@@ -7,8 +7,10 @@ import java.io.InputStreamReader; // Translates input bytes to char
 import java.util.ArrayList; // You Know This
 import java.util.Arrays; // Helper tools for arrays, e.g. Arrays.fill sets every spot to one value
 import java.util.HashMap; // Hashes the map to find faster(theres 100,000 words)
+import java.util.HashSet; // A Set that uses hashing, so contains/add/remove are instant even with lots of items
 import java.util.List; // You know this 
 import java.util.Map; // Stores a key and a value, able to find resources easily, very similar to array but can search by variable and location
+import java.util.Set; // A collection with no duplicates and no order, good for "have I seen this already?"
 
 public class App {
     public static void main(String[] args) throws IOException {
@@ -91,7 +93,7 @@ public class App {
             Arrays.fill(row, '.');
         }
 
-        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength);
+        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength, new HashSet<>());
         check("solve: found a fill", solved, true);
         for (Slot slot : solveOrder) {
             String answer = slot.getPattern(puzzle);
@@ -101,10 +103,24 @@ public class App {
             System.out.println(new String(row)); // turns a char[] into a String, e.g. "CATS."
         }
 
+        // Step 10 tests: every answer in the puzzle must be different
+        Set<String> answers = new HashSet<>();
+        for (Slot slot : solveOrder) {
+            answers.add(slot.getPattern(puzzle)); // a Set ignores duplicates, so repeats don't count twice
+        }
+        check("no repeats: all " + solveOrder.size() + " answers different", answers.size(), solveOrder.size());
+
         // An impossible grid: no 3-letter word starts with QZX, so solve must give up and return false
         Slot tiny = new Slot(0, 0, 3, true);
         char[][] stuck = { {'Q', 'Z', 'X'}, {'.', '.', '.'}, {'.', '.', '.'} };
-        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength), false);
+        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength, new HashSet<>()), false);
+
+        // CAT is already filled in. Allowed if CAT hasn't been used, blocked if it has.
+        char[][] catGrid = { {'C', 'A', 'T'}, {'.', '.', '.'}, {'.', '.', '.'} };
+        check("no repeats: CAT allowed when unused", solve(List.of(tiny), 0, catGrid, wordsByLength, new HashSet<>()), true);
+        Set<String> alreadyUsed = new HashSet<>();
+        alreadyUsed.add("CAT");
+        check("no repeats: CAT blocked when used", solve(List.of(tiny), 0, catGrid, wordsByLength, alreadyUsed), false);
     }
 
     // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)
@@ -205,8 +221,23 @@ public class App {
      *   - A slot that crossing words already filled (pattern has no '.') still has to be a real word.
      *
      * Related LeetCode: 37. Sudoku Solver, 79. Word Search (try, go deeper, undo)
+     *
+     * ===== Step 10: No Repeated Answers =====
+     *
+     * usedWords holds every word currently placed on the board.
+     * Skip any candidate that is already in usedWords.
+     * Keep usedWords in sync with the board: when a word goes on (CHOOSE) it goes in the set,
+     * when a word comes off (UNCHOOSE) it comes out of the set.
+     *
+     * Example:  usedWords = {CAT}, slot pattern = "CAT"  ->  false  (the only fit is taken)
+     *
+     * Constraints:
+     *   - Every one of the 10 answers in the 5x5 test grid must be different.
+     *   - When solve returns false, usedWords must look exactly like it did before the call (same rule as the grid).
+     *
+     * Related LeetCode: 46. Permutations (a "used" set with add on choose, remove on unchoose)
      */
-    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength) {
+    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords) {
         
         if (index == slots.size()) {
             return true;
@@ -218,13 +249,17 @@ public class App {
         List<String> candidates = findMatches(pattern, wordsByLength);
 
         for (String word : candidates) {
-            List<int[]> placed = slot.placeWord(filledGrid, word);
+            if (!usedWords.contains(word)) {
+                List<int[]> placed = slot.placeWord(filledGrid, word);
+                usedWords.add(word);
 
-            if (solve(slots, index + 1, filledGrid, wordsByLength)) {
-                return true;
+                if (solve(slots, index + 1, filledGrid, wordsByLength, usedWords)) {
+                    return true;
+                }
+
+                slot.removeWord(filledGrid, placed);
+                usedWords.remove(word);
             }
-
-            slot.removeWord(filledGrid, placed);
         }
         
         return false;

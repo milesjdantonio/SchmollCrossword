@@ -60,9 +60,9 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 7: Find matching words.** `App.findMatches(pattern, wordsByLength)` pulls the bucket for the pattern's length and keeps every word that fits (`.` matches any letter). Tested with PASS/FAIL checks in `main`.
 - ✅ **Step 8: Place and remove words.** `Slot.placeWord()` writes a word along a slot and returns only the squares it filled. `Slot.removeWord()` blanks just those squares, so letters shared with crossing words stay put.
 - ✅ **Step 9: Backtracking solver.** Recursive `App.solve(slots, index, grid, words)` fills slot `index`, tries each matching word, calls itself on `index + 1` and undoes the word on a dead end. Slots are tried in alternating across/down order so crossings are checked early (all-across-first never finished).
-- 🔨 **Step 10: No repeated answers. ← YOU ARE HERE**
-  The same word can't appear twice in one puzzle.
-- ⬜ **Step 11: Print the filled grid.** Show it in the console with `#` for black squares, to check the generator works.
+- ✅ **Step 10: No repeated answers.** `solve` takes a `Set<String> usedWords`: skip candidates already in it, add on place, remove on undo. (Without it, the first grid was a mirror image with every word used twice.)
+- 🔨 **Step 11: Print the filled grid. ← YOU ARE HERE**
+  Show it in the console with `#` for black squares, to check the generator works.
 - ⬜ **Step 12: Faster and different every time.** Fill the slot with the fewest options first (most-constrained), and shuffle candidate words so each puzzle is new.
 
 ### Phase 3: Turn the grid into a real crossword

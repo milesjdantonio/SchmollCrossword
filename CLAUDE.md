@@ -28,9 +28,9 @@ Context for Claude Code when working in this repository.
 
 ## Current status
 
-- **Done:** Steps 1–9 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive `App.solve()`). The program generates a filled 5×5 grid.
-- **Current step:** Step 10, no repeated answers in one puzzle.
-- **Next:** Step 11 (print the filled grid nicely), Step 12 (most-constrained slot first + shuffle).
+- **Done:** Steps 1–10 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive `App.solve()` with a `usedWords` set so no answer repeats). The program generates a filled 5×5 grid with 10 different words.
+- **Current step:** Step 11, printing the filled grid nicely (`#` for black squares).
+- **Next:** Step 12 (most-constrained slot first + shuffle).
 - **Solver order matters:** `solve` walks slots by index. `main` passes them in alternating across/down order; the default all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
 - **Not playable yet.** No clues, numbering or UI exist so far.
