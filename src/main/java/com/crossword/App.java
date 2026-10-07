@@ -5,6 +5,7 @@ import java.io.IOException; // Used with dealing with files, networks, and strea
 import java.io.InputStream; // Takes inputs as bytes
 import java.io.InputStreamReader; // Translates input bytes to char
 import java.util.ArrayList; // You Know This
+import java.util.Arrays; // Helper tools for arrays, e.g. Arrays.fill sets every spot to one value
 import java.util.HashMap; // Hashes the map to find faster(theres 100,000 words)
 import java.util.List; // You know this 
 import java.util.Map; // Stores a key and a value, able to find resources easily, very similar to array but can search by variable and location
@@ -51,6 +52,36 @@ public class App {
         testFindMatches(".....", 8636, wordsByLength);                     // every 5-letter word
         testFindMatches("QZX..", 0, wordsByLength);                        // nothing fits
         testFindMatches("...............................", 0, wordsByLength); // no words this long at all
+
+        // Step 8 tests: place two crossing words, then undo them one at a time
+        System.out.println();
+        char[][] grid = new char[size][size];
+        for (char[] row : grid) {
+            Arrays.fill(row, '.'); // sets every spot in this row to '.', same as the nested loop above
+        }
+        Slot across = new Slot(0, 0, 4, true);  // top row, 4 long
+        Slot down = new Slot(0, 0, 4, false);   // left column, 4 long; shares square (0,0) with `across`
+
+        List<int[]> acrossCells = across.placeWord(grid, "CATS");
+        check("place CATS across: pattern", across.getPattern(grid), "CATS");
+        check("place CATS across: squares filled", acrossCells.size(), 4);
+
+        List<int[]> downCells = down.placeWord(grid, "COAT");
+        check("place COAT down: pattern", down.getPattern(grid), "COAT");
+        check("place COAT down: squares filled", downCells.size(), 3);   // the C was already there
+
+        down.removeWord(grid, downCells);
+        check("remove COAT: down pattern", down.getPattern(grid), "C...");
+        check("remove COAT: across untouched", across.getPattern(grid), "CATS"); // the tricky one
+
+        across.removeWord(grid, acrossCells);
+        check("remove CATS: across pattern", across.getPattern(grid), "....");
+    }
+
+    // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)
+    static void check(String label, Object actual, Object expected) {
+        String status = actual.equals(expected) ? "PASS" : "FAIL";
+        System.out.println(status + "  " + label + "  expected " + expected + ", got " + actual);
     }
 
     // Prints PASS/FAIL for one test case, plus the first few matches so you can eyeball them

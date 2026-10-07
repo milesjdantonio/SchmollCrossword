@@ -110,4 +110,51 @@ public class Slot {
         }
         return pattern.toString();
     }
+
+    /*
+     * ===== Step 8a: Place a Word =====
+     *
+     * Write `word` into filledGrid along this slot, one letter per square.
+     * Return the squares that were EMPTY ('.') before and got a letter from this call.
+     * Squares that already had a letter (from a crossing word) are NOT in the list.
+     *
+     * Example:  grid row 0 = "C...", slot = Across (0,0) length 4, word = "CATS"
+     *           -> grid row 0 becomes "CATS"
+     *           -> returns [{0,1}, {0,2}, {0,3}]   (the C was already there)
+     *
+     * Constraints:
+     *   - word.length() == length, and word already fits getPattern() (findMatches guarantees this).
+     *   - Never return null. If nothing was empty, return an empty list.
+     *
+     * Related LeetCode: 37. Sudoku Solver, 51. N-Queens (place a choice, remember it, undo it later)
+     */
+    List<int[]> placeWord(char[][] filledGrid, String word) {
+        List<int[]> result = new ArrayList<>();
+        List<int[]> cells = getCells();
+
+        for (int i = 0; i < cells.size(); i++) {
+            int[] cell = cells.get(i);
+
+            if (filledGrid[cell[0]][cell[1]] == '.') {
+                filledGrid[cell[0]][cell[1]] = word.charAt(i);
+                result.add(cells.get(i));
+            }
+        }
+        return result; // placeholder so the project compiles
+    }
+
+    /*
+     * ===== Step 8b: Remove a Word =====
+     *
+     * Undo a placeWord: set every square in `placedCells` back to '.'.
+     * Only touch those squares, so letters that belong to crossing words stay put.
+     *
+     * Example:  after placing "CATS" above, removeWord(grid, [{0,1}, {0,2}, {0,3}])
+     *           -> grid row 0 is back to "C..."
+     */
+    void removeWord(char[][] filledGrid, List<int[]> placedCells) {
+        for (int[] placedCell : placedCells) {
+            filledGrid[placedCell[0]][placedCell[1]] = '.'; 
+        }
+    }
 }

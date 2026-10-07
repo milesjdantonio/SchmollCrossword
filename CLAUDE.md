@@ -28,9 +28,9 @@ Context for Claude Code when working in this repository.
 
 ## Current status
 
-- **Done:** Steps 1–7 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`). The project compiles and runs.
-- **Current step:** Step 8, placing a word into the grid along a slot and removing it without erasing crossing letters.
-- **Next:** Step 9, the backtracking solver.
+- **Done:** Steps 1–8 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`). The project compiles and runs.
+- **Current step:** Step 9, the recursive backtracking solver.
+- **Next:** Step 10 (no repeated answers), Step 11 (print the filled grid).
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
 - **Not playable yet.** No clues, numbering or UI exist so far.
 
@@ -59,6 +59,7 @@ Don't jump ahead. Build the layers in roadmap order unless the user asks otherwi
   - `findAllSlots` / `findAcrossSlots` / `findDownSlots` scan for runs of 3 or more open squares.
   - `getCells()` returns the list of `{row, col}` for the slot.
   - `getPattern(filledGrid)` returns the slot's letters as a string, e.g. `"C.T.."`.
+  - `placeWord(filledGrid, word)` writes the word and returns the `{row, col}` squares that were empty before (only those). `removeWord(filledGrid, placedCells)` blanks exactly those squares.
 - `src/main/resources/words.txt` is a ~172k-word Scrabble-style dictionary (lowercase, one per line). It is full of obscure words, and roadmap Step 13 replaces it with a common-word list suited to player-facing answers.
 
 ## Conventions
