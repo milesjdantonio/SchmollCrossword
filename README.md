@@ -51,16 +51,15 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 ### Phase 1: Foundations
 - ✅ **Step 1: Project setup.** Maven project, `com.crossword` package, Java 17.
 - ✅ **Step 2: Load the word list.** `App.loadWords()` reads `words.txt` and groups words by length into a `Map<Integer, List<String>>`.
-  - ⚠️ Small bug to fix: `if (word.isEmpty());` has a stray semicolon, so it does nothing. It should be `if (word.isEmpty()) continue;`.
 - ✅ **Step 3: Represent the grid.** `boolean[][] blackSquares` for the shape, `char[][] filledGrid` for the letters (`.` = empty).
 - ✅ **Step 4: Find all slots.** `Slot.findAcrossSlots()` / `findDownSlots()` scan each row/column for runs of 3+ open squares.
 - ✅ **Step 5: List a slot's squares.** `Slot.getCells()` returns the `(row, col)` of every square in a slot.
 
 ### Phase 2: Generate a filled grid
-- 🔨 **Step 6: Read a slot's pattern. ← YOU ARE HERE**
-  `Slot.getPattern(char[][] filledGrid)` should walk the slot's squares and build a string like `"C.T.."` from the grid. The method exists but its body is empty, so **the project doesn't compile right now.**
-- ⬜ **Step 7: Find matching words.** Given a pattern, return every word of the right length that fits (`.` matches any letter).
-- ⬜ **Step 8: Place and remove words.** Write a word into the grid along a slot, and undo it later without erasing letters that belong to crossing words.
+- ✅ **Step 6: Read a slot's pattern.** `Slot.getPattern(char[][] filledGrid)` walks the slot's squares and builds a string like `"C.T.."` from the grid.
+- ✅ **Step 7: Find matching words.** `App.findMatches(pattern, wordsByLength)` pulls the bucket for the pattern's length and keeps every word that fits (`.` matches any letter). Tested with PASS/FAIL checks in `main`.
+- 🔨 **Step 8: Place and remove words. ← YOU ARE HERE**
+  Write a word into the grid along a slot, and undo it later without erasing letters that belong to crossing words.
 - ⬜ **Step 9: Backtracking solver.** A recursive `solve()` that picks an empty slot, tries each matching word, goes deeper and undoes the word if it hits a dead end.
 - ⬜ **Step 10: No repeated answers.** The same word can't appear twice in one puzzle.
 - ⬜ **Step 11: Print the filled grid.** Show it in the console with `#` for black squares, to check the generator works.
@@ -99,7 +98,7 @@ mvn exec:java -Dexec.mainClass=com.crossword.App
 
 (`exec:java` uses the `exec-maven-plugin`, which Maven downloads the first time.) Or run `App.java` from VS Code with the ▶ Run button.
 
-> Right now the build fails until Step 6 (`getPattern`) has a body. For now the program only prints word counts and the slots it found. It isn't playable yet.
+> For now the program prints word counts, the slots it found, each slot's pattern and PASS/FAIL results for `findMatches`. It isn't playable yet.
 
 ---
 

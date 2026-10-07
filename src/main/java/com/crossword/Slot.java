@@ -7,7 +7,7 @@ public class Slot {
     int startRow;
     int startCol;
     int length;
-    boolean isAcross; // true = across, false = down ; true = closed space, false = open space
+    boolean isAcross; // true = across, false = down
 
     Slot (int startRow, int startCol, int length, boolean isAcross) {
         this.startRow = startRow;
@@ -104,6 +104,10 @@ public class Slot {
     }
 
     String getPattern(char[][] filledGrid) {
-        
+        StringBuilder pattern = new StringBuilder(); // a String you can add to, cheaper than += in a loop
+        for (int[] cell : getCells()) {
+            pattern.append(filledGrid[cell[0]][cell[1]]); // cell[0] = row, cell[1] = col
+        }
+        return pattern.toString();
     }
 }

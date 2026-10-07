@@ -28,10 +28,10 @@ Context for Claude Code when working in this repository.
 
 ## Current status
 
-- **Done:** Steps 1–5 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`).
-- **Current step:** Step 6, implementing `Slot.getPattern(char[][] filledGrid)` in `src/main/java/com/crossword/Slot.java`. It should return a string like `"C.T.."` built from the slot's squares (`.` = empty). The body is empty, so **the project does not compile yet**.
-- **Known bug:** in `App.loadWords()`, `if (word.isEmpty());` has a stray semicolon and does nothing. It should be `continue;`.
-- **Next:** Step 7 (pattern → matching words), then the backtracking solver.
+- **Done:** Steps 1–7 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`). The project compiles and runs.
+- **Current step:** Step 8, placing a word into the grid along a slot and removing it without erasing crossing letters.
+- **Next:** Step 9, the backtracking solver.
+- **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
 - **Not playable yet.** No clues, numbering or UI exist so far.
 
 ## Planned architecture
@@ -54,11 +54,11 @@ Don't jump ahead. Build the layers in roadmap order unless the user asks otherwi
 
 ## Code layout
 
-- `App.java` has `main` (prints word counts for lengths 3–7, builds a hard-coded 5×5 grid with black squares in the top-right and bottom-left corners, and prints all slots) and `loadWords()` (reads `words.txt` from the classpath and returns `Map<Integer, List<String>>` keyed by length; words are uppercased).
+- `App.java` has `main` (prints word counts for lengths 3–7, builds a hard-coded 5×5 grid with black squares in the top-right and bottom-left corners, places a few test letters, prints every slot with its pattern, and runs `testFindMatches` PASS/FAIL checks), `findMatches(pattern, wordsByLength)` (returns words fitting a `.`-wildcard pattern, never null) and `loadWords()` (reads `words.txt` from the classpath and returns `Map<Integer, List<String>>` keyed by length; words are uppercased).
 - `Slot.java` describes one across/down answer position (`startRow`, `startCol`, `length`, `isAcross`).
   - `findAllSlots` / `findAcrossSlots` / `findDownSlots` scan for runs of 3 or more open squares.
   - `getCells()` returns the list of `{row, col}` for the slot.
-  - `getPattern()` is a stub (current step).
+  - `getPattern(filledGrid)` returns the slot's letters as a string, e.g. `"C.T.."`.
 - `src/main/resources/words.txt` is a ~172k-word Scrabble-style dictionary (lowercase, one per line). It is full of obscure words, and roadmap Step 13 replaces it with a common-word list suited to player-facing answers.
 
 ## Conventions
