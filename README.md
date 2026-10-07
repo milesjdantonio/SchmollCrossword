@@ -48,6 +48,8 @@ SchmollCrosswordMain/
 
 Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 
+> For what each step teaches and its related LeetCode problems, see [ROADMAP.md](ROADMAP.md).
+
 ### Phase 1: Foundations
 - ✅ **Step 1: Project setup.** Maven project, `com.crossword` package, Java 17.
 - ✅ **Step 2: Load the word list.** `App.loadWords()` reads `words.txt` and groups words by length into a `Map<Integer, List<String>>`.
@@ -62,12 +64,12 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 9: Backtracking solver.** Recursive `App.solve(slots, index, grid, words)` fills slot `index`, tries each matching word, calls itself on `index + 1` and undoes the word on a dead end. Slots are tried in alternating across/down order so crossings are checked early (all-across-first never finished).
 - ✅ **Step 10: No repeated answers.** `solve` takes a `Set<String> usedWords`: skip candidates already in it, add on place, remove on undo. (Without it, the first grid was a mirror image with every word used twice.)
 - ✅ **Step 11: Print the filled grid.** `App.formatGrid(filledGrid, blackSquares)` returns the grid as text with `#` for black squares and single spaces between squares.
-- 🔨 **Step 12: Faster and different every time. ← YOU ARE HERE**
+- ✅ **Step 12: Faster and different every time.**
   - ✅ **12a: Shuffle.** `solve` takes a `Random` and shuffles each slot's candidates, so every seed gives a different puzzle and the same seed always gives the same one.
-  - 🔨 **12b: Most-constrained first.** Instead of a fixed slot order, always fill the slot with the fewest matching words next. (Shuffling alone made some seeds take 38,000+ tries.)
+  - ✅ **12b: Most-constrained first.** `pickMostConstrained` finds the slot with the fewest matching words, and `solve` always fills that one next using a `remaining` list instead of a fixed order. (Shuffling alone made some seeds take 38,000+ tries.)
 
 ### Phase 3: Turn the grid into a real crossword
-- ⬜ **Step 13: Use a player-friendly word list.** The current `words.txt` has obscure words (`aalii`, `aasvogel`) that no player would guess. Switch to a list of common words that make good answers.
+- 🔨 **Step 13: Use a player-friendly word list. ← YOU ARE HERE** The current `words.txt` has obscure words (`aalii`, `aasvogel`) that no player would guess. Switch to a list of common words that make good answers.
 - ⬜ **Step 14: Clue numbering.** Number squares the NYT way: scan left→right, top→bottom, and give a number to every square that starts an Across or Down answer.
 - ⬜ **Step 15: Clues.** Give every answer a clue. Start with a simple `word → clue` file, and later consider a bigger clue database or AI-written clues.
 - ⬜ **Step 16: A `Puzzle` object.** Bundle the grid, answers, numbers and clues into one object, and turn it into JSON so the game screen can read it.

@@ -83,21 +83,15 @@ public class App {
 
         // Step 9 tests: fill the whole 5x5 grid
         System.out.println();
-        // Alternate across/down so crossing letters get checked early (all-across-first takes minutes).
-        // findAllSlots returns 5 across then 5 down, so slot i pairs with slot i + 5.
-        List<Slot> solveOrder = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            solveOrder.add(allSlots.get(i));     // across
-            solveOrder.add(allSlots.get(i + 5)); // down
-        }
         char[][] puzzle = new char[size][size];
         for (char[] row : puzzle) {
             Arrays.fill(row, '.');
         }
 
-        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength, new HashSet<>(), new Random(1));
+        // new ArrayList<>(allSlots) makes a COPY, because solve takes slots out of the list it's given
+        boolean solved = solve(new ArrayList<>(allSlots), puzzle, wordsByLength, new HashSet<>(), new Random(1));
         check("solve: found a fill", solved, true);
-        for (Slot slot : solveOrder) {
+        for (Slot slot : allSlots) {
             String answer = slot.getPattern(puzzle);
             check("solve: " + slot + " is a real word", findMatches(answer, wordsByLength).size(), 1);
         }
@@ -107,22 +101,23 @@ public class App {
 
         // Step 10 tests: every answer in the puzzle must be different
         Set<String> answers = new HashSet<>();
-        for (Slot slot : solveOrder) {
+        for (Slot slot : allSlots) {
             answers.add(slot.getPattern(puzzle)); // a Set ignores duplicates, so repeats don't count twice
         }
-        check("no repeats: all " + solveOrder.size() + " answers different", answers.size(), solveOrder.size());
+        check("no repeats: all " + allSlots.size() + " answers different", answers.size(), allSlots.size());
 
-        // An impossible grid: no 3-letter word starts with QZX, so solve must give up and return false
+        // An impossible grid: no 3-letter word starts with QZX, so solve must give up and return false.
+        // List.of(...) can't be changed, so wrap it in new ArrayList<>(...) because solve removes slots.
         Slot tiny = new Slot(0, 0, 3, true);
         char[][] stuck = { {'Q', 'Z', 'X'}, {'.', '.', '.'}, {'.', '.', '.'} };
-        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength, new HashSet<>(), new Random(0)), false);
+        check("solve: impossible grid returns false", solve(new ArrayList<>(List.of(tiny)), stuck, wordsByLength, new HashSet<>(), new Random(0)), false);
 
         // CAT is already filled in. Allowed if CAT hasn't been used, blocked if it has.
         char[][] catGrid = { {'C', 'A', 'T'}, {'.', '.', '.'}, {'.', '.', '.'} };
-        check("no repeats: CAT allowed when unused", solve(List.of(tiny), 0, catGrid, wordsByLength, new HashSet<>(), new Random(0)), true);
+        check("no repeats: CAT allowed when unused", solve(new ArrayList<>(List.of(tiny)), catGrid, wordsByLength, new HashSet<>(), new Random(0)), true);
         Set<String> alreadyUsed = new HashSet<>();
         alreadyUsed.add("CAT");
-        check("no repeats: CAT blocked when used", solve(List.of(tiny), 0, catGrid, wordsByLength, alreadyUsed, new Random(0)), false);
+        check("no repeats: CAT blocked when used", solve(new ArrayList<>(List.of(tiny)), catGrid, wordsByLength, alreadyUsed, new Random(0)), false);
 
         // Step 11 tests: turn a grid into nice text. "\n" means "new line".
         System.out.println();
@@ -142,9 +137,9 @@ public class App {
 
         // Step 12a tests: shuffled candidates. Same seed = same puzzle, different seed = different puzzle.
         System.out.println();
-        String seed1 = generate(solveOrder, blackSquares, wordsByLength, 1);
-        String seed1Again = generate(solveOrder, blackSquares, wordsByLength, 1);
-        String seed2 = generate(solveOrder, blackSquares, wordsByLength, 2);
+        String seed1 = generate(allSlots, blackSquares, wordsByLength, 1);
+        String seed1Again = generate(allSlots, blackSquares, wordsByLength, 1);
+        String seed2 = generate(allSlots, blackSquares, wordsByLength, 2);
         check("shuffle: same seed gives the same puzzle", seed1Again, seed1);
         check("shuffle: different seeds give different puzzles", seed1.equals(seed2), false);
         check("shuffle: seed 1 no longer starts with AAHS", seed1.startsWith("A A H S"), false);
@@ -165,16 +160,45 @@ public class App {
         // Q at row 3, col 0 too: Down(0,0) is "...Q" and no word ends in Q (0 words), a dead end
         pickGrid[3][0] = 'Q';
         check("pick: dead end (0 options) wins", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Down at (0, 0), length 4");
+
+        // Step 12b-2 tests: solve picks its own order, so it gets allSlots straight from findAllSlots
+        System.out.println();
+        long start = System.currentTimeMillis(); // current time in milliseconds, used as a stopwatch
+        for (long seed = 1; seed <= 5; seed++) {
+            char[][] smartGrid = new char[size][size];
+            for (char[] row : smartGrid) {
+                Arrays.fill(row, '.');
+            }
+            boolean ok = solve(new ArrayList<>(allSlots), smartGrid, wordsByLength, new HashSet<>(), new Random(seed));
+            Set<String> smartAnswers = new HashSet<>();
+            boolean allReal = true;
+            for (Slot slot : allSlots) {
+                String answer = slot.getPattern(smartGrid);
+                smartAnswers.add(answer);
+                if (findMatches(answer, wordsByLength).size() != 1) {
+                    allReal = false;
+                }
+            }
+            check("smart solve seed " + seed + ": filled, real words, no repeats", ok && allReal && smartAnswers.size() == allSlots.size(), true);
+        }
+        long elapsed = System.currentTimeMillis() - start;
+        check("smart solve: 5 puzzles in under 5 seconds (took " + elapsed + " ms)", elapsed < 5000, true);
+
+        // Impossible grid: must return false AND put every slot back in `remaining`
+        List<Slot> tinyRemaining = new ArrayList<>();
+        tinyRemaining.add(tiny);
+        check("smart solve: impossible grid returns false", solve(tinyRemaining, stuck, wordsByLength, new HashSet<>(), new Random(0)), false);
+        check("smart solve: remaining restored after failing", tinyRemaining.size(), 1);
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
-    static String generate(List<Slot> order, boolean[][] blackSquares, Map<Integer, List<String>> wordsByLength, long seed) {
+    static String generate(List<Slot> slots, boolean[][] blackSquares, Map<Integer, List<String>> wordsByLength, long seed) {
         int size = blackSquares.length;
         char[][] grid = new char[size][size];
         for (char[] row : grid) {
             Arrays.fill(row, '.');
         }
-        solve(order, 0, grid, wordsByLength, new HashSet<>(), new Random(seed));
+        solve(new ArrayList<>(slots), grid, wordsByLength, new HashSet<>(), new Random(seed));
         return formatGrid(grid, blackSquares);
     }
 
@@ -329,65 +353,43 @@ public class App {
                 bestCount = count;
             }
         }
-        return best; // placeholder so the project compiles
+        return best;
     }
 
     /*
-     * ===== Step 9: Backtracking Solver =====
+     * ===== Backtracking Solver (Steps 9, 10, 12a, 12b) =====
      *
-     * Fill every slot in `slots` with a real word, starting from slots.get(index).
-     * Return true if the whole grid got filled, false if it's impossible from here.
-     * When this returns true, filledGrid holds the finished puzzle.
-     * When this returns false, filledGrid must look exactly like it did before the call.
+     * Fill every slot in `remaining` with a real word. Return true if the whole grid got filled,
+     * false if it's impossible from here. When this returns true, filledGrid holds the finished puzzle.
+     * When it returns false, remaining, filledGrid and usedWords look exactly like they did before the call.
      *
-     * Example 1:  index == slots.size()                ->  true   (nothing left to fill)
-     * Example 2:  slots.get(index) pattern = "QZX"     ->  false  (no word fits, nothing to try)
-     * Example 3:  the 5x5 test grid from index 0       ->  true, and every slot is a real word
+     * How each step shaped it:
+     *   - Step 9:   recursion + backtracking. Place a word, go deeper, undo it on a dead end.
+     *               A slot that crossing words already filled (no '.') still has to be a real word.
+     *   - Step 10:  usedWords holds every word on the board, so no answer appears twice.
+     *               Add on CHOOSE, remove on UNCHOOSE, in sync with placeWord/removeWord.
+     *   - Step 12a: candidates are shuffled with the `random` passed in, so the same seed always
+     *               gives the same puzzle (Step 23 will use today's date as the seed).
+     *   - Step 12b: always fill the most-constrained slot next (pickMostConstrained) instead of a
+     *               fixed order. Take it out of remaining before going deeper, put it back if every word failed.
      *
-     * Constraints:
-     *   - This method calls itself (recursion) with index + 1.
-     *   - Use the tools you already built: getPattern, findMatches, placeWord, removeWord.
-     *   - A slot that crossing words already filled (pattern has no '.') still has to be a real word.
-     *
-     * Related LeetCode: 37. Sudoku Solver, 79. Word Search (try, go deeper, undo)
-     *
-     * ===== Step 10: No Repeated Answers =====
-     *
-     * usedWords holds every word currently placed on the board.
-     * Skip any candidate that is already in usedWords.
-     * Keep usedWords in sync with the board: when a word goes on (CHOOSE) it goes in the set,
-     * when a word comes off (UNCHOOSE) it comes out of the set.
-     *
-     * Example:  usedWords = {CAT}, slot pattern = "CAT"  ->  false  (the only fit is taken)
+     * Example 1:  remaining is empty                       ->  true   (nothing left to fill)
+     * Example 2:  allSlots for the 5x5 grid, any seed      ->  true, real words, no repeats, fast
+     * Example 3:  one slot with pattern "QZX"              ->  false, and remaining still holds that slot
      *
      * Constraints:
-     *   - Every one of the 10 answers in the 5x5 test grid must be different.
-     *   - When solve returns false, usedWords must look exactly like it did before the call (same rule as the grid).
-     *
-     * Related LeetCode: 46. Permutations (a "used" set with add on choose, remove on unchoose)
-     *
-     * ===== Step 12a: A Different Puzzle Every Time =====
-     *
-     * Right now candidates come out of findMatches in alphabetical order, so the solver
-     * always finds the same puzzle. Mix the candidates into a random order before trying them.
-     * Use the `random` passed in, so the same seed always gives the same puzzle
-     * (Step 23 will use today's date as the seed, so everyone gets the same daily puzzle).
-     *
-     * Example:  seed 1 -> one puzzle, seed 1 again -> the exact same puzzle, seed 2 -> a different one
-     *
-     * Constraints:
+     *   - remaining must be a list that can change (new ArrayList<>(...)), and callers should pass a copy.
      *   - Only shuffle `candidates`, never the lists inside wordsByLength.
-     *   - Don't create a new Random inside solve. Use the one passed in.
      *
-     * Related LeetCode: 384. Shuffle an Array
+     * Related LeetCode: 37. Sudoku Solver, 79. Word Search, 46. Permutations, 384. Shuffle an Array
      */
-    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords, Random random) {
-        
-        if (index == slots.size()) {
+    static boolean solve(List<Slot> remaining, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords, Random random) {
+        if (remaining.isEmpty()) {
             return true;
         }
 
-        Slot slot = slots.get(index);
+        Slot slot = pickMostConstrained(remaining, filledGrid, wordsByLength); 
+        remaining.remove(slot);
 
         String pattern = slot.getPattern(filledGrid);
         List<String> candidates = findMatches(pattern, wordsByLength);
@@ -399,7 +401,7 @@ public class App {
                 List<int[]> placed = slot.placeWord(filledGrid, word);
                 usedWords.add(word);
 
-                if (solve(slots, index + 1, filledGrid, wordsByLength, usedWords, random)) {
+                if (solve(remaining, filledGrid, wordsByLength, usedWords, random)) {
                     return true;
                 }
 
@@ -407,7 +409,8 @@ public class App {
                 usedWords.remove(word);
             }
         }
-        
+
+        remaining.add(slot);
         return false;
     }
 }

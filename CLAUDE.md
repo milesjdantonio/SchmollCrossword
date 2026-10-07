@@ -24,14 +24,14 @@ Context for Claude Code when working in this repository.
   - Explain new terms and concepts in plain language when you introduce them.
   - Guide the user through each step instead of writing large chunks of code at once. Keep changes small and focused on the current step.
   - Keep the user's learning comments in the code (e.g. the import comments in `App.java`). Don't strip them out.
-- The full step-by-step roadmap is in [README.md](README.md). **When a step is finished, update the roadmap there**: move the 🔨 "YOU ARE HERE" marker and keep the "Current status" section below in sync.
+- The full step-by-step roadmap is in [README.md](README.md), with a detailed version (what each step teaches, related LeetCode problems, commit per step) in [ROADMAP.md](ROADMAP.md). **When a step is finished, update both**: move the 🔨 markers, the progress count and the commit table, and keep the "Current status" section below in sync.
 
 ## Current status
 
-- **Done:** Steps 1–10 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive `App.solve()` with a `usedWords` set so no answer repeats, `App.formatGrid()` for console output). The program generates and prints a filled 5×5 grid with 10 different words.
-- **Current step:** Step 12. 12a (shuffle candidates with a seeded `Random` passed into `solve`) is done. 12b is next: most-constrained slot first, starting with a `pickMostConstrained` helper, then switching `solve` from `index` to a list of remaining slots.
-- **Next:** Step 13, a player-friendly word list (Phase 3).
-- **Solver order matters:** `solve` walks slots by index. `main` passes them in alternating across/down order; the default all-across-first order took >200s without finishing.
+- **Done:** Steps 1–12 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive backtracking `App.solve()` with a `usedWords` set, `App.formatGrid()`, seeded shuffle, `App.pickMostConstrained()`). Phase 2 is complete: any seed gives a valid 5×5 grid with 10 different words in well under a second.
+- **Current step:** Step 13, a player-friendly word list (start of Phase 3). The answers are still obscure ENABLE words like `DARB`, `ERST`, `SCEND`.
+- **Next:** Step 14, clue numbering.
+- **Solver:** `solve(remaining, filledGrid, wordsByLength, usedWords, random)` removes slots from `remaining` as it fills them, so callers pass a mutable copy (`new ArrayList<>(allSlots)`, never `List.of(...)`). It picks the most-constrained slot each time; a fixed all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
 - **Not playable yet.** No clues, numbering or UI exist so far.
 
