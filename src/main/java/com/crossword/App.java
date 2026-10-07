@@ -76,6 +76,35 @@ public class App {
 
         across.removeWord(grid, acrossCells);
         check("remove CATS: across pattern", across.getPattern(grid), "....");
+
+        // Step 9 tests: fill the whole 5x5 grid
+        System.out.println();
+        // Alternate across/down so crossing letters get checked early (all-across-first takes minutes).
+        // findAllSlots returns 5 across then 5 down, so slot i pairs with slot i + 5.
+        List<Slot> solveOrder = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            solveOrder.add(allSlots.get(i));     // across
+            solveOrder.add(allSlots.get(i + 5)); // down
+        }
+        char[][] puzzle = new char[size][size];
+        for (char[] row : puzzle) {
+            Arrays.fill(row, '.');
+        }
+
+        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength);
+        check("solve: found a fill", solved, true);
+        for (Slot slot : solveOrder) {
+            String answer = slot.getPattern(puzzle);
+            check("solve: " + slot + " is a real word", findMatches(answer, wordsByLength).size(), 1);
+        }
+        for (char[] row : puzzle) {
+            System.out.println(new String(row)); // turns a char[] into a String, e.g. "CATS."
+        }
+
+        // An impossible grid: no 3-letter word starts with QZX, so solve must give up and return false
+        Slot tiny = new Slot(0, 0, 3, true);
+        char[][] stuck = { {'Q', 'Z', 'X'}, {'.', '.', '.'}, {'.', '.', '.'} };
+        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength), false);
     }
 
     // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)
@@ -155,6 +184,49 @@ public class App {
             }
         }
 
-        return result; 
+        return result;
+    }
+
+    /*
+     * ===== Step 9: Backtracking Solver =====
+     *
+     * Fill every slot in `slots` with a real word, starting from slots.get(index).
+     * Return true if the whole grid got filled, false if it's impossible from here.
+     * When this returns true, filledGrid holds the finished puzzle.
+     * When this returns false, filledGrid must look exactly like it did before the call.
+     *
+     * Example 1:  index == slots.size()                ->  true   (nothing left to fill)
+     * Example 2:  slots.get(index) pattern = "QZX"     ->  false  (no word fits, nothing to try)
+     * Example 3:  the 5x5 test grid from index 0       ->  true, and every slot is a real word
+     *
+     * Constraints:
+     *   - This method calls itself (recursion) with index + 1.
+     *   - Use the tools you already built: getPattern, findMatches, placeWord, removeWord.
+     *   - A slot that crossing words already filled (pattern has no '.') still has to be a real word.
+     *
+     * Related LeetCode: 37. Sudoku Solver, 79. Word Search (try, go deeper, undo)
+     */
+    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength) {
+        
+        if (index == slots.size()) {
+            return true;
+        }
+
+        Slot slot = slots.get(index);
+
+        String pattern = slot.getPattern(filledGrid);
+        List<String> candidates = findMatches(pattern, wordsByLength);
+
+        for (String word : candidates) {
+            List<int[]> placed = slot.placeWord(filledGrid, word);
+
+            if (solve(slots, index + 1, filledGrid, wordsByLength)) {
+                return true;
+            }
+
+            slot.removeWord(filledGrid, placed);
+        }
+        
+        return false;
     }
 }

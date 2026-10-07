@@ -59,9 +59,9 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 6: Read a slot's pattern.** `Slot.getPattern(char[][] filledGrid)` walks the slot's squares and builds a string like `"C.T.."` from the grid.
 - ✅ **Step 7: Find matching words.** `App.findMatches(pattern, wordsByLength)` pulls the bucket for the pattern's length and keeps every word that fits (`.` matches any letter). Tested with PASS/FAIL checks in `main`.
 - ✅ **Step 8: Place and remove words.** `Slot.placeWord()` writes a word along a slot and returns only the squares it filled. `Slot.removeWord()` blanks just those squares, so letters shared with crossing words stay put.
-- 🔨 **Step 9: Backtracking solver. ← YOU ARE HERE**
-  A recursive `solve()` that picks an empty slot, tries each matching word, goes deeper and undoes the word if it hits a dead end.
-- ⬜ **Step 10: No repeated answers.** The same word can't appear twice in one puzzle.
+- ✅ **Step 9: Backtracking solver.** Recursive `App.solve(slots, index, grid, words)` fills slot `index`, tries each matching word, calls itself on `index + 1` and undoes the word on a dead end. Slots are tried in alternating across/down order so crossings are checked early (all-across-first never finished).
+- 🔨 **Step 10: No repeated answers. ← YOU ARE HERE**
+  The same word can't appear twice in one puzzle.
 - ⬜ **Step 11: Print the filled grid.** Show it in the console with `#` for black squares, to check the generator works.
 - ⬜ **Step 12: Faster and different every time.** Fill the slot with the fewest options first (most-constrained), and shuffle candidate words so each puzzle is new.
 
@@ -98,7 +98,7 @@ mvn exec:java -Dexec.mainClass=com.crossword.App
 
 (`exec:java` uses the `exec-maven-plugin`, which Maven downloads the first time.) Or run `App.java` from VS Code with the ▶ Run button.
 
-> For now the program prints word counts, the slots it found, each slot's pattern and PASS/FAIL results for `findMatches`. It isn't playable yet.
+> For now the program prints word counts, the slots it found, PASS/FAIL test results and a fully generated 5×5 grid. It isn't playable yet.
 
 ---
 
