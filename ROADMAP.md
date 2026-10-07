@@ -105,9 +105,9 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 ### 🔨 Step 15: Clues
 - **What:** each puzzle's ~10 answers get fresh, original clues written by Claude through the Claude API, at a chosen difficulty (easy / medium / hard). No openly licensed clue source exists; see [CLUES.md](CLUES.md).
   - ✅ Setup: `anthropic-java` dependency, API key loaded from a file outside the repo, Claude Code blocked from reading it (`.claude/settings.json`)
-  - 🔨 **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: write the instructions
-  - ⬜ **15b:** `ClueWriter.findProblems(clueSet, answers)`: check Claude's clues (missing, gives away the answer, unexpected)
-  - ⬜ **15c:** `ClueWriter.writeClues(answers, difficulty)`: call the API with structured output, retry once if checks fail
+  - ✅ **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: the task, the difficulty with its meaning (made harder at the project owner's request: even easy avoids dictionary definitions), the rules (short, never contains the answer, original), and the answers one per line
+  - ✅ **15b:** `ClueWriter.findProblems(clueSet, answers)`: two passes, Claude's clues (unexpected, empty, gives away the answer) then the requested answers (missing), ignoring case
+  - 🔨 **15c:** `ClueWriter.writeClues(answers, difficulty)`: call the API with structured output, retry once if checks fail
 - **Will learn:** calling a real API from Java, keeping secrets out of code and git, prompt writing, structured output, validating AI output before users see it.
 - **LeetCode:** 242. Valid Anagram, 383. Ransom Note (checking one collection against another, for 15b)
 

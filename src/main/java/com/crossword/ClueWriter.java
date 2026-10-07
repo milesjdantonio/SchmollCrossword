@@ -1,12 +1,15 @@
 package com.crossword;
 
-import com.anthropic.client.AnthropicClient; // The object that talks to the Claude API
-import com.anthropic.client.okhttp.AnthropicOkHttpClient; // The standard way to build that client
 import java.io.IOException;
 import java.nio.file.Files; // Helpers to read files in one line
 import java.nio.file.Path; // A file location, e.g. C:\Users\you\.schmoll-crossword\anthropic-api-key.txt
 import java.util.ArrayList;
+import java.util.HashSet; // A Set with instant contains/add (used in findProblems)
 import java.util.List;
+import java.util.Set; // A collection with no duplicates, good for "have I seen this?"
+
+import com.anthropic.client.AnthropicClient; // The object that talks to the Claude API
+import com.anthropic.client.okhttp.AnthropicOkHttpClient; // The standard way to build that client
 
 /*
  * ===== Step 15: AI-written clues (Claude API) =====
@@ -88,8 +91,36 @@ public class ClueWriter {
      * Related LeetCode: none. Prompt writing is the "AI at work" skill in this step.
      */
     static String buildPrompt(List<String> answers, String difficulty) {
-        // TODO: your code here
-        return ""; // placeholder so the project compiles
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("Write one original crossword clue for each answer below.\n\n");
+
+        // Difficulty, plus what it means, so Claude doesn't have to guess
+        sb.append("Difficulty: ").append(difficulty).append(" - ");
+        if (difficulty.equalsIgnoreCase("easy")) {             // equalsIgnoreCase: "Easy", "EASY", "easy" all match
+            sb.append("not a dictionary definition. Use a synonym, a fill-in-the-blank phrase, or a common association, "
+                    + "so a casual solver needs a moment's thought.\n\n");
+        } else if (difficulty.equalsIgnoreCase("medium")) {
+            sb.append("indirect. Lean on less obvious meanings of the word and surface misdirection, "
+                    + "so an experienced solver gets it but a casual solver may need the crossing words.\n\n");
+        } else if (difficulty.equalsIgnoreCase("hard")) {
+            sb.append("tricky. Use heavy misdirection, puns or wordplay (end punny clues with '?'), "
+                    + "uncommon meanings, or trivia. Still fair: once solved, the clue must clearly fit the answer.\n\n");
+        } else {
+            sb.append("use your judgment.\n\n");
+        }
+
+        sb.append("Rules:\n");
+        sb.append("- Keep each clue short: never over 10 words.\n");
+        sb.append("- Never put the answer, or a form of it (like DESKS for DESK), in its own clue. That gives it away.\n");
+        sb.append("- Write original, creative clues. Don't copy clues from published crosswords.\n\n");
+
+        sb.append("Answers (one per line):\n");
+        for (String answer : answers) {
+            sb.append(answer).append("\n");   // append(...) returns the same sb, so calls can be chained
+        }
+
+        return sb.toString();
     }
 
     /*
@@ -110,8 +141,34 @@ public class ClueWriter {
      * Related LeetCode: 242. Valid Anagram, 383. Ransom Note (checking one collection against another)
      */
     static List<String> findProblems(ClueSet clueSet, List<String> answers) {
-        // TODO: your code here
-        return new ArrayList<>(); // placeholder so the project compiles
+        List<String> problems = new ArrayList<>();
+        Set<String> cluedAnswers = new HashSet<>(); // every answer Claude wrote a clue for
+
+        // Pass 1: look at each clue Claude wrote
+        for (Clue c : clueSet.clues()) {
+            // Claude might send "desk" instead of "DESK", or leave a field out (null), so clean them up first
+            String answer = (c.answer() == null) ? "" : c.answer().trim().toUpperCase();
+            String clueText = (c.clue() == null) ? "" : c.clue().trim();
+            cluedAnswers.add(answer);
+
+            if (!answers.contains(answer)) {
+                problems.add("unexpected answer " + answer);
+            }
+            if (clueText.isEmpty()) {
+                problems.add("empty clue for " + answer);
+            } else if (clueText.toUpperCase().contains(answer)) {   // compare in uppercase so "cats" matches CATS
+                problems.add("clue for " + answer + " gives away the answer");
+            }
+        }
+
+        // Pass 2: every answer we asked for must have a clue
+        for (String answer : answers) {
+            if (!cluedAnswers.contains(answer)) {
+                problems.add("missing clue for " + answer);
+            }
+        }
+
+        return problems;
     }
 
     /*
