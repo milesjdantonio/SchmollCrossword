@@ -103,9 +103,13 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **LeetCode:** 36. Valid Sudoku, 200. Number of Islands
 
 ### 🔨 Step 15: Clues
-- **What:** give every answer an original clue, starting with a `word → clue` file.
-- **Will learn:** parsing a file into a `HashMap`, handling missing data.
-- **LeetCode:** 1. Two Sum (hash lookups)
+- **What:** each puzzle's ~10 answers get fresh, original clues written by Claude through the Claude API, at a chosen difficulty (easy / medium / hard). No openly licensed clue source exists; see [CLUES.md](CLUES.md).
+  - ✅ Setup: `anthropic-java` dependency, API key loaded from a file outside the repo, Claude Code blocked from reading it (`.claude/settings.json`)
+  - 🔨 **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: write the instructions
+  - ⬜ **15b:** `ClueWriter.findProblems(clueSet, answers)`: check Claude's clues (missing, gives away the answer, unexpected)
+  - ⬜ **15c:** `ClueWriter.writeClues(answers, difficulty)`: call the API with structured output, retry once if checks fail
+- **Will learn:** calling a real API from Java, keeping secrets out of code and git, prompt writing, structured output, validating AI output before users see it.
+- **LeetCode:** 242. Valid Anagram, 383. Ransom Note (checking one collection against another, for 15b)
 
 ### ⬜ Step 16: A `Puzzle` object
 - **What:** bundle the grid, answers, numbers and clues into one class and turn it into JSON.

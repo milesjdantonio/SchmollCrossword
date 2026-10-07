@@ -38,7 +38,8 @@ SchmollCrosswordMain/
 ├── src/main/java/com/crossword/
 │   ├── App.java                         # Entry point: loads words, builds grid, prints slots
 │   ├── Slot.java                        # One across/down answer position in the grid
-│   └── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
+│   ├── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
+│   └── ClueWriter.java                  # Asks Claude to write each puzzle's clues (Step 15)
 └── src/main/resources/
     ├── words.txt                        # Answer words (SCOWL 50 ∩ Spread the Wordlist), one per line
     ├── blocked-words.txt                # Offensive words the generator must never use
@@ -76,7 +77,7 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 13: Use a player-friendly word list.** `words.txt` is now the words found in both SCOWL size 50 and Spread the Wordlist (score ≥ 50): 38.6k everyday, crossword-approved words instead of ENABLE's `aalii` and `darb`. `loadBlockedWords()` keeps the words in `blocked-words.txt` out. Research and sources are in [WORDLISTS.md](WORDLISTS.md).
 - ✅ **Step 13b: Faster word matching.** The friendlier list made puzzles slower (~1 s each). Measuring showed 94% of `findMatches` calls were repeats, so results are now cached, and new patterns are looked up in a Trie (`Trie.java`). 5 puzzles: ~5.5 s → ~0.15 s.
 - ✅ **Step 14: Clue numbering.** `App.numberGrid(blackSquares)` scans left→right, top→bottom and numbers every square that starts an Across or Down answer (0 everywhere else).
-- 🔨 **Step 15: Clues. ← YOU ARE HERE** Give every answer a clue. Start with a simple `word → clue` file, and later consider a bigger clue database or AI-written clues.
+- 🔨 **Step 15: Clues. ← YOU ARE HERE** No openly licensed clue source exists (see [CLUES.md](CLUES.md)), so each puzzle's ~10 clues are written fresh by Claude through the Claude API, at a chosen difficulty. `ClueWriter.java`: 15a build the prompt, 15b check Claude's clues, 15c call the API.
 - ⬜ **Step 16: A `Puzzle` object.** Bundle the grid, answers, numbers and clues into one object, and turn it into JSON so the game screen can read it.
 
 ### Phase 4: Make it playable
@@ -108,7 +109,33 @@ mvn exec:java -Dexec.mainClass=com.crossword.App
 
 > For now the program prints word counts, the slots it found, PASS/FAIL test results and a fully generated 5×5 grid. It isn't playable yet.
 
+To also ask Claude for real clues (costs a little per run, needs the API key below):
+
+```bash
+mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
+```
+
 ---
+
+## Claude API key
+
+AI-written clues (Step 15) need an Anthropic API key. **Treat it like a password**: anyone who has it can spend your credits.
+
+1. Create a key at [console.anthropic.com](https://console.anthropic.com) (Settings → API Keys) and add a small amount of credit.
+2. Save it **outside this project**, using **your own** PowerShell window (not by pasting it into a chat with Claude or anyone else):
+   ```powershell
+   New-Item -ItemType Directory -Force "$HOME\.schmoll-crossword" | Out-Null
+   notepad "$HOME\.schmoll-crossword\anthropic-api-key.txt"
+   ```
+   Paste the key as the only line, save, and close Notepad.
+3. Run the program. It should print `Claude API key found: yes`. It never prints the key itself.
+
+How the key is protected:
+- **Not in git:** the file lives in your home folder, outside the repository. `.gitignore` also blocks `.env` and `*.key` files in case one is ever created here.
+- **Not readable by Claude Code:** [.claude/settings.json](.claude/settings.json) has deny rules that stop Claude Code from reading that folder, `.env` / `*.key` files, or running commands that mention them or `ANTHROPIC_API_KEY`.
+- **Not in the code:** `ClueWriter.createClient()` loads it at run time.
+
+If a key is ever exposed (pasted somewhere, committed), delete it in the console right away and create a new one.
 
 ## License
 

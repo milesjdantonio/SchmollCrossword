@@ -10,3 +10,7 @@ target/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Secrets: never commit API keys
+.env
+*.key

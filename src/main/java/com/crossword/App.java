@@ -354,6 +354,56 @@ public class App {
             }
         }
         check("numbers: every answer starts on a numbered square", everySlotNumbered, true);
+
+        // Step 15 tests: AI-written clues. 15a and 15b run every time (free, no internet).
+        System.out.println();
+        List<String> twoAnswers = List.of("DESK", "CATS");
+        String prompt = ClueWriter.buildPrompt(twoAnswers, "hard");
+        check("prompt: mentions DESK", prompt.contains("DESK"), true);
+        check("prompt: mentions CATS", prompt.contains("CATS"), true);
+        check("prompt: mentions the difficulty", prompt.contains("hard"), true);
+
+        ClueWriter.ClueSet goodClues = new ClueWriter.ClueSet(List.of(
+                new ClueWriter.Clue("DESK", "Office furniture with drawers"),
+                new ClueWriter.Clue("CATS", "Some purring pets")));
+        check("problems: good clues have none", ClueWriter.findProblems(goodClues, twoAnswers).size(), 0);
+
+        ClueWriter.ClueSet missingOne = new ClueWriter.ClueSet(List.of(
+                new ClueWriter.Clue("DESK", "Office furniture with drawers")));
+        check("problems: a missing clue is caught", ClueWriter.findProblems(missingOne, twoAnswers).size(), 1);
+
+        ClueWriter.ClueSet givesItAway = new ClueWriter.ClueSet(List.of(
+                new ClueWriter.Clue("DESK", "Office furniture with drawers"),
+                new ClueWriter.Clue("CATS", "Pets like these cats")));
+        check("problems: a clue containing its answer is caught", ClueWriter.findProblems(givesItAway, twoAnswers).size(), 1);
+
+        ClueWriter.ClueSet extraWord = new ClueWriter.ClueSet(List.of(
+                new ClueWriter.Clue("DESK", "Office furniture with drawers"),
+                new ClueWriter.Clue("CATS", "Some purring pets"),
+                new ClueWriter.Clue("CHAIR", "Seat with a back")));
+        check("problems: an unexpected answer is caught", ClueWriter.findProblems(extraWord, twoAnswers).size(), 1);
+
+        // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
+        //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
+        // The key itself is never printed, only whether one was found.
+        System.out.println("Claude API key found: " + (ClueWriter.hasApiKey() ? "yes" : "no"));
+        boolean live = List.of(args).contains("live");
+        if (!live) {
+            System.out.println("Live clue test skipped (run with the argument 'live' to call Claude)");
+        } else if (!ClueWriter.hasApiKey()) {
+            System.out.println("Live clue test skipped: no API key (see 'Claude API key' in README.md)");
+        } else {
+            List<String> puzzleAnswers = new ArrayList<>();
+            for (Slot slot : allSlots) {
+                puzzleAnswers.add(slot.getPattern(puzzle));
+            }
+            System.out.print(formatGrid(puzzle, blackSquares));
+            ClueWriter.ClueSet clues = ClueWriter.writeClues(puzzleAnswers, "medium");
+            for (ClueWriter.Clue clue : clues.clues()) {
+                System.out.println("  " + clue.answer() + ": " + clue.clue());
+            }
+            check("live: Claude's clues pass every check", ClueWriter.findProblems(clues, puzzleAnswers).size(), 0);
+        }
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
