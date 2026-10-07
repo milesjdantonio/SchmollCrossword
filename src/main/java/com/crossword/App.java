@@ -15,6 +15,30 @@ import java.util.Random; // Makes "random" numbers; the same seed always gives t
 import java.util.Set; // A collection with no duplicates and no order, good for "have I seen this already?"
 
 public class App {
+    /*
+     * ===== Step 13b-1: Measure findMatches =====
+     *
+     * Before making findMatches faster, find out how it is used. Inside findMatches:
+     *   - add 1 to findMatchesCalls every time it runs
+     *   - if this exact pattern was seen before, add 1 to repeatedPatterns;
+     *     otherwise remember it in patternsSeen
+     *
+     * Example:  findMatches("C.T.") twice, then findMatches("CAT")
+     *           -> findMatchesCalls = 3, repeatedPatterns = 1 (the second "C.T."), patternsSeen = {C.T., CAT}
+     *
+     * Constraints:
+     *   - Don't change what findMatches returns. Only count.
+     *   - The tests reset these to 0 / empty before measuring.
+     *
+     * Related LeetCode: 217. Contains Duplicate (a Set to spot "seen this before")
+     *
+     * These are STATIC FIELDS: variables that belong to the whole class, not to one method call.
+     * A normal variable inside findMatches starts fresh on every call. These keep counting across calls.
+     */
+    static long findMatchesCalls = 0;
+    static long repeatedPatterns = 0;
+    static Set<String> patternsSeen = new HashSet<>();
+
     public static void main(String[] args) throws IOException {
         Map<Integer, List<String>> wordsByLength = loadWords();
 
@@ -204,6 +228,30 @@ public class App {
         check("blocklist: normal words still there (DESK)", findMatches("DESK", wordsByLength).size(), 1);
         check("word list: obscure ENABLE words are gone (DARB)", findMatches("DARB", wordsByLength).size(), 0);
         System.out.print(generate(allSlots, blackSquares, wordsByLength, 1)); // a puzzle from the new list
+
+        // Step 13b-1 tests: count findMatches calls and repeated patterns
+        System.out.println();
+        findMatchesCalls = 0;
+        repeatedPatterns = 0;
+        patternsSeen.clear();
+        findMatches("C.T.", wordsByLength);
+        findMatches("C.T.", wordsByLength);
+        findMatches("CAT", wordsByLength);
+        check("measure: 3 calls counted", findMatchesCalls, 3L);   // 3L = the number 3 as a long
+        check("measure: 1 repeat (the second C.T.)", repeatedPatterns, 1L);
+        check("measure: 2 different patterns seen", patternsSeen.size(), 2);
+
+        // Now measure a real puzzle. Seed 4 is the slowest of seeds 1-10.
+        findMatchesCalls = 0;
+        repeatedPatterns = 0;
+        patternsSeen.clear();
+        long measureStart = System.currentTimeMillis();
+        generate(allSlots, blackSquares, wordsByLength, 4);
+        long measureTime = System.currentTimeMillis() - measureStart;
+        long percentRepeated = findMatchesCalls == 0 ? 0 : 100 * repeatedPatterns / findMatchesCalls;
+        System.out.println("Seed 4: " + measureTime + " ms, " + findMatchesCalls + " findMatches calls, "
+                + repeatedPatterns + " repeats (" + percentRepeated + "%)");
+        check("measure: most calls are repeats (so caching will help)", percentRepeated > 50, true);
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
@@ -317,6 +365,13 @@ public class App {
      * Related LeetCode: 211. Design Add and Search Words Data Structure (same '.' wildcard idea)
      */
     static List<String> findMatches(String pattern, Map<Integer, List<String>> wordsByLength) {
+        findMatchesCalls++;
+        if (patternsSeen.contains(pattern)) {
+            repeatedPatterns++;
+        } else {
+            patternsSeen.add(pattern);
+        }
+
         List<String> result = new ArrayList<>();
         List<String> possibleWords = wordsByLength.getOrDefault(pattern.length(), new ArrayList<>());
         

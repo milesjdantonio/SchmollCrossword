@@ -90,7 +90,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 ### 🔨 Step 13b: Faster word matching
 - **Why:** every try in `solve` calls `pickMostConstrained`, which calls `findMatches` on every open slot, and each call scans thousands of words letter by letter. With the friendlier list, the solver makes many more tries, so this scanning dominates the run time.
 - **What:**
-  - **13b-1: Measure first.** Count how many times `findMatches` runs per puzzle and how often it sees the same pattern twice. Never optimize without numbers.
+  - ✅ **13b-1: Measure first.** Static counters in `findMatches` showed that seed 4 makes **113,616** calls, and **94%** of them repeat a pattern already worked out. That points straight at caching.
   - **13b-2: Cache.** Remember the answer for each pattern in a `HashMap<String, List<String>>`, so a repeated pattern is instant (memoization).
   - **13b-3: Trie (stretch).** Store the words in a tree of letters so a pattern like `C.T..` only explores branches that can match, instead of scanning every word.
 - **Will learn:** profiling, memoization and caching trade-offs (memory vs speed), the Trie data structure.
