@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 13 of 27 steps done.** Phase 2 is complete, and the answers are now everyday words.
+**Progress: 14 of 27 steps done.** Phase 2 is complete, the answers are everyday words, and a puzzle takes about 30 ms.
 
 ---
 
@@ -87,17 +87,17 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Learned:** finding and checking the license of a data source (and what NonCommercial / ShareAlike mean), benchmarking data choices, filtering data while loading it, `&&` vs `||` and short-circuiting, loading something once outside a loop.
 - **Side effect:** the smaller list means more dead ends, so puzzles went from ~0.2 s to ~1 s on average (3.5 s worst of 10). The timing test limit was raised from 5 s to 15 s, and Step 13b exists to win the speed back.
 
-### 🔨 Step 13b: Faster word matching
+### ✅ Step 13b: Faster word matching
 - **Why:** every try in `solve` calls `pickMostConstrained`, which calls `findMatches` on every open slot, and each call scans thousands of words letter by letter. With the friendlier list, the solver makes many more tries, so this scanning dominates the run time.
 - **What:**
   - ✅ **13b-1: Measure first.** Static counters in `findMatches` showed that seed 4 makes **113,616** calls, and **94%** of them repeat a pattern already worked out. That points straight at caching.
   - ✅ **13b-2: Cache.** `matchCache` (a `HashMap<String, List<String>>`) remembers each pattern's answer and hands out copies, so `solve`'s shuffling can't scramble it. 5 puzzles: ~5,500 ms → ~220 ms (25×). Seed 4: ~2,800 ms → ~42 ms. The timing limit is back to 5 s.
-  - **13b-3: Trie (stretch).** Store the words in a tree of letters so a pattern like `C.T..` only explores branches that can match, instead of scanning every word.
-- **Will learn:** profiling, memoization and caching trade-offs (memory vs speed), the Trie data structure.
-- **Goal:** the 5-puzzle timing test back near 1 second, so the limit can go back down.
+  - ✅ **13b-3: Trie.** `Trie.java` stores the words as a tree of letters, so a new pattern like `C.T..` only walks branches that can match. `findMatches` asks the Trie on a cache miss. Your Step 7 scan is kept as `findMatchesByScan`, and a test checks both give identical answers for 6,134 patterns. On the 6,357 distinct patterns the solver sees, the Trie takes ~52 ms vs ~127 ms for the scan, and 5 puzzles take ~150 ms. (Built by Claude at the project owner's request; read `Trie.java` for the commented walkthrough.)
+- **Learned:** profiling (measure before optimizing), memoization and caching trade-offs (memory vs speed, handing out copies), the Trie data structure, testing a new implementation against the old one.
+- **Result:** 5 puzzles went from ~5,500 ms to ~150 ms (about 35× faster), and the timing limit is back to 5 s.
 - **LeetCode:** 208. Implement Trie, 211. Design Add and Search Words Data Structure (same `.` wildcard as `findMatches`), 509. Fibonacci Number (memoization)
 
-### ⬜ Step 14: Clue numbering
+### 🔨 Step 14: Clue numbering
 - **What:** number squares the crossword way: scan left→right, top→bottom, and number every square that starts an Across or Down answer.
 - **Will learn:** grid scanning with neighbor checks.
 - **LeetCode:** 36. Valid Sudoku, 200. Number of Islands

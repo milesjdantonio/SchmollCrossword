@@ -286,6 +286,49 @@ public class App {
         List<String> veryFirst = findMatches("C.T.", wordsByLength); // the call that fills the cache
         veryFirst.clear();
         check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 7);
+
+        // Step 13b-3 tests: the Trie
+        System.out.println();
+        Trie tinyTrie = new Trie();
+        tinyTrie.insert("CAT");
+        tinyTrie.insert("CATS");
+        tinyTrie.insert("CUTE");
+        check("trie: C.T. finds CATS and CUTE", tinyTrie.match("C.T.").toString(), "[CATS, CUTE]");
+        check("trie: exact word CAT", tinyTrie.match("CAT").toString(), "[CAT]");
+        check("trie: CA is only the start of a word, not a word", tinyTrie.match("CA").toString(), "[]");
+        check("trie: ... finds only 3-letter words", tinyTrie.match("...").toString(), "[CAT]");
+
+        // Same answers as your Step 7 scan, for every 4- and 5-letter word with every other letter hidden
+        int compared = 0;
+        int different = 0;
+        for (int length = 4; length <= 5; length++) {
+            for (String word : wordsByLength.get(length)) {
+                StringBuilder p = new StringBuilder(word);
+                for (int i = 1; i < p.length(); i += 2) {
+                    p.setCharAt(i, '.');             // CATS -> C.T.
+                }
+                String pattern = p.toString();
+                compared++;
+                if (!getTrie(wordsByLength).match(pattern).equals(findMatchesByScan(pattern, wordsByLength))) {
+                    different++;
+                }
+            }
+        }
+        check("trie: same answers as the scan for all " + compared + " patterns", different, 0);
+
+        // Race: answer every distinct pattern the solver has seen, once with the scan and once with the Trie
+        long scanStart = System.currentTimeMillis();
+        for (String pattern : patternsSeen) {
+            findMatchesByScan(pattern, wordsByLength);
+        }
+        long scanTime = System.currentTimeMillis() - scanStart;
+        long trieStart = System.currentTimeMillis();
+        for (String pattern : patternsSeen) {
+            getTrie(wordsByLength).match(pattern);
+        }
+        long trieTime = System.currentTimeMillis() - trieStart;
+        System.out.println(patternsSeen.size() + " patterns: scan " + scanTime + " ms, trie " + trieTime + " ms");
+        check("trie: faster than the scan", trieTime < scanTime, true);
         check("cache: seed 4 now under 1 second (took " + measureTime + " ms)", measureTime < 1000, true);
         // Also watch "shuffle: same seed gives the same puzzle" above: it FAILS if the cache hands out its own list.
     }
@@ -414,9 +457,40 @@ public class App {
             return new ArrayList<>(matchCache.get(pattern));
         }
 
+        // Step 13b-3: new patterns are looked up in the Trie instead of scanning every word
+        List<String> result = getTrie(wordsByLength).match(pattern);
+
+        matchCache.put(pattern, result);    // notebook: "C.T." → [CATS, CITE, ...]
+        return new ArrayList<>(result);     // give the caller a copy, so shuffling it can't scramble the notebook
+    }
+
+    /*
+     * ===== Step 13b-3: Build the Trie once =====
+     *
+     * Builds a Trie from every word in wordsByLength the first time it's needed, then reuses it.
+     * If a different word map is passed in, it builds a fresh Trie for that map.
+     */
+    static Trie wordTrie = null;
+    static Map<Integer, List<String>> trieBuiltFrom = null;
+
+    static Trie getTrie(Map<Integer, List<String>> wordsByLength) {
+        if (wordTrie == null || trieBuiltFrom != wordsByLength) { // != on objects asks "is it the SAME map?"
+            wordTrie = new Trie();
+            for (List<String> bucket : wordsByLength.values()) {
+                for (String word : bucket) {
+                    wordTrie.insert(word);
+                }
+            }
+            trieBuiltFrom = wordsByLength;
+        }
+        return wordTrie;
+    }
+
+    // Your Step 7 scan, kept so the tests can check the Trie gives exactly the same answers
+    static List<String> findMatchesByScan(String pattern, Map<Integer, List<String>> wordsByLength) {
         List<String> result = new ArrayList<>();
         List<String> possibleWords = wordsByLength.getOrDefault(pattern.length(), new ArrayList<>());
-        
+
         for (String possibleWord : possibleWords) {
             boolean matches = true;
 
@@ -431,8 +505,7 @@ public class App {
             }
         }
 
-        matchCache.put(pattern, result);    // notebook: "C.T." → [CATS, CITE, ...]
-        return new ArrayList<>(result);     // give the caller a copy, so shuffling it can't scramble the notebook
+        return result;
     }
 
     /*

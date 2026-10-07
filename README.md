@@ -37,7 +37,8 @@ SchmollCrosswordMain/
 ├── pom.xml                              # Maven build config (Java 17)
 ├── src/main/java/com/crossword/
 │   ├── App.java                         # Entry point: loads words, builds grid, prints slots
-│   └── Slot.java                        # One across/down answer position in the grid
+│   ├── Slot.java                        # One across/down answer position in the grid
+│   └── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
 └── src/main/resources/
     ├── words.txt                        # Answer words (SCOWL 50 ∩ Spread the Wordlist), one per line
     ├── blocked-words.txt                # Offensive words the generator must never use
@@ -73,8 +74,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 
 ### Phase 3: Turn the grid into a real crossword
 - ✅ **Step 13: Use a player-friendly word list.** `words.txt` is now the words found in both SCOWL size 50 and Spread the Wordlist (score ≥ 50): 38.6k everyday, crossword-approved words instead of ENABLE's `aalii` and `darb`. `loadBlockedWords()` keeps the words in `blocked-words.txt` out. Research and sources are in [WORDLISTS.md](WORDLISTS.md).
-- 🔨 **Step 13b: Faster word matching. ← YOU ARE HERE** The friendlier list made puzzles slower (~1 s each, up to 3.5 s). Measure where the time goes, then cache `findMatches` results and (stretch) use a Trie.
-- ⬜ **Step 14: Clue numbering.** Number squares the NYT way: scan left→right, top→bottom, and give a number to every square that starts an Across or Down answer.
+- ✅ **Step 13b: Faster word matching.** The friendlier list made puzzles slower (~1 s each). Measuring showed 94% of `findMatches` calls were repeats, so results are now cached, and new patterns are looked up in a Trie (`Trie.java`). 5 puzzles: ~5.5 s → ~0.15 s.
+- 🔨 **Step 14: Clue numbering. ← YOU ARE HERE** Number squares the standard crossword way: scan left→right, top→bottom, and give a number to every square that starts an Across or Down answer.
 - ⬜ **Step 15: Clues.** Give every answer a clue. Start with a simple `word → clue` file, and later consider a bigger clue database or AI-written clues.
 - ⬜ **Step 16: A `Puzzle` object.** Bundle the grid, answers, numbers and clues into one object, and turn it into JSON so the game screen can read it.
 
