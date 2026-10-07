@@ -6,10 +6,12 @@ import java.io.InputStream; // Takes inputs as bytes
 import java.io.InputStreamReader; // Translates input bytes to char
 import java.util.ArrayList; // You Know This
 import java.util.Arrays; // Helper tools for arrays, e.g. Arrays.fill sets every spot to one value
+import java.util.Collections; // Helper tools for lists, e.g. Collections.shuffle mixes a list into random order
 import java.util.HashMap; // Hashes the map to find faster(theres 100,000 words)
 import java.util.HashSet; // A Set that uses hashing, so contains/add/remove are instant even with lots of items
-import java.util.List; // You know this 
+import java.util.List; // You know this
 import java.util.Map; // Stores a key and a value, able to find resources easily, very similar to array but can search by variable and location
+import java.util.Random; // Makes "random" numbers; the same seed always gives the same sequence
 import java.util.Set; // A collection with no duplicates and no order, good for "have I seen this already?"
 
 public class App {
@@ -93,7 +95,7 @@ public class App {
             Arrays.fill(row, '.');
         }
 
-        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength, new HashSet<>());
+        boolean solved = solve(solveOrder, 0, puzzle, wordsByLength, new HashSet<>(), new Random(1));
         check("solve: found a fill", solved, true);
         for (Slot slot : solveOrder) {
             String answer = slot.getPattern(puzzle);
@@ -113,14 +115,14 @@ public class App {
         // An impossible grid: no 3-letter word starts with QZX, so solve must give up and return false
         Slot tiny = new Slot(0, 0, 3, true);
         char[][] stuck = { {'Q', 'Z', 'X'}, {'.', '.', '.'}, {'.', '.', '.'} };
-        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength, new HashSet<>()), false);
+        check("solve: impossible grid returns false", solve(List.of(tiny), 0, stuck, wordsByLength, new HashSet<>(), new Random(0)), false);
 
         // CAT is already filled in. Allowed if CAT hasn't been used, blocked if it has.
         char[][] catGrid = { {'C', 'A', 'T'}, {'.', '.', '.'}, {'.', '.', '.'} };
-        check("no repeats: CAT allowed when unused", solve(List.of(tiny), 0, catGrid, wordsByLength, new HashSet<>()), true);
+        check("no repeats: CAT allowed when unused", solve(List.of(tiny), 0, catGrid, wordsByLength, new HashSet<>(), new Random(0)), true);
         Set<String> alreadyUsed = new HashSet<>();
         alreadyUsed.add("CAT");
-        check("no repeats: CAT blocked when used", solve(List.of(tiny), 0, catGrid, wordsByLength, alreadyUsed), false);
+        check("no repeats: CAT blocked when used", solve(List.of(tiny), 0, catGrid, wordsByLength, alreadyUsed, new Random(0)), false);
 
         // Step 11 tests: turn a grid into nice text. "\n" means "new line".
         System.out.println();
@@ -137,6 +139,26 @@ public class App {
 
         System.out.println();
         System.out.print(formatGrid(puzzle, blackSquares)); // the real 5x5 puzzle from Step 9
+
+        // Step 12a tests: shuffled candidates. Same seed = same puzzle, different seed = different puzzle.
+        System.out.println();
+        String seed1 = generate(solveOrder, blackSquares, wordsByLength, 1);
+        String seed1Again = generate(solveOrder, blackSquares, wordsByLength, 1);
+        String seed2 = generate(solveOrder, blackSquares, wordsByLength, 2);
+        check("shuffle: same seed gives the same puzzle", seed1Again, seed1);
+        check("shuffle: different seeds give different puzzles", seed1.equals(seed2), false);
+        check("shuffle: seed 1 no longer starts with AAHS", seed1.startsWith("A A H S"), false);
+    }
+
+    // Test helper: solve a fresh empty grid with the given random seed and return it as text
+    static String generate(List<Slot> order, boolean[][] blackSquares, Map<Integer, List<String>> wordsByLength, long seed) {
+        int size = blackSquares.length;
+        char[][] grid = new char[size][size];
+        for (char[] row : grid) {
+            Arrays.fill(row, '.');
+        }
+        solve(order, 0, grid, wordsByLength, new HashSet<>(), new Random(seed));
+        return formatGrid(grid, blackSquares);
     }
 
     // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)
@@ -295,8 +317,23 @@ public class App {
      *   - When solve returns false, usedWords must look exactly like it did before the call (same rule as the grid).
      *
      * Related LeetCode: 46. Permutations (a "used" set with add on choose, remove on unchoose)
+     *
+     * ===== Step 12a: A Different Puzzle Every Time =====
+     *
+     * Right now candidates come out of findMatches in alphabetical order, so the solver
+     * always finds the same puzzle. Mix the candidates into a random order before trying them.
+     * Use the `random` passed in, so the same seed always gives the same puzzle
+     * (Step 23 will use today's date as the seed, so everyone gets the same daily puzzle).
+     *
+     * Example:  seed 1 -> one puzzle, seed 1 again -> the exact same puzzle, seed 2 -> a different one
+     *
+     * Constraints:
+     *   - Only shuffle `candidates`, never the lists inside wordsByLength.
+     *   - Don't create a new Random inside solve. Use the one passed in.
+     *
+     * Related LeetCode: 384. Shuffle an Array
      */
-    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords) {
+    static boolean solve(List<Slot> slots, int index, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords, Random random) {
         
         if (index == slots.size()) {
             return true;
@@ -307,12 +344,14 @@ public class App {
         String pattern = slot.getPattern(filledGrid);
         List<String> candidates = findMatches(pattern, wordsByLength);
 
+        Collections.shuffle(candidates, random);
+        
         for (String word : candidates) {
             if (!usedWords.contains(word)) {
                 List<int[]> placed = slot.placeWord(filledGrid, word);
                 usedWords.add(word);
 
-                if (solve(slots, index + 1, filledGrid, wordsByLength, usedWords)) {
+                if (solve(slots, index + 1, filledGrid, wordsByLength, usedWords, random)) {
                     return true;
                 }
 

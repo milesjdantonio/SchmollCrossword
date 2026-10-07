@@ -63,7 +63,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 10: No repeated answers.** `solve` takes a `Set<String> usedWords`: skip candidates already in it, add on place, remove on undo. (Without it, the first grid was a mirror image with every word used twice.)
 - ✅ **Step 11: Print the filled grid.** `App.formatGrid(filledGrid, blackSquares)` returns the grid as text with `#` for black squares and single spaces between squares.
 - 🔨 **Step 12: Faster and different every time. ← YOU ARE HERE**
-  Fill the slot with the fewest options first (most-constrained), and shuffle candidate words so each puzzle is new.
+  - ✅ **12a: Shuffle.** `solve` takes a `Random` and shuffles each slot's candidates, so every seed gives a different puzzle and the same seed always gives the same one.
+  - 🔨 **12b: Most-constrained first.** Instead of a fixed slot order, always fill the slot with the fewest matching words next. (Shuffling alone made some seeds take 38,000+ tries.)
 
 ### Phase 3: Turn the grid into a real crossword
 - ⬜ **Step 13: Use a player-friendly word list.** The current `words.txt` has obscure words (`aalii`, `aasvogel`) that no player would guess. Switch to a list of common words that make good answers.

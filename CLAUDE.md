@@ -29,7 +29,7 @@ Context for Claude Code when working in this repository.
 ## Current status
 
 - **Done:** Steps 1–10 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive `App.solve()` with a `usedWords` set so no answer repeats, `App.formatGrid()` for console output). The program generates and prints a filled 5×5 grid with 10 different words.
-- **Current step:** Step 12, most-constrained slot first + shuffled candidates (faster, and a different puzzle each run).
+- **Current step:** Step 12. 12a (shuffle candidates with a seeded `Random` passed into `solve`) is done. 12b is next: most-constrained slot first, starting with a `pickMostConstrained` helper, then switching `solve` from `index` to a list of remaining slots.
 - **Next:** Step 13, a player-friendly word list (Phase 3).
 - **Solver order matters:** `solve` walks slots by index. `main` passes them in alternating across/down order; the default all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
