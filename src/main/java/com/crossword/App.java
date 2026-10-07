@@ -148,6 +148,23 @@ public class App {
         check("shuffle: same seed gives the same puzzle", seed1Again, seed1);
         check("shuffle: different seeds give different puzzles", seed1.equals(seed2), false);
         check("shuffle: seed 1 no longer starts with AAHS", seed1.startsWith("A A H S"), false);
+
+        // Step 12b-1 tests: pick the slot with the fewest matching words
+        System.out.println();
+        char[][] pickGrid = new char[size][size];
+        for (char[] row : pickGrid) {
+            Arrays.fill(row, '.');
+        }
+        // Empty grid: 4-letter slots (3903 words) beat 5-letter slots (8636). On a tie, keep the earliest.
+        check("pick: empty grid", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Across at (0, 0), length 4");
+
+        // Q at row 2, col 1: Across(2,0) is ".Q..." (12 words), Down(0,1) is "..Q.." (8 words)
+        pickGrid[2][1] = 'Q';
+        check("pick: fewest options wins", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Down at (0, 1), length 5");
+
+        // Q at row 3, col 0 too: Down(0,0) is "...Q" and no word ends in Q (0 words), a dead end
+        pickGrid[3][0] = 'Q';
+        check("pick: dead end (0 options) wins", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Down at (0, 0), length 4");
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
@@ -282,6 +299,37 @@ public class App {
             result += "\n";
         }
         return result; 
+    }
+
+    /*
+     * ===== Step 12b-1: Pick the Most-Constrained Slot =====
+     *
+     * Out of the slots in `remaining`, return the one with the FEWEST matching words
+     * for its current pattern in filledGrid. If two slots tie, return the earlier one.
+     *
+     * Example 1:  empty 5x5 grid                    ->  Across (0,0) length 4   (3903 beats 8636; earliest of the ties)
+     * Example 2:  Q at row 2, col 1                 ->  Down (0,1) length 5     ("..Q.." has 8, the fewest)
+     * Example 3:  also Q at row 3, col 0            ->  Down (0,0) length 4     ("...Q" has 0, a dead end)
+     *
+     * Constraints:
+     *   - remaining always has at least one slot.
+     *   - Don't change remaining or filledGrid. Only look.
+     *
+     * Related LeetCode: 414. Third Maximum Number, 1. Two Sum (scan once, remember the best so far)
+     */
+    static Slot pickMostConstrained(List<Slot> remaining, char[][] filledGrid, Map<Integer, List<String>> wordsByLength) {
+        int bestCount = Integer.MAX_VALUE;
+        Slot best = null;
+
+        for (Slot slot : remaining) {
+            int count = findMatches(slot.getPattern(filledGrid), wordsByLength).size();
+
+            if (count < bestCount) {
+                best = slot;
+                bestCount = count;
+            }
+        }
+        return best; // placeholder so the project compiles
     }
 
     /*
