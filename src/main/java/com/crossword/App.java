@@ -39,6 +39,26 @@ public class App {
     static long repeatedPatterns = 0;
     static Set<String> patternsSeen = new HashSet<>();
 
+    /*
+     * ===== Step 13b-2: Cache findMatches =====
+     *
+     * 94% of findMatches calls ask about a pattern that was already worked out. Remember the answers:
+     *   - matchCache maps a pattern to the list of words that fit it, e.g. "C.T." -> [CATS, CITE, CITY, ...]
+     *   - At the start of findMatches (after the 13b-1 counting): if the pattern is in matchCache,
+     *     return the saved answer right away, without scanning any words.
+     *   - At the end: save the answer in matchCache before returning it.
+     *
+     * Example:  findMatches("C.T.") scans and saves it; the next findMatches("C.T.") skips the scan.
+     *
+     * Constraints:
+     *   - The caller must be able to change the list it gets back (solve shuffles it!) without
+     *     changing what's saved in the cache. Hint: hand back a COPY, new ArrayList<>(someList).
+     *   - The cache assumes one word list per program run (the key is only the pattern).
+     *
+     * Related LeetCode: 509. Fibonacci Number, 70. Climbing Stairs (memoization: save answers you'll need again)
+     */
+    static Map<String, List<String>> matchCache = new HashMap<>();
+
     public static void main(String[] args) throws IOException {
         Map<Integer, List<String>> wordsByLength = loadWords();
 
@@ -207,9 +227,9 @@ public class App {
         }
         long elapsed = System.currentTimeMillis() - start;
         // The limit catches disasters (a fixed slot order took 200+ seconds), not normal variation.
-        // Raised from 5s to 15s in Step 13: the smaller, friendlier word list means more dead ends (~5s now).
-        // Step 13b (faster matching) should bring this back down.
-        check("smart solve: 5 puzzles in under 15 seconds (took " + elapsed + " ms)", elapsed < 15000, true);
+        // Raised from 5s to 15s in Step 13 (the smaller word list means more dead ends, ~5.5s),
+        // then lowered back to 5s in Step 13b-2, because caching findMatches should make this well under 1s.
+        check("smart solve: 5 puzzles in under 5 seconds (took " + elapsed + " ms)", elapsed < 5000, true);
 
         // Impossible grid: must return false AND put every slot back in `remaining`
         List<Slot> tinyRemaining = new ArrayList<>();
@@ -252,6 +272,22 @@ public class App {
         System.out.println("Seed 4: " + measureTime + " ms, " + findMatchesCalls + " findMatches calls, "
                 + repeatedPatterns + " repeats (" + percentRepeated + "%)");
         check("measure: most calls are repeats (so caching will help)", percentRepeated > 50, true);
+
+        // Step 13b-2 tests: cache findMatches answers
+        System.out.println();
+        matchCache.clear();
+        List<String> firstAnswer = findMatches("C.T.", wordsByLength);
+        check("cache: answer saved under its pattern", matchCache.containsKey("C.T."), true);
+        check("cache: second call gives the same words", findMatches("C.T.", wordsByLength), firstAnswer);
+        List<String> scribbled = findMatches("C.T.", wordsByLength);
+        scribbled.clear(); // pretend a caller messed with the list it got back
+        check("cache: changing a returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 7);
+        matchCache.clear();
+        List<String> veryFirst = findMatches("C.T.", wordsByLength); // the call that fills the cache
+        veryFirst.clear();
+        check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 7);
+        check("cache: seed 4 now under 1 second (took " + measureTime + " ms)", measureTime < 1000, true);
+        // Also watch "shuffle: same seed gives the same puzzle" above: it FAILS if the cache hands out its own list.
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
@@ -353,7 +389,7 @@ public class App {
      * A '.' matches any one letter. A letter must match exactly.
      * The order of the returned words does not matter.
      *
-     * Example 1:  pattern = "C.T."   ->  [CATE, CATS, CETE, CITE, CITY, ...]  (9 words)
+     * Example 1:  pattern = "C.T."   ->  [CATS, CITE, CITY, COTE, COTS, CUTE, CUTS]  (7 words)
      * Example 2:  pattern = "CAT"    ->  [CAT]
      * Example 3:  pattern = "QZX.."  ->  []
      *
@@ -370,6 +406,12 @@ public class App {
             repeatedPatterns++;
         } else {
             patternsSeen.add(pattern);
+        }
+
+        // Step 13b-2: already worked out? Hand back a COPY of the saved answer and skip the scan.
+        // (A copy, because solve shuffles the list it gets, and that must not scramble the cache.)
+        if (matchCache.containsKey(pattern)) {
+            return new ArrayList<>(matchCache.get(pattern));
         }
 
         List<String> result = new ArrayList<>();
@@ -389,7 +431,8 @@ public class App {
             }
         }
 
-        return result;
+        matchCache.put(pattern, result);    // notebook: "C.T." → [CATS, CITE, ...]
+        return new ArrayList<>(result);     // give the caller a copy, so shuffling it can't scramble the notebook
     }
 
     /*
