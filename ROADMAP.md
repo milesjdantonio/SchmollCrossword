@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 12 of 26 steps done.** Phase 2 is complete: the program generates a new, valid 5×5 grid for any seed.
+**Progress: 13 of 27 steps done.** Phase 2 is complete, and the answers are now everyday words.
 
 ---
 
@@ -80,9 +80,22 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ## Phase 3: Turn the grid into a real crossword 🔨
 
-### 🔨 Step 13: Use a player-friendly word list
+### ✅ Step 13: Use a player-friendly word list
 - **What:** replace `words.txt` (full of words like `AALII` and `SCEND`) with common words a normal person can guess.
-- **Will learn:** finding and checking the license of a data source, cleaning and filtering data.
+  - ✅ Researched SCOWL, Spread the Wordlist and others, then benchmarked each with the solver. Chose the words in **both SCOWL 50 and Spread the Wordlist (score ≥ 50)**, so every answer is both common and crossword-approved (see [WORDLISTS.md](WORDLISTS.md)).
+  - ✅ `App.loadBlockedWords()` + skipping blocked words in `loadWords()`, because every list produced offensive words in testing.
+- **Learned:** finding and checking the license of a data source (and what NonCommercial / ShareAlike mean), benchmarking data choices, filtering data while loading it, `&&` vs `||` and short-circuiting, loading something once outside a loop.
+- **Side effect:** the smaller list means more dead ends, so puzzles went from ~0.2 s to ~1 s on average (3.5 s worst of 10). The timing test limit was raised from 5 s to 15 s, and Step 13b exists to win the speed back.
+
+### 🔨 Step 13b: Faster word matching
+- **Why:** every try in `solve` calls `pickMostConstrained`, which calls `findMatches` on every open slot, and each call scans thousands of words letter by letter. With the friendlier list, the solver makes many more tries, so this scanning dominates the run time.
+- **What:**
+  - **13b-1: Measure first.** Count how many times `findMatches` runs per puzzle and how often it sees the same pattern twice. Never optimize without numbers.
+  - **13b-2: Cache.** Remember the answer for each pattern in a `HashMap<String, List<String>>`, so a repeated pattern is instant (memoization).
+  - **13b-3: Trie (stretch).** Store the words in a tree of letters so a pattern like `C.T..` only explores branches that can match, instead of scanning every word.
+- **Will learn:** profiling, memoization and caching trade-offs (memory vs speed), the Trie data structure.
+- **Goal:** the 5-puzzle timing test back near 1 second, so the limit can go back down.
+- **LeetCode:** 208. Implement Trie, 211. Design Add and Search Words Data Structure (same `.` wildcard as `findMatches`), 509. Fibonacci Number (memoization)
 
 ### ⬜ Step 14: Clue numbering
 - **What:** number squares the crossword way: scan left→right, top→bottom, and number every square that starts an Across or Down answer.

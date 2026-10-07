@@ -51,9 +51,9 @@ public class App {
 
         // Step 7 tests: like LeetCode's "Run" button. All should say PASS once findMatches works.
         System.out.println();
-        testFindMatches("C.T.", 9, wordsByLength);                         // CATE, CATS, CETE, CITE, CITY, ...
+        testFindMatches("C.T.", 7, wordsByLength);                         // CATS, CITE, CITY, COTE, COTS, CUTE, CUTS
         testFindMatches("CAT", 1, wordsByLength);                          // already a full word
-        testFindMatches(".....", 8636, wordsByLength);                     // every 5-letter word
+        testFindMatches(".....", 4014, wordsByLength);                     // every 5-letter word (4016 minus 2 blocked)
         testFindMatches("QZX..", 0, wordsByLength);                        // nothing fits
         testFindMatches("...............................", 0, wordsByLength); // no words this long at all
 
@@ -150,10 +150,10 @@ public class App {
         for (char[] row : pickGrid) {
             Arrays.fill(row, '.');
         }
-        // Empty grid: 4-letter slots (3903 words) beat 5-letter slots (8636). On a tie, keep the earliest.
+        // Empty grid: 4-letter slots (2120 words) beat 5-letter slots (4014). On a tie, keep the earliest.
         check("pick: empty grid", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Across at (0, 0), length 4");
 
-        // Q at row 2, col 1: Across(2,0) is ".Q..." (12 words), Down(0,1) is "..Q.." (8 words)
+        // Q at row 2, col 1: Across(2,0) is ".Q..." (7 words), Down(0,1) is "..Q.." (2 words)
         pickGrid[2][1] = 'Q';
         check("pick: fewest options wins", pickMostConstrained(allSlots, pickGrid, wordsByLength).toString(), "Down at (0, 1), length 5");
 
@@ -182,13 +182,28 @@ public class App {
             check("smart solve seed " + seed + ": filled, real words, no repeats", ok && allReal && smartAnswers.size() == allSlots.size(), true);
         }
         long elapsed = System.currentTimeMillis() - start;
-        check("smart solve: 5 puzzles in under 5 seconds (took " + elapsed + " ms)", elapsed < 5000, true);
+        // The limit catches disasters (a fixed slot order took 200+ seconds), not normal variation.
+        // Raised from 5s to 15s in Step 13: the smaller, friendlier word list means more dead ends (~5s now).
+        // Step 13b (faster matching) should bring this back down.
+        check("smart solve: 5 puzzles in under 15 seconds (took " + elapsed + " ms)", elapsed < 15000, true);
 
         // Impossible grid: must return false AND put every slot back in `remaining`
         List<Slot> tinyRemaining = new ArrayList<>();
         tinyRemaining.add(tiny);
         check("smart solve: impossible grid returns false", solve(tinyRemaining, stuck, wordsByLength, new HashSet<>(), new Random(0)), false);
         check("smart solve: remaining restored after failing", tinyRemaining.size(), 1);
+
+        // Step 13 tests: player-friendly word list (SCOWL 50 + Spread the Wordlist) with offensive words blocked.
+        // DICK and HORNY are still in words.txt, so only the blocklist can keep them out.
+        System.out.println();
+        Set<String> blocked = loadBlockedWords();
+        check("blocklist: loaded all 52 words", blocked.size(), 52);
+        check("blocklist: stored in UPPERCASE like the word list", blocked.contains("DICK"), true);
+        check("blocklist: DICK never offered as an answer", findMatches("DICK", wordsByLength).size(), 0);
+        check("blocklist: HORNY never offered as an answer", findMatches("HORNY", wordsByLength).size(), 0);
+        check("blocklist: normal words still there (DESK)", findMatches("DESK", wordsByLength).size(), 1);
+        check("word list: obscure ENABLE words are gone (DARB)", findMatches("DARB", wordsByLength).size(), 0);
+        System.out.print(generate(allSlots, blackSquares, wordsByLength, 1)); // a puzzle from the new list
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
@@ -230,11 +245,14 @@ public class App {
             throw new IOException("Error: Could not find words.txt in resources.");
         }
 
+        Set<String> blocked = loadBlockedWords(); // read the blocklist ONCE, then reuse it for every word below
+
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String word = line.trim().toUpperCase();
                 if (word.isEmpty()) continue; // skip blank lines
+                if (blocked.contains(word)) continue; // skip offensive lines
                 
                 int length = word.length();
                 wordsByLength.computeIfAbsent(length, k -> new ArrayList<>()).add(word); // computeIfAbsent allows you to add to a list even when it doesnt exist
@@ -243,6 +261,41 @@ public class App {
         }
 
         return wordsByLength;
+    }
+
+    /*
+     * ===== Step 13: Block Offensive Words =====
+     *
+     * Read src/main/resources/blocked-words.txt (one lowercase word per line) into a Set,
+     * so loadWords can skip any word in it. Then use it in loadWords (see the TODO there).
+     *
+     * Example:  blocked-words.txt has "dick" and "horny"  ->  {DICK, HORNY}
+     *           and findMatches("DICK", wordsByLength) returns []
+     *
+     * Constraints:
+     *   - Store the words in UPPERCASE, because loadWords uppercases every word.
+     *   - Skip blank lines, like loadWords does.
+     *   - If the file is missing, throw an IOException (same as loadWords).
+     *
+     * Related LeetCode: 1. Two Sum, 217. Contains Duplicate (a HashSet for instant "is it in here?" checks)
+     */
+    static Set<String> loadBlockedWords() throws IOException {
+        Set<String> blocked = new HashSet<>();
+
+        InputStream inputStream = App.class.getClassLoader().getResourceAsStream("blocked-words.txt");
+        if (inputStream == null) {
+            throw new IOException("Failed to Access blocked-words.txt");
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String word = line.trim().toUpperCase();
+                if (word.isEmpty()) continue;
+                blocked.add(word);
+            }
+        }
+        return blocked; 
     }
 
     /*
@@ -331,8 +384,8 @@ public class App {
      * Out of the slots in `remaining`, return the one with the FEWEST matching words
      * for its current pattern in filledGrid. If two slots tie, return the earlier one.
      *
-     * Example 1:  empty 5x5 grid                    ->  Across (0,0) length 4   (3903 beats 8636; earliest of the ties)
-     * Example 2:  Q at row 2, col 1                 ->  Down (0,1) length 5     ("..Q.." has 8, the fewest)
+     * Example 1:  empty 5x5 grid                    ->  Across (0,0) length 4   (2120 beats 4014; earliest of the ties)
+     * Example 2:  Q at row 2, col 1                 ->  Down (0,1) length 5     ("..Q.." has 2, the fewest)
      * Example 3:  also Q at row 3, col 0            ->  Down (0,0) length 4     ("...Q" has 0, a dead end)
      *
      * Constraints:

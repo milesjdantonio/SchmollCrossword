@@ -1,0 +1,25 @@
+Schmoll Crossword word list (words.txt)
+=======================================
+
+words.txt is a combination of two word lists. It keeps only the words that appear in BOTH:
+
+1. SCOWL (Spell Checker Oriented Word Lists), size 50
+   by Kevin Atkinson, http://wordlist.aspell.net/
+   Version 2020.12.07, files english-words.* and american-words.* at levels 10-50.
+   License: see SCOWL-Copyright.txt (permissive; that notice must be kept with this file).
+
+2. Spread the Word(list), answers scored 50 or higher
+   by Brooke Husic and Enrique Henestroza Anguiano, https://www.spreadthewordlist.com/
+   Downloaded 2026-10-07 (spreadthewordlist_caps.txt).
+   License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+   (CC BY-NC-SA 4.0), https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Changes made:
+- Kept only entries made of the letters a-z (no spaces, hyphens, apostrophes, accents or capitals).
+- Kept only words found in both lists above, and dropped the Spread the Word(list) scores.
+- Converted to lowercase, one word per line, sorted alphabetically.
+- (At load time, the game also skips every word in blocked-words.txt.)
+
+Because words.txt is adapted from Spread the Word(list), words.txt itself is shared under
+CC BY-NC-SA 4.0: you may reuse it for non-commercial purposes, with credit, under the same license.
+This applies to the word list only. The game's source code is under the MIT License (see LICENSE).

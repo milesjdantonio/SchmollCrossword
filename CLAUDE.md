@@ -15,7 +15,7 @@ Context for Claude Code when working in this repository.
   - **NYT puzzles and clues.** Never copy real NYT puzzles or clue text into the project, including the clue database in Step 15. Write original clues or use sources whose license allows reuse.
   - **NYT trademarks.** Don't use "New York Times," "NYT," "The Mini" or their logos in the game's name, UI, page titles or marketing. The game is "Schmoll Crossword." Saying it was "inspired by" the NYT Mini in the README is fine.
   - **NYT's exact look.** Don't copy their fonts, colors, icons or layout pixel for pixel. Give the game its own visual style.
-  - **Unlicensed data.** Check the license of any word list, clue list, font or icon set before adding it. The current `words.txt` is the public-domain ENABLE list.
+  - **Unlicensed data.** Check the license of any word list, clue list, font or icon set before adding it. The current `words.txt` is SCOWL 50 ∩ Spread the Wordlist (score ≥ 50). Because of Spread the Wordlist it is under **CC BY-NC-SA 4.0**, so **the game must stay free with no ads or paid features** (the user confirmed: free, no ads). `WORDLIST-NOTICE.txt` and `SCOWL-Copyright.txt` must stay next to it. Word list research, licenses and source links are in [WORDLISTS.md](WORDLISTS.md); add any new data source there.
 - Why this matters: in 2022 NYT sent takedown notices to Wordle clones on GitHub that used its name or copied its look and word lists.
 
 ## About the user
@@ -29,8 +29,10 @@ Context for Claude Code when working in this repository.
 ## Current status
 
 - **Done:** Steps 1–12 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive backtracking `App.solve()` with a `usedWords` set, `App.formatGrid()`, seeded shuffle, `App.pickMostConstrained()`). Phase 2 is complete: any seed gives a valid 5×5 grid with 10 different words in well under a second.
-- **Current step:** Step 13, a player-friendly word list (start of Phase 3). The answers are still obscure ENABLE words like `DARB`, `ERST`, `SCEND`.
+- **Done:** Step 13, the player-friendly word list (SCOWL 50 ∩ Spread the Wordlist + `loadBlockedWords()` blocklist).
+- **Current step:** Step 13b, faster word matching (added to the roadmap because the smaller list made puzzles ~5× slower: ~1 s average, 3.5 s worst). Plan: 13b-1 measure `findMatches` calls, 13b-2 cache results per pattern, 13b-3 (stretch) a Trie. The 5-puzzle timing test limit was raised from 5 s to 15 s in Step 13; lower it again once 13b works.
 - **Next:** Step 14, clue numbering.
+- **Roadmap numbering:** Step 13b was inserted instead of renumbering, because code comments and docs refer to later step numbers (e.g. "Step 23" for the daily seed). The roadmap has 27 steps.
 - **Solver:** `solve(remaining, filledGrid, wordsByLength, usedWords, random)` removes slots from `remaining` as it fills them, so callers pass a mutable copy (`new ArrayList<>(allSlots)`, never `List.of(...)`). It picks the most-constrained slot each time; a fixed all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
 - **Not playable yet.** No clues, numbering or UI exist so far.
@@ -61,7 +63,7 @@ Don't jump ahead. Build the layers in roadmap order unless the user asks otherwi
   - `getCells()` returns the list of `{row, col}` for the slot.
   - `getPattern(filledGrid)` returns the slot's letters as a string, e.g. `"C.T.."`.
   - `placeWord(filledGrid, word)` writes the word and returns the `{row, col}` squares that were empty before (only those). `removeWord(filledGrid, placedCells)` blanks exactly those squares.
-- `src/main/resources/words.txt` is a ~172k-word Scrabble-style dictionary (lowercase, one per line). It is full of obscure words, and roadmap Step 13 replaces it with a common-word list suited to player-facing answers.
+- `src/main/resources/words.txt` holds the words in both SCOWL 50 (english + american words, levels 10–50) and Spread the Wordlist with score ≥ 50, letters a–z only: 38,584 lowercase words, one per line. Blocked words are NOT removed from the file; `loadWords` skips them using `blocked-words.txt` (52 lowercase words, sorted, one per line; 10 of them appear in words.txt). Keep the blocklist test count in `main` in sync with the file. `WORDLIST-NOTICE.txt` gives credits and the CC BY-NC-SA 4.0 license; `SCOWL-Copyright.txt` is SCOWL's notice. Tests in `main` have expected counts tied to this list (e.g. `C.T.` = 7, `.....` = 4014 after blocking), so update them if the list changes.
 
 ## Conventions
 
