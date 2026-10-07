@@ -121,12 +121,30 @@ public class App {
         Set<String> alreadyUsed = new HashSet<>();
         alreadyUsed.add("CAT");
         check("no repeats: CAT blocked when used", solve(List.of(tiny), 0, catGrid, wordsByLength, alreadyUsed), false);
+
+        // Step 11 tests: turn a grid into nice text. "\n" means "new line".
+        System.out.println();
+        boolean[][] miniBlack = {
+            {false, false, true},
+            {false, false, false},
+            {true,  false, false}
+        };
+        char[][] miniFull = { {'C', 'A', '.'}, {'O', 'N', 'E'}, {'.', 'D', 'O'} };
+        check("format: full 3x3", formatGrid(miniFull, miniBlack), "C A #\nO N E\n# D O\n");
+
+        char[][] miniHalf = { {'C', '.', '.'}, {'.', '.', '.'}, {'.', '.', 'O'} };
+        check("format: empty squares stay '.'", formatGrid(miniHalf, miniBlack), "C . #\n. . .\n# . O\n");
+
+        System.out.println();
+        System.out.print(formatGrid(puzzle, blackSquares)); // the real 5x5 puzzle from Step 9
     }
 
     // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)
     static void check(String label, Object actual, Object expected) {
         String status = actual.equals(expected) ? "PASS" : "FAIL";
-        System.out.println(status + "  " + label + "  expected " + expected + ", got " + actual);
+        String shownExpected = expected.toString().replace("\n", "\\n"); // show line breaks as \n so it stays on one line
+        String shownActual = actual.toString().replace("\n", "\\n");
+        System.out.println(status + "  " + label + "  expected " + shownExpected + ", got " + shownActual);
     }
 
     // Prints PASS/FAIL for one test case, plus the first few matches so you can eyeball them
@@ -201,6 +219,47 @@ public class App {
         }
 
         return result;
+    }
+
+    /*
+     * ===== Step 11: Print the Filled Grid =====
+     *
+     * Turn the grid into text that is easy to read in the console.
+     *   - Black squares show as '#'.
+     *   - Open squares show their letter, or '.' if still empty.
+     *   - Squares in a row are separated by ONE space, with no space after the last one.
+     *   - Every row (including the last) ends with "\n" (a line break).
+     *
+     * Example:  blackSquares = {{F,F,T},{F,F,F},{T,F,F}},  filledGrid = {{C,A,.},{O,N,E},{.,D,O}}
+     *           -> "C A #\nO N E\n# D O\n"   which prints as:
+     *              C A #
+     *              O N E
+     *              # D O
+     *
+     * Constraints:
+     *   - Return the text, don't print it here (so tests can compare it).
+     *   - The grid is square: size = filledGrid.length.
+     *
+     * Related LeetCode: 6. Zigzag Conversion, 68. Text Justification (building output strings exactly right)
+     */
+    static String formatGrid(char[][] filledGrid, boolean[][] blackSquares) {
+        String result = "";
+
+        for (int row = 0; row < filledGrid.length; row++) {
+            for (int col = 0; col < filledGrid[row].length; col++) {
+                if (!blackSquares[row][col]) {
+                    result += filledGrid[row][col];
+                } else {
+                    result += "#";
+                }
+
+                if (col != filledGrid.length - 1) {
+                    result += " ";
+                }
+            }
+            result += "\n";
+        }
+        return result; 
     }
 
     /*
