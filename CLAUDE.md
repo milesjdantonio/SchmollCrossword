@@ -31,8 +31,9 @@ Context for Claude Code when working in this repository.
 - **Done:** Steps 1–12 (Maven setup, word loading, grid representation, slot finding, `Slot.getCells()`, `Slot.getPattern()`, `App.findMatches()`, `Slot.placeWord()`/`removeWord()`, recursive backtracking `App.solve()` with a `usedWords` set, `App.formatGrid()`, seeded shuffle, `App.pickMostConstrained()`). Phase 2 is complete: any seed gives a valid 5×5 grid with 10 different words in well under a second.
 - **Done:** Step 13, the player-friendly word list (SCOWL 50 ∩ Spread the Wordlist + `loadBlockedWords()` blocklist).
 - **Done:** Step 13b, faster word matching: counters in `findMatches` (13b-1), `matchCache` returning COPIES because `solve` shuffles the lists it gets (13b-2), and a `Trie` for cache misses (13b-3, written by Claude at the user's request). 5 puzzles ~150 ms; the timing limit is back to 5 s.
-- **Current step:** Step 14, clue numbering (`App.numberGrid`).
-- **Next:** Step 15, clues.
+- **Done:** Step 14, clue numbering: `App.numberGrid(blackSquares)` returns `int[][]` clue numbers (0 = none), using left/above + 3-long run checks.
+- **Current step:** Step 15, clues (original clues only, never NYT text; decide the clue source with the user first).
+- **Next:** Step 16, the `Puzzle` object + JSON.
 - **Roadmap numbering:** Step 13b was inserted instead of renumbering, because code comments and docs refer to later step numbers (e.g. "Step 23" for the daily seed). The roadmap has 27 steps.
 - **Solver:** `solve(remaining, filledGrid, wordsByLength, usedWords, random)` removes slots from `remaining` as it fills them, so callers pass a mutable copy (`new ArrayList<>(allSlots)`, never `List.of(...)`). It picks the most-constrained slot each time; a fixed all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.

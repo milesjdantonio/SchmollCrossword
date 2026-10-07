@@ -331,6 +331,29 @@ public class App {
         check("trie: faster than the scan", trieTime < scanTime, true);
         check("cache: seed 4 now under 1 second (took " + measureTime + " ms)", measureTime < 1000, true);
         // Also watch "shuffle: same seed gives the same puzzle" above: it FAILS if the cache hands out its own list.
+
+        // Step 14 tests: clue numbers. Arrays.deepToString turns a 2D array into text like [[1, 2], [3, 0]].
+        System.out.println();
+        check("numbers: 5x5 test grid", Arrays.deepToString(numberGrid(blackSquares)),
+                "[[1, 2, 3, 4, 0], [5, 0, 0, 0, 6], [7, 0, 0, 0, 0], [8, 0, 0, 0, 0], [0, 9, 0, 0, 0]]");
+
+        boolean[][] openThree = new boolean[3][3]; // a new boolean array starts all false = all open
+        check("numbers: 3x3 all open", Arrays.deepToString(numberGrid(openThree)), "[[1, 2, 3], [4, 0, 0], [5, 0, 0]]");
+
+        boolean[][] centerBlack = new boolean[3][3];
+        centerBlack[1][1] = true;
+        check("numbers: 3x3 center black (short runs get no number)", Arrays.deepToString(numberGrid(centerBlack)),
+                "[[1, 0, 2], [0, 0, 0], [3, 0, 0]]");
+
+        // Every slot from findAllSlots must start on a numbered square
+        int[][] numbers = numberGrid(blackSquares);
+        boolean everySlotNumbered = true;
+        for (Slot slot : allSlots) {
+            if (numbers[slot.startRow][slot.startCol] == 0) {
+                everySlotNumbered = false;
+            }
+        }
+        check("numbers: every answer starts on a numbered square", everySlotNumbered, true);
     }
 
     // Test helper: solve a fresh empty grid with the given random seed and return it as text
@@ -505,6 +528,67 @@ public class App {
             }
         }
 
+        return result;
+    }
+
+    /*
+     * ===== Step 14: Clue Numbering =====
+     *
+     * Give each square its clue number, the small number printed in the corner of a crossword square.
+     * Go through the squares left -> right, top -> bottom. A square gets the next number (1, 2, 3, ...)
+     * if it is the FIRST square of an Across answer or the FIRST square of a Down answer (or both).
+     * Every other square, including black squares, gets 0.
+     *
+     * An answer is a run of 3 or more open squares (the same rule findAllSlots uses).
+     * So a square starts an Across answer if:
+     *   - the square to its LEFT is black or off the grid, and
+     *   - it and the next 2 squares to its RIGHT are all open (a run of at least 3).
+     * Down works the same way, using the square ABOVE and the squares BELOW.
+     *
+     * Example 1:  our 5x5 test grid (black top-right and bottom-left)
+     *               1 2 3 4 #        -> {{1,2,3,4,0},
+     *               5 . . . 6            {5,0,0,0,6},
+     *               7 . . . .            {7,0,0,0,0},
+     *               8 . . . .            {8,0,0,0,0},
+     *               # 9 . . .            {0,9,0,0,0}}
+     *            Square (1,4) gets 6: it starts a Down answer because the square above it is black.
+     *
+     * Example 2:  3x3, all open       -> {{1,2,3},{4,0,0},{5,0,0}}
+     *
+     * Example 3:  3x3, center black   -> {{1,0,2},{0,0,0},{3,0,0}}
+     *            (0,1) gets NO number: going down it's only 1 square long before the black square.
+     *
+     * Constraints:
+     *   - Return an int[][] the same size as blackSquares. Don't change blackSquares.
+     *   - Numbers go up by 1 with no gaps, in reading order.
+     *
+     * Related LeetCode: 36. Valid Sudoku, 200. Number of Islands (walking a grid and checking neighbors)
+     */
+    static int[][] numberGrid(boolean[][] blackSquares) {
+        int size = blackSquares.length;
+        int[][] result = new int[size][size];   
+        int nextNumber = 1;                     
+
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                if (blackSquares[row][col]) continue;   // black squares stay 0
+
+                boolean startsAcross = (col == 0 || blackSquares[row][col - 1])
+                                        && col + 2 < size
+                                        && !blackSquares[row][col + 1]
+                                        && !blackSquares[row][col + 2];
+
+                boolean startsDown = (row == 0 || blackSquares[row - 1][col])
+                                        && row + 2 < size
+                                        && !blackSquares[row + 1][col]
+                                        && !blackSquares[row + 2][col];
+
+                if (startsAcross || startsDown) {
+                    result[row][col] = nextNumber;
+                    nextNumber++;
+                }
+            }
+        }
         return result;
     }
 

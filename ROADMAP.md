@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 14 of 27 steps done.** Phase 2 is complete, the answers are everyday words, and a puzzle takes about 30 ms.
+**Progress: 15 of 27 steps done.** Phase 2 is complete, the answers are everyday words, and a puzzle takes about 30 ms.
 
 ---
 
@@ -97,12 +97,12 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Result:** 5 puzzles went from ~5,500 ms to ~150 ms (about 35× faster), and the timing limit is back to 5 s.
 - **LeetCode:** 208. Implement Trie, 211. Design Add and Search Words Data Structure (same `.` wildcard as `findMatches`), 509. Fibonacci Number (memoization)
 
-### 🔨 Step 14: Clue numbering
-- **What:** number squares the crossword way: scan left→right, top→bottom, and number every square that starts an Across or Down answer.
-- **Will learn:** grid scanning with neighbor checks.
+### ✅ Step 14: Clue numbering
+- **What:** `App.numberGrid(blackSquares)` returns an `int[][]` with the clue number of every square that starts an Across or Down answer (0 elsewhere), numbered left→right, top→bottom.
+- **Learned:** grid scanning with neighbor checks, using `||` / `&&` short-circuiting to avoid reading off the edge of an array, default array values (`int` starts at 0), and the copy-paste bug (`col + 2` left in the Down check).
 - **LeetCode:** 36. Valid Sudoku, 200. Number of Islands
 
-### ⬜ Step 15: Clues
+### 🔨 Step 15: Clues
 - **What:** give every answer an original clue, starting with a `word → clue` file.
 - **Will learn:** parsing a file into a `HashMap`, handling missing data.
 - **LeetCode:** 1. Two Sum (hash lookups)
