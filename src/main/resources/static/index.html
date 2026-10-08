@@ -8,65 +8,96 @@
 </head>
 <body>
     <header class="top-bar">
-        <h1>Schmoll Crossword</h1>
-        <p class="subtitle">Daily puzzle · <span id="puzzle-date"></span></p>
+        <a class="logo" href="#">Schmoll Crossword</a>
+        <!-- Mode tabs (Step 23). The part of the URL after # picks the screen: #daily, #unlimited, or home -->
+        <nav class="modes" aria-label="Mode">
+            <a href="#" data-view="home">Home</a>
+            <a href="#daily" data-view="daily">Daily</a>
+            <a href="#unlimited" data-view="unlimited">Unlimited</a>
+        </nav>
     </header>
 
     <main>
-        <!-- Difficulty picker: same grid, different clues -->
-        <nav class="difficulty" aria-label="Difficulty">
-            <button type="button" data-difficulty="easy">Easy</button>
-            <button type="button" data-difficulty="medium" class="active">Medium</button>
-            <button type="button" data-difficulty="hard">Hard</button>
-        </nav>
+        <!-- Home screen (Step 23): pick a mode -->
+        <section id="home-view" class="home" hidden>
+            <p class="today-date" id="today-date"></p>
+            <div class="mode-cards">
+                <a class="mode-card" href="#daily">
+                    <h2>Daily</h2>
+                    <p>One puzzle a day, the same for everyone. Earns points and keeps your streak.</p>
+                    <p class="card-status" id="daily-status"></p>
+                </a>
+                <a class="mode-card" href="#unlimited">
+                    <h2>Unlimited</h2>
+                    <p>A brand-new puzzle whenever you want. Just for fun: no points.</p>
+                </a>
+            </div>
+            <p class="streak-line" id="home-streak"></p>
+        </section>
 
-        <p id="status" class="status">Loading today's puzzle…</p>
-
-        <div class="puzzle" id="puzzle" hidden>
-            <div class="board-area">
-                <!-- Timer (Step 21) -->
-                <div class="timer-row">
-                    <span class="timer" id="timer" aria-label="Time">0:00</span>
-                    <span class="points-today" id="points-today"></span>
-                </div>
-                <!-- "You solved it!" panel (Step 21); hidden until the grid is correct -->
-                <div class="win" id="win" hidden>
-                    <h2>You solved it!</h2>
-                    <p id="win-details"></p>
-                </div>
-                <!-- The clue for the selected word -->
-                <div class="clue-bar" id="clue-bar"></div>
-                <!-- Check and Reveal (Step 22) -->
-                <div class="helpers" id="helpers">
-                    <div class="helper-row">
-                        <span class="helper-label">Check</span>
-                        <button type="button" data-action="check" data-scope="square">Square</button>
-                        <button type="button" data-action="check" data-scope="word">Word</button>
-                        <button type="button" data-action="check" data-scope="puzzle">Puzzle</button>
-                    </div>
-                    <div class="helper-row">
-                        <span class="helper-label">Reveal</span>
-                        <button type="button" data-action="reveal" data-scope="square">Square</button>
-                        <button type="button" data-action="reveal" data-scope="word">Word</button>
-                        <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
-                    </div>
-                </div>
-                <!-- The 5x5 board; app.js fills it with squares -->
-                <div class="board" id="board" aria-label="Crossword grid"></div>
+        <!-- The game screen, used by both modes -->
+        <section id="game-view" hidden>
+            <div class="game-head">
+                <h1 id="game-title">Daily puzzle</h1>
+                <p class="subtitle" id="game-subtitle"></p>
             </div>
 
-            <!-- The clue lists; app.js fills them -->
-            <section class="clues">
-                <div>
-                    <h2>Across</h2>
-                    <ol id="across-clues"></ol>
+            <!-- Difficulty picker: in Daily it's the same grid with different clues; in Unlimited it starts a new puzzle -->
+            <nav class="difficulty" aria-label="Difficulty">
+                <button type="button" data-difficulty="easy">Easy</button>
+                <button type="button" data-difficulty="medium" class="active">Medium</button>
+                <button type="button" data-difficulty="hard">Hard</button>
+                <button type="button" class="new-puzzle" id="new-puzzle" hidden>New puzzle</button>
+            </nav>
+
+            <p id="status" class="status">Loading…</p>
+
+            <div class="puzzle" id="puzzle" hidden>
+                <div class="board-area">
+                    <!-- Timer (Step 21) -->
+                    <div class="timer-row">
+                        <span class="timer" id="timer" aria-label="Time">0:00</span>
+                        <span class="points-today" id="points-today"></span>
+                    </div>
+                    <!-- "You solved it!" panel (Step 21); hidden until the grid is correct -->
+                    <div class="win" id="win" hidden>
+                        <h2>You solved it!</h2>
+                        <p id="win-details"></p>
+                    </div>
+                    <!-- The clue for the selected word -->
+                    <div class="clue-bar" id="clue-bar"></div>
+                    <!-- The 5x5 board; app.js fills it with squares -->
+                    <div class="board" id="board" aria-label="Crossword grid"></div>
+                    <!-- Check and Reveal (Step 22) -->
+                    <div class="helpers" id="helpers">
+                        <div class="helper-row">
+                            <span class="helper-label">Check</span>
+                            <button type="button" data-action="check" data-scope="square">Square</button>
+                            <button type="button" data-action="check" data-scope="word">Word</button>
+                            <button type="button" data-action="check" data-scope="puzzle">Puzzle</button>
+                        </div>
+                        <div class="helper-row">
+                            <span class="helper-label">Reveal</span>
+                            <button type="button" data-action="reveal" data-scope="square">Square</button>
+                            <button type="button" data-action="reveal" data-scope="word">Word</button>
+                            <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <h2>Down</h2>
-                    <ol id="down-clues"></ol>
-                </div>
-            </section>
-        </div>
+
+                <!-- The clue lists, to the right of the board; app.js fills them -->
+                <section class="clues">
+                    <div>
+                        <h2>Across</h2>
+                        <ol id="across-clues"></ol>
+                    </div>
+                    <div>
+                        <h2>Down</h2>
+                        <ol id="down-clues"></ol>
+                    </div>
+                </section>
+            </div>
+        </section>
     </main>
 
     <script src="score.js"></script>

@@ -98,8 +98,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 22: Check and Reveal.** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
 
 ### Phase 5: Modes, saving and launch
-- 🔨 **Step 23: Daily and Unlimited modes. ← YOU ARE HERE** A home screen to pick a mode. Daily uses the date as the *seed* (same puzzle for everyone) with a countdown; Unlimited makes a new puzzle on demand.
-- ⬜ **Step 24: Save progress, stats, scores and settings.** Half-finished puzzles, scores, streaks, stats, and a settings screen (difficulty, harder words, timer, theme), all in browser storage.
+- ✅ **Step 23: Daily and Unlimited modes.** A home screen to pick a mode. Daily uses the date as the *seed* (same puzzle for everyone) with a countdown; Unlimited makes a new puzzle on demand.
+- 🔨 **Step 24: Save progress, stats, scores and settings. ← YOU ARE HERE** Half-finished puzzles, scores, streaks, stats, and a settings screen (difficulty, harder words, timer, theme), all in browser storage.
 - ⬜ **Step 25: Tests.** Add JUnit tests for slot finding, pattern matching, numbering and the solver.
 - ⬜ **Step 26: Mobile layout and deploy.** Make it work on phones and put the website online, with the API key kept on the server and a rate limit on unlimited mode to keep costs small.
 

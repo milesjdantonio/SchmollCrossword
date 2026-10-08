@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 23 of 27 steps done.** The game is fully playable in the browser. The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 24 of 27 steps done.** The game is fully playable in the browser, with Daily and Unlimited modes. The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -160,11 +160,12 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ## Phase 5: Modes, saving and launch 🔨
 
-### 🔨 Step 23: Daily and Unlimited modes
+### ✅ Step 23: Daily and Unlimited modes
 - **What:** a home screen to pick a mode. **Daily:** today's date is the seed (builds on 12a), the same puzzle for everyone, one per day, with a countdown to the next one. The player picks easy, medium or hard (same grid, different clues); **solving it at any one difficulty completes that day's daily.** **Unlimited:** a new random puzzle whenever you want.
-- **Will learn:** dates and time zones, turning a date into a seed, routing between screens.
+- **Done (built by Claude):** a Home screen (Daily / Unlimited cards, today's status, countdown to the next daily, streak) and mode tabs; the URL after `#` picks the screen (`#daily`, `#unlimited`), so Back and bookmarks work. Unlimited has a New puzzle button and earns no points. Each mode keeps its game while you visit the other. Also in this step, at the owner's request: **board on the left, clues on the right** (stacked on phones), **easier clue definitions** for every difficulty, and **fewer hard words** (most SCOWL level-35 words moved to the too-hard list, keeping a hand-picked everyday list: 3,930 answers of 3–5 letters). Fixed: unlimited seeds are kept below 2^53 so JavaScript reads them exactly. Verified with 19 new browser checks (71 total).
+- **Ideas to know:** one page with several screens shown/hidden by the URL hash; why big Java `long`s lose precision in JavaScript.
 
-### ⬜ Step 24: Save progress, stats, scores and settings
+### 🔨 Step 24: Save progress, stats, scores and settings
 - **What:** remember a half-finished puzzle, solve times, scores, daily streaks and win stats. A **settings** screen: difficulty, allow harder words (`SKIP_TOO_HARD_WORDS`), timer on/off, theme. Everything is saved in the browser (`localStorage`), with no accounts needed.
 - **Will learn:** browser storage, JSON in JavaScript, designing a settings model.
 

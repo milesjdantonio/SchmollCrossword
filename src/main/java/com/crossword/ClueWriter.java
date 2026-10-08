@@ -100,14 +100,15 @@ public class ClueWriter {
         // Difficulty, plus what it means, so Claude doesn't have to guess
         sb.append("Difficulty: ").append(difficulty).append(" - ");
         if (difficulty.equalsIgnoreCase("easy")) {             // equalsIgnoreCase: "Easy", "EASY", "easy" all match
-            sb.append("not a dictionary definition. Point to the answer through an association, an example, "
-                    + "or a common second meaning, so a casual solver needs a few seconds of thought, not an instant answer.\n\n");
+            // Made easier at the project owner's request (after playing): most people should get these right away
+            sb.append("direct and friendly. A simple definition, a synonym, or a fill-in-the-blank "
+                    + "that most people get right away.\n\n");
         } else if (difficulty.equalsIgnoreCase("medium")) {
-            sb.append("indirect. Use a less obvious meaning of the word, or describe it from an unexpected angle, "
-                    + "so most solvers need a crossing letter or two.\n\n");
+            sb.append("mostly straightforward, with a little play: some clues use an association, an example, "
+                    + "or a common second meaning, so most solvers get them after a moment's thought.\n\n");
         } else if (difficulty.equalsIgnoreCase("hard")) {
-            sb.append("tricky. Always use a less common meaning or a misleading surface reading; puns are welcome "
-                    + "(end punny clues with '?'). Still fair: once solved, the clue must clearly fit the answer.\n\n");
+            sb.append("clever but fair. Use less obvious meanings or light misdirection, with a pun now and then "
+                    + "(end punny clues with '?'). An experienced solver should still get most clues without crossings.\n\n");
         } else {
             sb.append("use your judgment.\n\n");
         }

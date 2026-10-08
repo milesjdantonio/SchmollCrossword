@@ -95,9 +95,9 @@ public class App {
 
         // Step 7 tests: like LeetCode's "Run" button. All should say PASS once findMatches works.
         System.out.println();
-        testFindMatches("C.T.", 6, wordsByLength);                         // CATS, CITE, CITY, COTS, CUTE, CUTS (COTE is too hard)
+        testFindMatches("C.T.", 5, wordsByLength);                         // CATS, CITE, CITY, CUTE, CUTS (COTE, COTS are too hard)
         testFindMatches("CAT", 1, wordsByLength);                          // already a full word
-        testFindMatches(".....", 3489, wordsByLength);                     // every Wordle-level 5-letter word (blocked and too-hard words skipped)
+        testFindMatches(".....", 2268, wordsByLength);                     // every Wordle-level 5-letter word (blocked and too-hard words skipped)
         testFindMatches("QZX..", 0, wordsByLength);                        // nothing fits
         testFindMatches("...............................", 0, wordsByLength); // no words this long at all
 
@@ -289,11 +289,11 @@ public class App {
         check("cache: second call gives the same words", findMatches("C.T.", wordsByLength), firstAnswer);
         List<String> scribbled = findMatches("C.T.", wordsByLength);
         scribbled.clear(); // pretend a caller messed with the list it got back
-        check("cache: changing a returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 6);
+        check("cache: changing a returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 5);
         matchCache.clear();
         List<String> veryFirst = findMatches("C.T.", wordsByLength); // the call that fills the cache
         veryFirst.clear();
-        check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 6);
+        check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 5);
 
         // Step 13b-3 tests: the Trie
         System.out.println();

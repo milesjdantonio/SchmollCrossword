@@ -87,7 +87,10 @@ public class PuzzleController {
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
         }
-        return PuzzleStore.generateUnlimited(new Random().nextLong(), difficulty.toLowerCase(), wordsByLength);
+        // JavaScript can only hold whole numbers exactly up to 2^53 (about 9 quadrillion), so keep the
+        // seed below that; otherwise the browser would see a rounded, wrong seed in the JSON.
+        long seed = new Random().nextLong() & ((1L << 53) - 1);
+        return PuzzleStore.generateUnlimited(seed, difficulty.toLowerCase(), wordsByLength);
     }
 
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"

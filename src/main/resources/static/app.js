@@ -1,4 +1,5 @@
-// Schmoll Crossword: draws today's puzzle from the server (Step 19) and lets you play it (Step 20).
+// Schmoll Crossword: draws the puzzle from the server (Step 19), lets you play it (Step 20-22),
+// and switches between the Home, Daily and Unlimited screens (Step 23).
 
 const statusEl = document.getElementById("status");
 const puzzleEl = document.getElementById("puzzle");
@@ -11,8 +12,17 @@ const winEl = document.getElementById("win");
 const winDetailsEl = document.getElementById("win-details");
 const pointsTodayEl = document.getElementById("points-today");
 
-document.getElementById("puzzle-date").textContent =
+const homeViewEl = document.getElementById("home-view");
+const gameViewEl = document.getElementById("game-view");
+const gameTitleEl = document.getElementById("game-title");
+const gameSubtitleEl = document.getElementById("game-subtitle");
+const newPuzzleEl = document.getElementById("new-puzzle");
+const dailyStatusEl = document.getElementById("daily-status");
+const homeStreakEl = document.getElementById("home-streak");
+
+const todayText = () =>
     new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+document.getElementById("today-date").textContent = todayText();
 
 // ---------------------------------------------------------------------------------------------
 // Game state: everything about the current game lives here
@@ -72,7 +82,8 @@ function saveDailyScore(puzzle, points, surrendered = false) {
 // Timer: counts up once a second while the page is visible and the puzzle isn't solved
 // ---------------------------------------------------------------------------------------------
 setInterval(() => {
-    if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden) return;
+    drawCountdown();   // the home screen's "next daily in ..." (Step 23)
+    if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden || gameViewEl.hidden) return;
     game.seconds++;
     drawTimer();
 }, 1000);
@@ -83,33 +94,75 @@ function drawTimer() {
     timerEl.textContent = minutes + ":" + seconds;
 }
 
-// Ask the server for today's puzzle at a difficulty, then draw it
-async function loadPuzzle(difficulty) {
-    statusEl.textContent = "Loading today's " + difficulty + " puzzle… (the first one of the day takes a few seconds)";
+// Ask the server for a puzzle, then draw it.
+// mode "daily":     today's puzzle at that difficulty (saved on the server, so fast after the first time)
+// mode "unlimited": a brand-new puzzle (Claude writes its clues, so it takes a few seconds)
+const lastPuzzle = {};      // mode -> the last puzzle loaded, so coming back to a mode doesn't fetch a new one
+let loadCounter = 0;        // ignore a slow answer if the player has already asked for something else
+
+async function loadPuzzle(mode, difficulty) {
+    const myLoad = ++loadCounter;
+    statusEl.textContent = mode === "daily"
+        ? "Loading today's " + difficulty + " puzzle… (the first one of the day takes a few seconds)"
+        : "Making a new " + difficulty + " puzzle… (Claude is writing the clues, this takes a few seconds)";
     statusEl.classList.remove("error");
     statusEl.hidden = false;
     puzzleEl.hidden = true;
 
     try {
-        const response = await fetch("/api/daily?difficulty=" + encodeURIComponent(difficulty));
+        const response = await fetch("/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty));
         if (!response.ok) {
             throw new Error("The server answered " + response.status);
         }
         const puzzle = await response.json();   // the JSON from Puzzle.toJson()
+        if (myLoad !== loadCounter) return;      // the player moved on while we waited
+        lastPuzzle[mode] = puzzle;
         startGame(puzzle);
         statusEl.hidden = true;
         puzzleEl.hidden = false;
     } catch (err) {
+        if (myLoad !== loadCounter) return;
         statusEl.textContent = "Couldn't load the puzzle: " + err.message;
         statusEl.classList.add("error");
     }
 }
 
+// Each mode keeps its own game while you visit the other one (Step 24 will also keep it across page reloads)
+const savedGames = {};      // mode -> a copy of that mode's game
+
+function snapshot() {
+    return JSON.parse(JSON.stringify({
+        seed: game.puzzle.seed, letters: game.letters, wrong: game.wrong, revealed: game.revealed,
+        seconds: game.seconds, solved: game.solved, surrendered: game.surrendered,
+        squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed,
+        row: game.row, col: game.col, direction: game.direction,
+        winShown: !winEl.hidden, winTitle: winEl.querySelector("h2").textContent, winText: winDetailsEl.textContent
+    }));
+}
+
+function restore(saved) {
+    Object.assign(game, {
+        letters: saved.letters, wrong: saved.wrong, revealed: saved.revealed, seconds: saved.seconds,
+        solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
+        squaresRevealed: saved.squaresRevealed, row: saved.row, col: saved.col, direction: saved.direction
+    });
+    winEl.querySelector("h2").textContent = saved.winTitle;
+    winDetailsEl.textContent = saved.winText;
+    winEl.hidden = !saved.winShown;
+}
+
 function startGame(puzzle) {
+    // Remember the game we're leaving, in case the player comes back to that mode
+    if (game.puzzle && game.puzzle.mode !== puzzle.mode) savedGames[game.puzzle.mode] = snapshot();
+
     // Same grid as before (only the difficulty changed)? Keep what the player typed.
     const sameGrid = game.puzzle && game.puzzle.seed === puzzle.seed && game.puzzle.mode === puzzle.mode;
+    const saved = savedGames[puzzle.mode];
+    const restoring = !sameGrid && saved && saved.seed === puzzle.seed;
     game.puzzle = puzzle;
-    if (!sameGrid) {
+    if (restoring) {
+        restore(saved);
+    } else if (!sameGrid) {
         game.letters = puzzle.solution.map(row => Array.from(row, () => ""));
         game.wrong = puzzle.solution.map(row => Array.from(row, () => false));
         game.revealed = puzzle.solution.map(row => Array.from(row, () => false));
@@ -126,7 +179,7 @@ function startGame(puzzle) {
     drawBoard(puzzle);
     drawClues(puzzle);
 
-    if (!sameGrid) {
+    if (!sameGrid && !restoring) {
         const first = puzzle.across[0];
         game.row = first.row;
         game.col = first.col;
@@ -516,7 +569,7 @@ function moveToEntry(step) {
 // ---------------------------------------------------------------------------------------------
 
 document.addEventListener("keydown", (event) => {
-    if (!game.puzzle || puzzleEl.hidden) return;
+    if (!game.puzzle || puzzleEl.hidden || gameViewEl.hidden) return;   // no typing on the Home screen
     if (event.ctrlKey || event.metaKey || event.altKey) return;   // leave browser shortcuts alone
     if (game.solved) return;                                       // the board is locked once solved
 
@@ -543,14 +596,92 @@ document.addEventListener("keydown", (event) => {
     event.preventDefault();  // ours: stop the page scrolling, Tab leaving the board, etc.
 });
 
-// Difficulty buttons: same grid, different clues (your letters stay)
-for (const button of document.querySelectorAll(".difficulty button")) {
+// ---------------------------------------------------------------------------------------------
+// Screens and modes (Step 23). The part of the URL after "#" picks the screen:
+//   (nothing) = Home,  #daily = Daily,  #unlimited = Unlimited
+// so the browser's Back button and bookmarks work.
+// ---------------------------------------------------------------------------------------------
+const difficultyFor = { daily: "medium", unlimited: "medium" };   // the difficulty each mode last used
+
+function currentView() {
+    const view = location.hash.replace("#", "");
+    return view === "daily" || view === "unlimited" ? view : "home";
+}
+
+function showView() {
+    const view = currentView();
+    document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === view));
+    homeViewEl.hidden = view !== "home";
+    gameViewEl.hidden = view === "home";
+
+    if (view === "home") {
+        drawHome();
+        return;
+    }
+    gameTitleEl.textContent = view === "daily" ? "Daily puzzle" : "Unlimited";
+    gameSubtitleEl.textContent = view === "daily" ? todayText() : "A new puzzle every time · no points";
+    newPuzzleEl.hidden = view !== "unlimited";
+    document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b =>
+        b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
+
+    if (game.puzzle && game.puzzle.mode === view) return;   // already showing this mode's game
+    if (lastPuzzle[view]) {
+        startGame(lastPuzzle[view]);                      // come back to the puzzle you left
+        statusEl.hidden = true;
+        puzzleEl.hidden = false;
+    } else {
+        loadPuzzle(view, difficultyFor[view]);
+    }
+}
+
+// Home screen: today's daily status, the countdown, and the streak
+function drawHome() {
+    const scores = loadDailyScores();
+    const today = scores[dayKey(new Date())];
+    if (!today) {
+        dailyStatusEl.textContent = "Today's puzzle is ready.";
+    } else if (today.surrendered) {
+        dailyStatusEl.textContent = "Today: revealed (0 pts).";
+    } else {
+        dailyStatusEl.textContent = "Done today: " + today.points + " pts (" + today.difficulty + ").";
+    }
+    const streaks = calculateStreaks(scores);
+    homeStreakEl.textContent = streaks.best > 0
+        ? "Streak: " + streaks.current + (streaks.current === 1 ? " day" : " days") + " · best " + streaks.best
+        : "";
+    drawCountdown();
+}
+
+// "Next daily in 5h 12m 30s" (until midnight, your time)
+function drawCountdown() {
+    if (homeViewEl.hidden) return;
+    const now = new Date();
+    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const total = Math.max(0, Math.floor((midnight - now) / 1000));
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+    const done = !!loadDailyScores()[dayKey(now)];
+    const base = dailyStatusEl.textContent.split(" Next daily")[0];
+    dailyStatusEl.textContent = done ? base + " Next daily in " + h + "h " + m + "m " + s + "s." : base;
+    if (total === 0) drawHome();   // midnight: a new daily is out
+}
+
+// Difficulty buttons. Daily: same grid, different clues (your letters stay). Unlimited: a new puzzle.
+for (const button of document.querySelectorAll(".difficulty button[data-difficulty]")) {
     button.addEventListener("click", () => {
-        document.querySelectorAll(".difficulty button").forEach(b => b.classList.remove("active"));
+        const view = currentView();
+        difficultyFor[view] = button.dataset.difficulty;
+        document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.remove("active"));
         button.classList.add("active");
         button.blur();       // so Space/Enter go to the puzzle, not back to the button
-        loadPuzzle(button.dataset.difficulty);
+        loadPuzzle(view, button.dataset.difficulty);
     });
 }
 
-loadPuzzle("medium");
+// Unlimited: "New puzzle" button
+newPuzzleEl.addEventListener("click", () => {
+    newPuzzleEl.blur();
+    loadPuzzle("unlimited", difficultyFor.unlimited);
+});
+
+window.addEventListener("hashchange", showView);
+showView();
