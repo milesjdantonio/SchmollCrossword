@@ -127,8 +127,7 @@ const Game = (() => {
         const myLoad = ++loadCounter;
         statusEl.innerHTML = "";
         statusEl.append(U.el("span", { class: "spinner", "aria-hidden": "true" }),
-            mode === "daily" ? `Loading today's ${difficulty} puzzle… (the first one of the day takes a few seconds)`
-                             : `Making a new ${difficulty} puzzle… (Claude is writing the clues, this takes a few seconds)`);
+            "Generating clues…");
         statusEl.classList.remove("error");
         statusEl.hidden = false;
         puzzleEl.hidden = true;
@@ -535,8 +534,8 @@ const Game = (() => {
         render();
     }
     // Reveal: fill in the right letter wherever it's empty or wrong. 10 points per square. All = surrender.
-    function reveal(scope) {
-        if (scope === "puzzle" && !confirm("Reveal the whole puzzle? This counts as giving up: 0 points, and it won't count toward your streak.")) return;
+    async function reveal(scope) {
+        if (scope === "puzzle" && !(await U.ask({ title: "Reveal the whole puzzle?", text: "This counts as giving up: 0 points, and it won't count toward your streak.", yes: "Reveal it", no: "Keep trying" }))) return;
         let n = 0;
         for (const [row, col] of scopeCells(scope)) {
             if (game.letters[row][col] !== game.puzzle.solution[row][col]) {

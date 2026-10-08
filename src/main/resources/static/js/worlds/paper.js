@@ -427,22 +427,11 @@
         nav: () => noise({ f: 1200, f2: 4000, d: 0.28, v: 0.08, q: 0.9 }),
         achievement: () => { sounds.stamp(); [72, 76, 79, 84].forEach((n, i) => tone({ t: 0.15 + i * 0.07, f: midi(n), type: "triangle", d: 0.4, v: 0.06 })); }
     };
-    // ambient: a little lo-fi piano loop (84 bpm)
-    const CHORDS = [[48, 55, 64, 67], [45, 52, 60, 64], [41, 48, 57, 64], [43, 50, 59, 62]];
-    const music = {
-        bpm: 84,
-        tick(step, t) {
-            const bar = Math.floor(step / 16), s = step % 16, ch = CHORDS[bar % 4];
-            if (s === 0 || s === 10) ch.forEach((n, i) => tone({ t: t + i * 0.012, f: midi(n), type: "triangle", d: 1.8, v: 0.03, bus: "music" }));
-            if (s % 4 === 2 && Math.random() < 0.55) tone({ t, f: midi(ch[3] + 12 + U.pick([0, 2, 3, 5])), type: "sine", d: 0.6, v: 0.025, bus: "music" });
-            if (s % 4 === 0) noise({ t, type: "highpass", f: 7000, d: 0.03, v: 0.012, bus: "music" });
-        }
-    };
 
     Worlds.register({
         id: "paper", name: "Notebook", icon: "✏️", tagline: "Pencil, paper & doodles (blueprint at night)",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, music, transition: "page",
+        scene, board, celebrate, titleCard, sounds, transition: "page",
         mascot: { name: "PIP", draw: drawPip },
         lines: {
             hello: ["Hi! I'm Pip. Let's fill in some squares!", "Sharpened and ready. Pick a puzzle!", "Fresh page, fresh puzzles."],

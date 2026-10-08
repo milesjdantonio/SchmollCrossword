@@ -4,7 +4,6 @@
 //   modes                          the light/dark modes it supports, e.g. ["light", "dark"] or ["dark"]
 //   scene(W, H, opts)              its animated background: returns { draw(ctx, t, dt, input), resize(W, H) }
 //   sounds                         its versions of the sound effects (see sound.js)
-//   music                          its ambient loop { bpm, tick(step, t) }
 //   mascot                         its guide character { name, draw(ctx, state) }, see mascot.js
 //   lines                          the mascot's lines in this world, by event
 //   board                          decorations on the board: { update, type, wordDone, restoreSolved, clear, attach }
@@ -84,7 +83,7 @@ const Worlds = (() => {
     function frame(now) {
         raf = 0;
         if (!scene) return;
-        const dt = Math.min(0.05, (now - last) / 1000);
+        const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
         t += dt;
         input.px += (input.tx - input.px) * Math.min(1, dt * 2.5);

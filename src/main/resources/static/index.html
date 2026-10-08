@@ -43,7 +43,6 @@
             </nav>
             <div class="tools">
                 <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
-                <button type="button" class="tool" id="music-toggle" title="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M9 18V6l11-2v12"/><circle class="fill" cx="6.5" cy="18" r="2.5"/><circle class="fill" cx="17.5" cy="16" r="2.5"/><path class="x" d="M3 3l18 18"/></svg><span class="sr">Music</span></button>
                 <button type="button" class="tool" id="sound-toggle" title="Sound effects"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound effects</span></button>
             </div>
             <div class="world-pop" id="world-pop" hidden>
@@ -190,7 +189,7 @@
                 <form class="settings" id="settings-form" onsubmit="return false">
                     <fieldset class="card wide">
                         <legend>World</legend>
-                        <p class="hint">The whole look: background, board, sounds, music, mascot and win animations. Hover a world to see it move.</p>
+                        <p class="hint">The whole look: background, board, sounds, mascot and win animations. Hover a world to see it move.</p>
                         <div class="world-cards" id="world-cards"></div>
                     </fieldset>
                     <fieldset class="card">
@@ -205,7 +204,6 @@
                         <legend>Sound</legend>
                         <div class="options col">
                             <label class="switch"><input type="checkbox" name="sound"><span class="track"></span>Sound effects</label>
-                            <label class="switch"><input type="checkbox" name="music"><span class="track"></span>Ambient music</label>
                             <label class="range">Volume <input type="range" name="volume" min="0" max="100" step="5"></label>
                         </div>
                         <p class="hint">Every sound is made in code, live, in your browser. Each world has its own.</p>

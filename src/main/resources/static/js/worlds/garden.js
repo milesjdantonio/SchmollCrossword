@@ -988,17 +988,6 @@
         achievement: () => { [84, 88, 91, 96].forEach((n, i) => tone({ t: i * 0.08, f: midi(n), type: "sine", d: 0.8, v: 0.05, echo: 0.3 })); chirp(0.4); },
         streak: () => [72, 79, 84, 91].forEach((n, i) => tone({ t: i * 0.08, f: midi(n), type: "sine", d: 0.6, v: 0.05 }))
     };
-    // ambient: soft marimba plucks on a pentatonic scale, with birds now and then (92 bpm)
-    const PENTA = [60, 62, 64, 67, 69, 72, 74, 76, 79];
-    const music = {
-        bpm: 92,
-        tick(step, t) {
-            const s = step % 16;
-            if (s % 2 === 0 && Math.random() < 0.55) tone({ t, f: midi(U.pick(PENTA)), type: "triangle", d: 0.35, v: 0.035, bus: "music" });
-            if (s === 0) tone({ t, f: midi(U.pick([48, 45, 41, 43])), type: "sine", d: 2.4, v: 0.04, a: 0.4, bus: "music" });
-            if (s === 9 && Math.random() < 0.3) for (let i = 0; i < 3; i++) { const f = U.rand(2600, 3600); tone({ t: t + i * 0.09, f, f2: f * 1.3, type: "sine", d: 0.07, v: 0.015, bus: "music" }); }
-        }
-    };
 
     // a new puzzle: take the side garden and drifting petals away
     function reset() {
@@ -1010,7 +999,7 @@
     Worlds.register({
         id: "garden", name: "Garden", icon: "\u{1F33B}", tagline: "Vines, blooms & fireflies (a night garden in dark mode)",
         modes: ["light", "dark"],
-        scene, sounds, music, titleCard, transition: "leaves",
+        scene, sounds, titleCard, transition: "leaves",
         celebrate: celebrateCine,
         board: { update, wordDone, clear, reset, restoreSolved: (boardEl, game) => { if (!game.surrendered) buildSides(true); } },
         mascot: { name: "BUMBLE", draw: drawBumble },

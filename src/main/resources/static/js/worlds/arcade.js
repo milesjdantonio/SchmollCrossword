@@ -381,24 +381,11 @@
         achievement: () => [76, 79, 88, 84, 86, 91].forEach((n, i) => tone({ t: i * 0.07, f: midi(n), type: "square", d: 0.07, v: 0.04 })),
         streak: () => [64, 67, 72, 76, 79, 84].forEach((n, i) => tone({ t: i * 0.05, f: midi(n), type: "square", d: 0.07, v: 0.035 }))
     };
-    // ambient: a chiptune loop (118 bpm)
-    const BASS = [45, 45, 57, 45, 41, 41, 53, 41, 43, 43, 55, 43, 40, 40, 52, 40];
-    const LEAD = [69, -1, 72, 76, -1, 74, 72, -1, 69, -1, 67, -1, 64, -1, 67, -1];
-    const music = {
-        bpm: 118,
-        tick(step, t) {
-            const s = step % 16, bar = Math.floor(step / 16);
-            if (s % 2 === 0) tone({ t, f: midi(BASS[(bar % 4) * 4 + (s / 4 | 0)]), type: "square", d: 0.1, v: 0.025, bus: "music", filt: { f: 1200 } });
-            if (s % 4 === 0) noise({ t, type: "lowpass", f: 400, d: 0.08, v: 0.06, bus: "music" });
-            if (s % 4 === 2) noise({ t, type: "highpass", f: 7000, d: 0.03, v: 0.025, bus: "music" });
-            if (bar % 2 === 1 && LEAD[s] > 0) tone({ t, f: midi(LEAD[s]), type: "square", d: 0.12, v: 0.016, bus: "music" });
-        }
-    };
 
     Worlds.register({
         id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave sunsets, combos & pixel fireworks",
         modes: ["dark"],
-        scene, board, celebrate, titleCard, sounds, music, transition: "pixels",
+        scene, board, celebrate, titleCard, sounds, transition: "pixels",
         mascot: { name: "BIT", draw: drawBit },
         lines: {
             hello: ["INSERT COIN... just kidding, it's free! Pick a stage!", "Player 1, ready?", "New high score incoming. I can feel it."],

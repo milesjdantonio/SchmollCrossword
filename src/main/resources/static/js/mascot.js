@@ -50,7 +50,7 @@ const Mascot = (() => {
     // ---- the animation loop (paused when the mascot is hidden) ----
     function frame(now) {
         raf = 0;
-        const dt = Math.min(0.05, (now - last) / 1000);
+        const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
         st.t += dt;
         blinkIn -= dt;

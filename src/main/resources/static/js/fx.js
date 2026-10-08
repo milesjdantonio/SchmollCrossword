@@ -32,7 +32,7 @@ const FX = (() => {
         raf = requestAnimationFrame(loop);
     }
     function loop(now) {
-        const dt = Math.min(0.05, (now - last) / 1000);
+        const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, W, H);

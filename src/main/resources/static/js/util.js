@@ -122,7 +122,39 @@ const U = (() => {
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
     }
 
-    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center };
+    // An in-page yes/no question (instead of the browser's confirm() box). Resolves true for yes.
+    // Escape, a click outside, or the "no" button answer no; "no" has focus, so a stray Enter is safe.
+    function ask({ title, text = "", yes = "Yes", no = "Cancel" }) {
+        return new Promise(resolve => {
+            const modal = el("div", { class: "results ask-modal", role: "alertdialog", "aria-modal": "true", "aria-labelledby": "ask-title" });
+            const noBtn = el("button", { type: "button", class: "btn ghost", text: no });
+            const yesBtn = el("button", { type: "button", class: "btn primary", text: yes });
+            modal.appendChild(el("div", { class: "res-card ask-card" },
+                el("h2", { id: "ask-title", class: "res-title ask-title", text: title }),
+                text ? el("p", { class: "ask-text", text }) : null,
+                el("div", { class: "res-actions" }, noBtn, yesBtn)));
+            let answered = false;
+            const done = answer => {
+                if (answered) return;
+                answered = true;
+                removeEventListener("keydown", onKey, true);
+                modal.classList.remove("in");
+                modal.classList.add("out");
+                setTimeout(() => modal.remove(), 300);
+                resolve(answer);
+            };
+            const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(false); } };
+            noBtn.addEventListener("click", () => done(false));
+            yesBtn.addEventListener("click", () => done(true));
+            modal.addEventListener("pointerdown", e => { if (e.target === modal) done(false); });
+            addEventListener("keydown", onKey, true);
+            (document.getElementById("overlay") || document.body).appendChild(modal);
+            requestAnimationFrame(() => modal.classList.add("in"));
+            setTimeout(() => noBtn.focus({ preventScroll: true }), 60);
+        });
+    }
+
+    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
@@ -146,7 +178,6 @@ const Settings = (() => {
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "paper",        // the world: paper, space, garden, arcade
         sound: true,            // sound effects (made in code, see sound.js)
-        music: false,           // the world's ambient music
         volume: 0.8,
         intro: true,            // play the start-up intro once per visit
         effects: "full"         // "full" or "lite"

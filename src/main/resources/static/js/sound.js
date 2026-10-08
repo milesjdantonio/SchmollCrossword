@@ -1,15 +1,14 @@
-// Sound (redesign): every sound and every bit of music is made in code with the Web Audio API.
+// Sound (redesign): every sound is made in code with the Web Audio API.
 // No sound files, so nothing to download and no licenses to check.
 //
 //   Sound.play("word")      plays the current world's version of a sound (or the shared one)
 //   Sound.tone({...})       one note: frequency f (sliding to f2), wave type, start t, length d, volume v...
 //   Sound.noise({...})      a burst of filtered noise (whooshes, scratches, crashes, crowds)
-//   Sound.music             the world's ambient loop (Settings > Music), and short jingles
 //
 // Browsers only allow sound after the first click or key press, so the engine wakes up then.
 
 const Sound = (() => {
-    let ctx = null, master, fxBus, musBus, echoIn, noiseBuf = null, crushCurve = null;
+    let ctx = null, master, fxBus, echoIn, noiseBuf = null, crushCurve = null;
     const gates = {};
 
     function init() {
@@ -29,9 +28,6 @@ const Sound = (() => {
         fxBus = ctx.createGain();
         fxBus.gain.value = Settings.get("sound") ? 0.8 : 0;
         fxBus.connect(master);
-        musBus = ctx.createGain();
-        musBus.gain.value = 0.55;
-        musBus.connect(master);
         // an echo (a delay that feeds back into itself) for spacey, dreamy sounds
         echoIn = ctx.createGain();
         const delay = ctx.createDelay(1), feedback = ctx.createGain(), wet = ctx.createGain();
@@ -51,7 +47,7 @@ const Sound = (() => {
         return true;
     }
     for (const type of ["pointerdown", "keydown", "touchstart"]) {
-        addEventListener(type, () => { if (init()) Music.wake(); }, { capture: true, passive: true });
+        addEventListener(type, () => init(), { capture: true, passive: true });
     }
     document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
@@ -64,10 +60,9 @@ const Sound = (() => {
     });
 
     const ready = () => ctx && ctx.state === "running";
-    const busFor = name => (name === "music" ? musBus : fxBus);
 
     // ---- building blocks ----
-    function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, bus, filt, echo = 0, crush = false, detune = 0, vib = 0 }) {
+    function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0 }) {
         if (!ctx) return;
         const start = ctx.currentTime + t;
         const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -96,12 +91,12 @@ const Sound = (() => {
             out.connect(fl);
             out = fl;
         }
-        out.connect(gain).connect(busFor(bus));
+        out.connect(gain).connect(fxBus);
         if (echo) { const send = ctx.createGain(); send.gain.value = echo; gain.connect(send).connect(echoIn); }
         osc.start(start);
         osc.stop(start + d + 0.05);
     }
-    function noise({ t = 0, d = 0.2, v = 0.2, type = "bandpass", f = 1000, f2, q = 1, a = 0.005, bus, echo = 0 }) {
+    function noise({ t = 0, d = 0.2, v = 0.2, type = "bandpass", f = 1000, f2, q = 1, a = 0.005, echo = 0 }) {
         if (!ctx) return;
         const start = ctx.currentTime + t;
         const src = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), gain = ctx.createGain();
@@ -114,7 +109,7 @@ const Sound = (() => {
         gain.gain.setValueAtTime(0.0001, start);
         gain.gain.exponentialRampToValueAtTime(v, start + a);
         gain.gain.exponentialRampToValueAtTime(0.0001, start + d);
-        src.connect(fl).connect(gain).connect(busFor(bus));
+        src.connect(fl).connect(gain).connect(fxBus);
         if (echo) { const send = ctx.createGain(); send.gain.value = echo; gain.connect(send).connect(echoIn); }
         src.start(start, Math.random());
         src.stop(start + d + 0.05);
@@ -163,42 +158,6 @@ const Sound = (() => {
         try { if (fn) fn(...args); } catch (err) { console.error("Sound", name, err); }
     }
 
-    // ---- music: a little step sequencer. A world's music is { bpm, tick(step, t) }: tick schedules the notes
-    //      for one sixteenth-note step at time offset t (seconds from now). It only plays with Settings > Music on.
-    const Music = (() => {
-        let timer = 0, step = 0, nextAt = 0, def = null;
-        function tick() {
-            if (!ready() || !def) return;
-            const sixteenth = 60 / def.bpm / 4;
-            if (nextAt < ctx.currentTime) nextAt = ctx.currentTime + 0.05;
-            while (nextAt < ctx.currentTime + 0.25) {
-                try { def.tick(step, nextAt - ctx.currentTime); } catch (err) { console.error(err); stop(); return; }
-                nextAt += sixteenth;
-                step++;
-            }
-        }
-        function start(musicDef) {
-            stop();
-            def = musicDef;
-            if (!def || !Settings.get("music") || !ready()) return;
-            step = 0;
-            nextAt = ctx.currentTime + 0.1;
-            musBus.gain.cancelScheduledValues(ctx.currentTime);
-            musBus.gain.setValueAtTime(0.0001, ctx.currentTime);
-            musBus.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 2.5);    // fade in
-            timer = setInterval(tick, 60);
-        }
-        function stop() { clearInterval(timer); timer = 0; }
-        function wake() {                                   // first click: start the music if it should be on
-            const world = typeof Worlds !== "undefined" && Worlds.current;
-            if (!timer && Settings.get("music") && world && world.music) start(world.music);
-        }
-        return { start, stop, wake, get playing() { return !!timer; } };
-    })();
-    Settings.on((key, value) => {
-        if (key !== "music") return;
-        if (value) { init(); Music.wake(); } else Music.stop();
-    });
 
-    return { play, tone, noise, chord, midi, init, Music, LIB, get ctx() { return ctx; } };
+    return { play, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

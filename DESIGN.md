@@ -20,7 +20,7 @@ character and sound. They asked for **that level of effort, not that style**:
   over the screen (the Space win: a black hole opens, swallows the board, collapses into a supernova, then a
   warp jump brings the board back). Cinematics are skippable with a click or key.
 - **Each world is a different place, not a recolor:** its own fonts, colors, board decorations, sounds,
-  music, mascot, lines, title card, win cinematic and screen transition.
+  mascot, lines, title card, win cinematic and screen transition.
 - **Never in the way:** decorations never cover the letters, never slow typing, and clicks always reach the
   squares. On phone-sized game screens the mascot steps aside.
 - **Our own look:** no NYT fonts, colors, icons or layout (see CLAUDE.md, License and copyright).
@@ -39,8 +39,8 @@ character and sound. They asked for **that level of effort, not that style**:
   no fire at 0, small at 1–2 days, bigger at 3–6, biggest (with embers and a strong glow) at 7+.
 - **Achievements** (15, in `achievements.js`): shown as badges that pop in on the results card, and in a grid on
   Stats. Test wins never count.
-- **Sound** is on by default, made in code with Web Audio (`sound.js`, no files). Ambient music is off by
-  default. Browsers only allow sound after the first click or key press, which the intro's PRESS START provides.
+- **Sound** is on by default, made in code with Web Audio (`sound.js`, no files). There is no background music
+  (the owner removed the option on 2026-10-08). Browsers only allow sound after the first click or key press, which the intro's PRESS START provides.
 
 ## How the frontend is built
 
@@ -52,7 +52,7 @@ Plain browser JavaScript (no build step), in `src/main/resources/static/`:
 | `css/app.css` | Shared layout and components, all driven by CSS variables (`--bg --surface --ink --muted --line --accent --accent-2 --word --sel --solved --font-head --font-body --font-cell --radius ...`). Phone breakpoints at 980/780/480 px; reduced motion turns animations off. |
 | `css/worlds.css` | One block per world: `[data-world="id"]` (and `[data-world="id"][data-theme="dark"]`) setting the variables, plus that world's own decorations, title card and win styles. |
 | `js/util.js` | `U` helpers (`U.el`, `U.svg`, seeded `U.rng`, `U.store`, `U.motion()`), the `Bus` event hub, `Settings`. |
-| `js/sound.js` | Synth engine and the shared sound library (`Sound.play(name)` uses the world's version when it has one), music sequencer. |
+| `js/sound.js` | Synth engine and the shared sound library (`Sound.play(name)` uses the world's version when it has one). |
 | `js/fx.js` | Particle layer (`FX.burst`, `ring`, `flash`, `shake`), `FX.countUp`, `FX.cinematic`, `FX.transition` (page / warp / leaves / autumn / blizzard / pixels / iris). Particle shapes include confetti, sparks, stars, pixels, petals, snowflakes, leaves and acorns. |
 | `js/worlds.js` | The world registry and the animated background loop (pointer parallax; ~30 fps in Lite effects; one still frame for reduced motion). |
 | `js/worlds/*.js` | One file per world. |
@@ -84,7 +84,7 @@ Pick the place and map each moment to something in it. Every row must be filled 
 | After the win | the board stays lit | side flowers stay, swaying, until the next puzzle | ? |
 | Mascot | NOVA, a little robot | BUMBLE, a bee | ? |
 | Screen transition | warp (stars streak to white) | leaves (a wall of leaves sweeps across) | ? |
-| Sounds and music | echoing synth blips; ambient pad | chimes and birdsong; marimba | ? |
+| Sounds | echoing synth blips | chimes and birdsong | ? |
 | Light / dark | dark only | day / night garden | ? |
 | Intro flourish | a cyan shockwave ring and sparks | a burst of petals | ? |
 
@@ -117,7 +117,6 @@ Worlds.register({
     titleCard(c, info),               // async; c.wait(ms), c.cleanup(fn), c.skipped (see FX.cinematic)
     celebrate(c, { boardEl, game, info }),
     sounds: { type, word, win, ... },  // overrides for Sound.LIB names
-    music: { bpm, tick(step, t) },
     mascot: { name, draw(ctx, state) },
     lines: { hello, start, word, win, wrong, right, idle, reveal },
     introFlourish(stage),

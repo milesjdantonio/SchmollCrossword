@@ -1,8 +1,8 @@
 // Schmoll Crossword: the screens around the game (redesign).
 //   Home: today's three dailies, Unlimited, the streak (with fire) and this week, the worlds
 //   Stats: tiles that count up, a calendar heatmap, best/average times, achievements, history
-//   Settings: the world picker (live previews), mode, sound & music, effects, timer, intro, difficulty
-//   The top bar (sound, music and world buttons), screen switching (#daily, #stats...), and the start-up intro.
+//   Settings: the world picker (live previews), mode, sound, effects, timer, intro, difficulty
+//   The top bar (sound and world buttons), screen switching (#daily, #stats...), and the start-up intro.
 
 const App = (() => {
     const $ = U.$;
@@ -21,8 +21,6 @@ const App = (() => {
         Sound.play("whoosh");
         await FX.transition(w.transition, () => {
             Settings.set("design", id);
-            Sound.Music.stop();
-            Sound.Music.wake();
             refreshWorldUI();
         });
         switching = false;
@@ -55,7 +53,7 @@ const App = (() => {
             const cv = card.querySelector("canvas");
             let anim = null, raf = 0, last = 0;
             try { anim = Worlds.preview(cv, card.dataset.wid, Settings.get("theme")); } catch (err) { console.error(err); }
-            const loop = now => { const dt = Math.min(0.05, (now - last) / 1000); last = now; anim.step(dt); raf = requestAnimationFrame(loop); };
+            const loop = now => { const dt = U.clamp((now - last) / 1000, 0, 0.05); last = now; anim.step(dt); raf = requestAnimationFrame(loop); };
             card.addEventListener("pointerenter", () => { if (anim && !raf && U.motion() !== "still") { last = performance.now(); raf = requestAnimationFrame(loop); } });
             card.addEventListener("pointerleave", () => { cancelAnimationFrame(raf); raf = 0; });
         }));
@@ -259,7 +257,6 @@ const App = (() => {
         f.hardWords.checked = s.hardWords;
         f.showTimer.checked = s.showTimer;
         f.sound.checked = s.sound;
-        f.music.checked = s.music;
         f.intro.checked = s.intro;
         f.volume.value = Math.round(s.volume * 100);
         $("#mode-note").hidden = !locked;
@@ -274,24 +271,21 @@ const App = (() => {
     });
     form.elements.volume.addEventListener("input", e => Settings.set("volume", Number(e.target.value) / 100));
     $("#replay-intro").addEventListener("click", () => { sessionStorage.removeItem("schmoll.introSeen"); intro(true); });
-    $("#reset-data").addEventListener("click", () => {
-        if (!confirm("Clear your saved progress, daily scores, streaks, achievements and settings? This can't be undone.")) return;
+    $("#reset-data").addEventListener("click", async () => {
+        if (!(await U.ask({ title: "Clear all your data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Clear it", no: "Cancel" }))) return;
         try { for (const k of Object.keys(localStorage)) if (k.startsWith("schmoll.")) localStorage.removeItem(k); } catch (err) { /* nothing saved */ }
         location.hash = "";
         location.reload();
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The top bar: sound, music and world buttons
+    // The top bar: sound and world buttons
     // ---------------------------------------------------------------------------------------------
     function drawTools() {
         $("#sound-toggle").classList.toggle("off", !Settings.get("sound"));
         $("#sound-toggle").setAttribute("aria-pressed", String(Settings.get("sound")));
-        $("#music-toggle").classList.toggle("off", !Settings.get("music"));
-        $("#music-toggle").setAttribute("aria-pressed", String(Settings.get("music")));
     }
     $("#sound-toggle").addEventListener("click", e => { Settings.set("sound", !Settings.get("sound")); Sound.play("toggle", true); e.currentTarget.blur(); });
-    $("#music-toggle").addEventListener("click", e => { Settings.set("music", !Settings.get("music")); Sound.play("toggle", Settings.get("music")); e.currentTarget.blur(); });
     const pop = $("#world-pop");
     $("#world-toggle").addEventListener("click", e => {
         e.stopPropagation();
@@ -303,7 +297,7 @@ const App = (() => {
     document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest("#world-toggle")) pop.hidden = true; });
     pop.addEventListener("click", e => { if (e.target.closest(".world-card")) pop.hidden = true; });
     Settings.on(key => {
-        if (key === "sound" || key === "music") drawTools();
+        if (key === "sound") drawTools();
         if (key === "theme") refreshWorldUI();
     });
     // every button and link gets a little "select" sound
@@ -313,11 +307,44 @@ const App = (() => {
     }, true);
 
     // ---------------------------------------------------------------------------------------------
-    // The start-up intro: PRESS START, then the logo builds itself out of tiles
+    // The start-up intro.
+    //   1. PRESS START, over the live world scene: letter tiles float up past you, rays turn slowly, the six
+    //      world icons bob, and a ticker scrolls along the bottom.
+    //   2. A shockwave, a crossword grid draws itself across the screen, and the logo builds itself out of tiles
+    //      (each one landing with a puff), then a shine sweeps across it.
+    //   3. "1 ACROSS" types out the tagline, the worlds orbit the logo and burst, and the current world adds its
+    //      own flourish before its screen transition takes you in.
     // ---------------------------------------------------------------------------------------------
     const LOGO = [];
     [..."SCHMOLL"].forEach((ch, i) => LOGO.push({ ch, r: 0, c: i }));
     [..."ROSSWORD"].forEach((ch, i) => LOGO.push({ ch, r: i + 1, c: 1 }));      // CROSSWORD goes down from SCHMOLL's C
+    const TAGLINE = "A tiny crossword. Three fresh ones every day.";
+    const TICKER = ["Three fresh puzzles every day", "Six worlds to explore", "Streaks, stats & achievements", "Unlimited puzzles on demand", "Every sound is made in code", "Free, no ads"];
+
+    // floating tiles for the start screen: far ones small and blurry, near ones big and sharp
+    function floatingTiles(n) {
+        const letters = "SCHMOLLCROSSWORD";
+        return Array.from({ length: n }, (_, i) => {
+            const depth = Math.random(), s = Math.round(22 + depth * 46);
+            return `<i class="it-tile" style="--x:${(Math.random() * 100).toFixed(1)}vw;--s:${s}px;--d:${(-Math.random() * 16).toFixed(1)}s;--t:${(15 - depth * 7).toFixed(1)}s;` +
+                `--r:${(Math.random() * 80 - 40).toFixed(0)}deg;--b:${((1 - depth) * 2.6).toFixed(1)}px;--o:${(0.3 + depth * 0.55).toFixed(2)}">${letters[i % letters.length]}</i>`;
+        }).join("");
+    }
+    // a crossword grid that draws itself out from the middle of the screen, with black squares popping in
+    function sketchGrid() {
+        const W = innerWidth, H = innerHeight, G = U.clamp(Math.min(W, H) / 8, 46, 92), cx = W / 2, cy = H / 2;
+        const far = Math.hypot(cx, cy);
+        let out = `<svg class="intro-grid" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">`;
+        for (let x = cx % G; x < W; x += G) out += `<line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${H}" pathLength="1" style="animation-delay:${Math.round(Math.abs(x - cx) / far * 500)}ms"/>`;
+        for (let y = cy % G; y < H; y += G) out += `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" pathLength="1" style="animation-delay:${Math.round(Math.abs(y - cy) / far * 500)}ms"/>`;
+        for (let x = cx % G - G; x < W; x += G) for (let y = cy % G - G; y < H; y += G) {
+            if (Math.random() > 0.09) continue;
+            const d = Math.hypot(x + G / 2 - cx, y + G / 2 - cy);
+            out += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${G.toFixed(1)}" height="${G.toFixed(1)}" style="animation-delay:${Math.round(300 + d / far * 700)}ms"/>`;
+        }
+        return out + "</svg>";
+    }
+
     async function intro(force = false) {
         const box = $("#intro");
         let seen = false;
@@ -326,12 +353,18 @@ const App = (() => {
         try { sessionStorage.setItem("schmoll.introSeen", "1"); } catch (err) { /* blocked */ }
         root.classList.add("intro-on");
         box.hidden = false;
+        box.classList.remove("go");
+        const ticker = TICKER.map(t => `<span>&#9733; ${U.esc(t)}</span>`).join("");
         box.innerHTML = `
+            <div class="intro-rays" aria-hidden="true"></div>
+            <div class="intro-tiles" aria-hidden="true">${floatingTiles(U.motion() === "lite" ? 12 : 26)}</div>
             <div class="intro-press">
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <button type="button" class="intro-start">PRESS START</button>
+                <div class="intro-worlds" aria-hidden="true">${Worlds.list.map((w, i) => `<span class="iw" style="--i:${i}">${w.icon}</span>`).join("")}</div>
                 <small>click anywhere or press any key · sound on \u{1F50A}</small>
-            </div>`;
+            </div>
+            <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;
         Mascot.away = true;
         await new Promise(resolve => {
             const go = () => { removeEventListener("keydown", go, true); box.removeEventListener("pointerdown", go); resolve(); };
@@ -340,40 +373,80 @@ const App = (() => {
         });
         Sound.init();
         Sound.play("start");
-        Sound.Music.wake();
-        // the logo
-        box.innerHTML = `<div class="intro-stage"><div class="intro-logo" aria-label="Schmoll Crossword"></div>
-            <p class="intro-tag">A tiny crossword. Three fresh ones every day.</p><small class="intro-skip">click to continue</small></div>`;
-        const logo = box.querySelector(".intro-logo"), stage = box.querySelector(".intro-stage");
+        const css = getComputedStyle(root), colors = ["--accent", "--accent-2", "--ink"].map(v => css.getPropertyValue(v).trim() || "#ffffff");
+        const bp = U.center(box.querySelector(".intro-start"));
+        FX.ring({ x: bp.x, y: bp.y, color: colors[0], r1: Math.hypot(innerWidth, innerHeight) * 0.6, dur: 0.9, width: 16, glow: false });
+        FX.burst({ x: bp.x, y: bp.y, n: 40, colors, shape: "star", speed: [200, 700], gravity: 300, drag: 1.2, life: [0.6, 1.1], size: [3, 7] });
+        FX.shake(6, 260);
+        box.classList.add("go");
+
+        // the logo builds itself over a self-drawing grid
+        box.querySelector(".intro-press").remove();
+        box.querySelector(".intro-ticker").remove();
+        box.insertAdjacentHTML("beforeend", sketchGrid() + `
+            <div class="intro-stage">
+                <div class="intro-logo" aria-label="Schmoll Crossword"><div class="intro-orbit" aria-hidden="true">${Worlds.list.map((w, i) => `<span class="io" style="--i:${i};--n:${Worlds.list.length}"><b>${w.icon}</b></span>`).join("")}</div></div>
+                <p class="intro-tag"><span class="it-clue">1 ACROSS</span><span class="it-type"></span><i class="it-caret"></i></p>
+                <small class="intro-skip">click to continue</small>
+            </div>`);
+        const logo = box.querySelector(".intro-logo"), stage = box.querySelector(".intro-stage"), orbit = box.querySelector(".intro-orbit");
         let skipped = false;
         const skip = () => { skipped = true; };
         box.addEventListener("pointerdown", skip);
         addEventListener("keydown", skip, true);
+        const pause = async ms => { for (let t = 0; t < ms && !skipped; t += 50) await U.wait(50); };
         LOGO.forEach((t, i) => {
             const tile = U.el("span", { class: "logo-tile" + (t.r === 0 && t.c === 1 ? " cross" : ""), text: t.ch, style: { gridRow: t.r + 1, gridColumn: t.c + 1, "--i": i } });
             logo.appendChild(tile);
-            const from = U.pick([[0, -260], [0, 260], [-260, 0], [260, 0]]);
+            const from = U.pick([[0, -320], [0, 320], [-320, 0], [320, 0]]);
             tile.animate([
-                { transform: `translate(${from[0]}px, ${from[1]}px) rotate(${U.rand(-90, 90)}deg) scale(.3)`, opacity: 0 },
-                { transform: "translate(0,0) rotate(0) scale(1.15)", opacity: 1, offset: 0.75 },
+                { transform: `translate(${from[0]}px, ${from[1]}px) rotate(${U.rand(-120, 120)}deg) scale(.3)`, opacity: 0 },
+                { transform: "translate(0,0) rotate(0) scale(1.2)", opacity: 1, offset: 0.75 },
                 { transform: "none", opacity: 1 }
-            ], { duration: 520, delay: 200 + i * 75, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" });
-            setTimeout(() => { if (!skipped) Sound.play("tile", i); }, 200 + i * 75 + 380);
+            ], { duration: 520, delay: 450 + i * 75, easing: "cubic-bezier(.2,.8,.3,1)", fill: "backwards" });
+            setTimeout(() => {
+                if (skipped) return;
+                Sound.play("tile", i);
+                const p = U.center(tile);
+                FX.burst({ x: p.x, y: p.y, n: 7, colors, shape: "circle", speed: [60, 180], gravity: 120, drag: 2.5, life: [0.3, 0.6], size: [1.5, 3.5] });
+            }, 450 + i * 75 + 390);
         });
-        const landed = 200 + LOGO.length * 75 + 450;
-        for (let t = 0; t < landed && !skipped; t += 50) await U.wait(50);
+        await pause(450 + LOGO.length * 75 + 450);
         if (!skipped) {
             stage.classList.add("landed");
             Sound.play("title");
-            const w = Worlds.current;
-            if (w.introFlourish) { try { w.introFlourish(logo); } catch (err) { console.error(err); } }
-            for (let t = 0; t < 2200 && !skipped; t += 50) await U.wait(50);
+            // "1 ACROSS": the tagline types itself out
+            const typeEl = stage.querySelector(".it-type");
+            for (let i = 0; i < TAGLINE.length && !skipped; i++) {
+                typeEl.textContent = TAGLINE.slice(0, i + 1);
+                if (TAGLINE[i] !== " " && i % 2 === 0) Sound.play("type");
+                await U.wait(32);
+            }
+            typeEl.textContent = TAGLINE;
+            // the worlds orbit the logo, then burst one by one
+            orbit.classList.add("on");
+            await pause(1300);
+            if (!skipped) {
+                orbit.querySelectorAll(".io b").forEach((icon, i) => setTimeout(() => {
+                    const p = U.center(icon);
+                    FX.burst({ x: p.x, y: p.y, n: 14, colors, shape: "star", speed: [80, 260], gravity: 100, drag: 1.6, life: [0.5, 0.9], size: [2.5, 5] });
+                    Sound.play("pop");
+                    icon.classList.add("gone");
+                }, i * 90));
+                await pause(Worlds.list.length * 90 + 150);
+            }
+            if (!skipped) {
+                const w = Worlds.current;
+                if (w.introFlourish) { try { w.introFlourish(logo); } catch (err) { console.error(err); } }
+                await pause(1600);
+            }
         }
         box.removeEventListener("pointerdown", skip);
         removeEventListener("keydown", skip, true);
         await FX.transition(Worlds.current.transition, () => {
             box.hidden = true;
             box.innerHTML = "";
+            box.classList.remove("go");
             root.classList.remove("intro-on");
             Mascot.away = mascotInTheWay();
         });

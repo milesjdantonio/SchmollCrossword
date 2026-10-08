@@ -637,7 +637,7 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Sounds & music: soft sines through an echo, deep rumbles for the big moments
+    // Sounds: soft sines through an echo, deep rumbles for the big moments
     // ---------------------------------------------------------------------------------------------
     const sounds = {
         type: () => { const f = U.rand(880, 1400); tone({ f, f2: f * 1.5, type: "sine", d: 0.09, v: 0.06, echo: 0.25 }); },
@@ -665,23 +665,11 @@
         select: () => tone({ f: 1760, f2: 2200, type: "sine", d: 0.06, v: 0.05, echo: 0.2 }),
         nav: () => { noise({ f: 600, f2: 3000, d: 0.25, v: 0.07, q: 1 }); tone({ f: 660, f2: 990, type: "sine", d: 0.18, v: 0.05, echo: 0.3 }); }
     };
-    // ambient: a slow drifting pad with a twinkling arpeggio (70 bpm)
-    const PADS = [[45, 52, 57, 64], [41, 48, 57, 64], [43, 50, 55, 62], [40, 47, 55, 59]];
-    const ARP = [76, 79, 83, 88, 83, 79, 81, 84];
-    const music = {
-        bpm: 70,
-        tick(step, t) {
-            const bar = Math.floor(step / 16), s = step % 16, pad = PADS[bar % 4];
-            if (s === 0) pad.forEach(n => tone({ t, f: midi(n), type: "triangle", d: 4.4, v: 0.03, a: 1.2, bus: "music", echo: 0.25 }));
-            if (s % 2 === 0 && Math.random() < 0.7) tone({ t, f: midi(ARP[(step / 2) % ARP.length] + (bar % 4 === 3 ? -2 : 0)), type: "sine", d: 0.5, v: 0.025, bus: "music", echo: 0.6 });
-            if (s === 8 && bar % 2 === 1) noise({ t, type: "bandpass", f: 400, f2: 1600, d: 3, v: 0.03, a: 1.4, bus: "music" });
-        }
-    };
 
     Worlds.register({
         id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "Black holes, nebulae & constellations",
         modes: ["dark"],
-        scene, board, celebrate, titleCard, sounds, music, transition: "warp",
+        scene, board, celebrate, titleCard, sounds, transition: "warp",
         mascot: { name: "NOVA", draw: drawNova },
         lines: {
             hello: ["Systems online. Ready to solve, Commander?", "Welcome aboard! Today's puzzles are in orbit.", "Scanning the grid... all systems go."],
