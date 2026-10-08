@@ -48,7 +48,7 @@ const Achievements = (() => {
             if (data.counts.unlimited >= 10) unlock("unlimited10");
         }
         data.worlds[worldId] = true;
-        if (Worlds.list.every(w => data.worlds[w.id])) unlock("worlds");
+        if (Worlds.list.every(w => w.plain || data.worlds[w.id])) unlock("worlds");
         if (info.mode === "daily" && info.counted) {
             if (info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
             if (info.left && !info.left.some(d => d !== "challenge")) unlock("hat");          // the three normal dailies

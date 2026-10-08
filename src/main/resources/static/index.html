@@ -16,7 +16,7 @@
         // Apply the saved world and mode before the page is drawn, so nothing flashes
         try {
             const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
-            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel", ocean: "ocean", candy: "candy", library: "library", volcano: "volcano", sky: "sky", desert: "desert", robot: "robot", carnival: "carnival", rain: "rain" }[s.design] || "paper";
+            const world = { classic: "classic", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel", ocean: "ocean", candy: "candy", library: "library", volcano: "volcano", sky: "sky", desert: "desert", robot: "robot", carnival: "carnival", rain: "rain" }[s.design] || "classic";
             document.documentElement.dataset.world = world;
             document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";   // every world has both modes
         } catch (err) { /* storage blocked: the Notebook world, light */ }
@@ -286,6 +286,7 @@
     <script src="js/sound.js"></script>
     <script src="js/fx.js"></script>
     <script src="js/worlds.js"></script>
+    <script src="js/worlds/classic.js"></script>
     <script src="js/worlds/paper.js"></script>
     <script src="js/worlds/space.js"></script>
     <script src="js/worlds/garden.js"></script>

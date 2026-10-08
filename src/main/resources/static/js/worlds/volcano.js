@@ -5,7 +5,7 @@
 //   floating up and the sea reflecting the glow.
 //   Board: each letter leaves an island treasure in its square (a shell, a hibiscus, a starfish, an ember,
 //   a coconut, a lava pebble); finished words get a glowing lava crack along their edge.
-//   Win: a volcano rises behind the board, rumbles, and erupts in confetti and fireworks.
+//   Win: the volcano in the background rumbles and erupts: a lava fountain, lava rivers, confetti and fireworks.
 
 (() => {
     const TAU = Math.PI * 2;
@@ -13,13 +13,17 @@
     const FIRE = ["#ffd23a", "#ff9a1f", "#ff5a1a", "#e8301a"];
     const TROPIC = ["#ff5c8a", "#ffd23a", "#2ec4b6", "#ff9a1f", "#7cdc5a", "#ffffff"];
     const dark = () => document.documentElement.dataset.theme === "dark";
+    // The win makes the volcano in the background erupt: celebrate() sets the start time, the scene draws it,
+    // and the scene tells celebrate() where the crater is on screen (for the confetti)
+    let eruption = 0;
+    const crater = { x: 0, y: 0 };
 
     // ---------------------------------------------------------------------------------------------
     // The background
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const night = opts.theme === "dark", preview = !!opts.preview;
-        let hz, sky, far, mid, near, glow, smoke, embers, gulls, palms, rivers, vx, vtop, nextGull = preview ? 999 : U.rand(3, 8), sparks = [];
+        let hz, sky, far, mid, near, glow, smoke, embers, gulls, palms, rivers, vx, vtop, nextGull = preview ? 999 : U.rand(3, 8), sparks = [], fountain = [];
 
         function setup() {
             const R = U.rng(7070);
@@ -45,13 +49,13 @@
                 g.fillStyle = night ? "#1a0c12" : "#7aa7a0";
                 g.beginPath(); g.ellipse(W * 0.12, base, W * 0.12, H * 0.05, 0, Math.PI, TAU); g.fill();
             }
-            rivers = night ? Array.from({ length: preview ? 2 : 4 }, (_, i) => {
+            rivers = Array.from({ length: preview ? 2 : 4 }, (_, i) => {
                 const side = i % 2 ? 1 : -1, cw = Math.max(W * 0.34, H * 0.42) * 0.16;
                 const pts = [];
                 let x = vx + side * cw * (0.2 + R() * 0.6), y = vtop + 2;
                 for (let k = 0; k < 14; k++) { pts.push([x, y]); y += (hz - vtop) / 14; x += side * (8 + R() * 16) + (R() - 0.5) * 12; }
                 return { pts, ph: R() * 10 };
-            }) : [];
+            });
             // mid layer: the sea and beach
             mid = Worlds.canvas(W + 60, H);
             {
@@ -111,31 +115,57 @@
                     g.fillStyle = "#fff6c8"; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
                 }
                 const fx = -20 - inp.px * 6;
-                // the crater glow behind the smoke (night)
-                if (night) {
-                    const pulse = 0.75 + 0.25 * Math.sin(t * 1.7);
-                    g.globalCompositeOperation = "lighter"; g.globalAlpha = pulse;
-                    g.drawImage(glow, vx - inp.px * 6 - 160, vtop - 150, 320, 260);
+                crater.x = vx - inp.px * 6; crater.y = vtop;
+                // the eruption (the win): rumbling for 1.6 s, erupting until 6 s, calming down by 10 s
+                const e = eruption && !preview ? (performance.now() - eruption) / 1000 : -1;
+                if (e > 10) eruption = 0;
+                const I = e < 0 ? 0 : e < 1.6 ? e / 1.6 * 0.4 : e < 6 ? 1 : Math.max(0, 1 - (e - 6) / 4);
+                // the crater glow behind the smoke (always at night, during an eruption by day too)
+                if (night || I > 0) {
+                    const pulse = (night ? 0.75 + 0.25 * Math.sin(t * 1.7) : 0) + I * (0.8 + 0.2 * Math.sin(t * 20));
+                    if (night) g.globalCompositeOperation = "lighter";
+                    g.globalAlpha = Math.min(1, pulse);
+                    const sz = 1 + I * 1.6;
+                    g.drawImage(glow, crater.x - 160 * sz, vtop - 150 * sz, 320 * sz, 260 * sz);
                     g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
                 }
                 // smoke puffs rising from the crater and drifting with the wind
                 for (const s of smoke) {
                     s.age += dt; if (s.age > 9) s.age -= 9;
-                    const k = s.age / 9, x = vx - inp.px * 6 + k * W * 0.18 + Math.sin(t * 0.5 + s.ph) * 10, y = vtop - k * H * 0.32, r = (14 + k * 70) * s.s;
-                    g.fillStyle = night ? `rgba(60,30,40,${(0.55 * (1 - k)).toFixed(3)})` : `rgba(235,235,240,${(0.75 * (1 - k)).toFixed(3)})`;
+                    const k = s.age / 9, x = vx - inp.px * 6 + k * W * 0.18 + Math.sin(t * 0.5 + s.ph) * 10, y = vtop - k * H * 0.32, r = (14 + k * 70) * s.s * (1 + I * 0.9);
+                    g.fillStyle = night ? `rgba(60,30,40,${(0.55 * (1 - k)).toFixed(3)})` : I > 0.3 ? `rgba(120,110,115,${(0.8 * (1 - k)).toFixed(3)})` : `rgba(235,235,240,${(0.75 * (1 - k)).toFixed(3)})`;
                     g.beginPath(); g.arc(x, y, r, 0, TAU); g.arc(x + r * 0.6, y + r * 0.2, r * 0.7, 0, TAU); g.fill();
                     if (night) { g.fillStyle = `rgba(255,110,40,${(0.18 * (1 - k)).toFixed(3)})`; g.beginPath(); g.arc(x, y + r * 0.3, r * 0.8, 0, TAU); g.fill(); }
                 }
                 g.drawImage(far, fx, 0);
-                // lava rivers creeping down the slopes (night)
-                for (const r of rivers) {
+                // lava rivers creeping down the slopes (at night; by day they pour out during an eruption)
+                const flow = night ? 1 : U.clamp((e - 1.6) / 2.5, 0, 1);
+                if (night || I > 0) for (const r of rivers) {
+                    const pts = r.pts.slice(0, Math.max(1, Math.ceil(r.pts.length * flow)));
+                    if (pts.length < 2) continue;
                     g.lineCap = "round"; g.lineJoin = "round";
-                    for (const [w, col] of [[10, "rgba(255,80,20,.35)"], [4, "#ff8a1f"], [1.6, "#ffe07a"]]) {
+                    g.globalAlpha = night ? 1 : Math.min(1, I * 1.2);
+                    for (const [w, col] of [[10 + I * 8, "rgba(255,80,20,.35)"], [4 + I * 3, "#ff8a1f"], [1.6 + I, "#ffe07a"]]) {
                         g.strokeStyle = col; g.lineWidth = w;
-                        g.beginPath(); r.pts.forEach(([x, y], i) => i ? g.lineTo(x + fx + 20, y) : g.moveTo(x + fx + 20, y)); g.stroke();
+                        g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x + fx + 20, y) : g.moveTo(x + fx + 20, y)); g.stroke();
                     }
+                    g.globalAlpha = 1;
+                    if (!night) continue;
                     const k = (t * 0.08 + r.ph) % 1, i = Math.floor(k * (r.pts.length - 1)), [x, y] = r.pts[i];          // a bright blob flowing down
                     g.globalCompositeOperation = "lighter"; g.drawImage(glow, x + fx + 20 - 14, y - 14, 28, 28); g.globalCompositeOperation = "source-over";
+                }
+                // the lava fountain shooting out of the crater during an eruption
+                if (e > 1.6 && e < 5.5) for (let i = 0; i < Math.round(dt * 140); i++) fountain.push({ x: crater.x + (Math.random() - 0.5) * 30, y: vtop, vx: (Math.random() - 0.5) * 300, vy: -250 - Math.random() * 450, life: 2.4, r: 2 + Math.random() * 4 });
+                if (fountain.length) {
+                    if (night) g.globalCompositeOperation = "lighter";
+                    fountain = fountain.filter(f => (f.life -= dt) > 0 && f.y < H);
+                    for (const f of fountain) {
+                        f.vy += 420 * dt; f.x += f.vx * dt; f.y += f.vy * dt;
+                        g.fillStyle = f.r > 4 ? "#ffd23a" : f.r > 3 ? "#ff8a1f" : "#ff5a1a";
+                        g.globalAlpha = Math.min(1, f.life);
+                        g.beginPath(); g.arc(f.x, f.y, f.r, 0, TAU); g.fill();
+                    }
+                    g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
                 }
                 // embers floating up from the crater (night)
                 for (const e of embers) {
@@ -213,61 +243,44 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The win: a volcano rises behind the board, rumbles and erupts in confetti and fireworks
+    // The win: the volcano in the background rumbles, then erupts in lava, confetti and fireworks
     // ---------------------------------------------------------------------------------------------
-    const VOLCANO = `<svg viewBox="0 0 400 260" aria-hidden="true">
-        <defs><linearGradient id="vcv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a3a34"/><stop offset="1" stop-color="#2a1814"/></linearGradient>
-        <radialGradient id="vcg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd23a"/><stop offset=".5" stop-color="#ff6a1a" stop-opacity=".6"/><stop offset="1" stop-color="#ff3a1a" stop-opacity="0"/></radialGradient></defs>
-        <ellipse class="vcv-glow" cx="200" cy="40" rx="90" ry="50" fill="url(#vcg)"/>
-        <path d="M0 260L150 40H250L400 260Z" fill="url(#vcv)"/>
-        <path d="M150 40Q200 60 250 40L240 52Q200 66 160 52Z" fill="#ff7a1a"/>
-        <path class="vcv-lava" d="M170 50Q160 110 140 150Q125 190 100 260M228 50Q240 120 262 170Q280 210 300 260" stroke="#ff8a1f" stroke-width="9" fill="none" stroke-linecap="round" pathLength="1"/>
-        </svg>`;
-    async function celebrate(c, { boardEl }) {
+    async function celebrate(c) {
         if (U.motion() === "still") return;
-        const W = innerWidth, H = innerHeight, b = boardEl.getBoundingClientRect(), cx = b.left + b.width / 2;
-        const overlay = document.getElementById("overlay");
-        const vw = Math.min(W * 0.9, 640), vh = vw * 0.65;
-        // 1. the volcano rises up from the bottom of the screen
-        const vol = U.el("div", { class: "vc-volcano", html: VOLCANO, style: { left: cx - vw / 2 + "px", width: vw + "px", height: vh + "px" } });
-        overlay.appendChild(vol);
-        c.cleanup(() => vol.remove());
+        const W = innerWidth, H = innerHeight;
+        const top = () => (crater.x ? { x: crater.x, y: crater.y } : { x: W * 0.62, y: H * 0.26 });
+        // 1. the ground rumbles, harder and harder (the scene starts glowing and puffing)
+        eruption = performance.now();
         Sound.play("rumble");
-        vol.animate([{ transform: "translateY(100%)" }, { transform: "none" }], { duration: 900, easing: "cubic-bezier(.2,1,.3,1)", fill: "backwards" });
-        await c.wait(900);
-        if (c.skipped) return;
-        // 2. it rumbles harder and harder
-        vol.classList.add("charge");
-        FX.shake(5, 500);
-        await c.wait(450);
+        FX.shake(4, 700);
+        await c.wait(800);
         if (c.skipped) return;
         Sound.play("rumble");
-        FX.shake(10, 600);
-        await c.wait(550);
+        FX.shake(9, 700);
+        await c.wait(800);
         if (c.skipped) return;
-        // 3. ERUPTION
-        const top = { x: cx, y: H - vh * (1 - 40 / 260) };
+        // 2. ERUPTION: lava shoots out of the crater (drawn by the scene) along with confetti
+        const p = top();
         Sound.play("erupt");
-        vol.classList.add("erupt");
-        FX.flash("#ffb35a", 500, 0.55);
+        FX.flash("#ffb35a", 500, 0.4);
         FX.shake(14, 700);
-        FX.burst({ x: top.x, y: top.y, n: 140, colors: TROPIC, shape: "rect", angle: -Math.PI / 2, spread: 0.55, speed: [500, 1100], gravity: 700, drag: 0.5, life: [2, 3.2], size: [7, 11] });
-        FX.burst({ x: top.x, y: top.y, n: 50, colors: FIRE, shape: "star", angle: -Math.PI / 2, spread: 0.4, speed: [400, 900], gravity: 600, life: [1.5, 2.4], size: [5, 9], spin: 6 });
-        FX.burst({ x: top.x, y: top.y, n: 40, colors: FIRE, shape: "spark", angle: -Math.PI / 2, spread: 0.6, speed: [300, 800], gravity: 400, life: [0.8, 1.4], size: [2, 4] });
+        FX.ring({ x: p.x, y: p.y, color: "#ff8a1f", r1: Math.max(W, H) * 0.5, dur: 1, width: 14, glow: dark() });
+        FX.burst({ x: p.x, y: p.y, n: 140, colors: TROPIC, shape: "rect", angle: -Math.PI / 2, spread: 0.6, speed: [500, 1100], gravity: 700, drag: 0.5, life: [2, 3.2], size: [7, 11] });
+        FX.burst({ x: p.x, y: p.y, n: 50, colors: FIRE, shape: "star", angle: -Math.PI / 2, spread: 0.45, speed: [400, 900], gravity: 600, life: [1.5, 2.4], size: [5, 9], spin: 6 });
+        FX.burst({ x: p.x, y: p.y, n: 40, colors: FIRE, shape: "spark", angle: -Math.PI / 2, spread: 0.6, speed: [300, 800], gravity: 400, life: [0.8, 1.4], size: [2, 4] });
         await c.wait(1000);
         if (c.skipped) return;
-        // 4. fireworks of lava bursting high in the sky
+        // 3. fireworks of lava bursting high in the sky
         for (let i = 0; i < 3; i++) {
-            const x = W * (0.25 + i * 0.25) + U.rand(-40, 40), y = H * U.rand(0.15, 0.3);
+            const x = W * (0.25 + i * 0.25) + U.rand(-40, 40), y = H * U.rand(0.12, 0.28);
             Sound.play("pop");
             FX.ring({ x, y, color: FIRE[i], r1: 120, dur: 0.7, width: 4, glow: dark() });
             FX.burst({ x, y, n: 40, colors: [FIRE[i], "#ffffff", TROPIC[i]], shape: "spark", speed: [150, 330], gravity: 140, life: [0.9, 1.4], size: [2, 3] });
             await c.wait(350);
             if (c.skipped) return;
         }
-        vol.animate([{ transform: "none" }, { transform: "translateY(100%)" }], { duration: 800, delay: 700, easing: "ease-in", fill: "forwards" });
         Sound.play("sparkle");
-        await c.wait(1500);
+        await c.wait(1600);
     }
 
     // ---------------------------------------------------------------------------------------------

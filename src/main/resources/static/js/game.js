@@ -152,6 +152,7 @@ const Game = (() => {
         try {
             let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
             if (mode === "unlimited" && difficulty === "hard" && Settings.get("hardWords")) url += "&hardWords=true";
+            if (mode === "daily") { const d = dayKey(new Date()); url += `&date=${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`; }   // the player's own date (time zones)
             const response = await fetch(url);
             if (response.status === 429) { drawUnlimitedLeft(); throw new Error("you've used today's Unlimited puzzles. Come back later, or play today's Daily (those are always free)."); }
             if (!response.ok) throw new Error("the server answered " + response.status);
@@ -395,6 +396,19 @@ const Game = (() => {
         return true;
     }
 
+    // Today's dailies that aren't done yet. A saved score counts, and so does a board that's solved on screen in
+    // this visit (a test win, or a solve whose score was saved before), so the mascot never asks for one you finished.
+    function dailiesLeft(seed) {
+        const all = scores(), day = seedDay(seed);
+        return ["easy", "medium", "hard", "challenge"].filter(d => {
+            if (all[day + "-" + d]) return false;
+            const slot = "daily-" + d;
+            if (game.puzzle && slotOf(game.puzzle) === slot) return !game.solved;
+            const other = savedGames[slot];
+            return !(other && other.solved && seedDay(other.seed) === day);
+        });
+    }
+
     function checkForWin() {
         if (game.solved || !isSolved()) return false;
         game.solved = true;
@@ -410,8 +424,7 @@ const Game = (() => {
             info.counted = saveDailyScore(p, info.points);
             info.firstToday = info.counted && !dayWasDone;
             info.streak = calculateStreaks(scores()).current;
-            const all = scores();
-            info.left = ["easy", "medium", "hard", "challenge"].filter(d => !all[seedDay(p.seed) + "-" + d]);
+            info.left = dailiesLeft(p.seed);
             if (!info.counted) info.note = "This daily was already completed, so no extra points.";
         } else {
             info.note = "Unlimited puzzles don't earn points, just glory.";
@@ -910,7 +923,10 @@ const Game = (() => {
     }
     function showPuzzleFor(view) {
         const slot = slotFor(view, difficultyFor[view]);
-        if (game.puzzle && slotOf(game.puzzle) === slot) {
+        // past the player's midnight with the page still open: yesterday's dailies are replaced by today's
+        const stale = p => view === "daily" && p && seedDay(p.seed) !== dayKey(new Date());
+        if (stale(lastPuzzle[slot])) { delete lastPuzzle[slot]; delete savedGames[slot]; }
+        if (game.puzzle && slotOf(game.puzzle) === slot && !stale(game.puzzle)) {
             loadCounter++;
             statusEl.hidden = true;
             puzzleEl.hidden = false;

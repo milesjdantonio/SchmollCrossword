@@ -22,7 +22,7 @@ const Mascot = (() => {
             "Tab and Enter jump to the next clue. Shift+Tab goes back.",
             "Check a square costs 5 points; Reveal costs 10. Use them wisely!",
             "Revealing the whole puzzle counts as giving up: no points, no streak.",
-            "Solve any one of the three dailies to keep your streak alive.",
+            "Solve any one of today's dailies to keep your streak alive.",
             "Faster solves earn a speed bonus: 100 points, minus 10 for each full minute.",
             "Try a different world in Settings. Each one has its own win animation!",
             "Hard puzzles use rarer words, and they're worth 200 points."
@@ -133,7 +133,8 @@ const Mascot = (() => {
         if (info.test) return say("Test win! Nothing was saved.", { mood: "wow" });
         let line = lineFor("win");
         if (info.firstToday && info.streak > 1) line += ` That's a ${info.streak}-day streak!`;
-        else if (info.left && info.left.length) line += ` Still to play today: ${info.left.join(", ")}.`;
+        else if (info.mode === "daily" && info.left && info.left.length) line += ` Still to play today: ${info.left.join(", ")}.`;
+        else if (info.mode === "daily" && info.left && !info.left.length) line += " That's every daily done for today!";
         say(line, { mood: "happy", hold: 9000 });
     });
     Bus.on("puzzle", ({ fresh }) => { if (fresh && !Mascot.startedOnce) { Mascot.startedOnce = true; setTimeout(() => react("start", { mood: "happy" }), 2200); } });

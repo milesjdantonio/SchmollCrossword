@@ -95,13 +95,37 @@ public class PuzzleController {
      * 2. Otherwise return today's daily puzzle for that difficulty (lowercased) from PuzzleStore.getDaily,
      *    using PuzzleStore.DAILY_FOLDER, LocalDate.now() and that difficulty's word list.
      */
+    // Time zones (added by Claude at the user's request): the browser sends the player's own date, ?date=2026-10-08,
+    // so the daily changes at the player's midnight, not the server's. Every place on Earth is within one day of
+    // the server's date, so anything further away is refused (nobody can fetch next week's puzzles).
     @GetMapping(value = "/api/daily", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String daily(@RequestParam(defaultValue = "medium") String difficulty) throws IOException {
+    public String daily(@RequestParam(defaultValue = "medium") String difficulty,
+                        @RequestParam(required = false) String date) throws IOException {
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
         }
         String level = difficulty.toLowerCase();
-        return PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, LocalDate.now(), level, wordsFor(level));
+        return PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, dailyDate(date, LocalDate.now()), level, wordsFor(level));
+    }
+
+    // The same, for the server's own date (used by the tests)
+    public String daily(String difficulty) throws IOException {
+        return daily(difficulty, null);
+    }
+
+    // Which day's puzzle to serve: the player's date if it's within a day of the server's, else HTTP 400
+    static LocalDate dailyDate(String date, LocalDate serverToday) {
+        if (date == null || date.isBlank()) return serverToday;
+        LocalDate asked;
+        try {
+            asked = LocalDate.parse(date);           // "2026-10-08"
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "date must look like 2026-10-08");
+        }
+        if (Math.abs(asked.toEpochDay() - serverToday.toEpochDay()) > 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "date must be today (in some time zone)");
+        }
+        return asked;
     }
 
     /*

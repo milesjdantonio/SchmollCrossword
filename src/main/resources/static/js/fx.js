@@ -399,7 +399,13 @@ const FX = (() => {
                     // k: 0 -> 1 while covering, stays 1 during the hold, then 1 -> 0 while uncovering
                     const k = t < IN ? U.ease.inOutCubic(t / IN) : t < IN + HOLD ? 1 : 1 - U.ease.inOutCubic((t - IN - HOLD) / OUT);
                     const leaving = t >= IN + HOLD;
-                    if (style === "pixels") {
+                    if (style === "fade") {
+                        // the Classic page: a quick, plain fade through the page colour
+                        c.fillStyle = C.bg;
+                        c.globalAlpha = k;
+                        c.fillRect(0, 0, W, H);
+                        c.globalAlpha = 1;
+                    } else if (style === "pixels") {
                         for (const cell of cells) {
                             const on = leaving ? cell.k < k : cell.k < k;
                             if (!on) continue;

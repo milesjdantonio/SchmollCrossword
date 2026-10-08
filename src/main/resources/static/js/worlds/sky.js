@@ -5,7 +5,7 @@
 //   lanterns drifting up.
 //   Board: each letter leaves something airy in its square (a feather, a tiny cloud, a kite, a balloon, a paper
 //   plane, a star); finished words get a rainbow ribbon.
-//   Win: a crowd of balloons launches past the board, a rainbow arcs across the screen and confetti drifts down.
+//   Win: a crowd of balloons launches past the board, three paper planes loop around it trailing clouds, confetti drifts down.
 
 (() => {
     const TAU = Math.PI * 2;
@@ -210,7 +210,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The win: balloons launch past the board, a rainbow arcs across the screen, confetti drifts down
+    // The win: balloons launch past the board, paper planes loop around it, confetti drifts down
     // ---------------------------------------------------------------------------------------------
     async function celebrate(c, { boardEl }) {
         if (U.motion() === "still") return;
@@ -229,30 +229,47 @@
         for (let i = 0; i < 4; i++) setTimeout(() => Sound.play("pop"), 300 + i * 260);
         await c.wait(1300);
         if (c.skipped) return;
-        // 2. a rainbow arcs across the whole screen
-        const R0 = Math.min(W * 0.55, H * 0.75), band = Math.max(10, R0 * 0.045);
-        const arcs = RAINBOW.map((col, i) => { const r = R0 - i * band; return `<path d="M${W / 2 - r} ${H} A${r} ${r} 0 0 1 ${W / 2 + r} ${H}" stroke="${col}" stroke-width="${band + 1}" fill="none" pathLength="1" style="animation-delay:${i * 0.06}s"/>`; }).join("");
-        const rb = U.el("div", { class: "sk-rainbow", html: `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${arcs}</svg>` });
-        overlay.appendChild(rb);
-        c.cleanup(() => rb.remove());
-        Sound.play("rainbow");
-        await c.wait(1100);
+        // 2. three little planes fly a loop-the-loop around the board, leaving cloud trails
+        const b = boardEl.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+        const R = Math.max(b.width, b.height) * 0.62, planes = [];
+        const pathAt = k => {                                       // 0..1: in from the left, once around the board, out to the right
+            if (k < 0.2) { const u = k / 0.2; return [U.lerp(-140, cx, u), cy + R]; }
+            if (k < 0.8) { const a = Math.PI / 2 - (k - 0.2) / 0.6 * Math.PI * 2; return [cx + Math.cos(a) * R * 1.1, cy + Math.sin(a) * R]; }
+            const u = (k - 0.8) / 0.2; return [U.lerp(cx, W + 160, u), cy + R - u * H * 0.25];
+        };
+        for (let i = 0; i < 3; i++) {
+            const pl = U.el("div", { class: "sk-plane", html: PLANE, style: { "--c": BALLOONS[i * 2] } });
+            overlay.appendChild(pl);
+            planes.push(pl);
+            const frames = [];
+            for (let f = 0; f <= 40; f++) {
+                const k = f / 40, [x, y] = pathAt(k), [x2, y2] = pathAt(Math.min(1, k + 0.01)), [x0, y0] = pathAt(Math.max(0, k - 0.01));
+                frames.push({ transform: `translate(${(x - 45).toFixed(0)}px, ${(y - 22).toFixed(0)}px) rotate(${(Math.atan2(y2 - y0, x2 - x0) * 180 / Math.PI).toFixed(1)}deg)` });
+            }
+            pl.animate(frames, { duration: 2600, delay: i * 260, easing: "linear", fill: "both" });
+        }
+        const trail = setInterval(() => planes.forEach(pl => {
+            const p = U.center(pl);
+            if (p.x > -20 && p.x < W + 20) FX.burst({ x: p.x, y: p.y, n: 1, colors: ["#ffffff"], shape: "circle", speed: [0, 10], gravity: -8, drag: 2, life: [1, 1.4], size: [7, 11] });
+        }), 45);
+        c.cleanup(() => { clearInterval(trail); planes.forEach(pl => pl.remove()); });
+        Sound.play("whoosh");
+        setTimeout(() => Sound.play("loop"), 700);
+        await c.wait(2400);
         if (c.skipped) return;
-        // 3. sparkles at both ends and confetti drifting down
-        FX.burst({ x: W / 2 - R0 + band * 3, y: H - 20, n: 40, colors: RAINBOW, shape: "star", angle: -Math.PI / 2, spread: 0.6, speed: [200, 500], gravity: 300, life: [1.2, 1.8], size: [4, 8], spin: 5 });
-        FX.burst({ x: W / 2 + R0 - band * 3, y: H - 20, n: 40, colors: RAINBOW, shape: "star", angle: -Math.PI / 2, spread: 0.6, speed: [200, 500], gravity: 300, life: [1.2, 1.8], size: [4, 8], spin: 5 });
-        FX.burst({ x: W / 2, y: -20, jitter: W / 2, jitterY: 10, n: 120, colors: RAINBOW, shape: "rect", angle: Math.PI / 2, spread: 0.4, speed: [60, 180], gravity: 220, drag: 0.5, life: [2.4, 3.4], size: [6, 9], delay: [0, 1] });
+        // 3. confetti drifts down from the clouds
+        FX.burst({ x: W / 2, y: -20, jitter: W / 2, jitterY: 10, n: 120, colors: BALLOONS, shape: "rect", angle: Math.PI / 2, spread: 0.4, speed: [60, 180], gravity: 220, drag: 0.5, life: [2.4, 3.4], size: [6, 9], delay: [0, 1] });
+        FX.burst({ x: cx, y: cy, n: 40, colors: ["#ffffff", "#ffd84a", "#bfe6ff"], shape: "star", speed: [150, 420], gravity: 160, life: [1.2, 1.8], size: [4, 8], spin: 5 });
         Sound.play("sparkle");
-        await c.wait(2300);
-        rb.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: "forwards" });
-        await c.wait(400);
+        clearInterval(trail);
+        await c.wait(2200);
     }
 
     // ---------------------------------------------------------------------------------------------
     // Title card: a little plane flies in towing a banner
     // ---------------------------------------------------------------------------------------------
     const PLANE = `<svg viewBox="0 0 120 60" aria-hidden="true">
-        <path d="M14 30Q20 18 60 20L96 24Q112 28 112 32Q112 36 96 38L60 40Q20 42 14 30Z" fill="#ff5c6c"/>
+        <path d="M14 30Q20 18 60 20L96 24Q112 28 112 32Q112 36 96 38L60 40Q20 42 14 30Z" style="fill: var(--c, #ff5c6c)"/>
         <path d="M44 22L60 4H70L64 22Z M44 38L60 56H70L64 38Z" fill="#ffd84a"/><path d="M18 28L8 14H16L28 26Z" fill="#ffd84a"/>
         <circle cx="84" cy="27" r="6" fill="#bfe6ff" stroke="#ffffff" stroke-width="2"/>
         <rect class="tcs-prop" x="112" y="14" width="4" height="32" rx="2" fill="#5a5a6a"/></svg>`;
@@ -338,7 +355,7 @@
         reveal: () => { noise({ type: "bandpass", f: 500, f2: 1600, d: 0.5, v: 0.08, q: 0.6 }); chime(0.2, 91, 0.04); },
         flip: () => chime(0, 91, 0.025),
         pop: () => tone({ f: 500, f2: 1100, type: "sine", d: 0.08, v: 0.07 }),
-        rainbow: () => [72, 76, 79, 84, 88, 91].forEach((n, i) => chime(i * 0.09, n, 0.045)),
+        loop: () => { tone({ f: 300, f2: 900, type: "sine", d: 0.8, v: 0.04, vib: 8 }); [72, 76, 79, 84, 88, 91].forEach((n, i) => chime(0.3 + i * 0.09, n, 0.04)); },
         sparkle: () => [91, 96, 100].forEach((n, i) => chime(i * 0.08, n, 0.03)),
         win: () => {},
         streak: () => [72, 79, 84, 88].forEach((n, i) => flute(i * 0.09, n, 0.06, 0.3)),
@@ -360,7 +377,7 @@
             hello: ["Pip here, your pilot! Buckle up for a puzzle.", "Welcome aboard! Skies are clear for solving.", "Hello from up here! The view is great."],
             start: ["Tap a square and start typing. Space flips Across and Down!", "Ready for takeoff? Fill in every square!"],
             word: ["Sky high!", "Smooth flying!", "On cloud nine!", "Soaring!", "Fly-tastic!", "Blue skies!"],
-            win: ["Balloons up! You did it!", "That solve was out of this world... almost!", "Over the rainbow!"],
+            win: ["Balloons up! You did it!", "That solve was out of this world... almost!", "Flying high, you did it!"],
             wrong: ["Bit of turbulence on a few of those.", "Some letters drifted off course."],
             right: ["Clear skies, all correct!", "A perfect landing!"],
             idle: ["Stuck? Try a crossing word for a new view.", "Take a deep breath of fresh air, then try the shortest clue."],

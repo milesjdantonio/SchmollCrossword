@@ -176,7 +176,7 @@ const Settings = (() => {
         hardWords: false,       // Unlimited Hard: allow the extremely hard words
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
-        design: "paper",        // the world: the id of one of js/worlds/*.js
+        design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)
         sound: true,            // sound effects (made in code, see sound.js)
         volume: 0.8,
         intro: true,            // play the start-up intro once per visit
@@ -188,7 +188,6 @@ const Settings = (() => {
     function load() {
         try {
             const raw = JSON.parse(localStorage.getItem(KEY)) || {};
-            if (raw.design === "classic") raw.design = "paper";      // the old Classic design is the Paper world now
             return { ...DEFAULTS, ...raw };
         } catch (err) {
             return { ...DEFAULTS };

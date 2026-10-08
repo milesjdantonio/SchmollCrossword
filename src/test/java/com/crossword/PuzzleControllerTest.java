@@ -36,6 +36,17 @@ class PuzzleControllerTest {
         assertEquals(400, unlimited.getStatusCode().value());
     }
 
+    // Time zones: a player's own date is used if it's within a day of the server's
+    @Test
+    void dailyDateFollowsThePlayersTimeZone() {
+        java.time.LocalDate today = java.time.LocalDate.of(2026, 10, 8);
+        assertEquals(today, PuzzleController.dailyDate(null, today), "no date: the server's day");
+        assertEquals(today.minusDays(1), PuzzleController.dailyDate("2026-10-07", today), "behind the server (e.g. Hawaii)");
+        assertEquals(today.plusDays(1), PuzzleController.dailyDate("2026-10-09", today), "ahead of the server (e.g. Tokyo)");
+        assertThrows(ResponseStatusException.class, () -> PuzzleController.dailyDate("2026-10-12", today), "next week");
+        assertThrows(ResponseStatusException.class, () -> PuzzleController.dailyDate("yesterday", today), "not a date");
+    }
+
     // Design pass: harder difficulties use bigger word lists
     @Test
     void difficultyPicksTheWordList() {

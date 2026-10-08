@@ -6,13 +6,12 @@
 //   Board: each letter leaves something rainy in its square (a raindrop, an umbrella, a rain boot, a leaf, a
 //   snail, a little cloud); finished words get a puddle with ripples.
 //   Win: the sky darkens, a big umbrella pops open over the board in a downpour, then the rain stops, the sun
-//   breaks through and a rainbow appears.
+//   breaks through and little umbrellas float down like parachutes.
 
 (() => {
     const TAU = Math.PI * 2;
     const { tone, noise, midi } = Sound;
     const UMBRELLAS = ["#ff5a6a", "#ffc93a", "#3aa8ff", "#3ac48a", "#b06aff", "#ff8a3a"];
-    const RAINBOW = ["#ff5c5c", "#ff9f40", "#ffd84a", "#6fd36a", "#4cb3ff", "#9a7cff"];
     const DROPS = ["#9ad0ff", "#cfe8ff", "#6ab4f0"];
     const dark = () => document.documentElement.dataset.theme === "dark";
 
@@ -221,7 +220,7 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The win: a downpour, a big umbrella pops open over the board, then the sun and a rainbow
+    // The win: a downpour, a big umbrella pops open over the board, then sunshine and floating umbrellas
     // ---------------------------------------------------------------------------------------------
     const UMBRELLA = `<svg viewBox="-120 -80 240 150" aria-hidden="true">
         <path d="M-110 0Q-100 -76 0 -78Q100 -76 110 0Q92 -14 73 0Q55 -14 37 0Q18 -14 0 0Q-18 -14 -37 0Q-55 -14 -73 0Q-92 -14 -110 0Z" fill="#ff5a6a"/>
@@ -257,28 +256,35 @@
             await c.wait(250);
             if (c.skipped) return;
         }
-        // 3. the rain stops: the sun breaks through and a rainbow arcs over the city
+        // 3. the rain stops: the sun breaks through and little umbrellas float down like parachutes
         dim.classList.add("clear");
         Sound.play("sunshine");
         const rays = U.el("div", { class: "rn-sun" });
         overlay.appendChild(rays);
         c.cleanup(() => rays.remove());
-        const R0 = Math.min(W * 0.55, H * 0.75), band = Math.max(10, R0 * 0.045);
-        const arcs = RAINBOW.map((col, i) => { const r = R0 - i * band; return `<path d="M${W / 2 - r} ${H} A${r} ${r} 0 0 1 ${W / 2 + r} ${H}" stroke="${col}" stroke-width="${band + 1}" fill="none" pathLength="1" style="animation-delay:${i * 0.06}s"/>`; }).join("");
-        const rb = U.el("div", { class: "sk-rainbow rn-rainbow", html: `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${arcs}</svg>` });
-        overlay.appendChild(rb);
-        c.cleanup(() => rb.remove());
         umb.animate([{ transform: "none" }, { transform: "translateY(-30px) rotate(-12deg) scale(.9)", opacity: 0 }], { duration: 700, delay: 300, easing: "ease-in", fill: "forwards" });
+        const minis = [], m = U.motion() === "lite" ? 8 : 16;
+        for (let i = 0; i < m; i++) {
+            const mini = U.el("div", { class: "rn-mini", html: MINI, style: { "--c": UMBRELLAS[i % UMBRELLAS.length], left: (i + 0.5) / m * W - 22 + U.rand(-30, 30) + "px" } });
+            overlay.appendChild(mini);
+            minis.push(mini);
+            const sway = U.rand(20, 50), fall = H + 120;
+            mini.animate([0, 0.25, 0.5, 0.75, 1].map((k, j) => ({ transform: `translate(${(Math.sin(j * 1.6) * sway).toFixed(0)}px, ${(k * fall).toFixed(0)}px) rotate(${(Math.cos(j * 1.6) * 14).toFixed(0)}deg)` })),
+                { duration: U.rand(3000, 4200), delay: U.rand(0, 900), easing: "linear", fill: "both" });
+        }
+        c.cleanup(() => minis.forEach(n => n.remove()));
         await c.wait(1000);
         if (c.skipped) return;
         // 4. glittering droplets
         FX.burst({ x: W / 2, y: H / 2, jitter: W / 2, jitterY: H / 2, n: 50, colors: ["#ffffff", "#cfe8ff", "#fff6c8"], shape: "star", speed: [5, 25], gravity: 30, life: [0.8, 1.4], size: [3, 6], delay: [0, 0.8], spin: 3 });
         Sound.play("sparkle");
-        await c.wait(2000);
-        rb.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: "forwards" });
+        await c.wait(2400);
         rays.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: "forwards" });
         await c.wait(450);
     }
+    // a tiny umbrella floating down (its canopy takes the colour --c)
+    const MINI = `<svg viewBox="-30 -24 60 50" aria-hidden="true"><path d="M-28 0Q-26 -22 0 -22Q26 -22 28 0Q21 -5 14 0Q7 -5 0 0Q-7 -5 -14 0Q-21 -5 -28 0Z" style="fill: var(--c)"/>
+        <path d="M-14 0Q-10 -16 0 -22Q10 -16 14 0" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="2"/><path d="M0 0V18Q0 23 -5 22" stroke="#4a4a4a" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`;
 
     // ---------------------------------------------------------------------------------------------
     // Title card: a fogged-up window is wiped clear to show the puzzle's name
@@ -395,7 +401,7 @@
             hello: ["Ribbit! I'm Puddles. Perfect puzzle weather!", "Welcome in out of the rain! Cozy up with a crossword.", "Rainy days are for crosswords!"],
             start: ["Tap a square and start typing. Space flips Across and Down!", "Let's make a splash! Fill every square."],
             word: ["Splash!", "Ribbit-ing!", "Toad-ally right!", "Making waves!", "Drip drop, nice!", "Hop to it!"],
-            win: ["The sun came out just for you!", "A rainbow-worthy solve!", "Toad-ally amazing!"],
+            win: ["The sun came out just for you!", "What a splash-tacular solve!", "Toad-ally amazing!"],
             wrong: ["Hmm, a few of those are a bit soggy.", "Some letters slipped in the puddles."],
             right: ["Clear skies, all correct!", "Right as rain!"],
             idle: ["Stuck? Try a crossing word, it might clear things up.", "Listen to the rain for a sec, then try the shortest clue."],

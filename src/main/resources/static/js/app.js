@@ -34,7 +34,7 @@ const App = (() => {
         if (v === "home") drawHome();
         if (v === "settings") drawSettings();
         if (v === "stats") drawStats();
-        document.querySelectorAll(".world-card").forEach(c => c.classList.toggle("on", c.dataset.wid === w.id));
+        document.querySelectorAll(".world-card, .world-classic-bar").forEach(c => c.classList.toggle("on", c.dataset.wid === w.id));
         root.classList.toggle("mode-locked", w.modes.length < 2);
     }
 
@@ -42,11 +42,21 @@ const App = (() => {
     function worldCards(container, { compact = false } = {}) {
         container.innerHTML = "";
         for (const w of Worlds.list) {
+            if (w.plain) continue;                    // Classic isn't a card: it's the plain bar underneath
             const card = U.el("button", { type: "button", class: "world-card" + (w.id === Settings.get("design") ? " on" : "") + (compact ? " compact" : ""), "data-wid": w.id, "aria-label": "Switch to the " + w.name + " world" },
                 U.el("canvas", { class: "wc-preview", "aria-hidden": "true" }),
                 U.el("span", { class: "wc-label" }, U.el("b", {}, U.el("i", { text: w.icon }), " " + w.name), compact ? null : U.el("small", { text: w.tagline })));
             container.appendChild(card);
             card.addEventListener("click", () => switchWorld(w.id));
+        }
+        // the Classic world: a plain bar across the bottom
+        const plain = Worlds.list.find(w => w.plain);
+        if (plain) {
+            const on = plain.id === Settings.get("design");
+            const bar = U.el("button", { type: "button", class: "world-classic-bar" + (on ? " on" : ""), "data-wid": plain.id, "aria-label": "Switch to the plain Classic page" },
+                U.el("b", { text: plain.name }), U.el("small", { text: on ? "On: a plain page with no extras" : "A plain page with no extras" }));
+            bar.addEventListener("click", () => switchWorld(plain.id));
+            container.appendChild(bar);
         }
         // draw the previews once laid out; animate one while it's hovered
         requestAnimationFrame(() => container.querySelectorAll(".world-card").forEach(card => {
@@ -369,7 +379,8 @@ const App = (() => {
         const box = $("#intro");
         let seen = false;
         try { seen = sessionStorage.getItem("schmoll.introSeen") === "1"; } catch (err) { /* blocked */ }
-        if (!force && (!Settings.get("intro") || seen || U.motion() === "still")) { box.hidden = true; return false; }
+        const plain = Worlds.current && Worlds.current.plain;          // the Classic page skips the intro
+        if (!force && (!Settings.get("intro") || seen || plain || U.motion() === "still")) { box.hidden = true; return false; }
         try { sessionStorage.setItem("schmoll.introSeen", "1"); } catch (err) { /* blocked */ }
         root.classList.add("intro-on");
         box.hidden = false;
@@ -381,7 +392,7 @@ const App = (() => {
             <div class="intro-press">
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <button type="button" class="intro-start">PRESS START</button>
-                <div class="intro-worlds" aria-hidden="true">${Worlds.list.map((w, i) => `<span class="iw" style="--i:${i}">${w.icon}</span>`).join("")}</div>
+                <div class="intro-worlds" aria-hidden="true">${Worlds.list.filter(w => !w.plain).map((w, i) => `<span class="iw" style="--i:${i}">${w.icon}</span>`).join("")}</div>
                 <small>click anywhere or press any key · sound on \u{1F50A}</small>
             </div>
             <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;
@@ -405,7 +416,7 @@ const App = (() => {
         box.querySelector(".intro-ticker").remove();
         box.insertAdjacentHTML("beforeend", sketchGrid() + `
             <div class="intro-stage">
-                <div class="intro-logo" aria-label="Schmoll Crossword"><div class="intro-orbit" aria-hidden="true">${Worlds.list.map((w, i) => `<span class="io" style="--i:${i};--n:${Worlds.list.length}"><b>${w.icon}</b></span>`).join("")}</div></div>
+                <div class="intro-logo" aria-label="Schmoll Crossword"><div class="intro-orbit" aria-hidden="true">${Worlds.list.filter(w => !w.plain).map((w, i, all) => `<span class="io" style="--i:${i};--n:${all.length}"><b>${w.icon}</b></span>`).join("")}</div></div>
                 <p class="intro-tag"><span class="it-clue">1 ACROSS</span><span class="it-type"></span><i class="it-caret"></i></p>
                 <small class="intro-skip">click to continue</small>
             </div>`);
