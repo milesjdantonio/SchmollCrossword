@@ -204,4 +204,6 @@ All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which
 - **Sniglet** and **Quicksand** (Snow Day). https://fonts.google.com/specimen/Sniglet ,
   https://fonts.google.com/specimen/Quicksand
 - **Patua One** (Acorn Woods). https://fonts.google.com/specimen/Patua+One
+- **Baloo 2** (Coral Reef). https://fonts.google.com/specimen/Baloo+2
+- **Lilita One** (Candy Hills). https://fonts.google.com/specimen/Lilita+One
 - Sounds are generated in code (Web Audio API), so there are no sound files or licenses.

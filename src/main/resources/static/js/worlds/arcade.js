@@ -13,7 +13,14 @@
     // The background
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
-        const preview = !!opts.preview;
+        const preview = !!opts.preview, day = opts.theme === "light";
+        // night = the synthwave drive; day = a pastel vaporwave afternoon with pixel clouds
+        const P = day
+            ? { sky: ["#8fe3ff", "#c9c2ff", "#ffc4ec", "#ffb38a"], floor: ["#ffe1f4", "#f3c8ff"], far: ["#f0b3f2", "rgba(160,60,200,.6)"],
+                near: ["#e39be8", "rgba(0,150,200,.6)"], grid: "255,60,170", horizon: "rgba(255,255,255,.95)", palm: "#6b2f8a", glow: "rgba(255,160,200,.45)" }
+            : { sky: ["#07011a", "#240744", "#6b0f6f", "#ff2a6d"], floor: ["#1d0338", "#040010"], far: ["#1a0533", "rgba(255,42,109,.75)"],
+                near: ["#11022a", "rgba(5,217,232,.7)"], grid: "255,42,109", horizon: "rgba(255,120,170,.9)", palm: "#0a0118", glow: "rgba(255,90,140,.35)" };
+        let clouds = [];
         let hz, sunR, sun, stars, far, near, sky = null, floor = null;
         let ufo = null, nextUfo = preview ? 999 : U.rand(8, 16);
 
@@ -28,7 +35,8 @@
             sun = document.createElement("canvas");
             sun.width = sun.height = Math.ceil(sunR * 2 + 4);
             const R = U.rng(2049);
-            stars = Array.from({ length: preview ? 40 : 120 }, () => ({ x: R() * W, y: R() * hz * 0.85, r: R() * 1.3 + 0.4, tw: R() * TAU }));
+            stars = day ? [] : Array.from({ length: preview ? 40 : 120 }, () => ({ x: R() * W, y: R() * hz * 0.85, r: R() * 1.3 + 0.4, tw: R() * TAU }));
+            clouds = day ? Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: R() * hz * 0.55, s: Math.round(3 + R() * 4), sp: 6 + R() * 10, w: 4 + Math.floor(R() * 5) })) : [];
             far = ridge(11, 14, H * 0.17);
             near = ridge(23, 9, H * 0.1);
             sky = floor = null;
@@ -59,8 +67,8 @@
             g.save();
             g.translate(x, base);
             g.scale(flip * s, s);
-            g.fillStyle = "#0a0118";
-            g.strokeStyle = "#0a0118";
+            g.fillStyle = P.palm;
+            g.strokeStyle = P.palm;
             g.lineCap = "round";
             g.lineWidth = 9;
             g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(14, -80, 44, -150); g.stroke();
@@ -99,13 +107,13 @@
             draw(g, t, dt, inp) {
                 if (!sky) {
                     sky = g.createLinearGradient(0, 0, 0, hz);
-                    sky.addColorStop(0, "#07011a");
-                    sky.addColorStop(0.5, "#240744");
-                    sky.addColorStop(0.82, "#6b0f6f");
-                    sky.addColorStop(1, "#ff2a6d");
+                    sky.addColorStop(0, P.sky[0]);
+                    sky.addColorStop(0.5, P.sky[1]);
+                    sky.addColorStop(0.82, P.sky[2]);
+                    sky.addColorStop(1, P.sky[3]);
                     floor = g.createLinearGradient(0, hz, 0, H);
-                    floor.addColorStop(0, "#1d0338");
-                    floor.addColorStop(1, "#040010");
+                    floor.addColorStop(0, P.floor[0]);
+                    floor.addColorStop(1, P.floor[1]);
                 }
                 g.fillStyle = sky;
                 g.fillRect(0, 0, W, hz);
@@ -113,11 +121,22 @@
                     g.fillStyle = `rgba(255,255,255,${(0.35 + 0.65 * Math.abs(Math.sin(t * 1.4 + s.tw))).toFixed(2)})`;
                     g.fillRect(s.x, s.y, s.r * 1.4, s.r * 1.4);
                 }
+                // pixel clouds drifting by (daytime)
+                for (const cl of clouds) {
+                    cl.x += cl.sp * dt;
+                    if (cl.x > W + 80) cl.x = -120;
+                    const px = cl.s * 4, cx = Math.round(cl.x - inp.px * 6), cy = Math.round(cl.y);
+                    g.fillStyle = "rgba(255,255,255,.9)";
+                    g.fillRect(cx, cy + px, cl.w * px, px * 1.6);
+                    g.fillRect(cx + px, cy, (cl.w - 2) * px, px * 2.6);
+                    g.fillStyle = "rgba(220,200,255,.8)";
+                    g.fillRect(cx, cy + px * 2.6, cl.w * px, px * 0.5);
+                }
                 // the sun and its glow
                 const sx = W / 2 - inp.px * 12, sy = hz - sunR * 0.45;
                 g.globalCompositeOperation = "lighter";
                 const glow = g.createRadialGradient(sx, sy, sunR * 0.6, sx, sy, sunR * 2.3);
-                glow.addColorStop(0, "rgba(255,90,140,.35)");
+                glow.addColorStop(0, P.glow);
                 glow.addColorStop(1, "rgba(255,42,109,0)");
                 g.fillStyle = glow;
                 g.fillRect(sx - sunR * 2.3, sy - sunR * 2.3, sunR * 4.6, sunR * 4.6);
@@ -133,7 +152,7 @@
                     if (ufo.x > W + 60) { ufo = null; nextUfo = U.rand(14, 26); }
                 }
                 // wireframe mountains
-                for (const [pts, fill, line, shift] of [[far, "#1a0533", "rgba(255,42,109,.75)", 6], [near, "#11022a", "rgba(5,217,232,.7)", 14]]) {
+                for (const [pts, fill, line, shift] of [[far, P.far[0], P.far[1], 6], [near, P.near[0], P.near[1], 14]]) {
                     const ox = -inp.px * shift;
                     g.beginPath();
                     g.moveTo(-20, hz);
@@ -150,12 +169,12 @@
                 g.fillStyle = floor;
                 g.fillRect(0, hz, W, H - hz);
                 const vx = W / 2 - inp.px * 40;
-                g.globalCompositeOperation = "lighter";
+                g.globalCompositeOperation = day ? "source-over" : "lighter";
                 for (const [width, alpha] of [[4, 0.18], [1.5, 1]]) {
                     g.lineWidth = width;
                     for (let j = -14; j <= 14; j++) {
                         const bx = vx + j * W * 0.11;
-                        g.strokeStyle = `rgba(255,42,109,${(0.55 * alpha).toFixed(2)})`;
+                        g.strokeStyle = `rgba(${P.grid},${(0.55 * alpha).toFixed(2)})`;
                         g.beginPath(); g.moveTo(vx + j * W * 0.006, hz); g.lineTo(bx + (bx - vx) * 0.4, H + 40); g.stroke();
                     }
                     const frac = (t * 1.1) % 1;
@@ -164,14 +183,14 @@
                         const y = hz + (H - hz) * 0.95 / z ** 1.05;
                         if (y > H + 4) continue;
                         const k = (y - hz) / (H - hz);
-                        g.strokeStyle = `rgba(255,42,109,${((0.12 + 0.88 * k) * alpha).toFixed(2)})`;
+                        g.strokeStyle = `rgba(${P.grid},${((0.12 + 0.88 * k) * alpha).toFixed(2)})`;
                         g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
                     }
                 }
                 // the horizon line glows
                 const hg = g.createLinearGradient(0, hz - 6, 0, hz + 10);
                 hg.addColorStop(0, "rgba(255,42,109,0)");
-                hg.addColorStop(0.5, "rgba(255,120,170,.9)");
+                hg.addColorStop(0.5, P.horizon);
                 hg.addColorStop(1, "rgba(255,42,109,0)");
                 g.fillStyle = hg;
                 g.fillRect(0, hz - 6, W, 16);
@@ -383,8 +402,8 @@
     };
 
     Worlds.register({
-        id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave sunsets, combos & pixel fireworks",
-        modes: ["dark"],
+        id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave nights or pastel vaporwave days, combos & pixel fireworks",
+        modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "pixels",
         mascot: { name: "BIT", draw: drawBit },
         lines: {

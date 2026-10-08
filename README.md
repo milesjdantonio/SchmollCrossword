@@ -152,7 +152,7 @@ Settings you can change with environment variables on the host:
 |---|---|---|
 | `ANTHROPIC_API_KEY` | (none) | The Claude API key. Required. |
 | `PUZZLE_DIR` | `/data` in Docker, `puzzles` locally | Where daily puzzles are saved |
-| `UNLIMITED_PER_PERSON_PER_HOUR` | 10 | Unlimited puzzles one player (IP address) can make per hour |
+| `UNLIMITED_PER_PERSON_PER_DAY` | 10 | Unlimited puzzles one player (IP address) can make in any 24 hours (dailies don't count) |
 | `UNLIMITED_EVERYONE_PER_DAY` | 200 | Unlimited puzzles everyone together can make in 24 hours: a hard cap on the daily cost |
 | `TZ` | `America/New_York` | The time zone whose midnight starts a new daily |
 

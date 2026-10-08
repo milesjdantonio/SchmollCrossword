@@ -79,7 +79,7 @@ const Mascot = (() => {
         setMood(mood, 3);
         bubble.classList.remove("hide");
         U.restart(bubble, "pop");
-        if (!quiet) Sound.play("blip");
+        // no sound when it talks: it talks on its own (tips, idle hints), and sounds should only answer the player
         let n = 0;
         typing = 1;
         text.textContent = "";

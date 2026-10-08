@@ -271,6 +271,11 @@ const App = (() => {
         else { Settings.set(input.name, input.value); Sound.play("select"); }
     });
     form.elements.volume.addEventListener("input", e => Settings.set("volume", Number(e.target.value) / 100));
+    // About & credits: report a problem with the puzzle you're playing (or go play one first)
+    $("#about-report").addEventListener("click", () => {
+        if (Game.state.puzzle) Game.openReport();
+        else location.hash = "#daily";
+    });
     $("#replay-intro").addEventListener("click", () => { sessionStorage.removeItem("schmoll.introSeen"); intro(true); });
     $("#reset-data").addEventListener("click", async () => {
         if (!(await U.ask({ title: "Clear all your data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Clear it", no: "Cancel" }))) return;

@@ -172,6 +172,21 @@ const FX = (() => {
                 g.restore();
                 break;
             }
+            case "bubble": {                         // a see-through bubble with a highlight, wobbling as it rises
+                const wob = 1 + Math.sin(p.age * 9 + p.seed) * 0.06;
+                g.lineWidth = Math.max(1, s * 0.12);
+                g.beginPath();
+                g.ellipse(p.x, p.y, s * wob, s / wob, 0, 0, Math.PI * 2);
+                g.stroke();
+                g.globalAlpha *= 0.25;
+                g.fill();
+                g.globalAlpha /= 0.25;
+                g.fillStyle = "rgba(255,255,255,.85)";
+                g.beginPath();
+                g.arc(p.x - s * 0.35, p.y - s * 0.35, s * 0.22, 0, Math.PI * 2);
+                g.fill();
+                break;
+            }
             case "text":
                 g.font = `${s}px sans-serif`;
                 g.textAlign = "center";
@@ -333,6 +348,7 @@ const FX = (() => {
     // ---- full-screen transitions in each world's style ----
     // style: "page" (a sheet of paper slides over), "warp" (stars streak, white-out), "leaves" (a wall of leaves
     // sweeps across), "autumn" (the same in fall colors), "blizzard" (a snowstorm blows in to a white-out),
+    // "tide" (water rises with bubbles), "frosting" (pink frosting drips down over the screen),
     // "pixels" (blocks fill in), "iris" (a closing circle). onCovered runs while all is hidden.
     function transition(style, onCovered) {
         if (U.motion() === "still") { onCovered && onCovered(); return Promise.resolve(); }
@@ -387,6 +403,63 @@ const FX = (() => {
                             if (!on) continue;
                             c.fillStyle = (cell.x + cell.y) % 7 === 0 ? C.accent : (cell.x * 3 + cell.y) % 11 === 0 ? C.accent2 : C.bg;
                             c.fillRect(cell.x * SZ, cell.y * SZ, SZ + 1, SZ + 1);
+                        }
+                    } else if (style === "tide") {
+                        // the water rises from the bottom with a wavy surface and bubbles, then drains away
+                        const level = H * (1.08 - k * 1.2);
+                        const wg = c.createLinearGradient(0, level, 0, H);
+                        wg.addColorStop(0, "#3fc4dc");
+                        wg.addColorStop(0.3, "#1679b0");
+                        wg.addColorStop(1, "#0a3a6b");
+                        c.fillStyle = wg;
+                        c.beginPath();
+                        c.moveTo(0, H);
+                        for (let x = 0; x <= W + 20; x += 20) c.lineTo(x, level + Math.sin(x * 0.012 + t * 6) * 16 + Math.sin(x * 0.031 - t * 4) * 7);
+                        c.lineTo(W, H);
+                        c.fill();
+                        c.strokeStyle = "rgba(255,255,255,.7)";
+                        c.lineWidth = 3;
+                        c.beginPath();
+                        for (let x = 0; x <= W + 20; x += 20) c[x ? "lineTo" : "moveTo"](x, level + Math.sin(x * 0.012 + t * 6) * 16 + Math.sin(x * 0.031 - t * 4) * 7);
+                        c.stroke();
+                        c.strokeStyle = "rgba(255,255,255,.6)";
+                        c.lineWidth = 1.5;
+                        for (const f of flakes) {
+                            const y = H - ((f.y + t * 0.5 * f.sp) % 1) * H * 1.1;
+                            if (y < level + 10) continue;
+                            c.beginPath();
+                            c.arc(f.x * W + Math.sin(t * 5 + f.ph) * 6, y, f.r * 1.6, 0, Math.PI * 2);
+                            c.stroke();
+                        }
+                    } else if (style === "frosting") {
+                        // pink frosting drips down from the top until it covers everything, then slides off the bottom
+                        const p = leaving ? 1 + (1 - k) : k;
+                        const edge = p <= 1 ? p * H * 1.25 : H * 1.25 + (p - 1) * H * 1.3;
+                        const top = p <= 1 ? -20 : (p - 1) * H * 1.3 - 20;
+                        c.fillStyle = "#ff9ec7";
+                        c.beginPath();
+                        c.moveTo(0, top);
+                        c.lineTo(W, top);
+                        for (let i = flakes.length > 40 ? 40 : flakes.length, x = W; i > 0; i--) {
+                            const f = flakes[i], w = W / 40, drip = (0.05 + f.r * 0.035) * H;
+                            c.lineTo(x, edge - drip * 0.3);
+                            c.quadraticCurveTo(x - w * 0.5, edge + drip, x - w, edge - drip * 0.3);
+                            x -= w;
+                        }
+                        c.closePath();
+                        c.fill();
+                        c.fillStyle = "rgba(255,255,255,.35)";
+                        c.fillRect(0, top, W, Math.max(0, edge - top) * 0.04);
+                        const sprinkle = ["#ffd23f", "#3ec1d3", "#7cdc5a", "#ffffff", "#a26bff", "#ff5c8a"];
+                        for (let i = 0; i < flakes.length; i++) {
+                            const f = flakes[i], y = top + f.y * (edge - top) * 0.92;
+                            if (y < top || y > edge - 20) continue;
+                            c.save();
+                            c.translate(f.x * W, y);
+                            c.rotate(f.ph * 3);
+                            c.fillStyle = sprinkle[i % sprinkle.length];
+                            c.fillRect(-5, -1.6, 10, 3.2);
+                            c.restore();
                         }
                     } else if (style === "blizzard") {
                         // a snowstorm blows in from the left, thickens into a white-out, then blows away

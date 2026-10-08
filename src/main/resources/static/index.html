@@ -9,17 +9,16 @@
          Nunito, Caveat, Patrick Hand (Notebook) · Orbitron, Exo 2 (Space) · Fredoka (Garden) · Press Start 2P, VT323 (Arcade) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Patrick+Hand&family=Patua+One&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Caveat:wght@600;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=Lilita+One&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Patrick+Hand&family=Patua+One&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/worlds.css">
     <script>
         // Apply the saved world and mode before the page is drawn, so nothing flashes
         try {
             const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
-            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel" }[s.design] || "paper";
-            const darkOnly = world === "space" || world === "arcade";
+            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel", ocean: "ocean", candy: "candy" }[s.design] || "paper";
             document.documentElement.dataset.world = world;
-            document.documentElement.dataset.theme = darkOnly || s.theme === "dark" ? "dark" : "light";
+            document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";   // every world has both modes
         } catch (err) { /* storage blocked: the Notebook world, light */ }
     </script>
 </head>
@@ -77,7 +76,7 @@
                     </article>
                     <article class="card unlimited-card">
                         <header class="card-head"><h2>Unlimited</h2><span class="kicker">just for fun</span></header>
-                        <p class="card-blurb">A brand-new puzzle whenever you want. Harder difficulties use harder words. No points, all glory.</p>
+                        <p class="card-blurb">A brand-new puzzle whenever you want (up to 10 a day). Harder difficulties use harder words. No points, all glory.</p>
                         <a class="btn primary big" href="#unlimited">Play Unlimited &#9654;</a>
                     </article>
                     <article class="card streak-card">
@@ -105,6 +104,7 @@
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
                         <button type="button" class="challenge-btn" data-difficulty="challenge" title="Challenge: a bigger grid (6&times;6 to 9&times;9) with longer words, worth more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
+                        <span class="unlimited-left" id="unlimited-left" hidden></span>
                         <button type="button" class="new-puzzle" id="new-puzzle" hidden>&#8635; New puzzle</button>
                     </nav>
                 </div>
@@ -201,7 +201,7 @@
                             <label class="opt"><input type="radio" name="theme" value="light"><span>&#9728; Light</span></label>
                             <label class="opt"><input type="radio" name="theme" value="dark"><span>&#9790; Dark</span></label>
                         </div>
-                        <p class="hint">Notebook turns into a blueprint at night; the Garden gets a moon and fireflies. <span id="mode-note">This world is always dark.</span></p>
+                        <p class="hint">Every world has a day and a night look: Notebook turns into a blueprint, Deep Space trades its sun for a black hole, the reef glows in the dark. <span id="mode-note">This world is always dark.</span></p>
                     </fieldset>
                     <fieldset class="card">
                         <legend>Sound</legend>
@@ -257,9 +257,9 @@
                                 which is why the game stays non-commercial.</dd>
                             <dt>Clues</dt>
                             <dd>Written for each puzzle by Claude, an AI model made by Anthropic, then checked by the game.
-                                Spot a bad one? Use &ldquo;Report a problem&rdquo; under the puzzle.</dd>
+                                Spot a bad one? <button type="button" class="link-btn" id="about-report">Report a problem</button> (or use the link under any puzzle).</dd>
                             <dt>Fonts</dt>
-                            <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Sniglet, Quicksand and Patua One,
+                            <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Sniglet, Quicksand, Patua One, Baloo 2 and Lilita One,
                                 from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a>, under the SIL Open Font License.</dd>
                             <dt>Art &amp; sound</dt>
                             <dd>Every scene, animation and sound is drawn or made in code for this game. No image or sound files.</dd>
@@ -286,6 +286,8 @@
     <script src="js/worlds/arcade.js"></script>
     <script src="js/worlds/snow.js"></script>
     <script src="js/worlds/squirrel.js"></script>
+    <script src="js/worlds/ocean.js"></script>
+    <script src="js/worlds/candy.js"></script>
     <script src="js/mascot.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/game.js"></script>

@@ -89,7 +89,7 @@ const Game = (() => {
     }
     function snapshot() {
         return JSON.parse(JSON.stringify({
-            seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed,
+            seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked,
             seconds: game.seconds, solved: game.solved, surrendered: game.surrendered, checks: game.checks,
             squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed,
             row: game.row, col: game.col, direction: game.direction, result: game.result
@@ -98,6 +98,7 @@ const Game = (() => {
     function restore(saved) {
         Object.assign(game, {
             letters: saved.letters, wrong: saved.wrong, revealed: saved.revealed, seconds: saved.seconds,
+            locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
             squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0,
             row: saved.row, col: saved.col, direction: saved.direction, testWin: false, celebrating: false
@@ -123,6 +124,23 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     // Loading puzzles
     // ---------------------------------------------------------------------------------------------
+    // Unlimited: each player gets 10 a day (they're paid Claude calls); the server says how many are left
+    async function drawUnlimitedLeft() {
+        const el = $("#unlimited-left");
+        try {
+            const r = await (await fetch("/api/unlimited/left")).json();
+            if (r.left > 0) el.textContent = `${r.left} of ${r.limit} left today`;
+            else {
+                const m = Math.ceil(r.nextInSeconds / 60), h = Math.floor(m / 60);
+                el.textContent = `0 of ${r.limit} left · next in ${h ? h + "h " : ""}${m % 60}m`;
+            }
+            el.classList.toggle("out", r.left === 0);
+            el.classList.toggle("low", r.left > 0 && r.left <= 3);
+        } catch (err) {
+            el.textContent = "";
+        }
+    }
+
     async function loadPuzzle(mode, difficulty) {
         const myLoad = ++loadCounter;
         statusEl.innerHTML = "";
@@ -135,11 +153,12 @@ const Game = (() => {
             let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
             if (mode === "unlimited" && difficulty === "hard" && Settings.get("hardWords")) url += "&hardWords=true";
             const response = await fetch(url);
-            if (response.status === 429) throw new Error("you've made a lot of puzzles recently. Take a break and try again later, or play today's Daily.");
+            if (response.status === 429) { drawUnlimitedLeft(); throw new Error("you've used today's Unlimited puzzles. Come back later, or play today's Daily (those are always free)."); }
             if (!response.ok) throw new Error("the server answered " + response.status);
             const puzzle = await response.json();
             if (myLoad !== loadCounter) return;
             lastPuzzle[slotOf(puzzle)] = puzzle;
+            if (mode === "unlimited") drawUnlimitedLeft();
             if (U.view() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty)) return;   // they moved on
             startGame(puzzle);
             statusEl.hidden = true;
@@ -164,7 +183,7 @@ const Game = (() => {
         else if (!sameGrid) {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
-                letters: blank(""), wrong: blank(false), revealed: blank(false), seconds: 0, solved: false, surrendered: false,
+                letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
                 squaresChecked: 0, squaresRevealed: 0, checks: 0, testWin: false, celebrating: false, result: null
             });
         }
@@ -264,6 +283,8 @@ const Game = (() => {
     }
 
     let lastClue = null, doneWords = null, doneKey = "";
+    // A square is locked once it's revealed, or checked and found right: it can't be typed over or erased
+    const isLocked = (row, col) => game.revealed[row][col] || game.locked[row][col];
     function render() {
         if (!game.puzzle) return;
         const current = currentEntry(), size = game.puzzle.size;
@@ -280,6 +301,7 @@ const Game = (() => {
                 cell.classList.toggle("selected", row === game.row && col === game.col && !game.solved);
                 cell.classList.toggle("wrong", game.wrong[row][col]);
                 cell.classList.toggle("revealed", game.revealed[row][col]);
+                cell.classList.toggle("locked", game.locked[row][col] && !game.revealed[row][col]);
             }
         }
         boardEl.classList.toggle("solved", game.solved && !game.surrendered);
@@ -520,8 +542,10 @@ const Game = (() => {
         return cells;
     }
     // Check: mark wrong letters (empty squares aren't marked). 5 points per square in the scope.
+    // Check: wrong letters get crossed out; right ones are LOCKED in (a check mark in the corner) so they can't
+    // be changed. Squares that are already locked aren't checked (or charged for) again.
     function check(scope) {
-        const cells = scopeCells(scope);
+        const cells = scopeCells(scope).filter(([row, col]) => !isLocked(row, col));
         game.squaresChecked += cells.length;
         game.checks++;
         let anyWrong = false, anyFilled = false;
@@ -530,7 +554,7 @@ const Game = (() => {
             if (letter) anyFilled = true;
             game.wrong[row][col] = letter !== "" && letter !== game.puzzle.solution[row][col];
             if (game.wrong[row][col]) { anyWrong = true; U.restart(game.cells[row][col], "shake"); }
-            else if (letter) U.restart(game.cells[row][col], "ok");
+            else if (letter) { game.locked[row][col] = true; U.restart(game.cells[row][col], "lock-in"); }
         }
         Sound.play(anyWrong ? "wrong" : "right");
         Bus.emit("check", { anyWrong, anyFilled });
@@ -628,7 +652,7 @@ const Game = (() => {
     function typeLetter(letter) {
         touched();
         const row = game.row, col = game.col, cell = game.cells[row][col];
-        if (!game.revealed[row][col]) {                  // revealed squares are locked: the cursor just moves on
+        if (!isLocked(row, col)) {                       // locked squares (revealed, or checked right): the cursor just moves on
             game.letters[row][col] = letter;
             game.wrong[row][col] = false;
             U.restart(cell, "typed");
@@ -648,12 +672,12 @@ const Game = (() => {
     function backspace() {
         touched();
         const clear = (row, col) => {
-            if (game.revealed[row][col]) return;
+            if (isLocked(row, col)) return;
             if (game.letters[row][col] !== "") { Sound.play("erase"); Bus.emit("erase", { row, col }); }
             game.letters[row][col] = "";
             game.wrong[row][col] = false;
         };
-        if (game.letters[game.row][game.col] !== "" && !game.revealed[game.row][game.col]) clear(game.row, game.col);
+        if (game.letters[game.row][game.col] !== "" && !isLocked(game.row, game.col)) clear(game.row, game.col);
         else {
             const cells = cellsOf(currentEntry());
             const index = cells.findIndex(([r, c]) => r === game.row && c === game.col);
@@ -764,6 +788,7 @@ const Game = (() => {
         send.addEventListener("click", async () => {
             if (!text.value.trim()) { err.textContent = "Please say what's wrong first."; text.focus(); return; }
             send.disabled = true;
+            send.textContent = "Sending…";
             err.textContent = "";
             try {
                 const response = await fetch("/api/report", { method: "POST", headers: { "Content-Type": "application/json" },
@@ -776,6 +801,7 @@ const Game = (() => {
             } catch (e) {
                 err.textContent = e.message.startsWith("You've") || e.message.startsWith("The report") ? e.message : "Couldn't reach the server. Please try again.";
                 send.disabled = false;
+                send.textContent = "Send report";
             }
         });
         overlay.appendChild(modal);
@@ -824,6 +850,8 @@ const Game = (() => {
             ? new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
             : "A brand-new puzzle every time · no points";
         $("#new-puzzle").hidden = view !== "unlimited";
+        $("#unlimited-left").hidden = view !== "unlimited";
+        if (view === "unlimited") drawUnlimitedLeft();
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
         drawDifficultyMarks();
         showPuzzleFor(view);
@@ -868,6 +896,7 @@ const Game = (() => {
     restoreProgress();
 
     return {
+        openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),
         openCells: () => game.cells.flat().filter(c => !c.classList.contains("block")),

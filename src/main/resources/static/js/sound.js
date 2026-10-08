@@ -24,9 +24,13 @@ const Sound = (() => {
         comp.ratio.value = 4;
         master = ctx.createGain();
         master.gain.value = Settings.get("volume");
-        master.connect(comp).connect(ctx.destination);
+        // a gentle low-pass on everything takes the harsh edge off high, bright sounds
+        const soften = ctx.createBiquadFilter();
+        soften.type = "lowpass";
+        soften.frequency.value = 6500;
+        master.connect(soften).connect(comp).connect(ctx.destination);
         fxBus = ctx.createGain();
-        fxBus.gain.value = Settings.get("sound") ? 0.8 : 0;
+        fxBus.gain.value = Settings.get("sound") ? 0.6 : 0;
         fxBus.connect(master);
         // an echo (a delay that feeds back into itself) for spacey, dreamy sounds
         echoIn = ctx.createGain();
@@ -56,7 +60,7 @@ const Sound = (() => {
     Settings.on((key, value) => {
         if (!ctx) return;
         if (key === "volume") master.gain.setTargetAtTime(value, ctx.currentTime, 0.05);
-        if (key === "sound") fxBus.gain.setTargetAtTime(value ? 0.8 : 0, ctx.currentTime, 0.05);
+        if (key === "sound") fxBus.gain.setTargetAtTime(value ? 0.6 : 0, ctx.currentTime, 0.05);
     });
 
     const ready = () => ctx && ctx.state === "running";
@@ -64,6 +68,8 @@ const Sound = (() => {
     // ---- building blocks ----
     function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0 }) {
         if (!ctx) return;
+        v *= quiet;                                        // small, frequent sounds play softer (see play)
+        if (f > 1800) v *= 0.5;                            // very high notes sound piercing: turn them down
         const start = ctx.currentTime + t;
         const osc = ctx.createOscillator(), gain = ctx.createGain();
         osc.type = type;
@@ -98,6 +104,11 @@ const Sound = (() => {
     }
     function noise({ t = 0, d = 0.2, v = 0.2, type = "bandpass", f = 1000, f2, q = 1, a = 0.005, echo = 0 }) {
         if (!ctx) return;
+        v *= quiet;
+        // No crash or clap sounds (the owner asked, 2026-10-08): short bursts of noise (claps, clicks, hi-hats,
+        // crackles) and hissy high-pass noise (cymbal crashes) are skipped everywhere. Soft whooshes, wind and
+        // low rumbles still play.
+        if (d < 0.25 || type === "highpass") return;
         const start = ctx.currentTime + t;
         const src = ctx.createBufferSource(), fl = ctx.createBiquadFilter(), gain = ctx.createGain();
         src.buffer = noiseBuf;
@@ -147,6 +158,9 @@ const Sound = (() => {
     };
 
     // play("word") -> the current world's "word" sound if it has one, otherwise the shared one
+    // The sounds that happen all the time (clicks, moving, typing) are kept quiet, so they never feel in your face
+    const SOFT = { select: 0.35, nav: 0.45, move: 0.35, type: 0.55, erase: 0.5, flip: 0.4, tile: 0.6, toggle: 0.5, blip: 0.4 };
+    let quiet = 1;
     function play(name, ...args) {
         if (!Settings.get("sound") || !init() || !ready()) return;
         const now = performance.now();
@@ -155,7 +169,8 @@ const Sound = (() => {
         gates[name] = now;
         const world = typeof Worlds !== "undefined" && Worlds.current;
         const fn = (world && world.sounds && world.sounds[name]) || LIB[name];
-        try { if (fn) fn(...args); } catch (err) { console.error("Sound", name, err); }
+        quiet = SOFT[name] || 1;
+        try { if (fn) fn(...args); } catch (err) { console.error("Sound", name, err); } finally { quiet = 1; }
     }
 
 

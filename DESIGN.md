@@ -2,8 +2,8 @@
 
 What Schmoll Crossword should look, feel and sound like, and **the recipe for making a new world**.
 The goal: a prompt like *"make an ocean world"* plus this file should produce what the project owner wants,
-without more questions. The six worlds that exist (Notebook, Deep Space, Garden, Neon Arcade, Snow Day, Acorn Woods) are the
-worked examples.
+without more questions. The eight worlds that exist (Notebook, Deep Space, Garden, Neon Arcade, Snow Day, Acorn Woods, Coral Reef, Candy
+Hills) are the worked examples. Every world has a light and a dark mode (the owner's rule, 2026-10-08).
 
 Decisions here came from the project owner (2026-10-08). When one changes, update this file.
 

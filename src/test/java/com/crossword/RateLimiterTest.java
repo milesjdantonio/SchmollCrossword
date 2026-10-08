@@ -61,4 +61,22 @@ class RateLimiterTest {
         limiter.allow("c", 2 * HOUR);
         assertEquals(1, limiter.peopleTracked(), "only c is left");
     }
+
+    // Unlimited (since 2026-10-08): 10 per person per DAY, and the website can ask how many are left
+    @Test
+    void aDailyWindowCountsWhatsLeft() {
+        long DAY = RateLimiter.DAY;
+        RateLimiter limiter = new RateLimiter(3, DAY, 100);
+        assertEquals(3, limiter.remaining("me", 0));
+        assertTrue(limiter.allow("me", 0));
+        assertTrue(limiter.allow("me", HOUR));
+        assertEquals(1, limiter.remaining("me", 2 * HOUR));
+        assertEquals(0, limiter.secondsUntilNext("me", 2 * HOUR), "still has one left");
+        assertTrue(limiter.allow("me", 3 * HOUR));
+        assertFalse(limiter.allow("me", 5 * HOUR), "an hour later isn't enough any more");
+        assertEquals(0, limiter.remaining("me", 5 * HOUR));
+        assertEquals((DAY - 5 * HOUR) / 1000, limiter.secondsUntilNext("me", 5 * HOUR), "the first one comes back 24 hours after it was made");
+        assertEquals(1, limiter.remaining("me", DAY + 1));
+        assertEquals(3, limiter.limit());
+    }
 }

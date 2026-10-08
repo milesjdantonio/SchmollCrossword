@@ -42,11 +42,11 @@ public class PuzzleController {
     // Spring Boot uses this one when the server starts (@Autowired picks it). @Value reads each limit from
     // application.properties, which lets the host override them with environment variables.
     @Autowired
-    public PuzzleController(@Value("${schmoll.unlimited.per-person-per-hour}") int perPersonPerHour,
+    public PuzzleController(@Value("${schmoll.unlimited.per-person-per-day}") int perPersonPerDay,
                             @Value("${schmoll.unlimited.everyone-per-day}") int everyonePerDay) throws IOException {
         this(Map.of("easy", App.loadWordsFor("easy"), "medium", App.loadWordsFor("medium"), "hard", App.loadWordsFor("hard"),
                     "challenge", App.loadWordsFor("challenge")),
-             App.loadWordsFor("hard", true), new RateLimiter(perPersonPerHour, everyonePerDay));
+             App.loadWordsFor("hard", true), new RateLimiter(perPersonPerDay, RateLimiter.DAY, everyonePerDay));
     }
 
     // The tests use this one, handing in word lists they already loaded
@@ -129,6 +129,16 @@ public class PuzzleController {
         // seed below that; otherwise the browser would see a rounded, wrong seed in the JSON.
         long seed = new Random().nextLong() & ((1L << 53) - 1);
         return PuzzleStore.generateUnlimited(seed, difficulty.toLowerCase(), wordsFor(difficulty.toLowerCase(), hardWords));
+    }
+
+    // How many Unlimited puzzles this player has left today (written by Claude): {"left":7,"limit":10,"nextInSeconds":0}
+    // nextInSeconds = when they're out, how long until they get one back.
+    @GetMapping(value = "/api/unlimited/left", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String unlimitedLeft(HttpServletRequest request) {
+        long now = System.currentTimeMillis();
+        String person = request.getRemoteAddr();
+        return "{\"left\":" + unlimitedLimiter.remaining(person, now) + ",\"limit\":" + unlimitedLimiter.limit()
+                + ",\"nextInSeconds\":" + unlimitedLimiter.secondsUntilNext(person, now) + "}";
     }
 
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"

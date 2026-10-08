@@ -204,7 +204,205 @@
     // ---------------------------------------------------------------------------------------------
     // The background scene
     // ---------------------------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------------------------
+    // Light mode: the solar system in full sunlight. A huge sun with a boiling surface, corona streamers and
+    // solar flares looping off its edge; planets on their orbits (each lit on the side facing the sun), an
+    // asteroid belt, comets whose tails always point away from the sun, and a lens flare across the sky.
+    // ---------------------------------------------------------------------------------------------
+    function sunScene(W, H, opts) {
+        const preview = !!opts.preview;
+        let sx, sy, sr, surface, glow, bgGrad, stars, belt, planets, ringed;
+        let flares = [], nextFlare = 0.5, comet = null, nextComet = preview ? 999 : U.rand(4, 9);
+
+        function setup() {
+            const m = Math.min(W, H), R = U.rng(1601);
+            sr = preview ? m * 0.2 : U.clamp(m * 0.13, 40, 150);
+            sx = preview ? W * 0.72 : W < 760 ? W * 0.82 : W * 0.8;
+            sy = preview ? H * 0.42 : W < 760 ? H * 0.12 : H * 0.24;
+            // the sun's surface: granules (hot cells) and darker sunspots, darker toward the edge
+            surface = document.createElement("canvas");
+            surface.width = surface.height = Math.ceil(sr * 2);
+            const x = surface.getContext("2d"), c = sr;
+            const base = x.createRadialGradient(c, c, 0, c, c, sr);
+            base.addColorStop(0, "#fffbe6");
+            base.addColorStop(0.55, "#ffe08a");
+            base.addColorStop(0.85, "#ffb23e");
+            base.addColorStop(1, "#ff8a1f");
+            x.fillStyle = base;
+            x.beginPath(); x.arc(c, c, sr, 0, TAU); x.fill();
+            x.save();
+            x.beginPath(); x.arc(c, c, sr, 0, TAU); x.clip();
+            for (let i = 0; i < (preview ? 160 : 700); i++) {
+                const a = R() * TAU, d = Math.sqrt(R()) * sr, gr = sr * (0.02 + R() * 0.035);
+                x.fillStyle = R() < 0.5 ? "rgba(255,255,230,.35)" : "rgba(230,120,20,.18)";
+                x.beginPath(); x.arc(c + Math.cos(a) * d, c + Math.sin(a) * d, gr, 0, TAU); x.fill();
+            }
+            for (const [dx, dy, s] of [[-0.3, 0.2, 0.07], [-0.22, 0.26, 0.04], [0.35, -0.3, 0.05]]) {
+                x.fillStyle = "rgba(120,50,10,.55)";
+                x.beginPath(); x.arc(c + dx * sr, c + dy * sr, s * sr, 0, TAU); x.fill();
+                x.fillStyle = "rgba(180,80,20,.35)";
+                x.beginPath(); x.arc(c + dx * sr, c + dy * sr, s * sr * 1.8, 0, TAU); x.fill();
+            }
+            x.restore();
+            glow = null;
+            bgGrad = null;
+            stars = Array.from({ length: preview ? 25 : 90 }, () => ({ x: R() * W, y: R() * H, r: 0.6 + R() * 1.2, tw: R() * TAU }));
+            belt = Array.from({ length: preview ? 50 : 220 }, () => ({ a: R() * TAU, d: 3.15 + R() * 0.35, s: 0.6 + R() * 1.6, sp: 0.02 + R() * 0.02 }));
+            // [orbit radius (in sun radii), size, speed, colours, has a moon]
+            planets = [
+                { o: 1.7, s: 0.09, sp: 0.5, c: ["#d9cfc4", "#8f8478"], a: R() * TAU },
+                { o: 2.3, s: 0.14, sp: 0.32, c: ["#ffe2b8", "#c8875a"], a: R() * TAU },
+                { o: 2.85, s: 0.15, sp: 0.24, c: ["#9fd8ff", "#2f6fb8"], a: R() * TAU, moon: true },
+                { o: 4.2, s: 0.27, sp: 0.1, c: ["#f2d0a6", "#b37446"], a: R() * TAU, rings: true },
+                { o: 5.3, s: 0.18, sp: 0.07, c: ["#c7f1f5", "#4aa3b8"], a: R() * TAU }
+            ];
+            ringed = makePlanet(Math.max(6, sr * 0.27));
+        }
+        setup();
+
+        const orbitY = 0.32;                                  // the orbits are seen from above at a slant
+        function orbitPoint(o, a) { return [sx + Math.cos(a) * sr * o, sy + Math.sin(a) * sr * o * orbitY]; }
+
+        function drawPlanet(g, p, x, y) {
+            const r = sr * p.s;
+            if (p.rings) { g.drawImage(ringed, x - ringed.width / 2, y - ringed.height / 2); return; }
+            // lit on the side facing the sun
+            const ang = Math.atan2(sy - y, sx - x);
+            const gr = g.createRadialGradient(x + Math.cos(ang) * r * 0.45, y + Math.sin(ang) * r * 0.45, r * 0.1, x, y, r * 1.1);
+            gr.addColorStop(0, p.c[0]);
+            gr.addColorStop(1, p.c[1]);
+            g.fillStyle = gr;
+            g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+        }
+
+        return {
+            resize(w, h) { W = w; H = h; setup(); },
+            draw(g, t, dt, inp) {
+                const px = sx - inp.px * 10, py = sy - inp.py * 8;
+                if (!bgGrad) {
+                    bgGrad = g.createRadialGradient(sx, sy, sr, sx, sy, Math.hypot(W, H));
+                    bgGrad.addColorStop(0, "#fff6dc");
+                    bgGrad.addColorStop(0.25, "#fde8d6");
+                    bgGrad.addColorStop(0.6, "#e6dcf6");
+                    bgGrad.addColorStop(1, "#c9cdf0");
+                }
+                g.fillStyle = bgGrad;
+                g.fillRect(0, 0, W, H);
+                for (const s of stars) {                      // faint stars, washed out by the sunlight
+                    g.fillStyle = `rgba(110,100,170,${(0.15 + 0.2 * Math.abs(Math.sin(t * 0.9 + s.tw))).toFixed(2)})`;
+                    g.fillRect(s.x - inp.px * 4, s.y - inp.py * 3, s.r, s.r);
+                }
+                // orbit lines
+                g.strokeStyle = "rgba(120,100,180,.22)";
+                g.lineWidth = 1;
+                for (const p of planets) { g.beginPath(); g.ellipse(px, py, sr * p.o, sr * p.o * orbitY, 0, 0, TAU); g.stroke(); }
+                // planets behind the sun (the top half of their orbits)
+                const placed = planets.map(p => { p.a += p.sp * dt * 0.4; const [x, y] = orbitPoint(p.o, p.a); return { p, x: x - inp.px * 10, y: y - inp.py * 8 }; });
+                for (const q of placed) if (Math.sin(q.p.a) < 0) drawPlanet(g, q.p, q.x, q.y);
+                // the asteroid belt
+                g.fillStyle = "rgba(120,95,80,.55)";
+                for (const b of belt) {
+                    b.a += b.sp * dt;
+                    const [x, y] = orbitPoint(b.d, b.a);
+                    g.fillRect(x - inp.px * 10, y - inp.py * 8, b.s, b.s);
+                }
+                // the corona: a big soft glow and slowly turning streamers
+                if (!glow) {
+                    glow = g.createRadialGradient(px, py, sr * 0.9, px, py, sr * 4);
+                    glow.addColorStop(0, "rgba(255,230,150,.75)");
+                    glow.addColorStop(0.35, "rgba(255,200,120,.25)");
+                    glow.addColorStop(1, "rgba(255,190,120,0)");
+                }
+                g.save();
+                g.translate(px - sx, py - sy);
+                g.fillStyle = glow;
+                g.fillRect(sx - sr * 4, sy - sr * 4, sr * 8, sr * 8);
+                g.restore();
+                g.globalCompositeOperation = "lighter";
+                for (let i = 0; i < 14; i++) {
+                    const a = i / 14 * TAU + t * 0.03 * (i % 2 ? 1 : -1), len = sr * (1.9 + 0.5 * Math.sin(t * 0.7 + i * 1.7)), w = 0.07 + 0.03 * Math.sin(t + i);
+                    const gr = g.createLinearGradient(px, py, px + Math.cos(a) * len, py + Math.sin(a) * len);
+                    gr.addColorStop(0.45, "rgba(255,220,140,.32)");
+                    gr.addColorStop(1, "rgba(255,220,140,0)");
+                    g.fillStyle = gr;
+                    g.beginPath();
+                    g.moveTo(px + Math.cos(a - w) * sr * 0.9, py + Math.sin(a - w) * sr * 0.9);
+                    g.lineTo(px + Math.cos(a) * len, py + Math.sin(a) * len);
+                    g.lineTo(px + Math.cos(a + w) * sr * 0.9, py + Math.sin(a + w) * sr * 0.9);
+                    g.fill();
+                }
+                g.globalCompositeOperation = "source-over";
+                // the sun itself, its surface slowly turning and breathing
+                g.save();
+                g.translate(px, py);
+                g.rotate(t * 0.02);
+                const pulse = 1 + Math.sin(t * 1.3) * 0.006;
+                g.drawImage(surface, -sr * pulse, -sr * pulse, sr * 2 * pulse, sr * 2 * pulse);
+                g.restore();
+                // solar flares: glowing loops that rise off the edge and fade
+                nextFlare -= dt;
+                if (nextFlare <= 0) { nextFlare = U.rand(1.2, 3); flares.push({ a: U.rand(0, TAU), w: U.rand(0.12, 0.3), h: U.rand(0.25, 0.6), life: U.rand(2.2, 3.6), age: 0 }); }
+                g.globalCompositeOperation = "lighter";
+                flares = flares.filter(f => (f.age += dt) < f.life);
+                for (const f of flares) {
+                    const k = f.age / f.life, grow = Math.min(1, k * 3), fade = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+                    const a1 = f.a - f.w, a2 = f.a + f.w, top = sr * (1 + f.h * grow);
+                    g.strokeStyle = `rgba(255,120,40,${(0.75 * fade).toFixed(2)})`;
+                    g.lineWidth = sr * 0.035;
+                    g.lineCap = "round";
+                    g.beginPath();
+                    g.moveTo(px + Math.cos(a1) * sr * 0.98, py + Math.sin(a1) * sr * 0.98);
+                    g.bezierCurveTo(px + Math.cos(a1) * top, py + Math.sin(a1) * top, px + Math.cos(a2) * top, py + Math.sin(a2) * top, px + Math.cos(a2) * sr * 0.98, py + Math.sin(a2) * sr * 0.98);
+                    g.stroke();
+                    g.strokeStyle = `rgba(255,220,150,${(0.5 * fade).toFixed(2)})`;
+                    g.lineWidth = sr * 0.012;
+                    g.stroke();
+                }
+                g.globalCompositeOperation = "source-over";
+                // planets in front of the sun (the bottom half of their orbits), with a moon around the blue one
+                for (const q of placed) {
+                    if (Math.sin(q.p.a) < 0) continue;
+                    drawPlanet(g, q.p, q.x, q.y);
+                    if (q.p.moon) { const ma = t * 1.4; g.fillStyle = "#d8d4e8"; g.beginPath(); g.arc(q.x + Math.cos(ma) * sr * 0.3, q.y + Math.sin(ma) * sr * 0.1, sr * 0.035, 0, TAU); g.fill(); }
+                }
+                // a comet now and then; its tail always points away from the sun
+                nextComet -= dt;
+                if (!comet && nextComet <= 0) comet = { x: -40, y: U.rand(0.35, 0.8) * H, vx: U.rand(90, 140), vy: -U.rand(10, 40) };
+                if (comet) {
+                    comet.x += comet.vx * dt; comet.y += comet.vy * dt;
+                    const away = Math.atan2(comet.y - sy, comet.x - sx), len = 140;
+                    const tg = g.createLinearGradient(comet.x, comet.y, comet.x + Math.cos(away) * len, comet.y + Math.sin(away) * len);
+                    tg.addColorStop(0, "rgba(120,170,255,.7)");
+                    tg.addColorStop(1, "rgba(120,170,255,0)");
+                    g.strokeStyle = tg;
+                    g.lineWidth = 5;
+                    g.lineCap = "round";
+                    g.beginPath(); g.moveTo(comet.x, comet.y); g.lineTo(comet.x + Math.cos(away) * len, comet.y + Math.sin(away) * len); g.stroke();
+                    g.fillStyle = "#ffffff";
+                    g.beginPath(); g.arc(comet.x, comet.y, 3.2, 0, TAU); g.fill();
+                    if (comet.x > W + 60 || comet.y < -60) { comet = null; nextComet = U.rand(10, 20); }
+                }
+                // a lens flare: soft rings on the line from the sun through the middle of the screen
+                if (!preview) {
+                    g.globalCompositeOperation = "lighter";
+                    const cx = W / 2 + inp.px * 30, cy = H / 2 + inp.py * 20;
+                    [[0.5, 0.12, "255,190,120"], [0.9, 0.05, "170,140,255"], [1.25, 0.2, "255,170,200"], [1.6, 0.08, "140,200,255"]].forEach(([k, s, col]) => {
+                        const fx = px + (cx - px) * k * 2, fy = py + (cy - py) * k * 2, fr = sr * s * 2;
+                        const fg = g.createRadialGradient(fx, fy, 0, fx, fy, fr);
+                        fg.addColorStop(0, `rgba(${col},.18)`);
+                        fg.addColorStop(0.7, `rgba(${col},.08)`);
+                        fg.addColorStop(1, `rgba(${col},0)`);
+                        g.fillStyle = fg;
+                        g.beginPath(); g.arc(fx, fy, fr, 0, TAU); g.fill();
+                    });
+                    g.globalCompositeOperation = "source-over";
+                }
+            }
+        };
+    }
+
     function scene(W, H, opts) {
+        if (opts.theme === "light") return sunScene(W, H, opts);
         const preview = !!opts.preview;
         let stars, neb, planet, pr, pp, bh, dust, bgGrad, moonR;
         let shooters = [], nextShoot = 2, sat = null, nextSat = preview ? 999 : U.rand(6, 14);
@@ -667,8 +865,8 @@
     };
 
     Worlds.register({
-        id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "Black holes, nebulae & constellations",
-        modes: ["dark"],
+        id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "A blazing sun by day, a black hole & nebulae by night",
+        modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "warp",
         mascot: { name: "NOVA", draw: drawNova },
         lines: {
