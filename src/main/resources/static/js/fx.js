@@ -1,6 +1,7 @@
 // FX: the effects layer, a canvas over the whole page (clicks go through it).
 //
-//   FX.burst({...})        a burst of particles: confetti, sparks, stars, pixels, petals, circles
+//   FX.burst({...})        a burst of particles: confetti, sparks, stars, pixels, petals, snowflakes, leaves,
+//                          acorns, circles
 //   FX.add(effect)         any custom effect: { update(dt) -> false when finished, draw(ctx, W, H) }
 //   FX.ring / flash / shake    shockwave rings, screen flashes, screen shakes
 //   FX.toast({...})        a pop-up notice (achievements)
@@ -116,6 +117,61 @@ const FX = (() => {
                 g.fill();
                 g.restore();
                 break;
+            case "flake": {                          // a six-armed snowflake with little branches
+                g.save();
+                g.translate(p.x, p.y);
+                g.rotate(p.rot);
+                g.lineWidth = Math.max(1, s * 0.16);
+                g.lineCap = "round";
+                g.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const a = i * Math.PI / 3, ca = Math.cos(a), sa = Math.sin(a);
+                    g.moveTo(0, 0);
+                    g.lineTo(ca * s, sa * s);
+                    for (const side of [-0.7, 0.7]) {
+                        g.moveTo(ca * s * 0.55, sa * s * 0.55);
+                        g.lineTo(ca * s * 0.55 + Math.cos(a + side) * s * 0.3, sa * s * 0.55 + Math.sin(a + side) * s * 0.3);
+                    }
+                }
+                g.stroke();
+                g.restore();
+                break;
+            }
+            case "leaf": {                           // a pointed leaf with a vein, fluttering as it turns
+                g.save();
+                g.translate(p.x, p.y);
+                g.rotate(p.rot);
+                g.scale(1, Math.abs(Math.cos(p.flip)) * 0.85 + 0.15);
+                g.beginPath();
+                g.moveTo(-s, 0);
+                g.quadraticCurveTo(-s * 0.1, -s * 0.62, s, 0);
+                g.quadraticCurveTo(-s * 0.1, s * 0.62, -s, 0);
+                g.fill();
+                g.strokeStyle = "rgba(70, 30, 8, .45)";
+                g.lineWidth = Math.max(0.6, s * 0.08);
+                g.beginPath();
+                g.moveTo(-s * 0.9, 0);
+                g.lineTo(s * 0.85, 0);
+                g.stroke();
+                g.restore();
+                break;
+            }
+            case "acorn": {                          // a nut (its colour) under a scaly brown cap
+                g.save();
+                g.translate(p.x, p.y);
+                g.rotate(p.rot);
+                g.beginPath();
+                g.ellipse(0, s * 0.22, s * 0.55, s * 0.72, 0, 0, Math.PI * 2);
+                g.fill();
+                g.fillStyle = "#6b4220";
+                g.beginPath();
+                g.ellipse(0, -s * 0.18, s * 0.7, s * 0.42, 0, Math.PI, Math.PI * 2);
+                g.closePath();
+                g.fill();
+                g.fillRect(-s * 0.08, -s * 0.78, s * 0.16, s * 0.24);
+                g.restore();
+                break;
+            }
             case "text":
                 g.font = `${s}px sans-serif`;
                 g.textAlign = "center";
@@ -276,17 +332,23 @@ const FX = (() => {
 
     // ---- full-screen transitions in each world's style ----
     // style: "page" (a sheet of paper slides over), "warp" (stars streak, white-out), "leaves" (a wall of leaves
-    // sweeps across), "pixels" (blocks fill in), "iris" (a closing circle). onCovered runs while all is hidden.
+    // sweeps across), "autumn" (the same in fall colors), "blizzard" (a snowstorm blows in to a white-out),
+    // "pixels" (blocks fill in), "iris" (a closing circle). onCovered runs while all is hidden.
     function transition(style, onCovered) {
         if (U.motion() === "still") { onCovered && onCovered(); return Promise.resolve(); }
         const IN = 0.5, HOLD = 0.12, OUT = 0.55;
         const css = getComputedStyle(document.documentElement);
         const col = name => css.getPropertyValue(name).trim() || "#000";
         const C = { bg: col("--bg"), accent: col("--accent"), accent2: col("--accent-2"), ink: col("--ink"), surface: col("--surface-solid") };
-        const cells = [], leaves = [], streaks = [];
+        const cells = [], leaves = [], streaks = [], flakes = [];
+        // leaf colors: the wall, two inner shades, the vein, and the tumbling edge leaves
+        const P = style === "autumn"
+            ? { wall: "#7a3a17", deep: "#6a3214", mid: "#934819", vein: "rgba(70, 25, 5, .4)", edge: ["#d9531e", "#f2a03d", "#b8321a", "#e8c547", "#9c5a2a"] }
+            : { wall: "#2f6a33", deep: "#285c2b", mid: "#357a36", vein: "rgba(20, 60, 20, .35)", edge: ["#3f8f3a", "#4fa344", "#2f7a31", "#5cb04c", "#77b35f"] };
         const SZ = 56;
         for (let y = 0; y < Math.ceil(H / SZ) + 1; y++) for (let x = 0; x < Math.ceil(W / SZ) + 1; x++) cells.push({ x, y, k: Math.random() * 0.6 + (x + y) / (W / SZ + H / SZ) * 0.4 });
-        for (let i = 0; i < 160; i++) leaves.push({ y: U.rand(-0.1, 1.1), x: Math.random(), off: U.rand(-0.35, 0.35), r: U.rand(26, 70), rot: U.rand(0, 6.28), spin: U.rand(-2.5, 2.5), c: ["#3f8f3a", "#4fa344", "#2f7a31", "#5cb04c", "#77b35f"][i % 5] });
+        for (let i = 0; i < 160; i++) leaves.push({ y: U.rand(-0.1, 1.1), x: Math.random(), off: U.rand(-0.35, 0.35), r: U.rand(26, 70), rot: U.rand(0, 6.28), spin: U.rand(-2.5, 2.5), c: P.edge[i % 5] });
+        for (let i = 0; i < 280; i++) flakes.push({ x: Math.random(), y: Math.random(), sp: U.rand(0.6, 1.8), r: U.rand(1, 4.5), ph: Math.random() * 6.28 });
         // a pointed leaf with a center vein
         const leaf = (c, x, y, r, rot, fill) => {
             c.save();
@@ -298,7 +360,7 @@ const FX = (() => {
             c.quadraticCurveTo(-r * 0.1, -r * 0.62, r, 0);
             c.quadraticCurveTo(-r * 0.1, r * 0.62, -r, 0);
             c.fill();
-            c.strokeStyle = "rgba(20, 60, 20, .35)";
+            c.strokeStyle = P.vein;
             c.lineWidth = Math.max(1, r * 0.05);
             c.beginPath();
             c.moveTo(-r * 0.85, 0);
@@ -326,17 +388,35 @@ const FX = (() => {
                             c.fillStyle = (cell.x + cell.y) % 7 === 0 ? C.accent : (cell.x * 3 + cell.y) % 11 === 0 ? C.accent2 : C.bg;
                             c.fillRect(cell.x * SZ, cell.y * SZ, SZ + 1, SZ + 1);
                         }
-                    } else if (style === "leaves") {
+                    } else if (style === "blizzard") {
+                        // a snowstorm blows in from the left, thickens into a white-out, then blows away
+                        c.fillStyle = `rgba(236, 244, 252, ${Math.min(1, k * 1.1).toFixed(3)})`;
+                        c.fillRect(0, 0, W, H);
+                        for (const f of flakes) {
+                            const x = (((f.x + t * f.sp * 1.3) % 1.3) - 0.15) * W;
+                            const y = ((f.y + t * 0.12 * f.sp) % 1) * H + Math.sin(t * 4 + f.ph) * 14;
+                            const len = 8 + 70 * k * f.sp;
+                            c.globalAlpha = Math.min(1, 0.35 + k);
+                            c.strokeStyle = f.r > 3 ? "#ffffff" : "#b7cde4";
+                            c.lineWidth = f.r * 0.8;
+                            c.lineCap = "round";
+                            c.beginPath();
+                            c.moveTo(x, y);
+                            c.lineTo(x - len, y - len * 0.22);
+                            c.stroke();
+                        }
+                        c.globalAlpha = 1;
+                    } else if (style === "leaves" || style === "autumn") {
                         // a wall of leaves moving left to right: it covers the screen in the middle of its trip
                         const p = leaving ? 1 + (1 - k) : k;            // 0..2
                         const front = p <= 1 ? U.lerp(-0.2 * W, 1.25 * W, p) : U.lerp(1.25 * W, 2.7 * W, p - 1);
                         const back = front - W * 1.5;
-                        c.fillStyle = "#2f6a33";
+                        c.fillStyle = P.wall;
                         c.fillRect(back, 0, W * 1.5, H);
                         // the inside of the wall: two layers of darker leaves for depth
                         for (const l of leaves) {
-                            leaf(c, back + l.x * W * 1.5, l.y * H, l.r * 1.25, l.rot + t * 0.4, "#285c2b");
-                            leaf(c, back + ((l.x + 0.37) % 1) * W * 1.5, (((l.y + 0.53) % 1.2) - 0.1) * H, l.r, -l.rot + t * 0.5, "#357a36");
+                            leaf(c, back + l.x * W * 1.5, l.y * H, l.r * 1.25, l.rot + t * 0.4, P.deep);
+                            leaf(c, back + ((l.x + 0.37) % 1) * W * 1.5, (((l.y + 0.53) % 1.2) - 0.1) * H, l.r, -l.rot + t * 0.5, P.mid);
                         }
                         // the ragged, tumbling edges
                         for (const l of leaves) for (const edge of [front, back]) leaf(c, edge + l.off * W * 0.25, l.y * H, l.r, l.rot + t * l.spin, l.c);

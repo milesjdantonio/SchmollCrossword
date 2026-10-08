@@ -2,7 +2,7 @@
 
 What Schmoll Crossword should look, feel and sound like, and **the recipe for making a new world**.
 The goal: a prompt like *"make an ocean world"* plus this file should produce what the project owner wants,
-without more questions. The four worlds that exist (Notebook, Deep Space, Garden, Neon Arcade) are the
+without more questions. The six worlds that exist (Notebook, Deep Space, Garden, Neon Arcade, Snow Day, Acorn Woods) are the
 worked examples.
 
 Decisions here came from the project owner (2026-10-08). When one changes, update this file.
@@ -53,7 +53,7 @@ Plain browser JavaScript (no build step), in `src/main/resources/static/`:
 | `css/worlds.css` | One block per world: `[data-world="id"]` (and `[data-world="id"][data-theme="dark"]`) setting the variables, plus that world's own decorations, title card and win styles. |
 | `js/util.js` | `U` helpers (`U.el`, `U.svg`, seeded `U.rng`, `U.store`, `U.motion()`), the `Bus` event hub, `Settings`. |
 | `js/sound.js` | Synth engine and the shared sound library (`Sound.play(name)` uses the world's version when it has one), music sequencer. |
-| `js/fx.js` | Particle layer (`FX.burst`, `ring`, `flash`, `shake`), `FX.countUp`, `FX.cinematic`, `FX.transition` (page / warp / leaves / pixels / iris). |
+| `js/fx.js` | Particle layer (`FX.burst`, `ring`, `flash`, `shake`), `FX.countUp`, `FX.cinematic`, `FX.transition` (page / warp / leaves / autumn / blizzard / pixels / iris). Particle shapes include confetti, sparks, stars, pixels, petals, snowflakes, leaves and acorns. |
 | `js/worlds.js` | The world registry and the animated background loop (pointer parallax; ~30 fps in Lite effects; one still frame for reduced motion). |
 | `js/worlds/*.js` | One file per world. |
 | `js/mascot.js` | The guide character in the corner: drawing loop, speech bubble with typewriter text, reactions to game events. |
@@ -67,7 +67,7 @@ the mascot and achievements listen to them, so a world never needs to know about
 ## Recipe: making a new world
 
 A world is **one JS file + one CSS block + one script tag**. It must deliver every item in the checklist at
-the same level of detail as the existing four.
+the same level of detail as the existing six.
 
 ### 1. The motif map (decide this first)
 
@@ -121,7 +121,7 @@ Worlds.register({
     mascot: { name, draw(ctx, state) },
     lines: { hello, start, word, win, wrong, right, idle, reveal },
     introFlourish(stage),
-    transition: "page" | "warp" | "leaves" | "pixels" | "iris"
+    transition: "page" | "warp" | "leaves" | "autumn" | "blizzard" | "pixels" | "iris"
 });
 ```
 
@@ -142,7 +142,7 @@ Worlds.register({
 3. **`app.css`**: the card label font (`.world-card[data-wid="NAME"] .wc-label b`).
 4. **WORDLISTS.md**: add any new font with its license (Google Fonts under the SIL OFL are fine).
 
-### 5. Technical rules (learned building the four worlds)
+### 5. Technical rules (learned building the worlds)
 
 - `U.el(tag, { style: { "--x": ... } })` sets CSS variables with `setProperty`; never `Object.assign` them.
 - **SVG + CSS animation:** never put a CSS `transform` animation on an element that has a `transform` attribute
@@ -164,6 +164,8 @@ calls Claude.
 
 ## Open ideas (not built)
 
-- More worlds: ocean (a whale, bioluminescence, bubbles), a cozy café, a haunted house, a winter village.
+- More worlds: ocean (a whale, bioluminescence, bubbles), a cozy café, a haunted house.
+- Snow Day and Acorn Woods (added 2026-10-08) follow the recipe: a snowy valley with a cabin, a snow globe win and
+  Pebble the penguin; an autumn forest with squirrels, an acorn stash, a leaf-tornado win and Hazel the squirrel.
 - A world that changes with the real season or time of day.
 - Unlockable worlds (tied to achievements).

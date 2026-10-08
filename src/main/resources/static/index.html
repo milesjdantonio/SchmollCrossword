@@ -9,14 +9,14 @@
          Nunito, Caveat, Patrick Hand (Notebook) · Orbitron, Exo 2 (Space) · Fredoka (Garden) · Press Start 2P, VT323 (Arcade) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Patrick+Hand&family=Press+Start+2P&family=VT323&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Patrick+Hand&family=Patua+One&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Sniglet:wght@400;800&family=VT323&display=swap">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/worlds.css">
     <script>
         // Apply the saved world and mode before the page is drawn, so nothing flashes
         try {
             const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
-            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade" }[s.design] || "paper";
+            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel" }[s.design] || "paper";
             const darkOnly = world === "space" || world === "arcade";
             document.documentElement.dataset.world = world;
             document.documentElement.dataset.theme = darkOnly || s.theme === "dark" ? "dark" : "light";
@@ -260,6 +260,8 @@
     <script src="js/worlds/space.js"></script>
     <script src="js/worlds/garden.js"></script>
     <script src="js/worlds/arcade.js"></script>
+    <script src="js/worlds/snow.js"></script>
+    <script src="js/worlds/squirrel.js"></script>
     <script src="js/mascot.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/game.js"></script>

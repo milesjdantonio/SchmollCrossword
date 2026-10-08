@@ -201,4 +201,7 @@ All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which
 - **Fredoka** (Garden). https://fonts.google.com/specimen/Fredoka
 - **Press Start 2P** and **VT323** (Neon Arcade). https://fonts.google.com/specimen/Press+Start+2P ,
   https://fonts.google.com/specimen/VT323
+- **Sniglet** and **Quicksand** (Snow Day). https://fonts.google.com/specimen/Sniglet ,
+  https://fonts.google.com/specimen/Quicksand
+- **Patua One** (Acorn Woods). https://fonts.google.com/specimen/Patua+One
 - Sounds are generated in code (Web Audio API), so there are no sound files or licenses.
