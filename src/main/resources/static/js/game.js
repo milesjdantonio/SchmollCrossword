@@ -227,7 +227,8 @@ const Game = (() => {
         pendingCard = false;
         const w = Worlds.current;
         if (!w || !w.titleCard || U.motion() === "still") return;
-        FX.cinematic(c => w.titleCard(c, cardInfo(game.puzzle)));
+        titlePlaying = true;
+        FX.cinematic(c => w.titleCard(c, cardInfo(game.puzzle))).then(() => { titlePlaying = false; });
     }
 
     function indexEntries(puzzle) {
@@ -305,6 +306,7 @@ const Game = (() => {
             }
         }
         boardEl.classList.toggle("solved", game.solved && !game.surrendered);
+        boardEl.dataset.dir = game.direction;
         boardEl.classList.toggle("surrendered", game.surrendered);
         document.querySelectorAll("#helpers button:not(#test-win):not(#report-btn)").forEach(b => { b.disabled = game.solved; });   // the test button stays on, to replay the win
         // which words are full now? Any that weren't before were just finished
@@ -625,7 +627,9 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     // Actions
     // ---------------------------------------------------------------------------------------------
-    const blocked = () => !game.puzzle || FX.playing || !!overlay.querySelector(".results.in") || document.documentElement.classList.contains("intro-on");
+    // A title card doesn't block the board: a key or click skips it (FX.cinematic) and still counts
+    let titlePlaying = false;
+    const blocked = () => !game.puzzle || (FX.playing && !titlePlaying) || !!overlay.querySelector(".results.in") || document.documentElement.classList.contains("intro-on");
     function touched() { lastInput = performance.now(); idleSaid = false; }
 
     function clickCell(row, col) {
@@ -637,6 +641,10 @@ const Game = (() => {
             game.col = col;
             if (game.direction === "across" && !game.acrossAt[row][col]) game.direction = "down";
             if (game.direction === "down" && !game.downAt[row][col]) game.direction = "across";
+            // the word this way is finished but the crossing word isn't: you most likely want the crossing word
+            const here = game.direction === "across" ? game.acrossAt[row][col] : game.downAt[row][col];
+            const other = game.direction === "across" ? game.downAt[row][col] : game.acrossAt[row][col];
+            if (here && other && isFull(here) && !isFull(other)) game.direction = other.direction;
             Sound.play("move");
         }
         render();
@@ -658,6 +666,7 @@ const Game = (() => {
     function typeLetter(letter) {
         touched();
         const row = game.row, col = game.col, cell = game.cells[row][col];
+        const wasFull = isFull(currentEntry());           // correcting a finished word: move one square at a time
         if (!isLocked(row, col)) {                       // locked squares (revealed, or checked right): the cursor just moves on
             game.letters[row][col] = letter;
             game.wrong[row][col] = false;
@@ -669,11 +678,30 @@ const Game = (() => {
         if (checkForWin()) return;
         const cells = cellsOf(currentEntry());
         const index = cells.findIndex(([r, c]) => r === game.row && c === game.col);
-        const nextEmpty = cells.slice(index + 1).find(([r, c]) => game.letters[r][c] === "");
-        if (nextEmpty) [game.row, game.col] = nextEmpty;
-        else if (index < cells.length - 1) [game.row, game.col] = cells[index + 1];
-        else { moveToEntry(+1); return; }
+        const empty = ([r, c]) => game.letters[r][c] === "";
+        if (wasFull) {
+            if (index < cells.length - 1) [game.row, game.col] = cells[index + 1];
+        } else {
+            // the next empty square in this word (wrapping back to the start), else the next unfinished word
+            const next = cells.slice(index + 1).find(empty) || cells.slice(0, index).find(empty);
+            if (next) [game.row, game.col] = next;
+            else if (!goToNextUnfinished()) { if (index < cells.length - 1) [game.row, game.col] = cells[index + 1]; }
+            else return;
+        }
         render();
+    }
+    // Is every square of this word filled in?
+    function isFull(entry) {
+        return !!entry && cellsOf(entry).every(([r, c]) => game.letters[r][c] !== "");
+    }
+    // Jump to the first empty square of the next word that isn't finished (false if every word is finished)
+    function goToNextUnfinished() {
+        const entries = allEntries(), start = entries.indexOf(currentEntry());
+        for (let i = 1; i <= entries.length; i++) {
+            const entry = entries[(start + i) % entries.length];
+            if (!isFull(entry)) { selectEntry(entry); return true; }
+        }
+        return false;
     }
     function backspace() {
         touched();
