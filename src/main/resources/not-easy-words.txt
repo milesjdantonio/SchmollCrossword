@@ -7,7 +7,6 @@ adieu
 adore
 aha
 ahem
-aisle
 akin
 alas
 alley
@@ -21,7 +20,6 @@ ammo
 ample
 anime
 apps
-apron
 aquas
 aroma
 array
@@ -38,8 +36,6 @@ axles
 baa
 baaed
 baas
-bacon
-bagel
 bah
 banal
 banjo
