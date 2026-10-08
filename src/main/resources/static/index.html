@@ -24,6 +24,16 @@
 
         <div class="puzzle" id="puzzle" hidden>
             <div class="board-area">
+                <!-- Timer (Step 21) -->
+                <div class="timer-row">
+                    <span class="timer" id="timer" aria-label="Time">0:00</span>
+                    <span class="points-today" id="points-today"></span>
+                </div>
+                <!-- "You solved it!" panel (Step 21); hidden until the grid is correct -->
+                <div class="win" id="win" hidden>
+                    <h2>You solved it!</h2>
+                    <p id="win-details"></p>
+                </div>
                 <!-- The clue for the selected word -->
                 <div class="clue-bar" id="clue-bar"></div>
                 <!-- The 5x5 board; app.js fills it with squares -->
@@ -44,6 +54,7 @@
         </div>
     </main>
 
+    <script src="score.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -108,6 +108,26 @@ main {
 }
 .clue-bar strong { margin-right: 4px; }
 
+/* Step 21: timer, today's points and the win panel */
+.timer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.timer { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.points-today { color: var(--muted); }
+.win {
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    background: #2d3a4a;
+    color: #fff;
+    border-radius: 6px;
+}
+.win h2 { margin: 0 0 4px; font-size: 1.2rem; }
+.win p { margin: 0; }
+.board.solved .cell:not(.block) { background: #e4f1e1; }   /* soft green once solved */
+
 /* The small clue number in a square's top-left corner */
 .cell .number {
     position: absolute;

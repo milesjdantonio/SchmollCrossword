@@ -6,6 +6,10 @@ const boardEl = document.getElementById("board");
 const acrossEl = document.getElementById("across-clues");
 const downEl = document.getElementById("down-clues");
 const clueBarEl = document.getElementById("clue-bar");
+const timerEl = document.getElementById("timer");
+const winEl = document.getElementById("win");
+const winDetailsEl = document.getElementById("win-details");
+const pointsTodayEl = document.getElementById("points-today");
 
 document.getElementById("puzzle-date").textContent =
     new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -22,8 +26,58 @@ const game = {
     acrossAt: [],        // acrossAt[row][col] = the Across entry covering that square (or null)
     downAt: [],          // downAt[row][col]   = the Down entry covering that square (or null)
     cells: [],           // cells[row][col]    = the square's <div> on the page
-    clueItems: new Map() // entry -> its <li> in the clue lists
+    clueItems: new Map(),// entry -> its <li> in the clue lists
+    seconds: 0,          // the timer (Step 21)
+    solved: false,       // true once every square is right
+    checksUsed: 0,       // for the score (Step 22 adds Check/Reveal)
+    revealsUsed: 0
 };
+
+// ---------------------------------------------------------------------------------------------
+// Daily scores, saved in this browser: { "20261007": { date, difficulty, seconds, points }, ... }
+// Keyed by the daily's seed, which is made from its date, so each daily puzzle has one entry.
+// ---------------------------------------------------------------------------------------------
+const SCORES_KEY = "schmoll.dailyScores";
+
+function loadDailyScores() {
+    try {
+        return JSON.parse(localStorage.getItem(SCORES_KEY)) || {};
+    } catch (err) {
+        return {};   // storage blocked or unreadable: act as if nothing is saved
+    }
+}
+
+function saveDailyScore(puzzle, points) {
+    const scores = loadDailyScores();
+    if (scores[puzzle.seed]) return false;   // already completed today (at any difficulty): no extra points
+    scores[puzzle.seed] = {
+        date: new Date().toISOString().slice(0, 10),
+        difficulty: puzzle.difficulty,
+        seconds: game.seconds,
+        points: points
+    };
+    try {
+        localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+    } catch (err) {
+        // storage blocked (e.g. private mode): the score just isn't remembered
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Timer: counts up once a second while the page is visible and the puzzle isn't solved
+// ---------------------------------------------------------------------------------------------
+setInterval(() => {
+    if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden) return;
+    game.seconds++;
+    drawTimer();
+}, 1000);
+
+function drawTimer() {
+    const minutes = Math.floor(game.seconds / 60);
+    const seconds = String(game.seconds % 60).padStart(2, "0");
+    timerEl.textContent = minutes + ":" + seconds;
+}
 
 // Ask the server for today's puzzle at a difficulty, then draw it
 async function loadPuzzle(difficulty) {
@@ -53,7 +107,15 @@ function startGame(puzzle) {
     game.puzzle = puzzle;
     if (!sameGrid) {
         game.letters = puzzle.solution.map(row => Array.from(row, () => ""));
+        game.seconds = 0;
+        game.solved = false;
+        game.checksUsed = 0;
+        game.revealsUsed = 0;
+        winEl.hidden = true;
+        boardEl.classList.remove("solved");
     }
+    drawTimer();
+    drawPointsToday();
     indexEntries(puzzle);
     drawBoard(puzzle);
     drawClues(puzzle);
@@ -88,6 +150,7 @@ function indexEntries(puzzle) {
 function drawBoard(puzzle) {
     boardEl.innerHTML = "";
     boardEl.style.setProperty("--size", puzzle.size);
+    boardEl.classList.toggle("solved", game.solved);
     game.cells = [];
     for (let row = 0; row < puzzle.size; row++) {
         game.cells.push([]);
@@ -160,6 +223,56 @@ function render() {
         label.textContent = current.number + (current.direction === "across" ? "A" : "D");
         clueBarEl.append(label, " " + current.clue);
     }
+}
+
+// "Today's daily: 240 pts (medium) · Streak 3 days (best 5)"
+function drawPointsToday() {
+    const puzzle = game.puzzle;
+    const scores = loadDailyScores();
+    const record = puzzle && puzzle.mode === "daily" ? scores[puzzle.seed] : null;
+    const streaks = calculateStreaks(scores);
+    const parts = [];
+    if (record) parts.push("Today's daily: " + record.points + " pts (" + record.difficulty + ")");
+    if (streaks.best > 0) {
+        parts.push("Streak " + streaks.current + (streaks.current === 1 ? " day" : " days") + " (best " + streaks.best + ")");
+    }
+    pointsTodayEl.textContent = parts.join(" · ");
+}
+
+// ---------------------------------------------------------------------------------------------
+// Win detection (Step 21)
+// ---------------------------------------------------------------------------------------------
+
+// Solved = every open square matches the solution
+function isSolved() {
+    const size = game.puzzle.size;
+    for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+            if (isBlock(row, col)) continue;
+            if (game.letters[row][col] !== game.puzzle.solution[row][col]) return false;
+        }
+    }
+    return true;
+}
+
+function checkForWin() {
+    if (game.solved || !isSolved()) return;
+    game.solved = true;
+    boardEl.classList.add("solved");
+    const time = timerEl.textContent;
+    const puzzle = game.puzzle;
+
+    if (puzzle.mode !== "daily") {
+        winDetailsEl.textContent = "Time: " + time + ". Unlimited puzzles don't earn points.";
+    } else {
+        const points = calculateScore(puzzle.difficulty, game.seconds, game.checksUsed, game.revealsUsed);
+        const counted = saveDailyScore(puzzle, points);
+        winDetailsEl.textContent = counted
+            ? "Time: " + time + " · " + points + " points for today's daily (" + puzzle.difficulty + ")."
+            : "Time: " + time + ". Today's daily was already completed, so no extra points.";
+    }
+    winEl.hidden = false;
+    drawPointsToday();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -237,6 +350,7 @@ function selectEntry(entry) {
 
 function typeLetter(letter) {
     game.letters[game.row][game.col] = letter;
+    checkForWin();
     const entry = currentEntry();
     const cells = entryCells(entry);
     const index = cells.findIndex(([r, c]) => r === game.row && c === game.col);
@@ -303,6 +417,7 @@ function moveToEntry(step) {
 document.addEventListener("keydown", (event) => {
     if (!game.puzzle || puzzleEl.hidden) return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;   // leave browser shortcuts alone
+    if (game.solved) return;                                       // the board is locked once solved
 
     const key = event.key;
     if (/^[a-zA-Z]$/.test(key)) {

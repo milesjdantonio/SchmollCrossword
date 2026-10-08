@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 21 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 22 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -147,11 +147,12 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Ideas to know:** one `game` state object is the source of truth; every action changes the state, then `render()` redraws the page from it. Keyboard input comes from `keydown` events.
 - **Known for later:** phones need an on-screen keyboard (Step 26).
 
-### 🔨 Step 21: Win detection, timer and score
+### ✅ Step 21: Win detection, timer and score
 - **What:** a running timer, pause, a "You solved it!" screen, and a **score** based on time, difficulty and how many checks/reveals were used.
-- **Will learn:** `setInterval`, comparing the player's grid to the answer, designing a scoring formula.
+- **Done:** timer (pauses when the tab is hidden, stops on solve), win detection after every letter, a win panel, the board locks and turns green. Scoring designed by the project owner in `static/score.js`: **easy 100 / medium 150 / hard 200**, plus a **speed bonus starting at 100 that drops 10 per full minute** (never below 0), minus Check/Reveal penalties (Step 22). **Only daily puzzles earn points**, saved per daily in `localStorage` (`schmoll.dailyScores`, keyed by the daily's seed), and only the first solve of a day counts. **Streaks** (current and best consecutive days) are shown but never add points. Unlimited shows the time only. Verified with 16 automated browser checks.
+- **Learned:** designing a scoring formula, why points are saved per daily and only once, streak counting across months.
 
-### ⬜ Step 22: Check and Reveal
+### 🔨 Step 22: Check and Reveal
 - **What:** check or reveal a square, a word or the whole puzzle, and mark wrong letters (each use lowers the score).
 - **Will learn:** reusing slot logic on the frontend.
 

@@ -94,8 +94,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 18: Backend API.** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
 - ✅ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
 - ✅ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
-- 🔨 **Step 21: Win detection, timer and score. ← YOU ARE HERE** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.
-- ⬜ **Step 22: Check and Reveal.** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
+- ✅ **Step 21: Win detection, timer and score.** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.
+- 🔨 **Step 22: Check and Reveal. ← YOU ARE HERE** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
 
 ### Phase 5: Modes, saving and launch
 - ⬜ **Step 23: Daily and Unlimited modes.** A home screen to pick a mode. Daily uses the date as the *seed* (same puzzle for everyone) with a countdown; Unlimited makes a new puzzle on demand.
