@@ -573,6 +573,12 @@ const Game = (() => {
                 const cell = game.cells[row][col];
                 cell.style.setProperty("--d", (n++ * 40) + "ms");
                 U.restart(cell, "flip");
+            } else if (!game.revealed[row][col] && !game.locked[row][col]) {
+                // already right (e.g. it belongs to a crossing word you filled in): the reveal confirms it,
+                // so it locks too, with no penalty
+                game.locked[row][col] = true;
+                game.wrong[row][col] = false;
+                U.restart(game.cells[row][col], "lock-in");
             }
         }
         Sound.play("reveal");
