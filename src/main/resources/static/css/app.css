@@ -457,6 +457,8 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .result-banner span { flex: 1; }
 .result-banner.surrender { background: var(--muted); }
 .result-banner .btn { box-shadow: none; }
+/* dark modes use a light green (and a light grey for a surrender): dark text reads better on those */
+[data-theme="dark"] .result-banner { color: #0d1a12; }
 .clue-bar-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .clue-bar {
     flex: 1;
@@ -595,7 +597,18 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .board.solved .cell:not(.block) { background: var(--solved); }
 .board.surrendered .cell:not(.block) { filter: saturate(.4); }
 
-.helpers { display: grid; gap: 7px; margin-top: 14px; }
+.helpers {
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+    padding: 10px 12px 8px;
+    background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
 .helper-row { display: flex; align-items: center; gap: 6px; }
 .helper-label { width: 4.3em; color: var(--ink); opacity: .8; font-size: .74rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .helper-row button {
@@ -603,16 +616,17 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     padding: 7px 0;
     border: 1.5px solid var(--line);
     border-radius: 999px;
-    background: var(--surface);
+    background: var(--surface-solid);
     color: var(--ink);
     font: 800 .88rem var(--font-body);
     cursor: pointer;
     transition: transform .15s, border-color .15s;
 }
 .helper-row button:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--accent); }
-.helper-row button:disabled { opacity: .45; cursor: default; }
-.test-win { margin-top: 2px; padding: 5px 0; border: 2px dashed var(--accent); border-radius: 999px; background: transparent; color: var(--accent); font: 800 .85rem var(--font-body); cursor: pointer; }
-.test-win:disabled { opacity: .4; cursor: default; }
+/* used up (e.g. the puzzle is solved): solid and muted, never see-through, so the scene can't show through the text */
+.helper-row button:disabled { background: var(--surface-2); color: var(--muted); border-color: transparent; cursor: default; }
+.test-win { margin-top: 2px; padding: 5px 0; border: 2px dashed var(--accent); border-radius: 999px; background: var(--surface-solid); color: var(--accent); font: 800 .85rem var(--font-body); cursor: pointer; }
+.test-win:disabled { color: var(--muted); border-color: var(--line); cursor: default; }
 
 .clues {
     flex: 1;
@@ -1176,6 +1190,6 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 }
 
 /* Text written straight on a world's scene: a soft halo in the page colour keeps it readable on any background */
-.hero-title, .greeting, #game-title, .game-titles .subtitle, .page-head h1, .page-head .subtitle, .helper-label, .hero .subtitle {
+.hero-title, .greeting, #game-title, .game-titles .subtitle, .page-head h1, .page-head .subtitle, .hero .subtitle {
     text-shadow: 0 0 2px var(--bg), 0 0 6px var(--bg), 0 0 12px var(--bg), 0 0 20px var(--bg);
 }
