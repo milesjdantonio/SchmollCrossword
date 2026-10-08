@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 17 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 18 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -120,13 +120,16 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ---
 
-## Phase 4: Make it a website ⬜
+## Phase 4: Make it a website 🔨
 
-### 🔨 Step 17: Save generated puzzles (daily = same for everyone)
-- **What:** the daily puzzle must be identical for every player, but Claude writes different clues on every call. So each day's puzzle (per difficulty) is generated **once**, saved as a JSON file, and every player is served that saved copy. Unlimited puzzles can be generated on demand (or pre-generated in batches to control API cost).
-- **Will learn:** reading and writing files, caching, why "same input, same output" matters.
+### ✅ Step 17: Save generated puzzles (daily = same for everyone)
+- **What:** the daily puzzle must be identical for every player, but Claude writes different clues on every call. Design (project owner, 2026-10-07): **one grid per date** (the date is the seed) shared by easy, medium and hard, plus **one clue set per difficulty**, each written by Claude only the first time that difficulty is requested, then saved as `puzzles/daily/<date>-<difficulty>.json` and served from the file. Unlimited puzzles can be generated on demand (or pre-generated in batches to control API cost). `PuzzleStore.java`:
+  - ✅ **17a:** `seedForDate(date)`: 2026-10-07 → 20261007
+  - ✅ **17b:** `dailyFile(folder, date, difficulty)`: `puzzles/daily/2026-10-07-hard.json` via `Path.resolve`
+  - ✅ **17c:** `getDaily(...)`: read the saved file if it exists, otherwise generate, save, return. `synchronized` so two simultaneous first requests can't both call Claude (written by Claude)
+- **Learned:** `LocalDate`, building a number from parts, `Path.resolve` (works on Windows and Linux), reading/writing files, caching on disk, `synchronized` for requests that arrive at the same time.
 
-### ⬜ Step 18: Backend API (Spring Boot)
+### 🔨 Step 18: Backend API (Spring Boot)
 - **What:** a small web server with endpoints like `GET /api/daily?difficulty=medium` and `GET /api/unlimited?difficulty=hard`, which return puzzles as JSON. It also serves the website's files.
 - **Will learn:** HTTP, REST endpoints, Spring Boot basics, keeping the API key on the server only.
 
@@ -151,7 +154,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 ## Phase 5: Modes, saving and launch ⬜
 
 ### ⬜ Step 23: Daily and Unlimited modes
-- **What:** a home screen to pick a mode. **Daily:** today's date is the seed (builds on 12a), the same puzzle for everyone, one per day, with a countdown to the next one. **Unlimited:** a new random puzzle whenever you want.
+- **What:** a home screen to pick a mode. **Daily:** today's date is the seed (builds on 12a), the same puzzle for everyone, one per day, with a countdown to the next one. The player picks easy, medium or hard (same grid, different clues); **solving it at any one difficulty completes that day's daily.** **Unlimited:** a new random puzzle whenever you want.
 - **Will learn:** dates and time zones, turning a date into a seed, routing between screens.
 
 ### ⬜ Step 24: Save progress, stats, scores and settings

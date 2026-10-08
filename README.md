@@ -44,7 +44,8 @@ SchmollCrosswordMain/
 │   ├── Slot.java                        # One across/down answer position in the grid
 │   ├── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
 │   ├── ClueWriter.java                  # Asks Claude to write each puzzle's clues (Step 15)
-│   └── Puzzle.java                      # One finished puzzle + its JSON for the website (Step 16)
+│   ├── Puzzle.java                      # One finished puzzle + its JSON for the website (Step 16)
+│   └── PuzzleStore.java                 # Daily puzzles: one grid per date, clues saved per difficulty (Step 17)
 └── src/main/resources/
     ├── words.txt                        # Answer words (SCOWL 50 ∩ Spread the Wordlist), one per line
     ├── blocked-words.txt                # Offensive words the generator must never use
@@ -87,8 +88,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 16: A `Puzzle` object.** `Puzzle.java` bundles the grid, numbers, answers, clues, difficulty, mode and seed, and `toJson()` turns it into JSON for the website.
 
 ### Phase 4: Make it a website
-- 🔨 **Step 17: Save generated puzzles. ← YOU ARE HERE** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
-- ⬜ **Step 18: Backend API.** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
+- ✅ **Step 17: Save generated puzzles.** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
+- 🔨 **Step 18: Backend API. ← YOU ARE HERE** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
 - ⬜ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
 - ⬜ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
 - ⬜ **Step 21: Win detection, timer and score.** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.

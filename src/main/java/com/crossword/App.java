@@ -442,6 +442,30 @@ public class App {
         check("json: quotes inside a clue are escaped", quotedJson.contains("\"clue\":\"\\\"Put a ___ in it!\\\"\""), true);
         check("json: still valid with quotes inside a clue", isValidJson(quotedJson), true);
 
+        // Step 17 tests: daily puzzles saved to files (these never call the API)
+        System.out.println();
+        java.time.LocalDate oct7 = java.time.LocalDate.of(2026, 10, 7);
+        check("daily: seed from 2026-10-07", PuzzleStore.seedForDate(oct7), 20261007L);
+        check("daily: next day gets a different seed", PuzzleStore.seedForDate(oct7.plusDays(1)), 20261008L);
+        java.nio.file.Path hardFile = PuzzleStore.dailyFile(PuzzleStore.DAILY_FOLDER, oct7, "hard");
+        check("daily: file name", String.valueOf(hardFile.getFileName()), "2026-10-07-hard.json");
+        check("daily: file is inside the daily folder", PuzzleStore.DAILY_FOLDER.equals(hardFile.getParent()), true);
+        check("daily: same date, same grid (shared by every difficulty)",
+                Arrays.deepEquals(PuzzleStore.buildGrid(PuzzleStore.seedForDate(oct7), wordsByLength),
+                                  PuzzleStore.buildGrid(PuzzleStore.seedForDate(oct7), wordsByLength)), true);
+
+        // Cache hit: a saved file must be returned as-is. Uses a throwaway temp folder.
+        // Only runs once dailyFile is right, so a wrong path can never trigger a real (paid) generation.
+        java.nio.file.Path tempFolder = java.nio.file.Files.createTempDirectory("schmoll-test");
+        java.nio.file.Path savedFile = tempFolder.resolve("2026-10-07-medium.json");
+        if (savedFile.equals(PuzzleStore.dailyFile(tempFolder, oct7, "medium"))) {
+            java.nio.file.Files.writeString(savedFile, "{\"saved\":true}");
+            check("daily: a saved puzzle is served from its file (no API call)",
+                    PuzzleStore.getDaily(tempFolder, oct7, "medium", wordsByLength), "{\"saved\":true}");
+        } else {
+            System.out.println("FAIL  daily: cache test skipped until dailyFile is right");
+        }
+
         // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
         //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
         // The key itself is never printed, only whether one was found.
@@ -462,6 +486,14 @@ public class App {
                 System.out.println("  " + clue.answer() + ": " + clue.clue());
             }
             check("live: Claude's clues pass every check", ClueWriter.findProblems(clues, puzzleAnswers).size(), 0);
+
+            // Step 17 live: today's medium daily. The FIRST run today calls Claude and saves the file;
+            // every run after that (and the second call here) reads the file instead.
+            java.time.LocalDate today = java.time.LocalDate.now();
+            String firstDaily = PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, today, "medium", wordsByLength);
+            String secondDaily = PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, today, "medium", wordsByLength);
+            System.out.println("Today's medium daily: " + firstDaily);
+            check("live: asking twice gives the identical daily puzzle", secondDaily, firstDaily);
         }
     }
 
