@@ -466,6 +466,16 @@ public class App {
             System.out.println("FAIL  daily: cache test skipped until dailyFile is right");
         }
 
+        // Step 18 tests: the API's input checking (calls the controller's methods directly; never reaches Claude)
+        System.out.println();
+        check("api: easy is a difficulty", PuzzleController.isValidDifficulty("easy"), true);
+        check("api: Hard (any case) is a difficulty", PuzzleController.isValidDifficulty("Hard"), true);
+        check("api: banana is not a difficulty", PuzzleController.isValidDifficulty("banana"), false);
+        check("api: missing (null) is not a difficulty", PuzzleController.isValidDifficulty(null), false);
+        PuzzleController controller = new PuzzleController(wordsByLength);
+        check("api: /api/daily?difficulty=banana is rejected with 400", rejectedWith400(() -> controller.daily("banana")), true);
+        check("api: /api/unlimited?difficulty=banana is rejected with 400", rejectedWith400(() -> controller.unlimited("banana")), true);
+
         // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
         //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
         // The key itself is never printed, only whether one was found.
@@ -506,6 +516,19 @@ public class App {
         }
         solve(new ArrayList<>(slots), grid, wordsByLength, new HashSet<>(), new Random(seed));
         return formatGrid(grid, blackSquares);
+    }
+
+    // Test helper: runs an API call and reports whether it was refused with HTTP 400 ("bad request")
+    interface ApiCall { String run() throws Exception; }
+    static boolean rejectedWith400(ApiCall call) {
+        try {
+            call.run();
+            return false;  // it answered normally: not rejected
+        } catch (org.springframework.web.server.ResponseStatusException e) {
+            return e.getStatusCode().value() == 400;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Test helper: asks a real JSON library (Jackson, which comes with the Claude SDK) whether text is valid JSON

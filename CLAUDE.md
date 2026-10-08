@@ -44,7 +44,8 @@ Context for Claude Code when working in this repository.
 - **Done:** Step 15, AI-written clues via the Claude API (user's design: generate clues only for the ~10 answers in each puzzle, with an easy/medium/hard difficulty; no open clue dataset exists, see CLUES.md). `ClueWriter.java` holds the key loading (done) 15a `buildPrompt` (tuned with the user over 6 rounds: harder difficulty definitions, playful wording, clues scaled to each word's familiarity, a small-daily-crossword style guide written in our own words), 15b `findProblems`, 15c `writeClues` (`claude-opus-5-5`, structured output into `ClueSet`, one retry). The live API test only runs with `-Dexec.args=live`; don't run it without the user's OK (it costs money).
 - **Done:** Step 16, `Puzzle.java`: `Puzzle.create(blackSquares, filledGrid, clueSet, mode, seed, difficulty)` builds sorted Across/Down `Entry` records; `toJson()` hand-builds JSON (16b written by Claude at the user's request; the user knows JSON and sees it as AI-appropriate boilerplate). Tests validate it with Jackson (comes with the Claude SDK).
 - **Done:** Step 17, `PuzzleStore.java`: `seedForDate`, `dailyFile`, `getDaily` (synchronized; reads `puzzles/daily/<date>-<difficulty>.json` or generates once via `generateDaily` and saves), `buildGrid(seed)` on the shared `SHAPE`.
-- **Current step:** Step 18, Spring Boot backend (`/api/daily`, `/api/unlimited`).
+- **Done:** Step 18, Spring Boot 4.1.1 backend: `WebApp` + `PuzzleController` (`/api/daily`, `/api/unlimited`, 400 on bad difficulty, difficulty lowercased).
+- **Current step:** Step 19, the game board web page (frontend: Claude builds it, per the user).
 - **Frontend:** the user asked Claude to do most frontend (HTML/CSS/JS) work; keep Java/backend steps as exercises for the user.
 - **Scope (changed 2026-10-07):** the game is a website. Steps 17–26 were redesigned: 17 save generated puzzles (daily cache), 18 Spring Boot API (`/api/daily`, `/api/unlimited`), 19–22 board, controls, win/timer/score, check/reveal, 23 daily + unlimited modes, 24 save progress/stats/scores/settings in browser storage, 25 JUnit, 26 mobile + deploy (API key server-side, rate-limit unlimited).
 - **Roadmap numbering:** Step 13b was inserted instead of renumbering, because code comments and docs refer to later step numbers (e.g. "Step 23" for the daily seed). The roadmap has 27 steps.
@@ -64,9 +65,10 @@ Don't jump ahead. Build the layers in roadmap order unless the user asks otherwi
 
 ## Build and run
 
-- Java 17 (set in `pom.xml`), Maven. No dependencies yet, and no tests yet.
+- Java 17, Maven, Spring Boot 4.1.1 (parent in `pom.xml`), `anthropic-java` 2.34.0. Tests are PASS/FAIL checks in `App.main` (JUnit comes in Step 25).
 - Compile: `mvn compile`
-- Run: `mvn exec:java -Dexec.mainClass=com.crossword.App`, or run `App.main` from the IDE.
+- Run the tests: `mvn exec:java -Dexec.mainClass=com.crossword.App`, or run `App.main` from the IDE (`-Dexec.args=live` adds the paid Claude checks).
+- Run the website server: `mvn spring-boot:run` (`WebApp.main`), then open http://localhost:8080. `PuzzleController` serves `GET /api/daily?difficulty=` and `GET /api/unlimited?difficulty=` (JSON; 400 for a bad difficulty). Requests that reach generation call Claude (paid).
 - The shell is Windows (PowerShell / Git Bash), and the project lives inside OneDrive.
 - GitHub remote: `origin` → https://github.com/milesjdantonio/SchmollCrossword (branch `main`).
 

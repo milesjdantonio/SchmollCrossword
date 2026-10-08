@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 18 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 19 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -129,11 +129,13 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
   - ✅ **17c:** `getDaily(...)`: read the saved file if it exists, otherwise generate, save, return. `synchronized` so two simultaneous first requests can't both call Claude (written by Claude)
 - **Learned:** `LocalDate`, building a number from parts, `Path.resolve` (works on Windows and Linux), reading/writing files, caching on disk, `synchronized` for requests that arrive at the same time.
 
-### 🔨 Step 18: Backend API (Spring Boot)
-- **What:** a small web server with endpoints like `GET /api/daily?difficulty=medium` and `GET /api/unlimited?difficulty=hard`, which return puzzles as JSON. It also serves the website's files.
-- **Will learn:** HTTP, REST endpoints, Spring Boot basics, keeping the API key on the server only.
+### ✅ Step 18: Backend API (Spring Boot)
+- **What:** Spring Boot 4.1.1 server (`WebApp`, `mvn spring-boot:run`, http://localhost:8080). `PuzzleController` serves `GET /api/daily?difficulty=` (today's saved daily via `PuzzleStore.getDaily`) and `GET /api/unlimited?difficulty=` (a fresh puzzle from a random seed via `PuzzleStore.generateUnlimited`), both as JSON.
+  - ✅ **18a:** `isValidDifficulty`: easy/medium/hard in any case, null-safe (guard clause)
+  - ✅ **18b/18c:** reject bad input with HTTP 400 before doing anything that costs money, lowercase the difficulty so `Hard` and `hard` share one saved daily
+- **Learned:** annotations (`@RestController`, `@GetMapping`, `@RequestParam`), HTTP status codes, never trusting input, `throw`, random seeds for unlimited mode.
 
-### ⬜ Step 19: Game board UI
+### 🔨 Step 19: Game board UI
 - **What:** a web page (HTML/CSS/JavaScript) that draws the grid with numbers and lists the clues, in Schmoll Crossword's own visual style.
 - **Will learn:** HTML structure, CSS grid layout, `fetch` to call your API.
 

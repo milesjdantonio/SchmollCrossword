@@ -45,7 +45,9 @@ SchmollCrosswordMain/
 │   ├── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
 │   ├── ClueWriter.java                  # Asks Claude to write each puzzle's clues (Step 15)
 │   ├── Puzzle.java                      # One finished puzzle + its JSON for the website (Step 16)
-│   └── PuzzleStore.java                 # Daily puzzles: one grid per date, clues saved per difficulty (Step 17)
+│   ├── PuzzleStore.java                 # Daily puzzles: one grid per date, clues saved per difficulty (Step 17)
+│   ├── PuzzleController.java            # The website's API: /api/daily and /api/unlimited (Step 18)
+│   └── WebApp.java                      # Starts the Spring Boot web server (Step 18)
 └── src/main/resources/
     ├── words.txt                        # Answer words (SCOWL 50 ∩ Spread the Wordlist), one per line
     ├── blocked-words.txt                # Offensive words the generator must never use
@@ -89,8 +91,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 
 ### Phase 4: Make it a website
 - ✅ **Step 17: Save generated puzzles.** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
-- 🔨 **Step 18: Backend API. ← YOU ARE HERE** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
-- ⬜ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
+- ✅ **Step 18: Backend API.** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
+- 🔨 **Step 19: Game board UI. ← YOU ARE HERE** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
 - ⬜ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
 - ⬜ **Step 21: Win detection, timer and score.** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.
 - ⬜ **Step 22: Check and Reveal.** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
@@ -116,7 +118,13 @@ mvn exec:java -Dexec.mainClass=com.crossword.App
 
 > For now the program prints word counts, the slots it found, PASS/FAIL test results and a fully generated 5×5 grid. It isn't playable yet.
 
-To also ask Claude for real clues (costs a little per run, needs the API key below):
+To start the website server (Step 18+), then open http://localhost:8080:
+
+```bash
+mvn spring-boot:run
+```
+
+To also ask Claude for real clues in the tests (costs a little per run, needs the API key below):
 
 ```bash
 mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live

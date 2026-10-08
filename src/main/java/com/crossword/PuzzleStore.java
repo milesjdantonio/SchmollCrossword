@@ -132,4 +132,15 @@ public class PuzzleStore {
         ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
         return Puzzle.create(SHAPE, grid, clues, "daily", seed, difficulty).toJson();
     }
+
+    // Makes a brand-new unlimited puzzle as JSON (not saved: every unlimited puzzle is new). COSTS MONEY (one API call).
+    static String generateUnlimited(long seed, String difficulty, Map<Integer, List<String>> wordsByLength) {
+        char[][] grid = buildGrid(seed, wordsByLength);
+        List<String> answers = new ArrayList<>();
+        for (Slot slot : Slot.findAllSlots(SHAPE)) {
+            answers.add(slot.getPattern(grid));
+        }
+        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
+        return Puzzle.create(SHAPE, grid, clues, "unlimited", seed, difficulty).toJson();
+    }
 }
