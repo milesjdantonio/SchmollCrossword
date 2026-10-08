@@ -75,7 +75,7 @@ const Game = (() => {
     const fingerprint = p => U.hash(JSON.stringify([p.solution, p.across.map(e => e.clue), p.down.map(e => e.clue)]));
     function restoreProgress() {
         const all = loadProgress();
-        for (const slot of ["daily-easy", "daily-medium", "daily-hard", "unlimited"]) {
+        for (const slot of ["daily-easy", "daily-medium", "daily-hard", "daily-challenge", "unlimited"]) {
             const saved = all[slot];
             if (!saved || !saved.puzzle || !saved.state) continue;
             if (slot !== "unlimited" && seedDay(saved.puzzle.seed) !== dayKey(new Date())) continue;   // an old daily
@@ -225,11 +225,14 @@ const Game = (() => {
     function drawBoard(puzzle) {
         boardEl.innerHTML = "";
         boardEl.style.setProperty("--size", puzzle.size);
+        boardEl.classList.toggle("big", puzzle.size > 5);              // Challenge mode's 7x7 grid: smaller letters
         game.cells = [];
         for (let row = 0; row < puzzle.size; row++) {
             game.cells.push([]);
             for (let col = 0; col < puzzle.size; col++) {
-                const cell = U.el("div", { class: "cell", style: { "--i": row * puzzle.size + col } });
+                const last = puzzle.size - 1;
+                const corner = row === 0 && col === 0 ? " c-tl" : row === 0 && col === last ? " c-tr" : row === last && col === 0 ? " c-bl" : row === last && col === last ? " c-br" : "";
+                const cell = U.el("div", { class: "cell" + corner, style: { "--i": row * puzzle.size + col } });
                 if (isBlock(row, col)) cell.classList.add("block");
                 else {
                     const number = puzzle.numbers[row][col];
@@ -384,7 +387,7 @@ const Game = (() => {
             info.firstToday = info.counted && !dayWasDone;
             info.streak = calculateStreaks(scores()).current;
             const all = scores();
-            info.left = ["easy", "medium", "hard"].filter(d => !all[seedDay(p.seed) + "-" + d]);
+            info.left = ["easy", "medium", "hard", "challenge"].filter(d => !all[seedDay(p.seed) + "-" + d]);
             if (!info.counted) info.note = "This daily was already completed, so no extra points.";
         } else {
             info.note = "Unlimited puzzles don't earn points, just glory.";

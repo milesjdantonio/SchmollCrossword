@@ -65,11 +65,12 @@
                 <div class="home-grid">
                     <article class="card daily-card">
                         <header class="card-head"><h2>Daily</h2><span class="kicker">same for everyone</span></header>
-                        <p class="card-blurb">Three puzzles a day, one per difficulty. Each earns points; any one keeps your streak.</p>
+                        <p class="card-blurb">Three puzzles a day, one per difficulty, plus a bigger Challenge. Each earns points; any one keeps your streak.</p>
                         <div class="daily-chips">
                             <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-sub">7&times;7 grid &middot; longer words &middot; up to 500 pts</span><span class="chip-state">Play</span></a>
                         </div>
                         <p class="card-status" id="daily-status"></p>
                         <p class="countdown" id="countdown"></p>
@@ -103,6 +104,7 @@
                         <button type="button" data-difficulty="easy">Easy</button>
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
+                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="Challenge: a bigger 7&times;7 grid with longer words, worth more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
                         <button type="button" class="new-puzzle" id="new-puzzle" hidden>&#8635; New puzzle</button>
                     </nav>
                 </div>

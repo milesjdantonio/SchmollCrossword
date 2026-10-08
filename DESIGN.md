@@ -35,6 +35,9 @@ character and sound. They asked for **that level of effort, not that style**:
 - **Three dailies a day**, one per difficulty, each with its own grid (seed = date × 10 + 1/2/3), words and clues.
   Each is scored separately (localStorage key `"20261008-easy"`); the Home screen shows a card per difficulty
   with ✓ and points, and the difficulty buttons show ✓ too.
+- **Challenge mode:** a fourth daily and an Unlimited option: a 7x7 grid with random symmetric black squares and
+  answers up to 7 letters (Hard's word list, medium-level clues). Base 300 points + a speed bonus from 200. Shown as a
+  gold ★ Challenge button and a wide gold card on Home.
 - **Streak:** solving any one of the day's dailies keeps it. The streak number has moving fire behind it:
   no fire at 0, small at 1–2 days, bigger at 3–6, biggest (with embers and a strong glow) at 7+.
 - **Achievements** (15, in `achievements.js`): shown as badges that pop in on the results card, and in a grid on

@@ -301,10 +301,10 @@
 }
 [data-world="garden"] .logo-text::before { content: "\273F\00a0"; display: inline-block; color: var(--accent); animation: spin 12s linear infinite; }
 [data-world="garden"] .board { overflow: visible; }
-[data-world="garden"] .board > .cell:nth-child(1) { border-top-left-radius: 10px; }
-[data-world="garden"] .board > .cell:nth-child(5) { border-top-right-radius: 10px; }
-[data-world="garden"] .board > .cell:nth-child(21) { border-bottom-left-radius: 10px; }
-[data-world="garden"] .board > .cell:nth-child(25) { border-bottom-right-radius: 10px; }
+[data-world="garden"] .board > .cell.c-tl { border-top-left-radius: 10px; }
+[data-world="garden"] .board > .cell.c-tr { border-top-right-radius: 10px; }
+[data-world="garden"] .board > .cell.c-bl { border-bottom-left-radius: 10px; }
+[data-world="garden"] .board > .cell.c-br { border-bottom-right-radius: 10px; }
 [data-world="garden"] .cell.typed .ltr { animation: sprout-in .45s cubic-bezier(.2, 1.6, .4, 1); }
 @keyframes sprout-in { from { opacity: 0; transform: translateY(10px) scale(.4); } }
 svg.garden { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }

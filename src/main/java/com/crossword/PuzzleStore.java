@@ -58,9 +58,9 @@ public class PuzzleStore {
     }
 
     // Design pass: each difficulty's daily gets its own seed (date seed + one digit), so its own grid.
-    // Example:  2026-10-07 easy -> 202610071, medium -> 202610072, hard -> 202610073
+    // Example:  2026-10-07 easy -> 202610071, medium -> 202610072, hard -> 202610073, challenge -> 202610074
     static long dailySeed(LocalDate date, String difficulty) {
-        int digit = difficulty.equals("easy") ? 1 : difficulty.equals("medium") ? 2 : 3;
+        int digit = difficulty.equals("easy") ? 1 : difficulty.equals("medium") ? 2 : difficulty.equals("hard") ? 3 : 4;
         return seedForDate(date) * 10 + digit;
     }
 
@@ -133,9 +133,28 @@ public class PuzzleStore {
         return grid;
     }
 
+    // Challenge mode: a 7x7 grid with random symmetric black squares (see ChallengeGrid). "synchronized" for the
+    // same reason as buildGrid: the solver shares App's caches.
+    static synchronized ChallengeGrid.Filled buildChallenge(long seed, Map<Integer, List<String>> wordsByLength) {
+        return ChallengeGrid.fill(seed, wordsByLength);
+    }
+
+    // A challenge puzzle as JSON. Its clues are written at the medium level: the bigger grid and its longer,
+    // less common words are the challenge. COSTS MONEY (one API call).
+    static String generateChallenge(long seed, String mode, Map<Integer, List<String>> wordsByLength) {
+        ChallengeGrid.Filled filled = buildChallenge(seed, wordsByLength);
+        List<String> answers = new ArrayList<>();
+        for (Slot slot : Slot.findAllSlots(filled.blackSquares())) {
+            answers.add(slot.getPattern(filled.grid()));
+        }
+        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, "medium");
+        return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, "challenge").toJson();
+    }
+
     // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
     static String generateDaily(LocalDate date, String difficulty, Map<Integer, List<String>> wordsByLength) {
         long seed = dailySeed(date, difficulty);
+        if (difficulty.equals("challenge")) return generateChallenge(seed, "daily", wordsByLength);
         char[][] grid = buildGrid(seed, wordsByLength);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {
@@ -147,6 +166,7 @@ public class PuzzleStore {
 
     // Makes a brand-new unlimited puzzle as JSON (not saved: every unlimited puzzle is new). COSTS MONEY (one API call).
     static String generateUnlimited(long seed, String difficulty, Map<Integer, List<String>> wordsByLength) {
+        if (difficulty.equals("challenge")) return generateChallenge(seed, "unlimited", wordsByLength);
         char[][] grid = buildGrid(seed, wordsByLength);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {

@@ -530,7 +530,7 @@
             let open = 0, filled = 0;
             const want = new Set();
             for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
-                if (sol[r][c] === "#") continue;
+                if (sol[r][c] === ".") continue;           // a black square
                 open++;
                 if (!game.letters[r][c]) continue;
                 filled++;

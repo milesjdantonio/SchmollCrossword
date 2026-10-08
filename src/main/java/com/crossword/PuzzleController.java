@@ -44,7 +44,8 @@ public class PuzzleController {
     @Autowired
     public PuzzleController(@Value("${schmoll.unlimited.per-person-per-hour}") int perPersonPerHour,
                             @Value("${schmoll.unlimited.everyone-per-day}") int everyonePerDay) throws IOException {
-        this(Map.of("easy", App.loadWordsFor("easy"), "medium", App.loadWordsFor("medium"), "hard", App.loadWordsFor("hard")),
+        this(Map.of("easy", App.loadWordsFor("easy"), "medium", App.loadWordsFor("medium"), "hard", App.loadWordsFor("hard"),
+                    "challenge", App.loadWordsFor("challenge")),
              App.loadWordsFor("hard", true), new RateLimiter(perPersonPerHour, everyonePerDay));
     }
 
@@ -71,7 +72,8 @@ public class PuzzleController {
      * ===== Step 18a: Is this a real difficulty? =====
      *
      * The URL is typed by whoever is calling the API, so it can contain anything (?difficulty=banana).
-     * Return true only for "easy", "medium" or "hard", ignoring upper/lower case ("Hard" is fine). Null is false.
+     * Return true only for "easy", "medium" or "hard" (and, since Challenge mode, "challenge"), ignoring upper/lower
+     * case ("Hard" is fine). Null is false.
      *
      * Example:  isValidDifficulty("Hard") -> true      isValidDifficulty("banana") -> false
      *
@@ -82,6 +84,7 @@ public class PuzzleController {
         if (difficulty.toLowerCase().equals("easy")) return true;
         if (difficulty.toLowerCase().equals("medium")) return true;
         if (difficulty.toLowerCase().equals("hard")) return true;
+        if (difficulty.toLowerCase().equals("challenge")) return true;   // Challenge mode: a bigger 7x7 grid
         return false;
     }
 
@@ -131,7 +134,7 @@ public class PuzzleController {
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"
     static ResponseStatusException badDifficulty(String difficulty) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                "difficulty must be easy, medium or hard (got: " + difficulty + ")");
+                "difficulty must be easy, medium, hard or challenge (got: " + difficulty + ")");
     }
 
     // Step 26: HTTP 429 means "too many requests: slow down". The website shows a friendly message for it.

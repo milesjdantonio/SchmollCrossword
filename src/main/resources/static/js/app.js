@@ -115,7 +115,8 @@ const App = (() => {
             else if (record.surrendered) state.textContent = "Revealed";
             else { state.textContent = `✓ ${record.points} pts · ${U.fmtTime(record.seconds || 0)}`; solved++; }
         });
-        $("#daily-status").textContent = solved === 3 ? "All three done today! \u{1F3C6}" : solved ? `${solved} of 3 done today.` : "Three new puzzles are ready.";
+        const total = document.querySelectorAll(".daily-chip").length;
+        $("#daily-status").textContent = solved === total ? "All of today's dailies done! \u{1F3C6}" : solved ? `${solved} of ${total} done today.` : "Today's puzzles are ready.";
         drawCountdown();
         const streaks = calculateStreaks(all);
         const holder = $("#home-streak");
@@ -127,7 +128,7 @@ const App = (() => {
         const now = new Date(), monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
         for (let i = 0; i < 7; i++) {
             const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i), key = dayKey(d);
-            const n = ["easy", "medium", "hard"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
+            const n = ["easy", "medium", "hard", "challenge"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
             week.appendChild(U.el("div", { class: "wk-day" + (key === today ? " today" : "") + (d > now ? " future" : ""), "data-n": Math.min(3, n), title: d.toDateString() + (n ? ` · ${n} solved` : "") },
                 U.el("span", { text: d.toLocaleDateString(undefined, { weekday: "narrow" }) }),
                 U.el("i", { text: n ? "✓" : "" })));
@@ -227,7 +228,7 @@ const App = (() => {
     function drawTimes(all, solved) {
         const el = $("#times-chart");
         el.innerHTML = "";
-        const rows = ["easy", "medium", "hard"].map(d => {
+        const rows = ["easy", "medium", "hard", "challenge"].map(d => {
             const t = solved.filter(k => all[k].difficulty === d && typeof all[k].seconds === "number").map(k => all[k].seconds);
             return { d, n: t.length, best: t.length ? Math.min(...t) : 0, avg: t.length ? t.reduce((a, b) => a + b, 0) / t.length : 0 };
         });

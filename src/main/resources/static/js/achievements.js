@@ -17,7 +17,9 @@ const Achievements = (() => {
         { id: "unlimited10", icon: "♾️", name: "Can't Stop", desc: "Solve 10 Unlimited puzzles." },
         { id: "worlds", icon: "\u{1F5FA}️", name: "World Traveler", desc: "Solve a puzzle in every world." },
         { id: "comeback", icon: "\u{1FA79}", name: "Never Give Up", desc: "Solve a puzzle after 3 or more Checks." },
-        { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a daily." }
+        { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a normal daily." },
+        { id: "challenger", icon: "\u{1F3D4}️", name: "Challenger", desc: "Solve a Challenge puzzle." },
+        { id: "summit", icon: "\u{1F9D7}", name: "Summit", desc: "Solve a daily Challenge without Check or Reveal." }
     ];
     const blank = () => ({ unlocked: {}, counts: {}, worlds: {} });
     const load = () => ({ ...blank(), ...U.store.get("achievements", {}) });
@@ -33,6 +35,7 @@ const Achievements = (() => {
         };
         unlock("first");
         if (info.difficulty === "hard") unlock("hard");
+        if (info.difficulty === "challenge") unlock("challenger");
         if (info.seconds < 60) unlock("speed60");
         if (info.seconds < 30) unlock("speed30");
         if (info.difficulty === "hard" && !info.checked && !info.revealed) unlock("clean");
@@ -47,8 +50,9 @@ const Achievements = (() => {
         data.worlds[worldId] = true;
         if (Worlds.list.every(w => data.worlds[w.id])) unlock("worlds");
         if (info.mode === "daily" && info.counted) {
-            if (info.points >= 300) unlock("perfect");
-            if (info.left && info.left.length === 0) unlock("hat");
+            if (info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
+            if (info.left && !info.left.some(d => d !== "challenge")) unlock("hat");          // the three normal dailies
+            if (info.difficulty === "challenge" && !info.checked && !info.revealed) unlock("summit");
             if (info.streak >= 3) unlock("streak3");
             if (info.streak >= 7) unlock("streak7");
             if (info.streak >= 30) unlock("streak30");

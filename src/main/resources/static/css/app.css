@@ -476,6 +476,9 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     transition: background-color .16s;
 }
 .cell.block { background: var(--block); cursor: default; }
+/* Challenge mode's 7x7 board: smaller letters and numbers (beats each world's own letter size) */
+.board.big .cell { font-size: clamp(1.1rem, 6.1vw, 1.95rem); }
+.board.big .cell .num { top: 2px; left: 3px; font-size: .6rem; }
 .cell.in-word { background: var(--word); }
 .cell.selected { background: var(--sel); }
 .cell .ltr { position: relative; z-index: 2; }
@@ -940,6 +943,14 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .diff-tag.easy { background: color-mix(in srgb, var(--good) 22%, var(--surface-2)); }
 .diff-tag.medium { background: color-mix(in srgb, var(--accent-2) 22%, var(--surface-2)); }
 .diff-tag.hard { background: color-mix(in srgb, var(--accent) 25%, var(--surface-2)); }
+.diff-tag.challenge { background: linear-gradient(135deg, #f6c445, #f08a24); color: #3a2200; }
+/* the Challenge button and home card: gold, with a star */
+.difficulty .challenge-btn { margin-left: 6px; background: linear-gradient(135deg, color-mix(in srgb, #f6c445 35%, transparent), color-mix(in srgb, #f08a24 30%, transparent)); }
+.difficulty .challenge-btn.active { background: linear-gradient(135deg, #f6c445, #f08a24); border-color: transparent; color: #3a2200; box-shadow: 0 0 16px rgba(246, 180, 60, .55); }
+.difficulty .challenge-btn span { display: inline-block; animation: spin 6s linear infinite; }
+.daily-chip.challenge { grid-column: 1 / -1; border-color: #e9a93a; background: linear-gradient(120deg, color-mix(in srgb, #f6c445 22%, var(--surface-2)), color-mix(in srgb, #f08a24 14%, var(--surface-2))); }
+.daily-chip.challenge .pips.star { color: #e99a1c; font-size: 1.2rem; line-height: 1; }
+.chip-sub { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; }
 .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
 .ach-tile { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; padding: 10px 12px; border: 1.5px dashed var(--line); border-radius: var(--radius-sm); opacity: .55; }
 .ach-tile.got { border-style: solid; border-color: var(--accent); background: var(--surface-2); opacity: 1; }

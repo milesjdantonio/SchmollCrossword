@@ -3,24 +3,29 @@
 // ===== The design (chosen by the project owner) =====
 //   points = base points for the difficulty
 //          + a speed bonus that starts at 100 and drops 10 for every full minute (never below 0)
+//            (Challenge mode, the bigger 7x7 daily: base 300 and a speed bonus that starts at 200)
 //          - 5 for every square CHECKED (Check square = 1 square, Check word = its length, Check puzzle = all squares)
 //          - 10 for every square REVEALED (only squares that were empty or wrong count)
 //   Revealing the whole puzzle is a surrender: 0 points, and it doesn't count toward the streak.
 //   Streaks are shown on screen only: they never add points.
 
 const SCORING = {
-    basePoints: { easy: 100, medium: 150, hard: 200 },   // points for solving, by difficulty
+    basePoints: { easy: 100, medium: 150, hard: 200, challenge: 300 },   // points for solving, by difficulty
     speedBonusStart: 100,     // bonus for solving in under a minute
+    challengeSpeedBonusStart: 200,   // Challenge mode: the bigger grid gets a bigger speed bonus
     speedBonusLossPerMinute: 10,
     checkPenaltyPerSquare: 5,     // per square looked at by Check
     revealPenaltyPerSquare: 10    // per square filled in by Reveal
 };
 
 // Points for one solved daily puzzle (never below 0)
+function speedBonusFor(difficulty, seconds) {
+    const start = difficulty === "challenge" ? SCORING.challengeSpeedBonusStart : SCORING.speedBonusStart;
+    return Math.max(0, start - Math.floor(seconds / 60) * SCORING.speedBonusLossPerMinute);
+}
 function calculateScore(difficulty, seconds, squaresChecked = 0, squaresRevealed = 0) {
     const base = SCORING.basePoints[difficulty] || 0;
-    const fullMinutes = Math.floor(seconds / 60);
-    const speedBonus = Math.max(0, SCORING.speedBonusStart - fullMinutes * SCORING.speedBonusLossPerMinute);
+    const speedBonus = speedBonusFor(difficulty, seconds);
     const points = base + speedBonus
         - squaresChecked * SCORING.checkPenaltyPerSquare
         - squaresRevealed * SCORING.revealPenaltyPerSquare;
@@ -30,7 +35,7 @@ function calculateScore(difficulty, seconds, squaresChecked = 0, squaresRevealed
 // The same score, split into its parts, for the results screen's tally
 function scoreBreakdown(difficulty, seconds, squaresChecked = 0, squaresRevealed = 0) {
     const base = SCORING.basePoints[difficulty] || 0;
-    const speed = Math.max(0, SCORING.speedBonusStart - Math.floor(seconds / 60) * SCORING.speedBonusLossPerMinute);
+    const speed = speedBonusFor(difficulty, seconds);
     const check = squaresChecked * SCORING.checkPenaltyPerSquare;
     const reveal = squaresRevealed * SCORING.revealPenaltyPerSquare;
     return { base, speed, check, reveal, total: Math.max(0, base + speed - check - reveal) };
@@ -38,7 +43,7 @@ function scoreBreakdown(difficulty, seconds, squaresChecked = 0, squaresRevealed
 
 // ---------------------------------------------------------------------------------------------
 // Streaks (display only). Saved dailies are keyed by day + difficulty, e.g. "20261007-easy".
-// Solving ANY of the day's three dailies keeps the streak alive.
+// Solving ANY of the day's dailies (the three normal ones or the Challenge) keeps the streak alive.
 // ---------------------------------------------------------------------------------------------
 
 // The day a daily's seed belongs to: 202610071 (easy daily, design pass) -> "20261007"; old seeds 20261007 too

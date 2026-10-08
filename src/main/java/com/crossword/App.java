@@ -132,7 +132,9 @@ public class App {
             case "easy":   return loadWords(true, true);
             case "medium": return loadWords(true, false);
             case "hard":   return allowVeryHardWords ? loadWords(false, false) : loadWordsSkipping(loadWordSet("very-hard-words.txt"));
-            default: throw new IllegalArgumentException("difficulty must be easy, medium or hard: " + difficulty);
+            // Challenge mode: the bigger 7x7 grid needs plenty of 6- and 7-letter words, so it uses Hard's list
+            case "challenge": return loadWordsFor("hard", false);
+            default: throw new IllegalArgumentException("difficulty must be easy, medium, hard or challenge: " + difficulty);
         }
     }
 
@@ -468,9 +470,17 @@ public class App {
      *
      * Related LeetCode: 37. Sudoku Solver, 79. Word Search, 46. Permutations, 384. Shuffle an Array
      */
+    // Challenge mode (added by Claude): a budget of solve() calls. Some random 7x7 patterns are very hard to fill,
+    // so the challenge generator sets a budget and, if it runs out, gives up and tries another pattern.
+    // Long.MAX_VALUE = no limit (the normal 5x5 puzzles never need one).
+    static long solveBudget = Long.MAX_VALUE;
+
     static boolean solve(List<Slot> remaining, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords, Random random) {
         if (remaining.isEmpty()) {
             return true;
+        }
+        if (--solveBudget < 0) {
+            return false;   // out of budget: unwinds like any dead end, so the grid is left as it was
         }
 
         Slot slot = pickMostConstrained(remaining, filledGrid, wordsByLength); 
