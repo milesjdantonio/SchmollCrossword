@@ -107,7 +107,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
   - ✅ Setup: `anthropic-java` dependency, API key loaded from a file outside the repo, Claude Code blocked from reading it (`.claude/settings.json`)
   - ✅ **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: the task, the difficulty with its meaning, the rules (short, never contains the answer, original, playful wording, each clue scaled to how familiar its word is) and a small-daily-crossword style guide (1–6 words, grammar matches the answer, `?` for puns, `___` blanks, "e.g." examples, quoted speech, a mix of clue types). Tuned over 6 rounds with the project owner.
   - ✅ **15b:** `ClueWriter.findProblems(clueSet, answers)`: two passes, Claude's clues (unexpected, empty, gives away the answer) then the requested answers (missing), ignoring case
-  - ✅ **15c:** `ClueWriter.writeClues(answers, difficulty)`: calls `claude-opus-5-5` with structured output into a `ClueSet`, retries once if the checks fail. Live test passed on the first try.
+  - ✅ **15c:** `ClueWriter.writeClues(answers, difficulty)`: calls Claude (first `claude-opus-5-5`; since 2026-10-08 Haiku 4.5 for easy and Sonnet 5.5 for medium/hard, to save money) with structured output into a `ClueSet`, retries once if the checks fail. Live test passed on the first try.
 - **Learned:** calling a real API from Java, keeping secrets out of code and git, prompt writing and iterating on it, structured output, validating AI output before users see it.
 - **LeetCode:** 242. Valid Anagram, 383. Ransom Note (checking one collection against another, for 15b)
 

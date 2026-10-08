@@ -1,230 +1,268 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-world="paper" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Schmoll Crossword</title>
-    <!-- Fonts (design pass): Nunito for text, Caveat for hand-written touches. Both SIL Open Font License. -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b2b33'/%3E%3Crect x='3' y='3' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Crect x='17' y='3' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Crect x='17' y='17' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Ctext x='9' y='13' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3ES%3C/text%3E%3Ctext x='23' y='13' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3EC%3C/text%3E%3Ctext x='23' y='27' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3ER%3C/text%3E%3C/svg%3E">
+    <!-- Fonts (all SIL Open Font License, free to use on websites; see WORDLISTS.md):
+         Nunito, Caveat, Patrick Hand (Notebook) · Orbitron, Exo 2 (Space) · Fredoka (Garden) · Press Start 2P, VT323 (Arcade) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Patrick+Hand&family=Press+Start+2P&family=VT323&display=swap">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/worlds.css">
     <script>
-        // Apply the saved theme before the page is drawn, so dark mode doesn't flash white first
+        // Apply the saved world and mode before the page is drawn, so nothing flashes
         try {
             const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
-            document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";
-            document.documentElement.dataset.design = s.design === "garden" ? "garden" : "classic";
-        } catch (err) { /* storage blocked: light theme */ }
+            const world = { classic: "paper", paper: "paper", space: "space", garden: "garden", arcade: "arcade" }[s.design] || "paper";
+            const darkOnly = world === "space" || world === "arcade";
+            document.documentElement.dataset.world = world;
+            document.documentElement.dataset.theme = darkOnly || s.theme === "dark" ? "dark" : "light";
+        } catch (err) { /* storage blocked: the Notebook world, light */ }
     </script>
 </head>
 <body>
-    <header class="top-bar">
-        <a class="logo" href="#">Schmoll Crossword</a>
-        <!-- Mode tabs (Step 23). The part of the URL after # picks the screen: #daily, #unlimited, or home -->
-        <nav class="modes" aria-label="Mode">
-            <a href="#" data-view="home">Home</a>
-            <a href="#daily" data-view="daily">Daily</a>
-            <a href="#unlimited" data-view="unlimited">Unlimited</a>
-            <a href="#stats" data-view="stats">Stats</a>
-            <a href="#settings" data-view="settings">Settings</a>
-            <!-- Sound on/off (design pass); the icon is drawn in CSS-friendly SVG -->
-            <button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="true">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg>
-            </button>
-        </nav>
-    </header>
+    <!-- the world's animated background (worlds.js) -->
+    <canvas id="world-bg" aria-hidden="true"></canvas>
+    <div class="crt" aria-hidden="true"></div>
 
-    <main>
-        <!-- Home screen (Step 23): pick a mode -->
-        <section id="home-view" class="home" hidden>
-            <p class="today-date" id="today-date"></p>
-            <div class="mode-cards">
-                <div class="mode-card daily-card">
-                    <h2>Daily</h2>
-                    <p>Three puzzles a day, the same for everyone. Each one earns points; any one keeps your streak.</p>
-                    <div class="daily-chips">
-                        <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
-                        <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
-                        <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
-                    </div>
-                    <p class="card-status" id="daily-status"></p>
-                </div>
-                <a class="mode-card" href="#unlimited">
-                    <h2>Unlimited</h2>
-                    <p>A brand-new puzzle whenever you want. Harder difficulties use harder words. Just for fun: no points.</p>
-                </a>
-            </div>
-            <div class="streak-line" id="home-streak"></div>
-        </section>
-
-        <!-- Stats (Step 24): daily puzzles only, worked out from the scores saved in this browser -->
-        <section id="stats-view" hidden>
-            <div class="page-head">
-                <h1>Your stats</h1>
-                <p class="subtitle">Daily puzzles only · saved in this browser</p>
-            </div>
-            <div class="stats-streak" id="stats-streak"></div>
-            <div class="stat-tiles" id="stat-tiles"></div>
-            <table class="history" id="history" hidden>
-                <thead>
-                    <tr><th>Date</th><th>Difficulty</th><th class="num">Time</th><th class="num">Points</th></tr>
-                </thead>
-                <tbody id="history-rows"></tbody>
-            </table>
-            <p class="empty-note" id="no-history" hidden>No dailies solved yet. Today's is waiting on the Daily tab.</p>
-        </section>
-
-        <!-- Settings (Step 24): saved in this browser -->
-        <section id="settings-view" hidden>
-            <div class="page-head">
-                <h1>Settings</h1>
-                <p class="subtitle">Saved in this browser</p>
-            </div>
-            <form class="settings" id="settings-form" onsubmit="return false">
-                <fieldset>
-                    <legend>Default difficulty</legend>
-                    <div class="options">
-                        <label><input type="radio" name="difficulty" value="easy"> Easy</label>
-                        <label><input type="radio" name="difficulty" value="medium"> Medium</label>
-                        <label><input type="radio" name="difficulty" value="hard"> Hard</label>
-                    </div>
-                    <p class="hint">What Daily and Unlimited start on. Easy uses the most common words, Hard adds rarer ones. You can still switch on the puzzle screen.</p>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Harder words</legend>
-                    <div class="options">
-                        <label><input type="checkbox" name="hardWords"> Allow extremely hard words in Unlimited Hard</label>
-                    </div>
-                    <p class="hint">Hard normally skips the rarest words (like OVOID or ADZE). This adds them back. The daily never uses them, so it's the same for everyone.</p>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Sound</legend>
-                    <div class="options">
-                        <label><input type="checkbox" name="sound"> Play sounds</label>
-                    </div>
-                    <p class="hint">Soft sounds for typing, finished words and wins. The speaker button at the top does the same.</p>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Timer</legend>
-                    <div class="options">
-                        <label><input type="checkbox" name="showTimer"> Show the timer while playing</label>
-                    </div>
-                    <p class="hint">Hiding it doesn't change your score: time still counts for the speed bonus.</p>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Theme</legend>
-                    <div class="theme-part">
-                        <h3>Mode</h3>
-                        <div class="options">
-                            <label><input type="radio" name="theme" value="light"> Light</label>
-                            <label><input type="radio" name="theme" value="dark"> Dark</label>
-                        </div>
-                    </div>
-                    <div class="theme-part">
-                        <h3>Design</h3>
-                        <div class="options">
-                            <label><input type="radio" name="design" value="classic"> Classic</label>
-                            <label><input type="radio" name="design" value="garden"> Garden</label>
-                        </div>
-                        <p class="hint">Classic: paper and pencil, with confetti when you win. Garden: vines grow between your letters, finished words bloom into flowers, and a solve lets the garden take over the screen.</p>
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Reset</legend>
-                    <button type="button" class="danger" id="reset-data">Clear my progress, scores and settings</button>
-                    <p class="hint">Can't be undone.</p>
-                </fieldset>
-            </form>
-        </section>
-
-        <!-- The game screen, used by both modes -->
-        <section id="game-view" hidden>
-            <div class="game-head">
-                <h1 id="game-title">Daily puzzle</h1>
-                <p class="subtitle" id="game-subtitle"></p>
-            </div>
-
-            <!-- Difficulty picker: in Daily it switches between today's three puzzles (✓ = solved); in Unlimited it starts a new puzzle -->
-            <nav class="difficulty" aria-label="Difficulty">
-                <button type="button" data-difficulty="easy">Easy</button>
-                <button type="button" data-difficulty="medium" class="active">Medium</button>
-                <button type="button" data-difficulty="hard">Hard</button>
-                <button type="button" class="new-puzzle" id="new-puzzle" hidden>New puzzle</button>
+    <div id="app">
+        <header class="top-bar">
+            <a class="logo" href="#" aria-label="Schmoll Crossword, home">
+                <span class="logo-mark" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></span>
+                <span class="logo-text">Schmoll<span> Crossword</span></span>
+            </a>
+            <nav class="modes" aria-label="Screens">
+                <a href="#" data-view="home"><span class="nav-ic" aria-hidden="true">&#8962;</span>Home</a>
+                <a href="#daily" data-view="daily"><span class="nav-ic" aria-hidden="true">&#9728;</span>Daily</a>
+                <a href="#unlimited" data-view="unlimited"><span class="nav-ic" aria-hidden="true">&#8734;</span>Unlimited</a>
+                <a href="#stats" data-view="stats"><span class="nav-ic" aria-hidden="true">&#9638;</span>Stats</a>
+                <a href="#settings" data-view="settings"><span class="nav-ic" aria-hidden="true">&#9881;</span>Settings</a>
             </nav>
-
-            <p id="status" class="status">Loading…</p>
-
-            <div class="puzzle" id="puzzle" hidden>
-                <div class="board-area">
-                    <!-- Timer (Step 21) -->
-                    <div class="timer-row">
-                        <span class="timer" id="timer" aria-label="Time">0:00</span>
-                        <span class="points-today" id="points-today"></span>
-                    </div>
-                    <!-- "You solved it!" panel (Step 21); hidden until the grid is correct -->
-                    <div class="win" id="win" hidden>
-                        <h2>You solved it!</h2>
-                        <p id="win-details"></p>
-                    </div>
-                    <!-- The clue for the selected word. Tap it to switch Across/Down; the arrows (touch screens only,
-                         Step 26) go to the previous / next clue, like Shift+Tab / Tab on a keyboard -->
-                    <div class="clue-bar-row">
-                        <button type="button" class="clue-step" data-step="-1" aria-label="Previous clue">&lsaquo;</button>
-                        <div class="clue-bar" id="clue-bar"></div>
-                        <button type="button" class="clue-step" data-step="1" aria-label="Next clue">&rsaquo;</button>
-                    </div>
-                    <!-- The 5x5 board; app.js fills it with squares -->
-                    <div class="board" id="board" aria-label="Crossword grid"></div>
-                    <!-- Check and Reveal (Step 22) -->
-                    <div class="helpers" id="helpers">
-                        <div class="helper-row">
-                            <span class="helper-label">Check</span>
-                            <button type="button" data-action="check" data-scope="square">Square</button>
-                            <button type="button" data-action="check" data-scope="word">Word</button>
-                            <button type="button" data-action="check" data-scope="puzzle">Puzzle</button>
-                        </div>
-                        <div class="helper-row">
-                            <span class="helper-label">Reveal</span>
-                            <button type="button" data-action="reveal" data-scope="square">Square</button>
-                            <button type="button" data-action="reveal" data-scope="word">Word</button>
-                            <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- The clue lists, to the right of the board; app.js fills them -->
-                <section class="clues">
-                    <div>
-                        <h2>Across</h2>
-                        <ol id="across-clues"></ol>
-                    </div>
-                    <div>
-                        <h2>Down</h2>
-                        <ol id="down-clues"></ol>
-                    </div>
-                </section>
-
-                <!-- On-screen keyboard (Step 26): phones have no keys, and this page has no text box to bring up
-                     theirs. Only shown on touch screens (see style.css); app.js adds the letter keys -->
-                <div class="keyboard" id="keyboard" aria-label="Keyboard">
-                    <div class="key-row"></div>
-                    <div class="key-row"></div>
-                    <div class="key-row"></div>
-                </div>
+            <div class="tools">
+                <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
+                <button type="button" class="tool" id="music-toggle" title="Music"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M9 18V6l11-2v12"/><circle class="fill" cx="6.5" cy="18" r="2.5"/><circle class="fill" cx="17.5" cy="16" r="2.5"/><path class="x" d="M3 3l18 18"/></svg><span class="sr">Music</span></button>
+                <button type="button" class="tool" id="sound-toggle" title="Sound effects"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound effects</span></button>
             </div>
-        </section>
-    </main>
+            <div class="world-pop" id="world-pop" hidden>
+                <b>Pick a world</b>
+                <div class="world-pop-cards" id="world-pop-cards"></div>
+            </div>
+        </header>
 
-    <script src="score.js"></script>
-    <script src="sound.js"></script>
-    <script src="designs.js"></script>
-    <script src="garden.js"></script>
-    <script src="app.js"></script>
+        <main>
+            <!-- ======================== HOME ======================== -->
+            <section id="home-view" class="screen" hidden>
+                <div class="hero">
+                    <div class="hero-logo" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i><i class="b"></i><i>O</i></div>
+                    <div>
+                        <p class="greeting" id="greeting"></p>
+                        <h1 class="hero-title">Today's puzzles</h1>
+                        <p class="today-date" id="today-date"></p>
+                    </div>
+                </div>
+                <div class="home-grid">
+                    <article class="card daily-card">
+                        <header class="card-head"><h2>Daily</h2><span class="kicker">same for everyone</span></header>
+                        <p class="card-blurb">Three puzzles a day, one per difficulty. Each earns points; any one keeps your streak.</p>
+                        <div class="daily-chips">
+                            <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
+                        </div>
+                        <p class="card-status" id="daily-status"></p>
+                        <p class="countdown" id="countdown"></p>
+                    </article>
+                    <article class="card unlimited-card">
+                        <header class="card-head"><h2>Unlimited</h2><span class="kicker">just for fun</span></header>
+                        <p class="card-blurb">A brand-new puzzle whenever you want. Harder difficulties use harder words. No points, all glory.</p>
+                        <a class="btn primary big" href="#unlimited">Play Unlimited &#9654;</a>
+                    </article>
+                    <article class="card streak-card">
+                        <header class="card-head"><h2>Your streak</h2><a class="kicker link" href="#stats">all stats &#9656;</a></header>
+                        <div class="streak-line" id="home-streak"></div>
+                        <div class="week" id="home-week" aria-label="This week"></div>
+                        <p class="home-ach" id="home-ach"></p>
+                    </article>
+                    <article class="card worlds-card">
+                        <header class="card-head"><h2>Worlds</h2><span class="kicker">pick a look</span></header>
+                        <div class="world-strip" id="home-worlds"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ======================== GAME ======================== -->
+            <section id="game-view" class="screen" hidden>
+                <div class="game-head">
+                    <div class="game-titles">
+                        <h1 id="game-title">Daily puzzle</h1>
+                        <p class="subtitle" id="game-subtitle"></p>
+                    </div>
+                    <nav class="difficulty" aria-label="Difficulty">
+                        <button type="button" data-difficulty="easy">Easy</button>
+                        <button type="button" data-difficulty="medium">Medium</button>
+                        <button type="button" data-difficulty="hard">Hard</button>
+                        <button type="button" class="new-puzzle" id="new-puzzle" hidden>&#8635; New puzzle</button>
+                    </nav>
+                </div>
+
+                <p id="status" class="status"></p>
+
+                <div class="puzzle" id="puzzle" hidden>
+                    <div class="board-area">
+                        <div class="hud-row">
+                            <div class="timer-wrap" title="Time and progress">
+                                <svg class="ring" viewBox="0 0 40 40" aria-hidden="true"><circle class="ring-bg" cx="20" cy="20" r="16"/><circle id="progress-ring" class="ring-fg" cx="20" cy="20" r="16" pathLength="100"/></svg>
+                                <span class="timer" id="timer" aria-label="Time">0:00</span>
+                                <span class="pct" id="progress-pct">0%</span>
+                            </div>
+                            <span class="points-today" id="points-today"></span>
+                            <div class="world-hud" id="world-hud"></div>
+                        </div>
+                        <div class="result-banner" id="result-banner" hidden></div>
+                        <div class="clue-bar-row">
+                            <button type="button" class="clue-step" data-step="-1" aria-label="Previous clue">&lsaquo;</button>
+                            <div class="clue-bar" id="clue-bar" title="Click to switch Across / Down"></div>
+                            <button type="button" class="clue-step" data-step="1" aria-label="Next clue">&rsaquo;</button>
+                        </div>
+                        <div class="board-wrap"><div class="board" id="board" aria-label="Crossword grid"></div></div>
+                        <div class="helpers" id="helpers">
+                            <div class="helper-row">
+                                <span class="helper-label">Check</span>
+                                <button type="button" data-action="check" data-scope="square">Square</button>
+                                <button type="button" data-action="check" data-scope="word">Word</button>
+                                <button type="button" data-action="check" data-scope="puzzle">Puzzle</button>
+                            </div>
+                            <div class="helper-row">
+                                <span class="helper-label">Reveal</span>
+                                <button type="button" data-action="reveal" data-scope="square">Square</button>
+                                <button type="button" data-action="reveal" data-scope="word">Word</button>
+                                <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
+                            </div>
+                            <!-- TEMPORARY test button (to be removed): fills in the answers and plays the win, nothing saved -->
+                            <button type="button" class="test-win" id="test-win">Win (test)</button>
+                        </div>
+                    </div>
+                    <section class="clues">
+                        <div class="clue-col"><h2><span>Across</span></h2><ol id="across-clues"></ol></div>
+                        <div class="clue-col"><h2><span>Down</span></h2><ol id="down-clues"></ol></div>
+                    </section>
+                    <div class="keyboard" id="keyboard" aria-label="Keyboard">
+                        <div class="key-row"></div><div class="key-row"></div><div class="key-row"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ======================== STATS ======================== -->
+            <section id="stats-view" class="screen" hidden>
+                <div class="page-head"><h1>Your stats</h1><p class="subtitle">Daily puzzles &middot; saved in this browser</p></div>
+                <div class="stats-top"><div class="stats-streak" id="stats-streak"></div></div>
+                <div class="stat-tiles" id="stat-tiles"></div>
+                <div class="stats-grid">
+                    <article class="card">
+                        <header class="card-head"><h2 id="heatmap-title">Last 18 weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i> 0&ndash;3 solved</span></header>
+                        <div class="heatmap" id="heatmap"></div>
+                    </article>
+                    <article class="card">
+                        <header class="card-head"><h2>Times</h2><span class="kicker"><i class="key-best"></i> best &nbsp;<i class="key-avg"></i> average</span></header>
+                        <div class="times-chart" id="times-chart"></div>
+                    </article>
+                </div>
+                <article class="card">
+                    <header class="card-head"><h2>Achievements</h2><span class="kicker" id="ach-count"></span></header>
+                    <div class="ach-grid" id="ach-grid"></div>
+                </article>
+                <article class="card">
+                    <header class="card-head"><h2>History</h2></header>
+                    <table class="history" id="history" hidden>
+                        <thead><tr><th>Date</th><th>Difficulty</th><th class="num">Time</th><th class="num">Points</th></tr></thead>
+                        <tbody id="history-rows"></tbody>
+                    </table>
+                    <p class="empty-note" id="no-history" hidden>No dailies solved yet. Today's are waiting on the Daily tab!</p>
+                </article>
+            </section>
+
+            <!-- ======================== SETTINGS ======================== -->
+            <section id="settings-view" class="screen" hidden>
+                <div class="page-head"><h1>Settings</h1><p class="subtitle">Saved in this browser</p></div>
+                <form class="settings" id="settings-form" onsubmit="return false">
+                    <fieldset class="card wide">
+                        <legend>World</legend>
+                        <p class="hint">The whole look: background, board, sounds, music, mascot and win animations. Hover a world to see it move.</p>
+                        <div class="world-cards" id="world-cards"></div>
+                    </fieldset>
+                    <fieldset class="card">
+                        <legend>Mode</legend>
+                        <div class="options">
+                            <label class="opt"><input type="radio" name="theme" value="light"><span>&#9728; Light</span></label>
+                            <label class="opt"><input type="radio" name="theme" value="dark"><span>&#9790; Dark</span></label>
+                        </div>
+                        <p class="hint">Notebook turns into a blueprint at night; the Garden gets a moon and fireflies. <span id="mode-note">This world is always dark.</span></p>
+                    </fieldset>
+                    <fieldset class="card">
+                        <legend>Sound</legend>
+                        <div class="options col">
+                            <label class="switch"><input type="checkbox" name="sound"><span class="track"></span>Sound effects</label>
+                            <label class="switch"><input type="checkbox" name="music"><span class="track"></span>Ambient music</label>
+                            <label class="range">Volume <input type="range" name="volume" min="0" max="100" step="5"></label>
+                        </div>
+                        <p class="hint">Every sound is made in code, live, in your browser. Each world has its own.</p>
+                    </fieldset>
+                    <fieldset class="card">
+                        <legend>Effects</legend>
+                        <div class="options">
+                            <label class="opt"><input type="radio" name="effects" value="full"><span>&#10024; Full</span></label>
+                            <label class="opt"><input type="radio" name="effects" value="lite"><span>&#9889; Lite</span></label>
+                        </div>
+                        <p class="hint">Lite uses fewer particles and a calmer background, for older devices. (Your device's "reduce motion" setting turns animations off.)</p>
+                        <div class="options col">
+                            <label class="switch"><input type="checkbox" name="intro"><span class="track"></span>Play the intro when I open the site</label>
+                            <label class="switch"><input type="checkbox" name="showTimer"><span class="track"></span>Show the timer while playing</label>
+                        </div>
+                        <button type="button" class="btn small" id="replay-intro">&#9654; Replay the intro</button>
+                    </fieldset>
+                    <fieldset class="card">
+                        <legend>Default difficulty</legend>
+                        <div class="options">
+                            <label class="opt"><input type="radio" name="difficulty" value="easy"><span>Easy</span></label>
+                            <label class="opt"><input type="radio" name="difficulty" value="medium"><span>Medium</span></label>
+                            <label class="opt"><input type="radio" name="difficulty" value="hard"><span>Hard</span></label>
+                        </div>
+                        <p class="hint">Easy uses the most common words; Hard adds rarer ones.</p>
+                        <div class="options col">
+                            <label class="switch"><input type="checkbox" name="hardWords"><span class="track"></span>Allow extremely hard words in Unlimited Hard</label>
+                        </div>
+                        <p class="hint">Like OVOID or ADZE. The daily never uses them, so it's the same for everyone.</p>
+                    </fieldset>
+                    <fieldset class="card">
+                        <legend>Reset</legend>
+                        <button type="button" class="btn danger" id="reset-data">Clear my progress, scores, achievements &amp; settings</button>
+                        <p class="hint">Can't be undone.</p>
+                    </fieldset>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- title cards, the results screen, popups (above the page) -->
+    <div id="overlay"></div>
+    <!-- the start-up intro -->
+    <div id="intro" class="intro" hidden></div>
+
+    <script src="js/util.js"></script>
+    <script src="js/score.js"></script>
+    <script src="js/sound.js"></script>
+    <script src="js/fx.js"></script>
+    <script src="js/worlds.js"></script>
+    <script src="js/worlds/paper.js"></script>
+    <script src="js/worlds/space.js"></script>
+    <script src="js/worlds/garden.js"></script>
+    <script src="js/worlds/arcade.js"></script>
+    <script src="js/mascot.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

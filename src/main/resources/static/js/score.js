@@ -27,6 +27,15 @@ function calculateScore(difficulty, seconds, squaresChecked = 0, squaresRevealed
     return Math.max(0, points);
 }
 
+// The same score, split into its parts, for the results screen's tally
+function scoreBreakdown(difficulty, seconds, squaresChecked = 0, squaresRevealed = 0) {
+    const base = SCORING.basePoints[difficulty] || 0;
+    const speed = Math.max(0, SCORING.speedBonusStart - Math.floor(seconds / 60) * SCORING.speedBonusLossPerMinute);
+    const check = squaresChecked * SCORING.checkPenaltyPerSquare;
+    const reveal = squaresRevealed * SCORING.revealPenaltyPerSquare;
+    return { base, speed, check, reveal, total: Math.max(0, base + speed - check - reveal) };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Streaks (display only). Saved dailies are keyed by day + difficulty, e.g. "20261007-easy".
 // Solving ANY of the day's three dailies keeps the streak alive.

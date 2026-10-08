@@ -63,7 +63,7 @@ If WordNet is used this way, credit it (CC BY 4.0) in the notice file.
 ## Decision (2026-10-07)
 
 The project owner chose **option 2 with a twist**: no stored clue file. Each time a puzzle is made, its ~10 answers are sent to the
-Claude API (`claude-opus-5-5`), which writes fresh clues at the chosen difficulty (easy / medium / hard). The code checks every
+Claude API (Haiku 4.5 for easy, Sonnet 5.5 for medium and hard; first `claude-opus-5-5`), which writes fresh clues at the chosen difficulty (easy / medium / hard). The code checks every
 clue (none missing, none containing its answer) before players see it. WordNet is not used for now.
 
 ---

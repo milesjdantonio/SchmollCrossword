@@ -46,7 +46,7 @@ class WordListTest {
     @Test
     void blocklistKeepsOffensiveWordsOut() throws IOException {
         Set<String> blocked = App.loadBlockedWords();
-        assertEquals(52, blocked.size(), "keep this in sync with blocked-words.txt");
+        assertEquals(54, blocked.size(), "keep this in sync with blocked-words.txt");
         assertTrue(blocked.contains("DICK"), "stored in UPPERCASE like the word list");
         assertEquals(0, App.findMatches("DICK", words).size());
         assertEquals(0, App.findMatches("HORNY", words).size());

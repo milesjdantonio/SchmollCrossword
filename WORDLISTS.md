@@ -168,10 +168,15 @@ Edit the file to add or remove words.
 ## Design pass: an easier list for Easy (2026-10-08)
 
 Difficulty now picks the answer words. **Easy** uses only everyday answers that are also in SCOWL size levels
-10 or 20 (the most common English words), which leaves 2,541 answers of 3–5 letters. The other 1,389 everyday
-answers are listed in `src/main/resources/not-easy-words.txt` (generated from the same SCOWL 2020.12.07 release
-linked below: `english-words.10/20` + `american-words.10/20`). It is derived from SCOWL and the existing list, so
-the same licenses and notices apply. Medium = the everyday list.
+10 or 20 (the most common English words). The other 1,389 everyday answers are listed in
+`src/main/resources/not-easy-words.txt` (generated from the same SCOWL 2020.12.07 release linked below:
+`english-words.10/20` + `american-words.10/20`). It is derived from SCOWL and the existing list, so the same
+licenses and notices apply. Medium = the everyday list.
+
+Later the same day the user found words like INCUR and LEST in an easy puzzle, so Claude went through every easy
+answer by hand and added 124 more to `not-easy-words.txt` (now 1,513 words): formal or old-fashioned words (LEST,
+ERGO, HENCE, THOU), British words (CHAP, DAFT, PENCE, VICAR), jargon (NODE, SINE, PARSE, SIGMA), and words that
+are awkward to clue in a family puzzle (DAMN, SEXY, MORON). That leaves **2,417 easy answers** of 3–5 letters.
 
 **Hard** adds the less common words (the level-35 words that Step 23 moved into the too-hard list), but skips the
 extremely hard ones: `very-hard-words.txt` (9,336 words) is exactly the Step 13c too-hard list (all SCOWL level
@@ -180,6 +185,14 @@ Settings "Allow extremely hard words in Unlimited Hard" adds them back; the dail
 
 ## Fonts (design pass)
 
-- **Nunito** and **Caveat**, loaded from Google Fonts. Both are under the SIL Open Font License 1.1, which allows
-  free use on websites. https://fonts.google.com/specimen/Nunito , https://fonts.google.com/specimen/Caveat
+All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which allows free use on websites:
+
+- **Nunito** and **Caveat** (Notebook text and headings). https://fonts.google.com/specimen/Nunito ,
+  https://fonts.google.com/specimen/Caveat
+- **Patrick Hand** (Notebook's handwriting). https://fonts.google.com/specimen/Patrick+Hand
+- **Orbitron** and **Exo 2** (Deep Space). https://fonts.google.com/specimen/Orbitron ,
+  https://fonts.google.com/specimen/Exo+2
+- **Fredoka** (Garden). https://fonts.google.com/specimen/Fredoka
+- **Press Start 2P** and **VT323** (Neon Arcade). https://fonts.google.com/specimen/Press+Start+2P ,
+  https://fonts.google.com/specimen/VT323
 - Sounds are generated in code (Web Audio API), so there are no sound files or licenses.

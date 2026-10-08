@@ -24,6 +24,14 @@ class ClueWriterTest {
         assertTrue(prompt.contains("hard"));
     }
 
+    // Easy clues come from the cheapest model; medium and hard need the stronger one for wordplay
+    @Test
+    void easyUsesTheCheaperModel() {
+        assertEquals(ClueWriter.EASY_MODEL, ClueWriter.modelFor("easy"));
+        assertEquals(ClueWriter.MODEL, ClueWriter.modelFor("medium"));
+        assertEquals(ClueWriter.MODEL, ClueWriter.modelFor("hard"));
+    }
+
     @Test
     void goodCluesHaveNoProblems() {
         ClueWriter.ClueSet good = clues(
