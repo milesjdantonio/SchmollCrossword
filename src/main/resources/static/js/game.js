@@ -306,7 +306,7 @@ const Game = (() => {
         }
         boardEl.classList.toggle("solved", game.solved && !game.surrendered);
         boardEl.classList.toggle("surrendered", game.surrendered);
-        document.querySelectorAll("#helpers button, #test-win").forEach(b => { b.disabled = game.solved; });
+        document.querySelectorAll("#helpers button:not(#test-win):not(#report-btn)").forEach(b => { b.disabled = game.solved; });   // the test button stays on, to replay the win
         // which words are full now? Any that weren't before were just finished
         const key = game.puzzle.mode + ":" + game.puzzle.seed;
         const full = new Set(), justDone = [];
@@ -810,9 +810,27 @@ const Game = (() => {
     }
 
     // TEMPORARY (to be removed): fills in every answer one square at a time and plays the win. Saves nothing.
+    // Press it again to watch the win again: after a test win the board is cleared and refilled; on a puzzle you
+    // really solved, only the win animation replays (your solve stays saved).
     $("#test-win").addEventListener("click", async event => {
         event.currentTarget.blur();
-        if (!game.puzzle || game.solved || blocked()) return;
+        if (!game.puzzle || blocked()) return;
+        if (game.solved && !game.testWin) {
+            const info = (game.result && game.result.info) || { mode: game.puzzle.mode, difficulty: game.puzzle.difficulty, seconds: game.seconds, test: true };
+            game.celebrating = true;
+            render();
+            celebrate(info);
+            return;
+        }
+        if (game.solved) {                               // a test win: start over with an empty board
+            const blank = v => game.puzzle.solution.map(row => Array.from(row, () => v));
+            Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, result: null, celebrating: false });
+            doneWords = null;
+            Worlds.board("reset");
+            Worlds.board("attach", boardEl, game);
+            render();
+            await U.wait(300);
+        }
         game.testWin = true;
         const size = game.puzzle.size;
         for (let row = 0; row < size; row++) for (let col = 0; col < size; col++) {
