@@ -391,6 +391,38 @@ public class App {
                 new ClueWriter.Clue("CHAIR", "Seat with a back")));
         check("problems: an unexpected answer is caught", ClueWriter.findProblems(extraWord, twoAnswers).size(), 1);
 
+        // Step 16a tests: assemble a Puzzle from a solved grid and its clues (no API call)
+        System.out.println();
+        char[][] sockGrid = {
+            "SOCK.".toCharArray(),   // toCharArray turns a String into a char[] row
+            "ERRED".toCharArray(),
+            "ADIEU".toCharArray(),
+            "TEMPS".toCharArray(),
+            ".REST".toCharArray()
+        };
+        List<ClueWriter.Clue> sockClueList = new ArrayList<>();
+        for (String answer : List.of("SOCK", "ERRED", "ADIEU", "TEMPS", "REST", "SEAT", "ORDER", "CRIME", "KEEPS", "DUST")) {
+            sockClueList.add(new ClueWriter.Clue(answer, "clue for " + answer));
+        }
+        Puzzle sockPuzzle = Puzzle.create(blackSquares, sockGrid, new ClueWriter.ClueSet(sockClueList), "daily", 1, "medium");
+        List<String> acrossOrder = new ArrayList<>();
+        for (Puzzle.Entry e : sockPuzzle.across) {
+            acrossOrder.add(e.number() + " " + e.answer());
+        }
+        List<String> downOrder = new ArrayList<>();
+        for (Puzzle.Entry e : sockPuzzle.down) {
+            downOrder.add(e.number() + " " + e.answer());
+        }
+        check("puzzle: across entries in number order", acrossOrder.toString(), "[1 SOCK, 5 ERRED, 7 ADIEU, 8 TEMPS, 9 REST]");
+        check("puzzle: down entries in number order", downOrder.toString(), "[1 SEAT, 2 ORDER, 3 CRIME, 4 KEEPS, 6 DUST]");
+        check("puzzle: numbers match numberGrid", Arrays.deepToString(sockPuzzle.numbers), Arrays.deepToString(numberGrid(blackSquares)));
+        boolean sockHasDust = !sockPuzzle.down.isEmpty() && sockPuzzle.down.get(sockPuzzle.down.size() - 1).clue().equals("clue for DUST");
+        check("puzzle: each entry gets its own clue (6-Down = DUST)", sockHasDust, true);
+        boolean sockPositions = !sockPuzzle.down.isEmpty() && sockPuzzle.down.get(sockPuzzle.down.size() - 1).row() == 1
+                && sockPuzzle.down.get(sockPuzzle.down.size() - 1).col() == 4 && sockPuzzle.down.get(sockPuzzle.down.size() - 1).length() == 4;
+        check("puzzle: 6-Down starts at row 1, col 4, 4 long", sockPositions, true);
+        check("puzzle: mode, seed and difficulty kept", sockPuzzle.mode + " " + sockPuzzle.seed + " " + sockPuzzle.difficulty, "daily 1 medium");
+
         // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
         //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
         // The key itself is never printed, only whether one was found.

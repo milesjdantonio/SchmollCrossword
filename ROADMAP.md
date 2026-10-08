@@ -113,7 +113,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ### 🔨 Step 16: A `Puzzle` object
 - **What:** bundle everything about one puzzle into one object: the grid, black squares, clue numbers, each Across/Down entry (number, answer, clue), the difficulty, the mode (daily or unlimited) and the seed. Then turn it into JSON text the website can read.
-  - **16a:** `Puzzle.create(...)`: assemble a finished puzzle from the pieces Steps 6–15 built
+  - ✅ **16a:** `Puzzle.create(...)`: one `Entry` per slot (number from `numberGrid`, answer from `getPattern`, clue matched by answer, ignoring case), Across/Down lists sorted by number with `Comparator.comparingInt`
   - **16b:** `puzzle.toJson()`: write the JSON by hand first, to see how serialization works (Step 18's web server will do it automatically)
 - **Will learn:** designing a class around what the frontend needs, records, serialization.
 - **LeetCode:** 297. Serialize and Deserialize Binary Tree
