@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Schmoll Crossword</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="top-bar">
+        <h1>Schmoll Crossword</h1>
+        <p class="subtitle">Daily puzzle · <span id="puzzle-date"></span></p>
+    </header>
+
+    <main>
+        <!-- Difficulty picker: same grid, different clues -->
+        <nav class="difficulty" aria-label="Difficulty">
+            <button type="button" data-difficulty="easy">Easy</button>
+            <button type="button" data-difficulty="medium" class="active">Medium</button>
+            <button type="button" data-difficulty="hard">Hard</button>
+        </nav>
+
+        <p id="status" class="status">Loading today's puzzle…</p>
+
+        <div class="puzzle" id="puzzle" hidden>
+            <!-- The 5x5 board; app.js fills it with squares -->
+            <div class="board" id="board" aria-label="Crossword grid"></div>
+
+            <!-- The clue lists; app.js fills them -->
+            <section class="clues">
+                <div>
+                    <h2>Across</h2>
+                    <ol id="across-clues"></ol>
+                </div>
+                <div>
+                    <h2>Down</h2>
+                    <ol id="down-clues"></ol>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

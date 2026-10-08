@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 19 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 20 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -135,11 +135,13 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
   - ✅ **18b/18c:** reject bad input with HTTP 400 before doing anything that costs money, lowercase the difficulty so `Hard` and `hard` share one saved daily
 - **Learned:** annotations (`@RestController`, `@GetMapping`, `@RequestParam`), HTTP status codes, never trusting input, `throw`, random seeds for unlimited mode.
 
-### 🔨 Step 19: Game board UI
+### ✅ Step 19: Game board UI
 - **What:** a web page (HTML/CSS/JavaScript) that draws the grid with numbers and lists the clues, in Schmoll Crossword's own visual style.
-- **Will learn:** HTML structure, CSS grid layout, `fetch` to call your API.
+- **Done (baseline, built by Claude):** `src/main/resources/static/` (`index.html`, `style.css`, `app.js`), served by Spring Boot at http://localhost:8080. Loads `/api/daily`, draws the grid (black squares from `.` in the solution, corner numbers) and the Across/Down clues, with Easy/Medium/Hard buttons. A real design pass comes later.
+- **Ideas to know:** the page `fetch`es JSON from your API and builds HTML elements from it; CSS grid lays out the squares; clue text is inserted with `textContent` so it can never inject HTML.
+- **Known for later:** the JSON includes the full solution, so a curious player could peek with browser tools. Fine for now; revisit before launch.
 
-### ⬜ Step 20: Controls
+### 🔨 Step 20: Controls
 - **What:** click to select, type to fill, Backspace, arrow keys, Across/Down toggle, highlight the current word and clue.
 - **Will learn:** keyboard and mouse events, keeping UI state in sync.
 

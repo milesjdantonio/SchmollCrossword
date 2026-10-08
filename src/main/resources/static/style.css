@@ -1,0 +1,122 @@
+/* Schmoll Crossword: baseline styles (Step 19). The real design pass comes later. */
+
+:root {
+    --bg: #f6f3ee;          /* warm paper */
+    --ink: #22252b;         /* text */
+    --muted: #6b6f78;       /* secondary text */
+    --cell: #ffffff;        /* open square */
+    --block: #2d3a4a;       /* black square: deep slate blue, our own look */
+    --line: #2d3a4a;        /* grid lines */
+    --accent: #e07a3f;      /* buttons, highlights */
+    --accent-ink: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.top-bar {
+    text-align: center;
+    padding: 24px 16px 8px;
+}
+.top-bar h1 { margin: 0; font-size: 1.8rem; letter-spacing: 0.02em; }
+.subtitle { margin: 4px 0 0; color: var(--muted); }
+
+main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 8px 16px 40px;
+}
+
+/* Difficulty buttons */
+.difficulty {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0 20px;
+}
+.difficulty button {
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--ink);
+    padding: 6px 18px;
+    border-radius: 999px;
+    font: inherit;
+    cursor: pointer;
+}
+.difficulty button.active {
+    background: var(--accent);
+    color: var(--accent-ink);
+}
+
+.status { text-align: center; color: var(--muted); }
+.status.error { color: #b3261e; }
+
+/* Board + clues side by side on wide screens, stacked on phones */
+.puzzle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* The grid: 5 equal columns; app.js sets --size from the puzzle */
+.board {
+    --size: 5;
+    display: grid;
+    grid-template-columns: repeat(var(--size), 1fr);
+    width: min(360px, 90vw);
+    aspect-ratio: 1;
+    border: 3px solid var(--line);
+    background: var(--line);
+    gap: 2px;
+}
+
+.cell {
+    position: relative;
+    background: var(--cell);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.4rem, 7vw, 2.2rem);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.cell.block { background: var(--block); }
+
+/* The small clue number in a square's top-left corner */
+.cell .number {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Clue lists */
+.clues {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+.clues > div { min-width: 220px; max-width: 300px; }
+.clues h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 4px;
+}
+.clues ol { list-style: none; padding: 0; margin: 0; }
+.clues li {
+    display: flex;
+    gap: 10px;
+    padding: 6px 0;
+}
+.clues li .clue-number { font-weight: 700; min-width: 1.5em; text-align: right; }

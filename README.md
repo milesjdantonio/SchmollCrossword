@@ -92,8 +92,8 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 ### Phase 4: Make it a website
 - ✅ **Step 17: Save generated puzzles.** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
 - ✅ **Step 18: Backend API.** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
-- 🔨 **Step 19: Game board UI. ← YOU ARE HERE** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
-- ⬜ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
+- ✅ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
+- 🔨 **Step 20: Controls. ← YOU ARE HERE** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
 - ⬜ **Step 21: Win detection, timer and score.** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.
 - ⬜ **Step 22: Check and Reveal.** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
 
