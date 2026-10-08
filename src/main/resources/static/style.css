@@ -71,6 +71,7 @@ main {
     --size: 5;
     display: grid;
     grid-template-columns: repeat(var(--size), 1fr);
+    grid-template-rows: repeat(var(--size), 1fr);   /* equal rows too, so typed letters can't stretch a row */
     width: min(360px, 90vw);
     aspect-ratio: 1;
     border: 3px solid var(--line);
@@ -89,6 +90,23 @@ main {
     text-transform: uppercase;
 }
 .cell.block { background: var(--block); }
+
+/* Step 20: selection highlights */
+.cell:not(.block) { cursor: pointer; user-select: none; }
+.cell.in-word { background: #fbe3d3; }      /* the current word: light accent */
+.cell.selected { background: #f4b183; }     /* the selected square: stronger accent */
+
+/* The clue for the selected word, shown above the board */
+.board-area { width: min(360px, 90vw); }
+.clue-bar {
+    min-height: 3.2em;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: #fbe3d3;
+    border-left: 4px solid var(--accent);
+    border-radius: 4px;
+}
+.clue-bar strong { margin-right: 4px; }
 
 /* The small clue number in a square's top-left corner */
 .cell .number {
@@ -120,3 +138,6 @@ main {
     padding: 6px 0;
 }
 .clues li .clue-number { font-weight: 700; min-width: 1.5em; text-align: right; }
+.clues li { cursor: pointer; border-radius: 4px; padding-left: 4px; }
+.clues li:hover { background: #efe9e1; }
+.clues li.active { background: #fbe3d3; }

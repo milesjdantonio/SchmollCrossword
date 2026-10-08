@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 20 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 21 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -141,11 +141,13 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Ideas to know:** the page `fetch`es JSON from your API and builds HTML elements from it; CSS grid lays out the squares; clue text is inserted with `textContent` so it can never inject HTML.
 - **Known for later:** the JSON includes the full solution, so a curious player could peek with browser tools. Fine for now; revisit before launch.
 
-### 🔨 Step 20: Controls
+### ✅ Step 20: Controls
 - **What:** click to select, type to fill, Backspace, arrow keys, Across/Down toggle, highlight the current word and clue.
-- **Will learn:** keyboard and mouse events, keeping UI state in sync.
+- **Done (built by Claude):** click a square (click again or Space to flip Across/Down), type to fill and auto-advance (to the next word at the end), Backspace, arrow keys (turn first, then move; skip black squares), Tab/Shift+Tab/Enter between clues, click a clue to jump to it, highlighted word + selected square + active clue, a clue bar above the board. Letters survive switching difficulty (same grid). Checked with 14 automated play tests in headless Edge.
+- **Ideas to know:** one `game` state object is the source of truth; every action changes the state, then `render()` redraws the page from it. Keyboard input comes from `keydown` events.
+- **Known for later:** phones need an on-screen keyboard (Step 26).
 
-### ⬜ Step 21: Win detection, timer and score
+### 🔨 Step 21: Win detection, timer and score
 - **What:** a running timer, pause, a "You solved it!" screen, and a **score** based on time, difficulty and how many checks/reveals were used.
 - **Will learn:** `setInterval`, comparing the player's grid to the answer, designing a scoring formula.
 

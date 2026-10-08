@@ -23,8 +23,12 @@
         <p id="status" class="status">Loading today's puzzle…</p>
 
         <div class="puzzle" id="puzzle" hidden>
-            <!-- The 5x5 board; app.js fills it with squares -->
-            <div class="board" id="board" aria-label="Crossword grid"></div>
+            <div class="board-area">
+                <!-- The clue for the selected word -->
+                <div class="clue-bar" id="clue-bar"></div>
+                <!-- The 5x5 board; app.js fills it with squares -->
+                <div class="board" id="board" aria-label="Crossword grid"></div>
+            </div>
 
             <!-- The clue lists; app.js fills them -->
             <section class="clues">

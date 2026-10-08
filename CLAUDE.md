@@ -46,7 +46,8 @@ Context for Claude Code when working in this repository.
 - **Done:** Step 17, `PuzzleStore.java`: `seedForDate`, `dailyFile`, `getDaily` (synchronized; reads `puzzles/daily/<date>-<difficulty>.json` or generates once via `generateDaily` and saves), `buildGrid(seed)` on the shared `SHAPE`.
 - **Done:** Step 18, Spring Boot 4.1.1 backend: `WebApp` + `PuzzleController` (`/api/daily`, `/api/unlimited`, 400 on bad difficulty, difficulty lowercased).
 - **Done:** Step 19 baseline web page in `src/main/resources/static/` (index.html, style.css, app.js): fetches `/api/daily`, draws grid + clues, difficulty buttons. Design is a placeholder; the user wants a real design pass later.
-- **Current step:** Step 20, controls (frontend: Claude builds it).
+- **Done:** Step 20 controls in `app.js`: a `game` state object + `render()`; click/type/Backspace/arrows/Tab/Space, word and clue highlighting, clue bar. Verified with automated play tests driving headless Edge over the DevTools protocol (Node 24 built-in WebSocket; Edge is at `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`).
+- **Current step:** Step 21, win detection, timer and score.
 - **Frontend:** the user asked Claude to do most frontend (HTML/CSS/JS) work; keep Java/backend steps as exercises for the user.
 - **Scope (changed 2026-10-07):** the game is a website. Steps 17–26 were redesigned: 17 save generated puzzles (daily cache), 18 Spring Boot API (`/api/daily`, `/api/unlimited`), 19–22 board, controls, win/timer/score, check/reveal, 23 daily + unlimited modes, 24 save progress/stats/scores/settings in browser storage, 25 JUnit, 26 mobile + deploy (API key server-side, rate-limit unlimited).
 - **Roadmap numbering:** Step 13b was inserted instead of renumbering, because code comments and docs refer to later step numbers (e.g. "Step 23" for the daily seed). The roadmap has 27 steps.
