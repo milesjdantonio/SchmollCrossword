@@ -302,6 +302,20 @@ const App = (() => {
     });
     document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest("#world-toggle")) pop.hidden = true; });
     pop.addEventListener("click", e => { if (e.target.closest(".world-card")) pop.hidden = true; });
+    // Light / dark, right in the world menu (the same setting as Settings > Mode)
+    const drawPopMode = () => pop.querySelectorAll(".pop-mode button").forEach(b => {
+        const on = b.dataset.mode === Settings.get("theme");
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", String(on));
+    });
+    pop.querySelectorAll(".pop-mode button").forEach(b => b.addEventListener("click", () => {
+        if (Settings.get("theme") === b.dataset.mode) return;
+        Settings.set("theme", b.dataset.mode);
+        Sound.play("toggle", b.dataset.mode === "dark");
+        worldCards($("#world-pop-cards"), { compact: true });     // the previews show the new mode
+    }));
+    drawPopMode();
+    Settings.on(key => { if (key === "theme") drawPopMode(); });
     Settings.on(key => {
         if (key === "sound") drawTools();
         if (key === "theme") refreshWorldUI();

@@ -45,7 +45,13 @@
                 <button type="button" class="tool" id="sound-toggle" title="Sound effects"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound effects</span></button>
             </div>
             <div class="world-pop" id="world-pop" hidden>
-                <b>Pick a world</b>
+                <div class="world-pop-head">
+                    <b>Pick a world</b>
+                    <div class="pop-mode" role="group" aria-label="Light or dark mode">
+                        <button type="button" data-mode="light">&#9728; Light</button>
+                        <button type="button" data-mode="dark">&#9790; Dark</button>
+                    </div>
+                </div>
                 <div class="world-pop-cards" id="world-pop-cards"></div>
             </div>
         </header>
