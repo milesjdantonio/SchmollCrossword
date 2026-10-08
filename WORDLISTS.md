@@ -122,6 +122,22 @@ What went into the project:
 
 ---
 
+## Too-hard list (Step 13c, 2026-10-07)
+
+The project owner wants **nothing harder than a Wordle answer**. The combined list still had words like
+OVOID, UVULA, XYLEM, AVAST, EWER and TIDED, so `src/main/resources/too-hard-words.txt` now lists words to skip:
+
+- **Every SCOWL level 40/50 word** (the least common we kept), **except** a hand-picked keep list of everyday words
+  (EMOJI, NINJA, WIKI, DECAF, VEGAN, ADIEU, LEMUR, PIXEL, TRYST...).
+- **Archaic, odd or crossword-only words from level 35** (EKED, METE, LIEU, DEIGN, ABLER, UTERI, TIDED...).
+- Result: 849 of the 6,695 three-to-five-letter answers are skipped, leaving 5,847.
+
+It was judged by Claude, not copied from any list. **The NYT's Wordle answer list was deliberately not used** (NYT content).
+The setting `App.SKIP_TOO_HARD_WORDS` (default `true`) turns the filter off; offensive words stay blocked either way.
+Edit the file to add or remove words.
+
+---
+
 ## Sources
 
 - **SCOWL** (Spell Checker Oriented Word Lists), Kevin Atkinson

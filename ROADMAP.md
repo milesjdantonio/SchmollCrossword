@@ -1,11 +1,11 @@
 # Schmoll Crossword: Full Roadmap
 
-Every step needed to go from an empty Java project to a playable daily mini crossword.
+Every step needed to go from an empty Java project to a mini crossword **website** with a daily puzzle (the same for everyone), an unlimited mode, scores, stats and settings.
 Each step is set up like a LeetCode problem: a problem statement, an empty method, and PASS/FAIL tests in `main`.
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 15 of 27 steps done.** Phase 2 is complete, the answers are everyday words, and a puzzle takes about 30 ms.
+**Progress: 16 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -102,67 +102,69 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Learned:** grid scanning with neighbor checks, using `||` / `&&` short-circuiting to avoid reading off the edge of an array, default array values (`int` starts at 0), and the copy-paste bug (`col + 2` left in the Down check).
 - **LeetCode:** 36. Valid Sudoku, 200. Number of Islands
 
-### 🔨 Step 15: Clues
+### ✅ Step 15: Clues
 - **What:** each puzzle's ~10 answers get fresh, original clues written by Claude through the Claude API, at a chosen difficulty (easy / medium / hard). No openly licensed clue source exists; see [CLUES.md](CLUES.md).
   - ✅ Setup: `anthropic-java` dependency, API key loaded from a file outside the repo, Claude Code blocked from reading it (`.claude/settings.json`)
-  - ✅ **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: the task, the difficulty with its meaning (made harder at the project owner's request: even easy avoids dictionary definitions), the rules (short, never contains the answer, original), and the answers one per line
+  - ✅ **15a:** `ClueWriter.buildPrompt(answers, difficulty)`: the task, the difficulty with its meaning, the rules (short, never contains the answer, original, playful wording, each clue scaled to how familiar its word is) and a small-daily-crossword style guide (1–6 words, grammar matches the answer, `?` for puns, `___` blanks, "e.g." examples, quoted speech, a mix of clue types). Tuned over 6 rounds with the project owner.
   - ✅ **15b:** `ClueWriter.findProblems(clueSet, answers)`: two passes, Claude's clues (unexpected, empty, gives away the answer) then the requested answers (missing), ignoring case
-  - 🔨 **15c:** `ClueWriter.writeClues(answers, difficulty)`: call the API with structured output, retry once if checks fail
-- **Will learn:** calling a real API from Java, keeping secrets out of code and git, prompt writing, structured output, validating AI output before users see it.
+  - ✅ **15c:** `ClueWriter.writeClues(answers, difficulty)`: calls `claude-opus-5-5` with structured output into a `ClueSet`, retries once if the checks fail. Live test passed on the first try.
+- **Learned:** calling a real API from Java, keeping secrets out of code and git, prompt writing and iterating on it, structured output, validating AI output before users see it.
 - **LeetCode:** 242. Valid Anagram, 383. Ransom Note (checking one collection against another, for 15b)
 
-### ⬜ Step 16: A `Puzzle` object
-- **What:** bundle the grid, answers, numbers and clues into one class and turn it into JSON.
-- **Will learn:** designing a class, your first Maven dependency (a JSON library), serialization.
+### 🔨 Step 16: A `Puzzle` object
+- **What:** bundle everything about one puzzle into one object: the grid, black squares, clue numbers, each Across/Down entry (number, answer, clue), the difficulty, the mode (daily or unlimited) and the seed. Then turn it into JSON text the website can read.
+  - **16a:** `Puzzle.create(...)`: assemble a finished puzzle from the pieces Steps 6–15 built
+  - **16b:** `puzzle.toJson()`: write the JSON by hand first, to see how serialization works (Step 18's web server will do it automatically)
+- **Will learn:** designing a class around what the frontend needs, records, serialization.
 - **LeetCode:** 297. Serialize and Deserialize Binary Tree
 
 ---
 
-## Phase 4: Make it playable ⬜
+## Phase 4: Make it a website ⬜
 
-### ⬜ Step 17: Console version (optional warm-up)
-- **What:** play in the terminal: type `1A CAT`, see the grid update, and win.
-- **Will learn:** reading user input with `Scanner`, a game loop, parsing commands.
+### ⬜ Step 17: Save generated puzzles (daily = same for everyone)
+- **What:** the daily puzzle must be identical for every player, but Claude writes different clues on every call. So each day's puzzle (per difficulty) is generated **once**, saved as a JSON file, and every player is served that saved copy. Unlimited puzzles can be generated on demand (or pre-generated in batches to control API cost).
+- **Will learn:** reading and writing files, caching, why "same input, same output" matters.
 
-### ⬜ Step 18: Backend API
-- **What:** a small Spring Boot server with `GET /api/puzzle` that returns a puzzle as JSON.
-- **Will learn:** HTTP, REST endpoints, Spring Boot basics.
+### ⬜ Step 18: Backend API (Spring Boot)
+- **What:** a small web server with endpoints like `GET /api/daily?difficulty=medium` and `GET /api/unlimited?difficulty=hard`, which return puzzles as JSON. It also serves the website's files.
+- **Will learn:** HTTP, REST endpoints, Spring Boot basics, keeping the API key on the server only.
 
 ### ⬜ Step 19: Game board UI
-- **What:** a web page (HTML/CSS/JavaScript) that draws the grid with numbers and lists the clues.
+- **What:** a web page (HTML/CSS/JavaScript) that draws the grid with numbers and lists the clues, in Schmoll Crossword's own visual style.
 - **Will learn:** HTML structure, CSS grid layout, `fetch` to call your API.
 
 ### ⬜ Step 20: Controls
 - **What:** click to select, type to fill, Backspace, arrow keys, Across/Down toggle, highlight the current word and clue.
 - **Will learn:** keyboard and mouse events, keeping UI state in sync.
 
-### ⬜ Step 21: Win detection and timer
-- **What:** a running timer, pause, and a "You solved it!" screen with the final time.
-- **Will learn:** `setInterval`, comparing the player's grid to the answer.
+### ⬜ Step 21: Win detection, timer and score
+- **What:** a running timer, pause, a "You solved it!" screen, and a **score** based on time, difficulty and how many checks/reveals were used.
+- **Will learn:** `setInterval`, comparing the player's grid to the answer, designing a scoring formula.
 
 ### ⬜ Step 22: Check and Reveal
-- **What:** check or reveal a square, a word or the whole puzzle, and mark wrong letters.
+- **What:** check or reveal a square, a word or the whole puzzle, and mark wrong letters (each use lowers the score).
 - **Will learn:** reusing slot logic on the frontend.
 
 ---
 
-## Phase 5: Polish ⬜
+## Phase 5: Modes, saving and launch ⬜
 
-### ⬜ Step 23: Daily puzzle
-- **What:** use today's date as the random seed, so everyone gets the same puzzle each day (builds on 12a).
-- **Will learn:** dates in Java, turning a date into a seed.
+### ⬜ Step 23: Daily and Unlimited modes
+- **What:** a home screen to pick a mode. **Daily:** today's date is the seed (builds on 12a), the same puzzle for everyone, one per day, with a countdown to the next one. **Unlimited:** a new random puzzle whenever you want.
+- **Will learn:** dates and time zones, turning a date into a seed, routing between screens.
 
-### ⬜ Step 24: Save progress and stats
-- **What:** remember a half-finished puzzle, solve times and streaks.
-- **Will learn:** browser `localStorage`, JSON in JavaScript.
+### ⬜ Step 24: Save progress, stats, scores and settings
+- **What:** remember a half-finished puzzle, solve times, scores, daily streaks and win stats. A **settings** screen: difficulty, allow harder words (`SKIP_TOO_HARD_WORDS`), timer on/off, theme. Everything is saved in the browser (`localStorage`), with no accounts needed.
+- **Will learn:** browser storage, JSON in JavaScript, designing a settings model.
 
 ### ⬜ Step 25: Tests
 - **What:** move the PASS/FAIL checks in `main` into real JUnit tests.
 - **Will learn:** JUnit, `mvn test`, why real test frameworks beat print statements.
 
 ### ⬜ Step 26: Mobile layout and deploy
-- **What:** make it work on phones and put it online so friends can play.
-- **Will learn:** responsive CSS, hosting a Java app.
+- **What:** make it work on phones and put the website online so friends can play. The API key lives only on the server, and unlimited mode gets a rate limit so API costs stay small (the game is free with no ads).
+- **Will learn:** responsive CSS, hosting a Java app, secrets in production, rate limiting.
 
 ---
 
@@ -183,3 +185,6 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 | 13b-1 | `5ad9a31` |
 | 13b-2 | `4f0dbca` |
 | 13b-3 | `63bf476` |
+| 14 | `84d4c1d` |
+| 15 setup | `6d95a43` |
+| 15a–15b | `0e81d0f` |

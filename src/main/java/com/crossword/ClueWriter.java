@@ -10,6 +10,8 @@ import java.util.Set; // A collection with no duplicates, good for "have I seen 
 
 import com.anthropic.client.AnthropicClient; // The object that talks to the Claude API
 import com.anthropic.client.okhttp.AnthropicOkHttpClient; // The standard way to build that client
+import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.StructuredMessageCreateParams;
 
 /*
  * ===== Step 15: AI-written clues (Claude API) =====
@@ -98,14 +100,14 @@ public class ClueWriter {
         // Difficulty, plus what it means, so Claude doesn't have to guess
         sb.append("Difficulty: ").append(difficulty).append(" - ");
         if (difficulty.equalsIgnoreCase("easy")) {             // equalsIgnoreCase: "Easy", "EASY", "easy" all match
-            sb.append("not a dictionary definition. Use a synonym, a fill-in-the-blank phrase, or a common association, "
-                    + "so a casual solver needs a moment's thought.\n\n");
+            sb.append("not a dictionary definition. Point to the answer through an association, an example, "
+                    + "or a common second meaning, so a casual solver needs a few seconds of thought, not an instant answer.\n\n");
         } else if (difficulty.equalsIgnoreCase("medium")) {
-            sb.append("indirect. Lean on less obvious meanings of the word and surface misdirection, "
-                    + "so an experienced solver gets it but a casual solver may need the crossing words.\n\n");
+            sb.append("indirect. Use a less obvious meaning of the word, or describe it from an unexpected angle, "
+                    + "so most solvers need a crossing letter or two.\n\n");
         } else if (difficulty.equalsIgnoreCase("hard")) {
-            sb.append("tricky. Use heavy misdirection, puns or wordplay (end punny clues with '?'), "
-                    + "uncommon meanings, or trivia. Still fair: once solved, the clue must clearly fit the answer.\n\n");
+            sb.append("tricky. Always use a less common meaning or a misleading surface reading; puns are welcome "
+                    + "(end punny clues with '?'). Still fair: once solved, the clue must clearly fit the answer.\n\n");
         } else {
             sb.append("use your judgment.\n\n");
         }
@@ -113,7 +115,26 @@ public class ClueWriter {
         sb.append("Rules:\n");
         sb.append("- Keep each clue short: never over 10 words.\n");
         sb.append("- Never put the answer, or a form of it (like DESKS for DESK), in its own clue. That gives it away.\n");
-        sb.append("- Write original, creative clues. Don't copy clues from published crosswords.\n\n");
+        sb.append("- Write original, creative clues. Don't copy clues from published crosswords.\n");
+        // Playful wording (chosen over literal-only): idioms and a bit of attitude are welcome, but easy must stay clear
+        sb.append("- Playful, conversational wording is welcome: idioms, everyday slang and a bit of attitude "
+                + "(\"Push someone's buttons\", \"Key that sends your text\"). At easy difficulty, only use idioms "
+                + "almost every English speaker knows.\n");
+        // Scale each clue to its word: an uncommon answer plus a tricky clue is unfair, a very common one can take more play
+        sb.append("- Scale each clue to its word, within the difficulty above: if an answer is less familiar, "
+                + "make its clue more direct; if it's a very common word, you can be more playful or misleading.\n\n");
+
+        // Standard mini-crossword conventions, described in our own words (no real puzzle's clues are copied)
+        sb.append("Style (a small daily crossword):\n");
+        sb.append("- Aim for 1 to 6 words per clue.\n");
+        sb.append("- Match the answer's grammar: a plural answer gets a plural clue, a past-tense answer a past-tense clue.\n");
+        sb.append("- End a clue with '?' only when it is a pun or wordplay.\n");
+        sb.append("- Use a fill-in-the-blank with ___ for a common phrase, saying, or title.\n");
+        sb.append("- Use \"e.g.\", \"for one\" or \"say\" when the clue gives an example of the answer.\n");
+        sb.append("- Put a clue in quotation marks when the answer is something people say out loud.\n");
+        sb.append("- Keep the tone lively and modern: everyday life, food, tech, pop culture.\n");
+        sb.append("- Mix clue types across the puzzle: mostly straight clues, plus at least one fill-in-the-blank, "
+                + "and a spoken-phrase or '?' clue where it fits naturally.\n\n");
 
         sb.append("Answers (one per line):\n");
         for (String answer : answers) {
@@ -203,7 +224,27 @@ public class ClueWriter {
      * Related LeetCode: none. This is API integration, the most common "AI at work" task.
      */
     static ClueSet writeClues(List<String> answers, String difficulty) {
-        // TODO: your code here
-        return new ClueSet(new ArrayList<>()); // placeholder so the project compiles
+        AnthropicClient client = createClient();
+
+        StructuredMessageCreateParams<ClueSet> params = MessageCreateParams.builder()
+            .model("claude-opus-5-5")
+            .maxTokens(16000L)
+            .outputConfig(ClueSet.class)                       // "reply as a ClueSet": the SDK makes the JSON schema
+            .addUserMessage(buildPrompt(answers, difficulty))  // your Step 15a prompt
+            .build();
+
+        ClueSet clues = null;
+        for (int attempt = 1; attempt <= 2; attempt++) {
+            var response = client.messages().create(params);   // ← the actual internet call
+            clues = response.content().stream()
+                .flatMap(block -> block.text().stream())
+                .findFirst().orElseThrow()
+                .text();
+
+            if (findProblems(clues, answers).isEmpty()) {   // Step 15b says no problems?
+                return clues;                               // good: done
+            }
+        }
+        return clues;   // still had problems after 2 tries: return them anyway, and the live test will show what's wrong
     }
 }

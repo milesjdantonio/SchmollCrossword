@@ -95,9 +95,9 @@ public class App {
 
         // Step 7 tests: like LeetCode's "Run" button. All should say PASS once findMatches works.
         System.out.println();
-        testFindMatches("C.T.", 7, wordsByLength);                         // CATS, CITE, CITY, COTE, COTS, CUTE, CUTS
+        testFindMatches("C.T.", 6, wordsByLength);                         // CATS, CITE, CITY, COTS, CUTE, CUTS (COTE is too hard)
         testFindMatches("CAT", 1, wordsByLength);                          // already a full word
-        testFindMatches(".....", 4014, wordsByLength);                     // every 5-letter word (4016 minus 2 blocked)
+        testFindMatches(".....", 3489, wordsByLength);                     // every Wordle-level 5-letter word (blocked and too-hard words skipped)
         testFindMatches("QZX..", 0, wordsByLength);                        // nothing fits
         testFindMatches("...............................", 0, wordsByLength); // no words this long at all
 
@@ -249,6 +249,14 @@ public class App {
         check("word list: obscure ENABLE words are gone (DARB)", findMatches("DARB", wordsByLength).size(), 0);
         System.out.print(generate(allSlots, blackSquares, wordsByLength, 1)); // a puzzle from the new list
 
+        // Step 13c tests: only Wordle-level answers, with a setting to allow harder words
+        check("too hard: OVOID skipped by default", findMatches("OVOID", wordsByLength).size(), 0);
+        check("too hard: XYLEM skipped by default", findMatches("XYLEM", wordsByLength).size(), 0);
+        check("too hard: everyday words stay (EMOJI)", findMatches("EMOJI", wordsByLength).size(), 1);
+        Map<Integer, List<String>> withHardWords = loadWords(false);   // the setting turned off
+        check("too hard: setting off brings OVOID back", withHardWords.get(5).contains("OVOID"), true);
+        check("too hard: setting off still blocks offensive words", withHardWords.get(4).contains("DICK"), false);
+
         // Step 13b-1 tests: count findMatches calls and repeated patterns
         System.out.println();
         findMatchesCalls = 0;
@@ -281,11 +289,11 @@ public class App {
         check("cache: second call gives the same words", findMatches("C.T.", wordsByLength), firstAnswer);
         List<String> scribbled = findMatches("C.T.", wordsByLength);
         scribbled.clear(); // pretend a caller messed with the list it got back
-        check("cache: changing a returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 7);
+        check("cache: changing a returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 6);
         matchCache.clear();
         List<String> veryFirst = findMatches("C.T.", wordsByLength); // the call that fills the cache
         veryFirst.clear();
-        check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 7);
+        check("cache: changing the FIRST returned list doesn't damage the cache", findMatches("C.T.", wordsByLength).size(), 6);
 
         // Step 13b-3 tests: the Trie
         System.out.println();
@@ -437,8 +445,23 @@ public class App {
         System.out.println(status + "  " + pattern + "  expected " + expectedCount + ", got " + result.size() + "  " + preview);
     }
 
+    /*
+     * ===== Setting: skip words that are too hard =====
+     *
+     * true  = only Wordle-level answers (skips every word in too-hard-words.txt). This is the normal game.
+     * false = allow the harder words too (OVOID, XYLEM, AVAST...), e.g. for an "expert" mode later.
+     * Offensive words (blocked-words.txt) are ALWAYS skipped; this setting doesn't change that.
+     */
+    static boolean SKIP_TOO_HARD_WORDS = true;
+
+    // Loads the word list using the setting above
     static Map<Integer, List<String>> loadWords() throws IOException {
-        Map<Integer, List<String>> wordsByLength = new HashMap<>(); 
+        return loadWords(SKIP_TOO_HARD_WORDS);
+    }
+
+    // Same, but you choose: loadWords(false) includes the too-hard words (the tests use this to compare)
+    static Map<Integer, List<String>> loadWords(boolean skipTooHardWords) throws IOException {
+        Map<Integer, List<String>> wordsByLength = new HashMap<>();
 
         InputStream inputStream = App.class.getClassLoader().getResourceAsStream("words.txt");
         if (inputStream == null) {
@@ -446,6 +469,8 @@ public class App {
         }
 
         Set<String> blocked = loadBlockedWords(); // read the blocklist ONCE, then reuse it for every word below
+        // Same idea for the too-hard list. When the setting is off, use an empty set so nothing is skipped.
+        Set<String> tooHard = skipTooHardWords ? loadTooHardWords() : new HashSet<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
@@ -453,7 +478,8 @@ public class App {
                 String word = line.trim().toUpperCase();
                 if (word.isEmpty()) continue; // skip blank lines
                 if (blocked.contains(word)) continue; // skip offensive lines
-                
+                if (tooHard.contains(word)) continue; // skip words harder than Wordle level
+
                 int length = word.length();
                 wordsByLength.computeIfAbsent(length, k -> new ArrayList<>()).add(word); // computeIfAbsent allows you to add to a list even when it doesnt exist
                 // computeIfAbsent runs your lambda, creates a new empty ArrayList, stores it under key 5, and hands it back. Then .add(word) puts your word into that brand-new list
@@ -480,11 +506,21 @@ public class App {
      * Related LeetCode: 1. Two Sum, 217. Contains Duplicate (a HashSet for instant "is it in here?" checks)
      */
     static Set<String> loadBlockedWords() throws IOException {
-        Set<String> blocked = new HashSet<>();
+        return loadWordSet("blocked-words.txt");
+    }
 
-        InputStream inputStream = App.class.getClassLoader().getResourceAsStream("blocked-words.txt");
+    // Words harder than Wordle level (archaic, jargon, crossword-only). Edit too-hard-words.txt to change it.
+    static Set<String> loadTooHardWords() throws IOException {
+        return loadWordSet("too-hard-words.txt");
+    }
+
+    // Your Step 13 code, moved here so both lists can share it (one lowercase word per line -> UPPERCASE Set)
+    static Set<String> loadWordSet(String fileName) throws IOException {
+        Set<String> words = new HashSet<>();
+
+        InputStream inputStream = App.class.getClassLoader().getResourceAsStream(fileName);
         if (inputStream == null) {
-            throw new IOException("Failed to Access blocked-words.txt");
+            throw new IOException("Failed to Access " + fileName);
         }
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -492,10 +528,10 @@ public class App {
             while ((line = reader.readLine()) != null) {
                 String word = line.trim().toUpperCase();
                 if (word.isEmpty()) continue;
-                blocked.add(word);
+                words.add(word);
             }
         }
-        return blocked; 
+        return words;
     }
 
     /*
