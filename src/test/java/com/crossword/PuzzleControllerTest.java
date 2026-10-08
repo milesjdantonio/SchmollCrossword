@@ -44,8 +44,9 @@ class PuzzleControllerTest {
         assertFalse(controller.wordsFor("hard").get(5).contains("OVOID"), "extremely hard words need the setting");
         assertTrue(controller.wordsFor("hard", true).get(5).contains("OVOID"));
         assertFalse(controller.wordsFor("medium", true).get(5).contains("OVOID"), "the setting only changes Hard");
-        assertTrue(controller.wordsFor("medium").get(5).contains("MANGO"));
-        assertFalse(controller.wordsFor("easy").get(5).contains("MANGO"), "level-35 words aren't easy");
+        assertTrue(controller.wordsFor("medium").get(5).contains("FJORD"));
+        assertFalse(controller.wordsFor("easy").get(5).contains("FJORD"), "not-easy-words.txt keeps it out of Easy");
+        assertTrue(controller.wordsFor("easy").get(5).contains("MANGO"), "everyday words moved back into Easy");
         assertTrue(controller.wordsFor("easy").get(5).contains("HOUSE"));
         assertFalse(controller.wordsFor("hard", true).get(4).contains("DICK"), "offensive words are blocked either way");
     }

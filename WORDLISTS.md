@@ -176,7 +176,13 @@ licenses and notices apply. Medium = the everyday list.
 Later the same day the user found words like INCUR and LEST in an easy puzzle, so Claude went through every easy
 answer by hand and added 124 more to `not-easy-words.txt` (now 1,513 words): formal or old-fashioned words (LEST,
 ERGO, HENCE, THOU), British words (CHAP, DAFT, PENCE, VICAR), jargon (NODE, SINE, PARSE, SIGMA), and words that
-are awkward to clue in a family puzzle (DAMN, SEXY, MORON). That leaves **2,417 easy answers** of 3–5 letters.
+are awkward to clue in a family puzzle (DAMN, SEXY, MORON).
+
+Then the user went the other way through the start of the list (A to BALD) and moved everyday words with one clear,
+concrete meaning back into Easy (ACHOO, ACNE, ACRE, ANKLE, ANT, AQUA, ATTIC, BAKER, BALD), and asked Claude to do the
+same for the rest. Claude moved 525 more back (BARN, CANDY, DEER, GOOSE, IGLOO, LAMB, PUPPY, SHARK, TACO, ZEBRA...),
+keeping out niche, slangy or dated ones (BANAL, DWEEB, FJORD, KUDZU, MATZO, SWAMI). `not-easy-words.txt` now has
+977 words, which leaves **2,953 easy answers** of 3–5 letters.
 
 **Hard** adds the less common words (the level-35 words that Step 23 moved into the too-hard list), but skips the
 extremely hard ones: `very-hard-words.txt` (9,336 words) is exactly the Step 13c too-hard list (all SCOWL level

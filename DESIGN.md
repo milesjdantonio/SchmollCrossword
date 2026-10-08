@@ -27,7 +27,7 @@ character and sound. They asked for **that level of effort, not that style**:
 
 ## Game rules that go with the design (built)
 
-- **Words scale with difficulty.** Easy = only the most common words (SCOWL levels 10–20 minus a hand-picked list, 2,417 answers;
+- **Words scale with difficulty.** Easy = only the most common words (SCOWL levels 10–20, adjusted by hand both ways, 2,953 answers;
   `not-easy-words.txt` lists the rest). Medium = the everyday list (3,930). Hard = adds the less common words
   (alibi, abhor, cacao) but skips the extremely hard ones in `very-hard-words.txt` (geode, adze, schwa).
   Settings "Allow extremely hard words in Unlimited Hard" adds those back (Unlimited only, so the daily stays the
