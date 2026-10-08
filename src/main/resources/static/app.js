@@ -1,6 +1,6 @@
 // Schmoll Crossword: draws the puzzle from the server (Step 19), lets you play it (Step 20-22),
-// switches between the Home, Daily and Unlimited screens (Step 23), and saves progress, stats
-// and settings in this browser (Step 24).
+// switches between the Home, Daily and Unlimited screens (Step 23), saves progress, stats
+// and settings in this browser (Step 24), and has an on-screen keyboard for phones (Step 26).
 
 const statusEl = document.getElementById("status");
 const puzzleEl = document.getElementById("puzzle");
@@ -188,17 +188,21 @@ async function loadPuzzle(mode, difficulty) {
         let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
         if (mode === "unlimited" && settings.hardWords) url += "&hardWords=true";   // Settings: harder words (Unlimited only)
         const response = await fetch(url);
+        if (response.status === 429) {   // Step 26: the server's rate limit for Unlimited
+            throw new Error("you've made a lot of puzzles recently. Take a break and try again later, or play today's Daily.");
+        }
         if (!response.ok) {
             throw new Error("The server answered " + response.status);
         }
         const puzzle = await response.json();   // the JSON from Puzzle.toJson()
         if (myLoad !== loadCounter) return;      // the player moved on while we waited
         lastPuzzle[mode] = puzzle;
+        if (currentView() !== mode) return;      // they went to another screen: keep it for when they come back
         startGame(puzzle);
         statusEl.hidden = true;
         puzzleEl.hidden = false;
     } catch (err) {
-        if (myLoad !== loadCounter) return;
+        if (myLoad !== loadCounter || currentView() !== mode) return;   // don't show one mode's error on another's screen
         statusEl.textContent = "Couldn't load the puzzle: " + err.message;
         statusEl.classList.add("error");
     }
@@ -675,6 +679,42 @@ document.addEventListener("keydown", (event) => {
 });
 
 // ---------------------------------------------------------------------------------------------
+// On-screen keyboard and clue arrows (Step 26), for touch screens. They call the same actions as the
+// real keyboard above. "⇄" switches Across/Down (like Space), "⌫" is Backspace.
+// ---------------------------------------------------------------------------------------------
+const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "⇄ZXCVBNM⌫"];
+document.querySelectorAll("#keyboard .key-row").forEach((rowEl, i) => {
+    for (const key of [...KEY_ROWS[i]]) {   // [..."ABC"] splits a string into ["A", "B", "C"]
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "key";
+        button.textContent = key;
+        button.dataset.key = key;
+        if (key === "⇄") { button.classList.add("wide"); button.setAttribute("aria-label", "Switch Across/Down"); }
+        if (key === "⌫") { button.classList.add("wide"); button.setAttribute("aria-label", "Backspace"); }
+        rowEl.appendChild(button);
+    }
+});
+
+document.getElementById("keyboard").addEventListener("click", (event) => {
+    const button = event.target.closest(".key");   // the key that was tapped (or null if the gap between keys was)
+    if (!button || !game.puzzle || game.solved) return;
+    const key = button.dataset.key;
+    if (key === "⌫") backspace();
+    else if (key === "⇄") toggleDirection();
+    else typeLetter(key);
+});
+
+clueBarEl.addEventListener("click", () => {
+    if (game.puzzle && !game.solved) toggleDirection();
+});
+document.querySelectorAll(".clue-step").forEach(button => {
+    button.addEventListener("click", () => {
+        if (game.puzzle && !game.solved) moveToEntry(Number(button.dataset.step));
+    });
+});
+
+// ---------------------------------------------------------------------------------------------
 // Screens and modes (Step 23-24). The part of the URL after "#" picks the screen:
 //   (nothing) = Home,  #daily,  #unlimited,  #stats,  #settings
 // so the browser's Back button and bookmarks work.
@@ -714,7 +754,11 @@ function showView() {
     document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b =>
         b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
 
-    if (game.puzzle && game.puzzle.mode === view) return;   // already showing this mode's game
+    if (game.puzzle && game.puzzle.mode === view) {          // already this mode's game:
+        statusEl.hidden = true;                               // hide the other mode's "Loading…" or error message
+        puzzleEl.hidden = false;
+        return;
+    }
     if (lastPuzzle[view]) {
         startGame(lastPuzzle[view]);                      // come back to the puzzle you left
         statusEl.hidden = true;

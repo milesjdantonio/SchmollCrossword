@@ -26,8 +26,10 @@ import java.util.Random;
  */
 public class PuzzleStore {
 
-    // Where daily puzzles are saved (inside the project folder, ignored by git: it's generated data)
-    static final Path DAILY_FOLDER = Path.of("puzzles", "daily");
+    // Where daily puzzles are saved: puzzles/daily inside the project folder (ignored by git: it's generated data).
+    // Step 26: online, the host sets PUZZLE_DIR to a disk that survives restarts; otherwise a restart would lose
+    // today's saved clues and the next request would pay Claude to write different ones.
+    static final Path DAILY_FOLDER = Path.of(System.getenv().getOrDefault("PUZZLE_DIR", "puzzles"), "daily");
 
     // The grid shape every puzzle uses for now (black squares top-right and bottom-left)
     static final boolean[][] SHAPE = {
@@ -111,7 +113,9 @@ public class PuzzleStore {
     // ---------------------------------------------------------------------------------------
 
     // Fills the SHAPE grid using a seed. The same seed always gives the same grid.
-    static char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength) {
+    // "synchronized" (Step 26): the solver shares App's cache, counters and Trie, which aren't safe for two
+    // requests to change at the same moment. Filling a grid takes well under a second, so taking turns is fine.
+    static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength) {
         int size = SHAPE.length;
         char[][] grid = new char[size][size];
         for (char[] row : grid) {

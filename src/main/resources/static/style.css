@@ -191,10 +191,12 @@ main {
 
 /* The clue for the selected word, shown above the board */
 .board-area { width: min(360px, 90vw); }
+.clue-bar-row { display: flex; align-items: stretch; gap: 6px; margin-bottom: 10px; }
 .clue-bar {
+    flex: 1;
     min-height: 3.2em;
-    margin-bottom: 10px;
     padding: 8px 12px;
+    cursor: pointer;          /* tap or click it to switch Across/Down */
     background: var(--word);
     border-left: 4px solid var(--accent);
     border-radius: 4px;
@@ -349,4 +351,77 @@ main {
     padding: 6px 14px;
     font: inherit;
     cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------------------------
+   Step 26: phones and tablets
+   ---------------------------------------------------------------------------------------------
+   "pointer: coarse" = the main way to point is a finger (a touch screen), not a mouse. Only then do the
+   on-screen keyboard and the clue arrows appear, so the desktop layout doesn't change. */
+.keyboard, .clue-step { display: none; }
+
+@media (pointer: coarse) {
+    .clue-step {
+        display: block;
+        width: 36px;
+        border: 1px solid var(--border);
+        background: var(--panel);
+        color: var(--ink);
+        border-radius: 6px;
+        font-size: 1.4rem;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .puzzle { flex-wrap: wrap; }   /* on a wide tablet the keyboard gets its own row under the board and clues */
+    .keyboard {
+        display: grid;
+        gap: 6px;
+        flex-basis: 100%;
+        align-self: stretch;       /* full width, even though the board and clues are centered */
+        width: 100%;
+        position: sticky;          /* stays at the bottom of the screen while you scroll the clues */
+        bottom: 0;
+        padding: 8px 4px calc(8px + env(safe-area-inset-bottom));   /* clear the iPhone home bar */
+        background: var(--bg);
+        border-top: 1px solid var(--border);
+    }
+    .key-row { display: flex; justify-content: center; gap: 5px; }
+    .key {
+        flex: 1 1 0;               /* every key gets an equal share of the row... */
+        max-width: 42px;           /* ...but doesn't get huge on a tablet */
+        height: 46px;
+        border: none;
+        border-radius: 6px;
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: 0 1px 0 var(--border);
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 0;
+        touch-action: manipulation;   /* no double-tap zoom, so fast typing doesn't zoom the page */
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    .key:active { background: var(--selected); }
+    .key.wide { flex-grow: 1.5; max-width: 64px; font-size: 1.2rem; background: var(--hover); }
+
+    .board .cell, .clues li, .difficulty button, .helper-row button { touch-action: manipulation; }
+}
+
+/* Narrow screens (phones): less empty space, so the board, clue and keyboard fit on one screen */
+@media (max-width: 480px) {
+    .top-bar { padding: 10px 12px; }
+    .logo { font-size: 1.25rem; }
+    .modes a { padding: 5px 10px; font-size: 0.95rem; }
+    main { padding: 4px 12px 24px; }
+    .game-head h1, .page-head h1 { font-size: 1.3rem; }
+    .difficulty { margin: 8px 0 12px; }
+    .difficulty button { padding: 5px 14px; }
+    .puzzle { gap: 16px; }
+    .clue-bar { min-height: 2.8em; padding: 6px 10px; }
+    .helpers { margin-top: 8px; }
+    .helper-row button { padding: 6px 0; }
+    .history th, .history td { padding: 8px 6px; }
 }

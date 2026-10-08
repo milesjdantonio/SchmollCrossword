@@ -58,6 +58,7 @@ public class App {
      * Related LeetCode: 509. Fibonacci Number, 70. Climbing Stairs (memoization: save answers you'll need again)
      */
     static Map<String, List<String>> matchCache = new HashMap<>();
+    static Map<Integer, List<String>> cacheBuiltFrom = null;   // the word list matchCache's answers came from (Step 26)
 
     /*
      * ===== Step 25: the tests moved to JUnit =====
@@ -205,6 +206,14 @@ public class App {
             repeatedPatterns++;
         } else {
             patternsSeen.add(pattern);
+        }
+
+        // Step 26: the website has TWO word lists (Step 24's "harder words" setting). The cache's key is only the
+        // pattern, so answers saved from one list must never be handed out for the other (OVOID could land in
+        // the daily!). Same idea as getTrie: a different word map means start a fresh notebook.
+        if (cacheBuiltFrom != wordsByLength) {
+            matchCache.clear();
+            cacheBuiltFrom = wordsByLength;
         }
 
         // Step 13b-2: already worked out? Hand back a COPY of the saved answer and skip the scan.

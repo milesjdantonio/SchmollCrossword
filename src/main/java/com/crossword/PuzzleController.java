@@ -6,12 +6,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import jakarta.servlet.http.HttpServletRequest; // everything about one incoming web request, e.g. who sent it
 
 /*
  * ===== Step 18: The puzzle API =====
@@ -31,15 +35,23 @@ public class PuzzleController {
     private final Map<Integer, List<String>> wordsByLength;          // everyday words (the normal game, and every daily)
     private final Map<Integer, List<String>> wordsWithHardWords;     // everyday + too-hard words (Settings: harder words)
 
-    // Spring Boot uses this one when the server starts
-    public PuzzleController() throws IOException {
-        this(App.loadWords(), App.loadWords(false));
+    // Step 26: limits how many paid unlimited puzzles can be made (see RateLimiter)
+    private final RateLimiter unlimitedLimiter;
+
+    // Spring Boot uses this one when the server starts (@Autowired picks it). @Value reads each limit from
+    // application.properties, which lets the host override them with environment variables.
+    @Autowired
+    public PuzzleController(@Value("${schmoll.unlimited.per-person-per-hour}") int perPersonPerHour,
+                            @Value("${schmoll.unlimited.everyone-per-day}") int everyonePerDay) throws IOException {
+        this(App.loadWords(), App.loadWords(false), new RateLimiter(perPersonPerHour, everyonePerDay));
     }
 
     // The tests use this one, handing in word lists they already loaded
-    PuzzleController(Map<Integer, List<String>> wordsByLength, Map<Integer, List<String>> wordsWithHardWords) {
+    PuzzleController(Map<Integer, List<String>> wordsByLength, Map<Integer, List<String>> wordsWithHardWords,
+                     RateLimiter unlimitedLimiter) {
         this.wordsByLength = wordsByLength;
         this.wordsWithHardWords = wordsWithHardWords;
+        this.unlimitedLimiter = unlimitedLimiter;
     }
 
     /*
@@ -98,13 +110,19 @@ public class PuzzleController {
      * 2. Otherwise return PuzzleStore.generateUnlimited(...) with a random seed: new Random().nextLong()
      *    (no seed in the Random = different every time, which is exactly what unlimited mode wants).
      *
-     * Every unlimited puzzle is a paid API call; Step 26 adds a rate limit before the site goes public.
+     * Every unlimited puzzle is a paid API call, so Step 26 adds a rate limit (HTTP 429 when it's hit).
      */
     @GetMapping(value = "/api/unlimited", produces = MediaType.APPLICATION_JSON_VALUE)
     public String unlimited(@RequestParam(defaultValue = "medium") String difficulty,
-                            @RequestParam(defaultValue = "false") boolean hardWords) {   // Step 24: Settings > harder words
+                            @RequestParam(defaultValue = "false") boolean hardWords,    // Step 24: Settings > harder words
+                            HttpServletRequest request) {                               // Step 26: who's asking
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
+        }
+        // Checked AFTER the difficulty, so a bad request never uses up someone's allowance.
+        // getRemoteAddr() is the player's IP address (application.properties makes it see past the host's proxy).
+        if (!unlimitedLimiter.allow(request.getRemoteAddr(), System.currentTimeMillis())) {
+            throw tooManyPuzzles();
         }
         // JavaScript can only hold whole numbers exactly up to 2^53 (about 9 quadrillion), so keep the
         // seed below that; otherwise the browser would see a rounded, wrong seed in the JSON.
@@ -118,4 +136,8 @@ public class PuzzleController {
                 "difficulty must be easy, medium or hard (got: " + difficulty + ")");
     }
 
+    // Step 26: HTTP 429 means "too many requests: slow down". The website shows a friendly message for it.
+    static ResponseStatusException tooManyPuzzles() {
+        return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "unlimited puzzle limit reached, try again later");
+    }
 }

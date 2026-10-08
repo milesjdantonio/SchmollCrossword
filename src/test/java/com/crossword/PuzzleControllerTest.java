@@ -6,13 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest; // a pretend web request, so no server is needed
 import org.springframework.web.server.ResponseStatusException;
 
-// Steps 18 and 24: the API's input checks and word list choice.
+// Steps 18, 24 and 26: the API's input checks, word list choice and rate limit.
 // These call the controller's methods directly and never reach Claude.
 class PuzzleControllerTest {
 
-    private final PuzzleController controller = new PuzzleController(TestWords.everyday(), TestWords.withHardWords());
+    // A limit of 0 means every unlimited request is refused, so a test can never trigger a real (paid) puzzle
+    private final PuzzleController controller =
+            new PuzzleController(TestWords.everyday(), TestWords.withHardWords(), new RateLimiter(0, 0));
 
     @Test
     void validDifficulties() {
@@ -28,7 +31,7 @@ class PuzzleControllerTest {
         ResponseStatusException daily = assertThrows(ResponseStatusException.class, () -> controller.daily("banana"));
         assertEquals(400, daily.getStatusCode().value());
         ResponseStatusException unlimited = assertThrows(ResponseStatusException.class,
-                () -> controller.unlimited("banana", false));
+                () -> controller.unlimited("banana", false, new MockHttpServletRequest()));
         assertEquals(400, unlimited.getStatusCode().value());
     }
 
@@ -40,4 +43,11 @@ class PuzzleControllerTest {
         assertFalse(controller.wordsFor(true).get(4).contains("DICK"), "offensive words are blocked either way");
     }
 
+    // Step 26: over the limit = HTTP 429 "too many requests", before any puzzle (or Claude call) is made
+    @Test
+    void overTheLimitIsRejectedWith429() {
+        ResponseStatusException e = assertThrows(ResponseStatusException.class,
+                () -> controller.unlimited("easy", false, new MockHttpServletRequest()));
+        assertEquals(429, e.getStatusCode().value());
+    }
 }

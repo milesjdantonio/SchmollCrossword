@@ -68,6 +68,14 @@ class FindMatchesSpeedTest {
         assertEquals(5, App.findMatches("C.T.", words).size());
     }
 
+    // Step 26: the website uses two word lists, so answers cached from one must not leak into the other
+    @Test
+    void cacheNeverMixesUpWordLists() {
+        assertEquals(0, App.findMatches("OVOID", words).size());
+        assertEquals(1, App.findMatches("OVOID", TestWords.withHardWords()).size());
+        assertEquals(0, App.findMatches("OVOID", words).size(), "back on the everyday list, OVOID must be gone again");
+    }
+
     @Test
     void seed4InUnderOneSecond() {
         generate(1);   // warm-up: the very first fill also builds the Trie

@@ -148,8 +148,13 @@
                         <h2>You solved it!</h2>
                         <p id="win-details"></p>
                     </div>
-                    <!-- The clue for the selected word -->
-                    <div class="clue-bar" id="clue-bar"></div>
+                    <!-- The clue for the selected word. Tap it to switch Across/Down; the arrows (touch screens only,
+                         Step 26) go to the previous / next clue, like Shift+Tab / Tab on a keyboard -->
+                    <div class="clue-bar-row">
+                        <button type="button" class="clue-step" data-step="-1" aria-label="Previous clue">&lsaquo;</button>
+                        <div class="clue-bar" id="clue-bar"></div>
+                        <button type="button" class="clue-step" data-step="1" aria-label="Next clue">&rsaquo;</button>
+                    </div>
                     <!-- The 5x5 board; app.js fills it with squares -->
                     <div class="board" id="board" aria-label="Crossword grid"></div>
                     <!-- Check and Reveal (Step 22) -->
@@ -180,6 +185,14 @@
                         <ol id="down-clues"></ol>
                     </div>
                 </section>
+
+                <!-- On-screen keyboard (Step 26): phones have no keys, and this page has no text box to bring up
+                     theirs. Only shown on touch screens (see style.css); app.js adds the letter keys -->
+                <div class="keyboard" id="keyboard" aria-label="Keyboard">
+                    <div class="key-row"></div>
+                    <div class="key-row"></div>
+                    <div class="key-row"></div>
+                </div>
             </div>
         </section>
     </main>
