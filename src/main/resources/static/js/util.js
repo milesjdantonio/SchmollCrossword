@@ -176,7 +176,7 @@ const Settings = (() => {
         hardWords: false,       // Unlimited Hard: allow the extremely hard words
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
-        design: "paper",        // the world: paper, space, garden, arcade
+        design: "paper",        // the world: the id of one of js/worlds/*.js
         sound: true,            // sound effects (made in code, see sound.js)
         volume: 0.8,
         intro: true,            // play the start-up intro once per visit

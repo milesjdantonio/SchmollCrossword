@@ -142,8 +142,89 @@ const Worlds = (() => {
         };
     }
 
+    // A board decoration layer several worlds share: a little picture ("mark") in a corner of each filled square
+    // and something along each finished word, drawn in one <svg> over the board.
+    //   id                 CSS class prefix: the layer is "deco-layer ID-layer", the board gets "ID-solved"
+    //   mark(rnd)          SVG markup centered on 0,0, in square units (a square is 1 wide); rnd(k) is seeded
+    //   word(entry, cells, rnd, group, across)   draws a finished word's decoration into group
+    //   type(cell), wordDone(entry, cells)       particle effects
+    function decoBoard({ id, mark, word, type, wordDone, corners = [[0.8, 0.22], [0.8, 0.79], [0.21, 0.8]] }) {
+        let layer = null, gW, gM, marks = new Map(), words = new Map(), seed = 1, size = 5, quiet = true, boardRef = null;
+        const rnd = (...k) => { let h = seed; for (const v of k) { h = Math.imul(h ^ v, 2654435761); h ^= h >>> 13; } return (h >>> 0) / 4294967296; };
+        function build(game, boardEl) {
+            if (layer) layer.remove();
+            size = game.puzzle.size;
+            seed = U.hash(game.puzzle.seed + game.puzzle.mode + id);
+            boardRef = boardEl;
+            layer = U.svg("svg", { class: `deco-layer ${id}-layer`, viewBox: `0 0 ${size} ${size}`, preserveAspectRatio: "none", "aria-hidden": "true" });
+            boardEl.appendChild(layer);
+            gW = U.svg("g", {}, layer);
+            gM = U.svg("g", {}, layer);
+            marks = new Map();
+            words = new Map();
+        }
+        function addMark(r, c, grow) {
+            const [ox, oy] = corners[Math.floor(rnd(r, c, 2) * corners.length)];
+            const x = c + ox + (rnd(r, c, 3) - 0.5) * 0.05, y = r + oy + (rnd(r, c, 4) - 0.5) * 0.05, rot = (rnd(r, c, 5) - 0.5) * 40;
+            const outer = U.svg("g", { transform: `translate(${x.toFixed(3)} ${y.toFixed(3)}) rotate(${rot.toFixed(1)})`, class: "deco-mark" + (grow ? " pop" : "") }, gM);
+            U.svg("g", { class: "deco-mark-in" }, outer).innerHTML = mark(k => rnd(r, c, 10 + k));
+            return outer;
+        }
+        function update(game, boardEl) {
+            if (!layer || !boardEl.contains(layer) || size !== game.puzzle.size) { build(game, boardEl); quiet = true; }
+            const grow = !quiet && U.motion() !== "still";
+            quiet = false;
+            const n = game.puzzle.size;
+            if (mark) {
+                const want = new Set();
+                for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+                    if (!game.letters[r][c]) continue;
+                    const key = r * 99 + c;
+                    want.add(key);
+                    if (!marks.has(key)) marks.set(key, addMark(r, c, grow));
+                }
+                for (const [key, el] of marks) if (!want.has(key)) { el.remove(); marks.delete(key); }
+            }
+            if (word) {
+                const full = new Set();
+                for (const entry of [...game.puzzle.across, ...game.puzzle.down]) {
+                    const cells = Game.cellsOf(entry);
+                    if (!cells.every(([r, c]) => game.letters[r][c])) continue;
+                    const key = entry.direction + entry.number;
+                    full.add(key);
+                    if (!words.has(key)) {
+                        const g = U.svg("g", { class: "deco-word" + (grow ? " grow" : "") }, gW);
+                        word(entry, cells, (...k) => rnd(entry.number, entry.direction === "across" ? 1 : 2, ...k), g, entry.direction === "across");
+                        words.set(key, g);
+                    }
+                }
+                for (const [key, el] of words) if (!full.has(key)) { el.remove(); words.delete(key); }
+            }
+            boardEl.classList.toggle(id + "-solved", !!(game.solved && !game.surrendered));
+        }
+        function clear() {
+            if (layer) layer.remove();
+            layer = null;
+            marks = new Map();
+            words = new Map();
+            if (boardRef) boardRef.classList.remove(id + "-solved");
+        }
+        return {
+            attach() { quiet = true; },
+            update,
+            type: cell => type && type(cell),
+            wordDone: (entry, cells) => wordDone && wordDone(entry, cells),
+            restoreSolved(boardEl, game) { quiet = true; update(game, boardEl); },
+            reset: clear,
+            clear
+        };
+    }
+
+    // An offscreen canvas (for drawing a scene's still parts once)
+    const canvas = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
+
     return {
-        register, use, board, preview, modeFor, list, byId,
+        register, use, board, preview, modeFor, list, byId, decoBoard, canvas,
         get current() { return current; },
         get time() { return t; }
     };

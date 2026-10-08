@@ -206,4 +206,14 @@ All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which
 - **Patua One** (Acorn Woods). https://fonts.google.com/specimen/Patua+One
 - **Baloo 2** (Coral Reef). https://fonts.google.com/specimen/Baloo+2
 - **Lilita One** (Candy Hills). https://fonts.google.com/specimen/Lilita+One
+- **IM Fell English SC** and **Courier Prime** (Haunted Library). https://fonts.google.com/specimen/IM+Fell+English+SC ,
+  https://fonts.google.com/specimen/Courier+Prime
+- **Bungee** (Volcano Island). https://fonts.google.com/specimen/Bungee
+- **Comfortaa** (Sky Kingdom). https://fonts.google.com/specimen/Comfortaa
+- **Rye** (Desert Caravan). https://fonts.google.com/specimen/Rye
+- **Russo One** and **Share Tech Mono** (Robot Factory). https://fonts.google.com/specimen/Russo+One ,
+  https://fonts.google.com/specimen/Share+Tech+Mono
+- **Shrikhand** (Big Top Carnival). https://fonts.google.com/specimen/Shrikhand
+- **Pacifico** and **Josefin Sans** (Rainy City). https://fonts.google.com/specimen/Pacifico ,
+  https://fonts.google.com/specimen/Josefin+Sans
 - Sounds are generated in code (Web Audio API), so there are no sound files or licenses.

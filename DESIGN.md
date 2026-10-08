@@ -2,8 +2,9 @@
 
 What Schmoll Crossword should look, feel and sound like, and **the recipe for making a new world**.
 The goal: a prompt like *"make an ocean world"* plus this file should produce what the project owner wants,
-without more questions. The eight worlds that exist (Notebook, Deep Space, Garden, Neon Arcade, Snow Day, Acorn Woods, Coral Reef, Candy
-Hills) are the worked examples. Every world has a light and a dark mode (the owner's rule, 2026-10-08).
+without more questions. The fifteen worlds that exist (Notebook, Deep Space, Garden, Neon Arcade, Snow Day, Acorn Woods, Coral Reef, Candy
+Hills, Haunted Library, Volcano Island, Sky Kingdom, Desert Caravan, Robot Factory, Big Top Carnival, Rainy City) are the worked
+examples. Every world has a light and a dark mode (the owner's rule, 2026-10-08).
 
 Decisions here came from the project owner (2026-10-08). When one changes, update this file.
 
@@ -116,14 +117,15 @@ Worlds.register({
     id, name, icon, tagline,          // shown in the world picker
     modes: ["light", "dark"],         // or just ["dark"]; the Settings mode buttons lock when there's one
     scene(W, H, { theme, preview }),  // returns { draw(ctx, t, dt, input), resize(W, H) }; input has px/py parallax
-    board: { attach, update, type, wordDone, restoreSolved, reset, clear },
+    board: { attach, update, type, wordDone, restoreSolved, reset, clear },   // or Worlds.decoBoard({...}), below
     titleCard(c, info),               // async; c.wait(ms), c.cleanup(fn), c.skipped (see FX.cinematic)
     celebrate(c, { boardEl, game, info }),
     sounds: { type, word, win, ... },  // overrides for Sound.LIB names
     mascot: { name, draw(ctx, state) },
     lines: { hello, start, word, win, wrong, right, idle, reveal },
     introFlourish(stage),
-    transition: "page" | "warp" | "leaves" | "autumn" | "blizzard" | "pixels" | "iris"
+    transition: "page" | "warp" | "leaves" | "autumn" | "blizzard" | "tide" | "frosting" | "pages" | "lava" | "clouds"
+              | "sandstorm" | "shutter" | "curtain" | "downpour" | "pixels" | "iris"
 });
 ```
 
@@ -144,8 +146,17 @@ Worlds.register({
 3. **`app.css`**: the card label font (`.world-card[data-wid="NAME"] .wc-label b`).
 4. **WORDLISTS.md**: add any new font with its license (Google Fonts under the SIL OFL are fine).
 
+**Shortcut for the board:** `Worlds.decoBoard({ id, mark(rnd), word(entry, cells, rnd, group, across), type(cell),
+wordDone(entry, cells) })` builds the whole `board` object: `mark` returns SVG markup for the little picture in a corner of
+each filled square (square units, centered on 0,0), `word` draws a finished word's decoration into an SVG group, and the
+board gets the class `ID-solved` when solved. The seven worlds added last use it (library.js ... rain.js).
+`Worlds.canvas(w, h)` makes an offscreen canvas for drawing a scene's still parts once.
+
 ### 5. Technical rules (learned building the worlds)
 
+- Name a world's CSS classes with its own prefix (`lb-`, `vc-`, `cv-`...), state classes included: a bare `.ring`
+  clashed with the timer's `.ring { transform: rotate(-90deg) }` and turned the carnival tower on its side.
+- `scene(..., { preview: true })` runs at about 170×95 px: keep every radius positive there (`Math.max(1, ...)`).
 - `U.el(tag, { style: { "--x": ... } })` sets CSS variables with `setProperty`; never `Object.assign` them.
 - **SVG + CSS animation:** never put a CSS `transform` animation on an element that has a `transform` attribute
   (CSS replaces it). Position with an outer `<g transform>`, animate an inner `<g>`.

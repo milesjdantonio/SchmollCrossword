@@ -349,6 +349,8 @@ const FX = (() => {
     // style: "page" (a sheet of paper slides over), "warp" (stars streak, white-out), "leaves" (a wall of leaves
     // sweeps across), "autumn" (the same in fall colors), "blizzard" (a snowstorm blows in to a white-out),
     // "tide" (water rises with bubbles), "frosting" (pink frosting drips down over the screen),
+    // "pages" (book pages pile up), "lava" (lava rises, then cools), "clouds" (clouds billow in, then part),
+    // "sandstorm", "shutter" (blast doors), "curtain" (velvet stage curtains), "downpour" (rain, then a wiper),
     // "pixels" (blocks fill in), "iris" (a closing circle). onCovered runs while all is hidden.
     function transition(style, onCovered) {
         if (U.motion() === "still") { onCovered && onCovered(); return Promise.resolve(); }
@@ -459,6 +461,167 @@ const FX = (() => {
                             c.rotate(f.ph * 3);
                             c.fillStyle = sprinkle[i % sprinkle.length];
                             c.fillRect(-5, -1.6, 10, 3.2);
+                            c.restore();
+                        }
+                    } else if (style === "pages") {
+                        // loose book pages flutter in from the right and pile up into a parchment wall, then blow off left
+                        const p = leaving ? 1 + (1 - k) : k;
+                        const shift = p <= 1 ? 0 : -(p - 1) * W * 1.6;
+                        c.fillStyle = `rgba(233, 219, 186, ${Math.min(1, p <= 1 ? k * 1.15 : 1).toFixed(3)})`;
+                        c.fillRect(shift, 0, W, H);
+                        for (const l of leaves) {
+                            const arrive = l.x * 0.8;                                   // when this page lands
+                            const q = U.clamp((Math.min(p, 1) - arrive) / 0.25, 0, 1);
+                            if (q <= 0) continue;
+                            const x = U.lerp(W * 1.2, l.x * W, U.ease.outCubic(q)) + shift * (1 + l.off), y = l.y * H + Math.sin(t * 3 + l.rot) * 12 * (1 - q);
+                            c.save();
+                            c.translate(x, y);
+                            c.rotate(l.rot * 0.3 + (1 - q) * l.spin + (p > 1 ? (p - 1) * l.spin : 0));
+                            c.scale(1, 0.7 + 0.3 * Math.abs(Math.cos(t * 4 + l.rot)));
+                            const w = l.r * 1.5, h = l.r * 1.9;
+                            c.fillStyle = l.c === P.edge[0] ? "#f6ecd2" : "#efe2c2";
+                            c.fillStyle = "rgba(60,40,10,.18)"; c.fillRect(-w / 2 + 3, -h / 2 + 4, w, h);
+                            c.fillStyle = l.c === P.edge[0] ? "#f6ecd2" : "#efe2c2";
+                            c.fillRect(-w / 2, -h / 2, w, h);
+                            c.strokeStyle = "rgba(90,70,40,.35)"; c.lineWidth = 1;
+                            for (let yy = -h / 2 + 8; yy < h / 2 - 5; yy += 6) { c.beginPath(); c.moveTo(-w / 2 + 6, yy); c.lineTo(w / 2 - 6 - (yy * 7 % 9), yy); c.stroke(); }
+                            c.restore();
+                        }
+                    } else if (style === "lava") {
+                        // glowing lava rises from the bottom, then cools to dark rock that sinks away
+                        const p = leaving ? 1 + (1 - k) : k;
+                        const level = p <= 1 ? H * (1.1 - p * 1.25) : -H * 0.15 + (p - 1) * H * 1.3;
+                        const cool = p <= 1 ? 0 : Math.min(1, (p - 1) * 2.5);
+                        const lg = c.createLinearGradient(0, level, 0, level + H);
+                        lg.addColorStop(0, cool ? `rgb(${Math.round(255 - cool * 200)},${Math.round(200 - cool * 160)},${Math.round(60 - cool * 20)})` : "#ffd23a");
+                        lg.addColorStop(0.08, cool ? "#3a1a10" : "#ff7a1a");
+                        lg.addColorStop(0.5, cool ? "#2a120c" : "#d9300f");
+                        lg.addColorStop(1, cool ? "#1a0a08" : "#7a1408");
+                        c.fillStyle = lg;
+                        c.beginPath();
+                        c.moveTo(0, H + 40);
+                        for (let x = 0; x <= W + 24; x += 24) c.lineTo(x, level + Math.sin(x * 0.01 + t * 3) * 14 + Math.sin(x * 0.027 - t * 2) * 6);
+                        c.lineTo(W, H + 40);
+                        c.fill();
+                        // bubbles of brighter lava swelling and popping (glowing cracks once it cools)
+                        for (let i = 0; i < 50; i++) {
+                            const f = flakes[i], x = f.x * W, y = level + 30 + f.y * H;
+                            if (y > H + 20) continue;
+                            if (cool) {
+                                c.strokeStyle = "rgba(255,110,40,.45)"; c.lineWidth = 2;
+                                c.beginPath(); c.moveTo(x - 30, y); c.lineTo(x - 8, y + 6 * Math.sin(f.ph)); c.lineTo(x + 12, y - 4); c.lineTo(x + 34, y + 8 * Math.cos(f.ph)); c.stroke();
+                            } else {
+                                const r = (4 + f.r * 4) * (0.4 + 0.6 * Math.abs(Math.sin(t * 2 * f.sp + f.ph)));
+                                c.fillStyle = "rgba(255,220,110,.55)"; c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+                                c.fillStyle = "rgba(255,250,200,.6)"; c.beginPath(); c.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2); c.fill();
+                            }
+                        }
+                        if (!cool) for (const f of flakes.slice(0, 60)) {                // embers flying off the surface
+                            const y = level - ((t * 140 * f.sp + f.y * 300) % 260);
+                            c.fillStyle = `rgba(255,${150 + Math.round(f.r * 20)},60,${(0.8 - (level - y) / 300).toFixed(2)})`;
+                            c.fillRect(f.x * W + Math.sin(t * 4 + f.ph) * 10, y, f.r, f.r);
+                        }
+                    } else if (style === "clouds") {
+                        // puffy clouds billow in from every edge until the sky is white, then part to the sides
+                        const p = leaving ? 1 + (1 - k) : k;
+                        const grow = p <= 1 ? U.ease.outCubic(p) : 1;
+                        const part = p <= 1 ? 0 : U.ease.inCubic(p - 1);
+                        c.fillStyle = `rgba(250, 252, 255, ${Math.min(1, Math.max(0, grow * 1.4 - 0.4) * (1 - part)).toFixed(3)})`;
+                        c.fillRect(0, 0, W, H);
+                        for (let i = 0; i < 70; i++) {
+                            const f = flakes[i], side = f.x < 0.5 ? -1 : 1;
+                            const hx = f.x * W, hy = f.y * H;
+                            const x = U.lerp(f.x < 0.5 ? -W * 0.3 : W * 1.3, hx, grow) + side * part * W * 0.9;
+                            const r = (60 + f.r * 30) * (0.4 + grow * 0.9);
+                            c.fillStyle = i % 3 ? "#ffffff" : "#e6eef8";
+                            for (const [dx, dy, rr] of [[0, 0, 1], [0.7, 0.15, 0.75], [-0.7, 0.18, 0.7], [0.2, -0.45, 0.65]]) {
+                                c.beginPath(); c.arc(x + dx * r, hy + dy * r + Math.sin(t * 2 + f.ph) * 4, rr * r, 0, Math.PI * 2); c.fill();
+                            }
+                        }
+                    } else if (style === "sandstorm") {
+                        // a wall of sand sweeps in from the right, the screen goes golden, then it blows away left
+                        c.fillStyle = `rgba(222, 178, 110, ${Math.min(1, k * 1.15).toFixed(3)})`;
+                        c.fillRect(0, 0, W, H);
+                        for (const f of flakes) {
+                            const x = W * 1.15 - (((f.x + t * f.sp * 1.4) % 1.3)) * W;
+                            const y = ((f.y + t * 0.05 * f.sp) % 1) * H + Math.sin(t * 5 + f.ph) * 10;
+                            const len = 6 + 60 * k * f.sp;
+                            c.globalAlpha = Math.min(1, 0.3 + k);
+                            c.strokeStyle = f.r > 3 ? "#f7dca0" : "#b9864a";
+                            c.lineWidth = f.r * 0.7;
+                            c.lineCap = "round";
+                            c.beginPath(); c.moveTo(x, y); c.lineTo(x + len, y + len * 0.08); c.stroke();
+                        }
+                        c.globalAlpha = 1;
+                        const dust = c.createLinearGradient(0, 0, W, 0);
+                        dust.addColorStop(0, "rgba(160,110,50,0)"); dust.addColorStop(1, `rgba(160,110,50,${(0.35 * k).toFixed(3)})`);
+                        c.fillStyle = dust; c.fillRect(0, 0, W, H);
+                    } else if (style === "shutter") {
+                        // two riveted blast doors with hazard stripes slam shut from top and bottom, then slide open
+                        const half = H / 2 * k;
+                        for (const top of [true, false]) {
+                            const y = top ? half - H / 2 : H - half;
+                            const mg = c.createLinearGradient(0, y, 0, y + H / 2);
+                            mg.addColorStop(0, "#6b7682"); mg.addColorStop(0.5, "#8e9aa6"); mg.addColorStop(1, "#5a646e");
+                            c.fillStyle = mg;
+                            c.fillRect(0, y, W, H / 2);
+                            c.strokeStyle = "rgba(0,0,0,.25)"; c.lineWidth = 2;
+                            for (let x = 0; x < W; x += 120) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + H / 2); c.stroke(); }
+                            c.fillStyle = "rgba(255,255,255,.5)";
+                            for (let x = 30; x < W; x += 60) for (const ry of [y + 18, y + H / 2 - 18]) { c.beginPath(); c.arc(x, ry, 4, 0, Math.PI * 2); c.fill(); }
+                            const sy = top ? y + H / 2 - 34 : y;                       // the hazard stripes on the meeting edge
+                            c.save();
+                            c.beginPath(); c.rect(0, sy, W, 34); c.clip();
+                            c.fillStyle = "#ffcc1a"; c.fillRect(0, sy, W, 34);
+                            c.fillStyle = "#1e2226";
+                            for (let x = -40; x < W + 40; x += 40) { c.beginPath(); c.moveTo(x, sy + 34); c.lineTo(x + 20, sy + 34); c.lineTo(x + 54, sy); c.lineTo(x + 34, sy); c.fill(); }
+                            c.restore();
+                        }
+                        if (k > 0.97 && !leaving) { c.fillStyle = "rgba(255,240,180,.5)"; c.fillRect(0, H / 2 - 2, W, 4); }
+                    } else if (style === "curtain") {
+                        // red velvet curtains swish shut from both sides, with gold fringe, then open again
+                        for (const left of [true, false]) {
+                            const w = W / 2 * (0.04 + k * 0.98);
+                            const x0 = left ? 0 : W - w;
+                            const cg = c.createLinearGradient(x0, 0, x0 + w, 0);
+                            for (let i = 0; i <= 10; i++) cg.addColorStop(i / 10, i % 2 ? "#a3121f" : "#d42a35");
+                            c.fillStyle = cg;
+                            c.beginPath();
+                            const edge = left ? x0 + w : x0, outer = left ? 0 : W;
+                            c.moveTo(outer, 0);
+                            for (let y = 0; y <= H; y += 30) c.lineTo(edge + (left ? 1 : -1) * Math.sin(y * 0.02 + t * 3) * 8 * (1 - k * 0.5), y);
+                            c.lineTo(outer, H);
+                            c.fill();
+                            c.fillStyle = "#ffcf4a";
+                            for (let y = 0; y <= H; y += 14) c.fillRect(edge - (left ? 6 : 0) + (left ? 1 : -1) * Math.sin(y * 0.02 + t * 3) * 8 * (1 - k * 0.5), y, 6, 8);
+                        }
+                        const vg = c.createLinearGradient(0, 0, 0, 70);                // the valance across the top
+                        vg.addColorStop(0, "#7a0c16"); vg.addColorStop(1, "#b81d28");
+                        c.fillStyle = vg;
+                        c.beginPath(); c.moveTo(0, 0); c.lineTo(W, 0);
+                        for (let x = W; x >= 0; x -= W / 12) c.quadraticCurveTo(x - W / 24, 90, x - W / 12, 50);
+                        c.fill();
+                    } else if (style === "downpour") {
+                        // rain streaks thicken into a misty downpour, then a windshield wiper sweeps it clear
+                        const fogA = leaving ? 1 : Math.min(1, k * 1.2);
+                        const sweep = leaving ? 1 - k : 0;                            // 0..1 of the wiper's trip
+                        const px = W / 2, py = H + 10, R = Math.hypot(W / 2, H + 10) * 1.05, ang = Math.PI + sweep * Math.PI;
+                        c.save();
+                        if (leaving) { c.beginPath(); c.rect(0, 0, W, H); c.moveTo(px, py); c.arc(px, py, R, Math.PI, ang); c.closePath(); c.clip("evenodd"); }
+                        c.fillStyle = `rgba(120, 140, 165, ${(fogA * 0.97).toFixed(3)})`;
+                        c.fillRect(0, 0, W, H);
+                        c.strokeStyle = "rgba(220,235,250,.55)"; c.lineWidth = 1.4;
+                        for (const f of flakes) {
+                            const x = f.x * W, y = ((f.y + t * 1.6 * f.sp) % 1.1) * H - 40, len = 14 + 30 * f.sp;
+                            c.beginPath(); c.moveTo(x, y); c.lineTo(x - len * 0.15, y + len); c.stroke();
+                        }
+                        c.fillStyle = "rgba(235,245,255,.35)";                          // drops on the glass
+                        for (let i = 0; i < 90; i++) { const f = flakes[i]; c.beginPath(); c.arc(f.x * W, ((f.y + t * 0.05 * f.sp) % 1) * H, f.r * 1.5, 0, Math.PI * 2); c.fill(); }
+                        c.restore();
+                        if (leaving && sweep < 1) {                                    // the wiper blade
+                            c.save(); c.translate(px, py); c.rotate(ang);
+                            c.fillStyle = "#1d2228"; c.fillRect(0, -5, R, 10);
+                            c.fillStyle = "#3a434d"; c.fillRect(0, -2, R, 4);
                             c.restore();
                         }
                     } else if (style === "blizzard") {
