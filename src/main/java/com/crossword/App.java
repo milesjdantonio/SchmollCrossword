@@ -472,9 +472,14 @@ public class App {
         check("api: Hard (any case) is a difficulty", PuzzleController.isValidDifficulty("Hard"), true);
         check("api: banana is not a difficulty", PuzzleController.isValidDifficulty("banana"), false);
         check("api: missing (null) is not a difficulty", PuzzleController.isValidDifficulty(null), false);
-        PuzzleController controller = new PuzzleController(wordsByLength);
+        PuzzleController controller = new PuzzleController(wordsByLength, withHardWords);
         check("api: /api/daily?difficulty=banana is rejected with 400", rejectedWith400(() -> controller.daily("banana")), true);
-        check("api: /api/unlimited?difficulty=banana is rejected with 400", rejectedWith400(() -> controller.unlimited("banana")), true);
+        check("api: /api/unlimited?difficulty=banana is rejected with 400", rejectedWith400(() -> controller.unlimited("banana", false)), true);
+
+        // Step 24 tests: Settings > "Allow harder words in Unlimited" picks the bigger word list
+        check("words: hardWords=true includes OVOID", controller.wordsFor(true).get(5).contains("OVOID"), true);
+        check("words: hardWords=false leaves OVOID out", controller.wordsFor(false).get(5).contains("OVOID"), false);
+        check("words: offensive words are blocked either way", controller.wordsFor(true).get(4).contains("DICK"), false);
 
         // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
         //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live

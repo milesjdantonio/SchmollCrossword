@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Schmoll Crossword</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Apply the saved theme before the page is drawn, so dark mode doesn't flash white first
+        try {
+            const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
+            document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";
+        } catch (err) { /* storage blocked: light theme */ }
+    </script>
 </head>
 <body>
     <header class="top-bar">
@@ -14,6 +21,8 @@
             <a href="#" data-view="home">Home</a>
             <a href="#daily" data-view="daily">Daily</a>
             <a href="#unlimited" data-view="unlimited">Unlimited</a>
+            <a href="#stats" data-view="stats">Stats</a>
+            <a href="#settings" data-view="settings">Settings</a>
         </nav>
     </header>
 
@@ -33,6 +42,81 @@
                 </a>
             </div>
             <p class="streak-line" id="home-streak"></p>
+        </section>
+
+        <!-- Stats (Step 24): daily puzzles only, worked out from the scores saved in this browser -->
+        <section id="stats-view" hidden>
+            <div class="page-head">
+                <h1>Your stats</h1>
+                <p class="subtitle">Daily puzzles only · saved in this browser</p>
+            </div>
+            <div class="stat-tiles" id="stat-tiles"></div>
+            <table class="history" id="history" hidden>
+                <thead>
+                    <tr><th>Date</th><th>Difficulty</th><th class="num">Time</th><th class="num">Points</th></tr>
+                </thead>
+                <tbody id="history-rows"></tbody>
+            </table>
+            <p class="empty-note" id="no-history" hidden>No dailies solved yet. Today's is waiting on the Daily tab.</p>
+        </section>
+
+        <!-- Settings (Step 24): saved in this browser -->
+        <section id="settings-view" hidden>
+            <div class="page-head">
+                <h1>Settings</h1>
+                <p class="subtitle">Saved in this browser</p>
+            </div>
+            <form class="settings" id="settings-form" onsubmit="return false">
+                <fieldset>
+                    <legend>Default difficulty</legend>
+                    <div class="options">
+                        <label><input type="radio" name="difficulty" value="easy"> Easy</label>
+                        <label><input type="radio" name="difficulty" value="medium"> Medium</label>
+                        <label><input type="radio" name="difficulty" value="hard"> Hard</label>
+                    </div>
+                    <p class="hint">What Daily and Unlimited start on. You can still switch on the puzzle screen.</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Harder words</legend>
+                    <div class="options">
+                        <label><input type="checkbox" name="hardWords"> Allow harder words in Unlimited</label>
+                    </div>
+                    <p class="hint">Adds less common answers. The daily always uses the everyday list, so it's the same for everyone.</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Timer</legend>
+                    <div class="options">
+                        <label><input type="checkbox" name="showTimer"> Show the timer while playing</label>
+                    </div>
+                    <p class="hint">Hiding it doesn't change your score: time still counts for the speed bonus.</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Theme</legend>
+                    <div class="theme-part">
+                        <h3>Mode</h3>
+                        <div class="options">
+                            <label><input type="radio" name="theme" value="light"> Light</label>
+                            <label><input type="radio" name="theme" value="dark"> Dark</label>
+                        </div>
+                    </div>
+                    <div class="theme-part">
+                        <h3>Design</h3>
+                        <div class="options">
+                            <label><input type="radio" name="design" value="classic"> Classic</label>
+                        </div>
+                        <p class="hint">More designs are coming with the design pass.</p>
+                    </div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Reset</legend>
+                    <button type="button" class="danger" id="reset-data">Clear my progress, scores and settings</button>
+                    <p class="hint">Can't be undone.</p>
+                </fieldset>
+            </form>
         </section>
 
         <!-- The game screen, used by both modes -->

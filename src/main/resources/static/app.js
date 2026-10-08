@@ -1,5 +1,6 @@
 // Schmoll Crossword: draws the puzzle from the server (Step 19), lets you play it (Step 20-22),
-// and switches between the Home, Daily and Unlimited screens (Step 23).
+// switches between the Home, Daily and Unlimited screens (Step 23), and saves progress, stats
+// and settings in this browser (Step 24).
 
 const statusEl = document.getElementById("status");
 const puzzleEl = document.getElementById("puzzle");
@@ -19,6 +20,9 @@ const gameSubtitleEl = document.getElementById("game-subtitle");
 const newPuzzleEl = document.getElementById("new-puzzle");
 const dailyStatusEl = document.getElementById("daily-status");
 const homeStreakEl = document.getElementById("home-streak");
+const statsViewEl = document.getElementById("stats-view");
+const settingsViewEl = document.getElementById("settings-view");
+const settingsFormEl = document.getElementById("settings-form");
 
 const todayText = () =>
     new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
@@ -45,6 +49,38 @@ const game = {
     squaresChecked: 0,   // for the score: every square looked at by Check
     squaresRevealed: 0   // for the score: every square filled in by Reveal
 };
+
+// ---------------------------------------------------------------------------------------------
+// Settings (Step 24), saved in this browser
+// ---------------------------------------------------------------------------------------------
+const SETTINGS_KEY = "schmoll.settings";
+const DEFAULT_SETTINGS = { difficulty: "medium", hardWords: false, showTimer: true, theme: "light", design: "classic" };
+
+function loadSettings() {
+    try {
+        return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY)) };
+    } catch (err) {
+        return { ...DEFAULT_SETTINGS };
+    }
+}
+let settings = loadSettings();
+
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch (err) {
+        // storage blocked: settings last until the page is closed
+    }
+    applySettings();
+}
+
+// Make the page match the settings
+function applySettings() {
+    document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.dataset.design = settings.design;
+    timerEl.hidden = !settings.showTimer;
+}
+applySettings();
 
 // ---------------------------------------------------------------------------------------------
 // Daily scores, saved in this browser: { "20261007": { date, difficulty, seconds, points }, ... }
@@ -86,7 +122,46 @@ setInterval(() => {
     if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden || gameViewEl.hidden) return;
     game.seconds++;
     drawTimer();
+    saveProgress();
 }, 1000);
+
+// ---------------------------------------------------------------------------------------------
+// Progress (Step 24): each mode's puzzle and game, saved in this browser so a reload doesn't lose them
+//   { daily: { puzzle, state, difficulty }, unlimited: { puzzle, state, difficulty } }
+// ---------------------------------------------------------------------------------------------
+const PROGRESS_KEY = "schmoll.progress";
+
+function loadProgress() {
+    try {
+        return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {};
+    } catch (err) {
+        return {};
+    }
+}
+
+function saveProgress() {
+    if (!game.puzzle) return;
+    const all = loadProgress();
+    all[game.puzzle.mode] = { puzzle: game.puzzle, state: snapshot(), difficulty: difficultyFor[game.puzzle.mode] };
+    try {
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+    } catch (err) {
+        // storage blocked or full: progress lasts until the page is closed
+    }
+}
+
+// On page load: bring back each mode's saved game (a daily only if it's today's)
+function restoreProgress() {
+    const all = loadProgress();
+    for (const mode of ["daily", "unlimited"]) {
+        const saved = all[mode];
+        if (!saved || !saved.puzzle || !saved.state) continue;
+        if (mode === "daily" && String(saved.puzzle.seed) !== dayKey(new Date())) continue;   // yesterday's daily
+        lastPuzzle[mode] = saved.puzzle;
+        savedGames[mode] = saved.state;
+        if (saved.difficulty) difficultyFor[mode] = saved.difficulty;
+    }
+}
 
 function drawTimer() {
     const minutes = Math.floor(game.seconds / 60);
@@ -110,7 +185,9 @@ async function loadPuzzle(mode, difficulty) {
     puzzleEl.hidden = true;
 
     try {
-        const response = await fetch("/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty));
+        let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
+        if (mode === "unlimited" && settings.hardWords) url += "&hardWords=true";   // Settings: harder words (Unlimited only)
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error("The server answered " + response.status);
         }
@@ -287,6 +364,7 @@ function render() {
         label.textContent = current.number + (current.direction === "across" ? "A" : "D");
         clueBarEl.append(label, " " + current.clue);
     }
+    saveProgress();   // every change to the game is saved (Step 24)
 }
 
 // "Today's daily: 240 pts (medium) · Streak 3 days (best 5)"
@@ -597,25 +675,37 @@ document.addEventListener("keydown", (event) => {
 });
 
 // ---------------------------------------------------------------------------------------------
-// Screens and modes (Step 23). The part of the URL after "#" picks the screen:
-//   (nothing) = Home,  #daily = Daily,  #unlimited = Unlimited
+// Screens and modes (Step 23-24). The part of the URL after "#" picks the screen:
+//   (nothing) = Home,  #daily,  #unlimited,  #stats,  #settings
 // so the browser's Back button and bookmarks work.
 // ---------------------------------------------------------------------------------------------
-const difficultyFor = { daily: "medium", unlimited: "medium" };   // the difficulty each mode last used
+// The difficulty each mode last used (starts at the default from Settings)
+const difficultyFor = { daily: settings.difficulty, unlimited: settings.difficulty };
+const VIEWS = ["daily", "unlimited", "stats", "settings"];
 
 function currentView() {
     const view = location.hash.replace("#", "");
-    return view === "daily" || view === "unlimited" ? view : "home";
+    return VIEWS.includes(view) ? view : "home";
 }
 
 function showView() {
     const view = currentView();
     document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === view));
     homeViewEl.hidden = view !== "home";
-    gameViewEl.hidden = view === "home";
+    gameViewEl.hidden = view !== "daily" && view !== "unlimited";
+    statsViewEl.hidden = view !== "stats";
+    settingsViewEl.hidden = view !== "settings";
 
     if (view === "home") {
         drawHome();
+        return;
+    }
+    if (view === "stats") {
+        drawStats();
+        return;
+    }
+    if (view === "settings") {
+        drawSettings();
         return;
     }
     gameTitleEl.textContent = view === "daily" ? "Daily puzzle" : "Unlimited";
@@ -683,5 +773,107 @@ newPuzzleEl.addEventListener("click", () => {
     loadPuzzle("unlimited", difficultyFor.unlimited);
 });
 
+// ---------------------------------------------------------------------------------------------
+// Stats page (Step 24): worked out from the daily scores saved in this browser
+// ---------------------------------------------------------------------------------------------
+const formatTime = seconds => Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+
+// "20261007" -> "Wed, Oct 7, 2026"
+function formatDayKey(key) {
+    const date = new Date(Number(key.slice(0, 4)), Number(key.slice(4, 6)) - 1, Number(key.slice(6, 8)));
+    return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+
+function drawStats() {
+    const scores = loadDailyScores();
+    const keys = Object.keys(scores).sort().reverse();        // newest first
+    const solved = keys.filter(k => !scores[k].surrendered);
+    const times = solved.map(k => scores[k].seconds).filter(s => typeof s === "number");
+    const streaks = calculateStreaks(scores);
+    const totalPoints = solved.reduce((sum, k) => sum + (scores[k].points || 0), 0);
+
+    const tiles = [
+        [totalPoints, "total points"],
+        [solved.length, solved.length === 1 ? "daily solved" : "dailies solved"],
+        [streaks.current, "current streak"],
+        [streaks.best, "best streak"],
+        [times.length ? formatTime(Math.min(...times)) : "–", "best time"],
+        [times.length ? formatTime(Math.round(times.reduce((a, b) => a + b, 0) / times.length)) : "–", "average time"]
+    ];
+    const tilesEl = document.getElementById("stat-tiles");
+    tilesEl.innerHTML = "";
+    for (const [value, label] of tiles) {
+        const tile = document.createElement("div");
+        tile.className = "stat-tile";
+        const v = document.createElement("div");
+        v.className = "value";
+        v.textContent = value;
+        const l = document.createElement("div");
+        l.className = "label";
+        l.textContent = label;
+        tile.append(v, l);
+        tilesEl.appendChild(tile);
+    }
+
+    const rowsEl = document.getElementById("history-rows");
+    rowsEl.innerHTML = "";
+    for (const key of keys) {
+        const s = scores[key];
+        const row = document.createElement("tr");
+        const cells = [
+            [formatDayKey(key), ""],
+            [s.difficulty || "", ""],
+            [typeof s.seconds === "number" ? formatTime(s.seconds) : "–", "num"],
+            [s.surrendered ? "revealed (0)" : String(s.points), "num"]
+        ];
+        for (const [text, cls] of cells) {
+            const td = document.createElement("td");
+            td.textContent = text;
+            if (cls) td.className = cls;
+            row.appendChild(td);
+        }
+        rowsEl.appendChild(row);
+    }
+    document.getElementById("history").hidden = keys.length === 0;
+    document.getElementById("no-history").hidden = keys.length > 0;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Settings page (Step 24): the form shows the saved settings; any change is saved right away
+// ---------------------------------------------------------------------------------------------
+function drawSettings() {
+    const form = settingsFormEl.elements;
+    for (const input of form.difficulty) input.checked = input.value === settings.difficulty;
+    for (const input of form.theme) input.checked = input.value === settings.theme;
+    const designs = form.design.length === undefined ? [form.design] : form.design;   // only one option for now
+    for (const input of designs) input.checked = input.value === settings.design;
+    form.hardWords.checked = settings.hardWords;
+    form.showTimer.checked = settings.showTimer;
+}
+
+settingsFormEl.addEventListener("change", (event) => {
+    const input = event.target;
+    if (input.type === "checkbox") {
+        settings[input.name] = input.checked;
+    } else {
+        settings[input.name] = input.value;
+    }
+    if (input.name === "difficulty") {
+        // the new default applies to modes that haven't started a game yet
+        for (const mode of ["daily", "unlimited"]) if (!lastPuzzle[mode]) difficultyFor[mode] = input.value;
+    }
+    saveSettings();
+});
+
+document.getElementById("reset-data").addEventListener("click", () => {
+    if (!confirm("Clear your saved progress, daily scores, streaks and settings? This can't be undone.")) return;
+    try {
+        [SCORES_KEY, PROGRESS_KEY, SETTINGS_KEY].forEach(key => localStorage.removeItem(key));
+    } catch (err) { /* nothing saved anyway */ }
+    location.hash = "";
+    location.reload();
+});
+
 window.addEventListener("hashchange", showView);
+restoreProgress();   // bring back saved games before showing anything (Step 24)
 showView();
