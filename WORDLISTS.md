@@ -132,6 +132,11 @@ OVOID, UVULA, XYLEM, AVAST, EWER and TIDED, so `src/main/resources/too-hard-word
 - **Archaic, odd or crossword-only words from level 35** (EKED, METE, LIEU, DEIGN, ABLER, UTERI, TIDED...).
 - Result: 849 of the 6,695 three-to-five-letter answers are skipped, leaving 5,847.
 
+**Update (Step 23, after playing):** the project owner asked for fewer hard words, so every SCOWL **level-35** word
+was also moved to the too-hard list **except** a hand-picked list of everyday words (CABIN, BANJO, CLAW, PIER...).
+CYST, MITES, WOMB, OVARY and COTS are now skipped. Answers of 3–5 letters: 5,847 → **3,930**; the solver still fills
+20/20 test grids in about a second. Example answers now: WADE, AGING, LATTE, LITER, NORM, WALL, AGAIN, DITTO, ENTER, GERM.
+
 It was judged by Claude, not copied from any list. **The NYT's Wordle answer list was deliberately not used** (NYT content).
 The setting `App.SKIP_TOO_HARD_WORDS` (default `true`) turns the filter off; offensive words stay blocked either way.
 Edit the file to add or remove words.
