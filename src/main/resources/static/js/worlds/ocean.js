@@ -403,6 +403,7 @@
         // 2. a treasure chest rises in front of the board and bursts open
         const chest = U.el("div", { class: "oc-chest", html: CHEST, style: { left: cx - 90 + "px", top: Math.min(H - 160, b.bottom - 120) + "px" } });
         overlay.appendChild(chest);
+        FX.follow(c, boardEl, chest);
         c.cleanup(() => chest.remove());
         chest.animate([{ transform: "translateY(260px) scale(.6)", opacity: 0 }, { transform: "translateY(-14px) scale(1.05)", opacity: 1, offset: 0.7 }, { transform: "none", opacity: 1 }], { duration: 700, easing: "cubic-bezier(.2,.9,.3,1)", fill: "backwards" });
         await c.wait(800);
@@ -425,6 +426,7 @@
         Sound.play("whale");
         const whale = U.el("div", { class: "oc-whale", html: WHALE, style: { top: Math.max(60, b.top - 40) + "px" } });
         overlay.appendChild(whale);
+        FX.follow(c, boardEl, whale);
         c.cleanup(() => whale.remove());
         whale.animate([{ transform: `translateX(${W + 60}px) translateY(0)` }, { transform: `translateX(${W * 0.4}px) translateY(-24px)`, offset: 0.5 }, { transform: "translateX(-420px) translateY(0)" }], { duration: 3600, easing: "linear", fill: "forwards" });
         for (let i = 0; i < 3; i++) setTimeout(() => FX.burst({ x: W / 2, y: H + 10, jitter: W / 2, n: 14, colors: ["#ffffff", "#bff3ff"], shape: "bubble", speed: [40, 120], angle: -Math.PI / 2, spread: 0.3, gravity: -200, life: [2, 3], size: [3, 9], wobble: 30 }), i * 600);

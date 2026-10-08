@@ -55,7 +55,7 @@
             // the street at the bottom, wet and shiny
             street = { y: H * 0.86 };
             cafe = { x: W * 0.72, w: Math.min(W * 0.22, 220), h: H * 0.11 };
-            rain = Array.from({ length: preview ? 60 : 260 }, () => ({ x: R() * W * 1.2, y: R() * H, sp: 600 + R() * 400, len: 10 + R() * 16, z: 0.4 + R() * 0.6 }));
+            rain = Array.from({ length: preview ? 60 : 260 }, (_, i) => ({ x: R() * W * 1.2, y: R() * H, sp: 600 + R() * 400, len: 10 + R() * 16, z: [0.45, 0.7, 1][i % 3] }));   // 3 depths, each drawn in one stroke
             puddles = Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: H * (0.9 + R() * 0.08), w: 30 + R() * 60, rings: [] }));
         }
         setup();
@@ -168,13 +168,18 @@
                 // the rain, slanting with the wind (and the pointer)
                 g.lineCap = "round";
                 const slant = 0.18 + inp.px * 0.06;
-                for (const r of rain) {
-                    r.y += r.sp * dt * r.z; r.x += r.sp * dt * r.z * slant;
-                    if (r.y > H) { r.y = -20; r.x = Math.random() * W * 1.2 - W * 0.1; }
-                    if (r.x > W + 20) r.x -= W * 1.2;
-                    g.strokeStyle = night ? `rgba(170,190,230,${(0.25 + r.z * 0.3).toFixed(2)})` : `rgba(255,255,255,${(0.35 + r.z * 0.35).toFixed(2)})`;
-                    g.lineWidth = r.z * 1.4;
-                    g.beginPath(); g.moveTo(r.x, r.y); g.lineTo(r.x - r.len * r.z * slant, r.y - r.len * r.z); g.stroke();
+                for (const z of [0.45, 0.7, 1]) {
+                    g.strokeStyle = night ? `rgba(170,190,230,${(0.25 + z * 0.3).toFixed(2)})` : `rgba(255,255,255,${(0.35 + z * 0.35).toFixed(2)})`;
+                    g.lineWidth = z * 1.4;
+                    g.beginPath();
+                    for (const r of rain) {
+                        if (r.z !== z) continue;
+                        r.y += r.sp * dt * z; r.x += r.sp * dt * z * slant;
+                        if (r.y > H) { r.y = -20; r.x = Math.random() * W * 1.2 - W * 0.1; }
+                        if (r.x > W + 20) r.x -= W * 1.2;
+                        g.moveTo(r.x, r.y); g.lineTo(r.x - r.len * z * slant, r.y - r.len * z);
+                    }
+                    g.stroke();
                 }
             }
         };
@@ -244,6 +249,7 @@
         const uw = Math.min(W * 0.8, b.width * 1.3);
         const umb = U.el("div", { class: "rn-umbrella", html: UMBRELLA, style: { left: cx - uw / 2 + "px", top: Math.max(4, b.top - uw * 0.3) + "px", width: uw + "px", height: uw * 0.625 + "px" } });
         overlay.appendChild(umb);
+        FX.follow(c, boardEl, umb);
         c.cleanup(() => umb.remove());
         Sound.play("whoosh");
         setTimeout(() => Sound.play("pop"), 250);

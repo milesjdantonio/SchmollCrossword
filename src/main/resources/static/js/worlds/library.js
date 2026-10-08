@@ -19,7 +19,7 @@
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const night = opts.theme === "dark", preview = !!opts.preview;
-        let back, shelves, glow, motes, candles, wisps, win, event = null, nextEvent = preview ? 999 : U.rand(5, 10);
+        let back, shelves, glow, wisp, motes, candles, wisps, win, event = null, nextEvent = preview ? 999 : U.rand(5, 10);
 
         function setup() {
             const R = U.rng(5150);
@@ -136,6 +136,9 @@
                 gr.addColorStop(0, night ? "rgba(255,200,110,.9)" : "rgba(255,250,220,.9)"); gr.addColorStop(0.4, night ? "rgba(255,160,60,.28)" : "rgba(255,240,200,.3)"); gr.addColorStop(1, "rgba(255,160,60,0)");
                 g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
             }
+            // a ghostly wisp, drawn once and stretched into an oval when used
+            wisp = Worlds.canvas(64, 64);
+            { const g = wisp.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(170,230,210,.10)"); gr.addColorStop(1, "rgba(170,230,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
             motes = Array.from({ length: preview ? 20 : 70 }, () => ({ x: R() * W, y: R() * H, s: 0.6 + R() * 1.6, sp: 3 + R() * 8, ph: R() * TAU }));
             candles = night ? Array.from({ length: preview ? 5 : 11 }, (_, i) => ({ x: W * (0.12 + (i + R() * 0.6) / (preview ? 5 : 11) * 0.76), y: H * (0.12 + R() * 0.42), h: 16 + R() * 18, ph: R() * TAU, z: 0.6 + R() * 0.6 })) : [];
             wisps = night ? Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: H * (0.3 + R() * 0.5), sp: 6 + R() * 10, ph: R() * TAU, r: 30 + R() * 50 })) : [];
@@ -193,9 +196,7 @@
                 for (const w of wisps) {
                     w.x += w.sp * dt; if (w.x > W + w.r * 2) w.x = -w.r * 2;
                     const y = w.y + Math.sin(t * 0.7 + w.ph) * 20;
-                    const wg = g.createRadialGradient(w.x - inp.px * 14, y, 0, w.x - inp.px * 14, y, w.r);
-                    wg.addColorStop(0, "rgba(170,230,210,.10)"); wg.addColorStop(1, "rgba(170,230,210,0)");
-                    g.fillStyle = wg; g.beginPath(); g.ellipse(w.x - inp.px * 14, y, w.r * 1.6, w.r * 0.6, 0, 0, TAU); g.fill();
+                    g.drawImage(wisp, w.x - inp.px * 14 - w.r * 1.6, y - w.r * 0.6, w.r * 3.2, w.r * 1.2);
                 }
                 // floating candles, bobbing and flickering (night)
                 for (const c of candles) {
@@ -298,6 +299,7 @@
             book.animate(frames, { duration: 1900, delay: i * 70, easing: "ease-in-out", fill: "both" });
         }
         c.cleanup(() => books.forEach(bk => bk.remove()));
+        FX.follow(c, boardEl, ...books);
         Sound.play("flutter");
         setTimeout(() => Sound.play("flutter"), 700);
         await c.wait(2000);

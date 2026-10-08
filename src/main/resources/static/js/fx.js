@@ -716,10 +716,26 @@ const FX = (() => {
         });
     }
 
+    // Keep pieces of a cinematic that sit on or around the board (a snow globe, a chest...) attached to it while the
+    // page scrolls: they're position: fixed, so they're moved by however far the board has moved since they were placed.
+    function follow(c, boardEl, ...els) {
+        const start = boardEl.getBoundingClientRect();
+        const items = els.map(el => ({ el, x: el.style.left ? parseFloat(el.style.left) : null, y: el.style.top ? parseFloat(el.style.top) : null }));
+        const move = () => {
+            const r = boardEl.getBoundingClientRect(), dx = r.left - start.left, dy = r.top - start.top;
+            for (const it of items) {
+                if (it.x !== null) it.el.style.left = it.x + dx + "px";
+                if (it.y !== null) it.el.style.top = it.y + dy + "px";
+            }
+        };
+        addEventListener("scroll", move, { passive: true, capture: true });
+        c.cleanup(() => removeEventListener("scroll", move, { capture: true }));
+    }
+
     function clear() { parts = []; effects = []; }
 
     return {
-        burst, add, ring, flash, shake, toast, countUp, cinematic, transition, clear, star,
+        burst, add, ring, flash, shake, toast, countUp, cinematic, transition, follow, clear, star,
         get playing() { return playing > 0; }, get W() { return W; }, get H() { return H; }
     };
 })();

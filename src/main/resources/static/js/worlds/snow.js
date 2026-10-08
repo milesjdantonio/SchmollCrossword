@@ -622,6 +622,7 @@
             html: `<div class="sn-glass"></div><div class="sn-base"><span>SNOW DAY!</span></div>` });
         document.getElementById("overlay").appendChild(globe);
         c.cleanup(() => globe.remove());
+        FX.follow(c, boardEl, globe);
         Sound.play("whoosh");
         const flakes = Array.from({ length: U.motion() === "lite" ? 70 : 150 }, () => ({ a: Math.random() * TAU, d: Math.sqrt(Math.random()) * (R - 12), va: U.rand(1.6, 3.6) * (Math.random() < 0.5 ? -1 : 1), r: U.rand(1.2, 3.6), x: 0, y: 0, vy: 0 }));
         let phase = "swirl", et = 0, alive = true;
@@ -683,6 +684,7 @@
         const sy = room > sw + 30 || b.left > sw + 30 ? b.bottom - sh : Math.min(innerHeight - sh - 10, b.bottom - sh * 0.7);
         const holder = U.el("div", { class: "sn-snowman-wrap", "aria-hidden": "true", style: { left: sx + "px", top: sy + "px" }, html: SNOWMAN });
         document.getElementById("overlay").appendChild(holder);
+        FX.follow(c, boardEl, holder);
         c.cleanup(() => holder.remove());
         const part = sel => holder.querySelector(sel);
         const ease = "cubic-bezier(.3,1.4,.5,1)";

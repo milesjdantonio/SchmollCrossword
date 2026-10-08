@@ -336,6 +336,7 @@
         // 1. the piñata swings down into view above the board
         const pin = U.el("div", { class: "cd-pinata", html: PINATA, style: { left: cx - 70 + "px", top: Math.max(10, b.top - 60) + "px" } });
         overlay.appendChild(pin);
+        FX.follow(c, boardEl, pin);
         c.cleanup(() => pin.remove());
         Sound.play("whoosh");
         pin.animate([{ transform: "translateY(-120vh) rotate(-20deg)" }, { transform: "translateY(10px) rotate(14deg)", offset: 0.6 }, { transform: "rotate(-8deg)", offset: 0.8 }, { transform: "none" }], { duration: 900, easing: "ease-out", fill: "backwards" });

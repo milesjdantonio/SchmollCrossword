@@ -229,6 +229,7 @@
         // 2. a treasure chest rises out of the sand in front of the board
         const chest = U.el("div", { class: "ds-chest", html: `<i class="ds-rays"></i>${CHEST}`, style: { left: cx - 90 + "px", top: cy - 70 + "px" } });
         overlay.appendChild(chest);
+        FX.follow(c, boardEl, chest);
         c.cleanup(() => chest.remove());
         Sound.play("thud");
         chest.animate([{ transform: "translateY(60px) scale(.3)", opacity: 0 }, { transform: "translateY(-10px) scale(1.05)", opacity: 1, offset: 0.7 }, { transform: "none", opacity: 1 }], { duration: 700, easing: "ease-out", fill: "backwards" });

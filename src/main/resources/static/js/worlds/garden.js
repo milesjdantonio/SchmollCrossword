@@ -18,7 +18,6 @@
     let vineEls = new Map();         // "r,c" -> { parentKey, node }: the vine growing INTO that square (kept between updates)
     let flowerEls = new Map();       // "r,c" -> { stage: "bud" or "bloom", node }
     let sides = null;                // the side-of-screen garden after a win
-    let critterTimer = null;
     let lastGame = null;
     const reduceMotion = () => U.motion() === "still";
 
@@ -510,17 +509,6 @@
         anim.onfinish = () => node.remove();
     }
 
-    function startCritters() {
-        if (critterTimer) return;
-        const tick = () => {
-            critterTimer = setTimeout(tick, 18000 + Math.random() * 22000);
-            if (document.hidden || document.documentElement.dataset.design !== "garden") return;
-            const roll = Math.random();
-            spawnCritter(roll < 0.55 ? "butterfly" : roll < 0.85 ? "bee" : "ladybug");
-        };
-        critterTimer = setTimeout(tick, 6000 + Math.random() * 8000);
-    }
-
     // ---------------------------------------------------------------------------------------------
     // The win: the garden takes over
     // ---------------------------------------------------------------------------------------------
@@ -628,8 +616,6 @@
         if (sides) sides.remove();
         sides = null;
         document.querySelectorAll(".garden-celebration, .critter-layer").forEach(n => n.remove());
-        clearTimeout(critterTimer);
-        critterTimer = null;
     }
 
     // The side garden is drawn in screen pixels, so redraw it (already grown) when the window changes size

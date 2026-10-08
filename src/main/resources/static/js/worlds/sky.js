@@ -19,7 +19,7 @@
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const night = opts.theme === "dark", preview = !!opts.preview;
-        let sky, stars, cloudsFar, cloudsNear, islands, birds = [], balloons = [], lanterns, puff, nextBirds = preview ? 999 : U.rand(2, 6), nextBalloon = preview ? 999 : U.rand(4, 9);
+        let sky, stars, cloudsFar, cloudsNear, islands, birds = [], balloons = [], lanterns, puff, halo, nextBirds = preview ? 999 : U.rand(2, 6), nextBalloon = preview ? 999 : U.rand(4, 9);
 
         function makeIsland(R, w) {
             // a floating island drawn once: a grassy top, a rocky underside, maybe a castle and a waterfall
@@ -67,6 +67,9 @@
                 { x: W * 0.14, y: H * 0.5, w: unit * 0.24, z: 0.9, ph: 1.7, falls: true },
                 { x: W * 0.5, y: H * 0.1, w: unit * 0.12, z: 0.35, ph: 3.1 }
             ].map(i => ({ ...i, img: makeIsland(R, i.w) }));
+            // a lantern's warm halo, drawn once and reused (a new gradient per lantern per frame is slow)
+            halo = Worlds.canvas(64, 64);
+            { const g = halo.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,190,90,.5)"); gr.addColorStop(1, "rgba(255,150,60,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
             lanterns = night ? Array.from({ length: preview ? 6 : 18 }, () => ({ x: R() * W, y: R() * H, sp: 8 + R() * 14, s: 0.6 + R() * 0.7, ph: R() * TAU })) : [];
             puff = Worlds.canvas(120, 70);
             {
@@ -147,9 +150,7 @@
                 for (const l of lanterns) {
                     l.y -= l.sp * dt; if (l.y < -30) { l.y = H + 30; l.x = Math.random() * W; }
                     const x = l.x + Math.sin(t * 0.6 + l.ph) * 12 - inp.px * 14 * l.s, y = l.y, s = l.s;
-                    const lg = g.createRadialGradient(x, y, 0, x, y, 30 * s);
-                    lg.addColorStop(0, "rgba(255,190,90,.5)"); lg.addColorStop(1, "rgba(255,150,60,0)");
-                    g.fillStyle = lg; g.beginPath(); g.arc(x, y, 30 * s, 0, TAU); g.fill();
+                    g.drawImage(halo, x - 30 * s, y - 30 * s, 60 * s, 60 * s);
                     g.fillStyle = `rgba(255,${200 + Math.round(Math.sin(t * 5 + l.ph) * 20)},120,.95)`;
                     g.beginPath(); g.moveTo(x - 7 * s, y - 10 * s); g.lineTo(x + 7 * s, y - 10 * s); g.lineTo(x + 5 * s, y + 9 * s); g.lineTo(x - 5 * s, y + 9 * s); g.fill();
                 }

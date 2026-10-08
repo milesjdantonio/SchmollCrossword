@@ -286,6 +286,7 @@
             return st;
         });
         c.cleanup(() => stickers.forEach(s => s.remove()));
+        FX.follow(c, boardEl, ...stickers);
         [0, 120, 240, 360].forEach(ms => setTimeout(() => Sound.play("pop"), 150 + ms));
         await c.wait(650);
         if (c.skipped) return;

@@ -23,7 +23,7 @@
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const night = opts.theme === "dark", preview = !!opts.preview;
-        let hz, sky, far, mid, near, glow, smoke, embers, gulls, palms, rivers, vx, vtop, nextGull = preview ? 999 : U.rand(3, 8), sparks = [], fountain = [];
+        let hz, sky, far, mid, glow, smoke, embers, gulls, palms, rivers, vx, vtop, nextGull = preview ? 999 : U.rand(3, 8), sparks = [], fountain = [];
 
         function setup() {
             const R = U.rng(7070);
