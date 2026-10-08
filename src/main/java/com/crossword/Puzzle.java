@@ -102,4 +102,97 @@ public class Puzzle {
 
         return new Puzzle(mode, seed, difficulty, blackSquares, filledGrid, numbers, across, down);
     }
+
+    /*
+     * ===== Step 16b: Turn the Puzzle into JSON =====
+     *
+     * The website is JavaScript and can't read a Java object, but it can read JSON text.
+     * Build this exact shape with a StringBuilder (no spaces or line breaks needed):
+     *
+     *   {"mode":"daily","seed":1,"difficulty":"medium","size":5,
+     *    "solution":["SOCK.","ERRED","ADIEU","TEMPS",".REST"],
+     *    "numbers":[[1,2,3,4,0],[5,0,0,0,6],[7,0,0,0,0],[8,0,0,0,0],[0,9,0,0,0]],
+     *    "across":[{"number":1,"direction":"across","row":0,"col":0,"length":4,"answer":"SOCK","clue":"..."}, ...],
+     *    "down":[ ...same shape... ]}
+     *
+     * JSON rules you need:
+     *   - Text goes in double quotes: "mode":"daily". Numbers don't: "seed":1
+     *   - [ ] is a list, { } is an object (a group of "name":value pairs)
+     *   - Commas go BETWEEN items, never after the last one (the fencepost problem from formatGrid!)
+     *   - Use quote(...) below for every piece of text: a clue like  "Carpe diem," for one  contains
+     *     double quotes, which would break the JSON unless they're escaped as \"
+     *
+     * Black squares are the '.' in "solution" rows, so there's no separate blackSquares list.
+     *
+     * Related LeetCode: 297. Serialize and Deserialize Binary Tree, 271. Encode and Decode Strings
+     */
+    String toJson() {
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"mode\":").append(quote(this.mode)).append(",");
+        sb.append("\"seed\":").append(this.seed).append(",");
+        sb.append("\"difficulty\":").append(quote(this.difficulty)).append(",");   // text, so it needs quote()
+        sb.append("\"size\":").append(this.size).append(",");
+
+        // "solution":["SOCK.","ERRED",...]  (black squares are the '.')
+        sb.append("\"solution\":[");
+        for (int r = 0; r < solution.length; r++) {
+            if (r > 0) sb.append(",");                        // comma BETWEEN items only
+            sb.append(quote(new String(solution[r])));       // char[] row -> "SOCK."
+        }
+        sb.append("],");
+
+        // "numbers":[[1,2,3,4,0],[5,0,0,0,6],...]
+        sb.append("\"numbers\":[");
+        for (int r = 0; r < numbers.length; r++) {
+            if (r > 0) sb.append(",");
+            sb.append("[");
+            for (int c = 0; c < numbers[r].length; c++) {
+                if (c > 0) sb.append(",");
+                sb.append(numbers[r][c]);
+            }
+            sb.append("]");
+        }
+        sb.append("],");
+
+        sb.append("\"across\":").append(entriesJson(across)).append(",");
+        sb.append("\"down\":").append(entriesJson(down));
+        sb.append("}");
+        return sb.toString();
+    }
+
+    // [{...},{...}] for a list of entries (Across and Down share this, so it's written once)
+    private static String entriesJson(List<Entry> entries) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < entries.size(); i++) {
+            if (i > 0) sb.append(",");
+            Entry e = entries.get(i);
+            sb.append("{\"number\":").append(e.number())
+              .append(",\"direction\":").append(quote(e.direction()))
+              .append(",\"row\":").append(e.row())
+              .append(",\"col\":").append(e.col())
+              .append(",\"length\":").append(e.length())
+              .append(",\"answer\":").append(quote(e.answer()))
+              .append(",\"clue\":").append(quote(e.clue()))
+              .append("}");
+        }
+        return sb.append("]").toString();
+    }
+
+    // Wraps text in double quotes and escapes the characters that would break JSON (already done for you).
+    // quote("Hi") -> "Hi"      quote("Say \"cheese\"") -> "Say \"cheese\""
+    static String quote(String text) {
+        StringBuilder sb = new StringBuilder("\"");
+        for (char ch : text.toCharArray()) {
+            if (ch == '"') {
+                sb.append("\\\"");          // " becomes \"
+            } else if (ch == '\\') {
+                sb.append("\\\\");          // \ becomes \\
+            } else if (ch == '\n') {
+                sb.append("\\n");           // a line break becomes \n
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.append('"').toString();
+    }
 }

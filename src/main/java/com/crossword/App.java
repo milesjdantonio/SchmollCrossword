@@ -423,6 +423,25 @@ public class App {
         check("puzzle: 6-Down starts at row 1, col 4, 4 long", sockPositions, true);
         check("puzzle: mode, seed and difficulty kept", sockPuzzle.mode + " " + sockPuzzle.seed + " " + sockPuzzle.difficulty, "daily 1 medium");
 
+        // Step 16b tests: the Puzzle as JSON text for the website
+        System.out.println();
+        String json = sockPuzzle.toJson();
+        check("json: starts with { and ends with }", json.startsWith("{") && json.endsWith("}"), true);
+        check("json: has the mode as text", json.contains("\"mode\":\"daily\""), true);
+        check("json: has the seed as a number", json.contains("\"seed\":1,"), true);
+        check("json: has the solution rows", json.contains("\"solution\":[\"SOCK.\",\"ERRED\",\"ADIEU\",\"TEMPS\",\".REST\"]"), true);
+        check("json: has the numbers grid", json.contains("\"numbers\":[[1,2,3,4,0],[5,0,0,0,6],[7,0,0,0,0],[8,0,0,0,0],[0,9,0,0,0]]"), true);
+        check("json: 1-Across entry exactly right",
+                json.contains("{\"number\":1,\"direction\":\"across\",\"row\":0,\"col\":0,\"length\":4,\"answer\":\"SOCK\",\"clue\":\"clue for SOCK\"}"), true);
+        check("json: is valid JSON (a real JSON library can read it)", isValidJson(json), true);
+
+        // A clue with double quotes in it must still produce valid JSON
+        List<ClueWriter.Clue> quotedClues = new ArrayList<>(sockClueList);
+        quotedClues.set(0, new ClueWriter.Clue("SOCK", "\"Put a ___ in it!\""));
+        String quotedJson = Puzzle.create(blackSquares, sockGrid, new ClueWriter.ClueSet(quotedClues), "daily", 1, "medium").toJson();
+        check("json: quotes inside a clue are escaped", quotedJson.contains("\"clue\":\"\\\"Put a ___ in it!\\\"\""), true);
+        check("json: still valid with quotes inside a clue", isValidJson(quotedJson), true);
+
         // 15c calls the real Claude API, which costs a little money, so it only runs when you ask:
         //   mvn compile exec:java -Dexec.mainClass=com.crossword.App -Dexec.args=live
         // The key itself is never printed, only whether one was found.
@@ -455,6 +474,16 @@ public class App {
         }
         solve(new ArrayList<>(slots), grid, wordsByLength, new HashSet<>(), new Random(seed));
         return formatGrid(grid, blackSquares);
+    }
+
+    // Test helper: asks a real JSON library (Jackson, which comes with the Claude SDK) whether text is valid JSON
+    static boolean isValidJson(String text) {
+        try {
+            new com.fasterxml.jackson.databind.ObjectMapper().readTree(text);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Prints PASS/FAIL when comparing any two values (Strings, numbers, ...)

@@ -43,7 +43,8 @@ SchmollCrosswordMain/
 │   ├── App.java                         # Entry point: loads words, builds grid, prints slots
 │   ├── Slot.java                        # One across/down answer position in the grid
 │   ├── Trie.java                        # Tree of letters for fast pattern lookups (Step 13b)
-│   └── ClueWriter.java                  # Asks Claude to write each puzzle's clues (Step 15)
+│   ├── ClueWriter.java                  # Asks Claude to write each puzzle's clues (Step 15)
+│   └── Puzzle.java                      # One finished puzzle + its JSON for the website (Step 16)
 └── src/main/resources/
     ├── words.txt                        # Answer words (SCOWL 50 ∩ Spread the Wordlist), one per line
     ├── blocked-words.txt                # Offensive words the generator must never use
@@ -83,10 +84,10 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 13b: Faster word matching.** The friendlier list made puzzles slower (~1 s each). Measuring showed 94% of `findMatches` calls were repeats, so results are now cached, and new patterns are looked up in a Trie (`Trie.java`). 5 puzzles: ~5.5 s → ~0.15 s.
 - ✅ **Step 14: Clue numbering.** `App.numberGrid(blackSquares)` scans left→right, top→bottom and numbers every square that starts an Across or Down answer (0 everywhere else).
 - ✅ **Step 15: Clues.** No openly licensed clue source exists (see [CLUES.md](CLUES.md)), so each puzzle's ~10 clues are written fresh by Claude through the Claude API, at easy, medium or hard, in a small-daily-crossword style. `ClueWriter.java` builds the prompt, calls the API and checks every clue.
-- 🔨 **Step 16: A `Puzzle` object. ← YOU ARE HERE** Bundle the grid, numbers, answers, clues, difficulty, mode and seed into one object, and turn it into JSON so the website can read it.
+- ✅ **Step 16: A `Puzzle` object.** `Puzzle.java` bundles the grid, numbers, answers, clues, difficulty, mode and seed, and `toJson()` turns it into JSON for the website.
 
 ### Phase 4: Make it a website
-- ⬜ **Step 17: Save generated puzzles.** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
+- 🔨 **Step 17: Save generated puzzles. ← YOU ARE HERE** Generate each day's puzzle once and save it, so the daily puzzle (including Claude's clues) is identical for everyone.
 - ⬜ **Step 18: Backend API.** A Spring Boot server with `GET /api/daily` and `GET /api/unlimited` that return puzzles as JSON and serve the website.
 - ⬜ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
 - ⬜ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.

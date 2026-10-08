@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 16 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 17 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -78,7 +78,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ---
 
-## Phase 3: Turn the grid into a real crossword 🔨
+## Phase 3: Turn the grid into a real crossword ✅
 
 ### ✅ Step 13: Use a player-friendly word list
 - **What:** replace `words.txt` (full of words like `AALII` and `SCEND`) with common words a normal person can guess.
@@ -111,18 +111,18 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Learned:** calling a real API from Java, keeping secrets out of code and git, prompt writing and iterating on it, structured output, validating AI output before users see it.
 - **LeetCode:** 242. Valid Anagram, 383. Ransom Note (checking one collection against another, for 15b)
 
-### 🔨 Step 16: A `Puzzle` object
+### ✅ Step 16: A `Puzzle` object
 - **What:** bundle everything about one puzzle into one object: the grid, black squares, clue numbers, each Across/Down entry (number, answer, clue), the difficulty, the mode (daily or unlimited) and the seed. Then turn it into JSON text the website can read.
   - ✅ **16a:** `Puzzle.create(...)`: one `Entry` per slot (number from `numberGrid`, answer from `getPattern`, clue matched by answer, ignoring case), Across/Down lists sorted by number with `Comparator.comparingInt`
-  - **16b:** `puzzle.toJson()`: write the JSON by hand first, to see how serialization works (Step 18's web server will do it automatically)
-- **Will learn:** designing a class around what the frontend needs, records, serialization.
+  - ✅ **16b:** `puzzle.toJson()`: hand-built JSON (mode, seed, difficulty, size, solution rows with `.` for black squares, numbers, Across/Down entries) with `quote()` escaping; a test checks it with a real JSON library (Jackson). Written by Claude at the project owner's request: the owner already works with JSON and treated it as AI-appropriate boilerplate.
+- **Learned:** designing a class around what the frontend needs, records and their accessor methods, `.equals` vs `==` for Strings, sorting with `Comparator.comparingInt`, what JSON serialization does (and when to hand it to AI or a library).
 - **LeetCode:** 297. Serialize and Deserialize Binary Tree
 
 ---
 
 ## Phase 4: Make it a website ⬜
 
-### ⬜ Step 17: Save generated puzzles (daily = same for everyone)
+### 🔨 Step 17: Save generated puzzles (daily = same for everyone)
 - **What:** the daily puzzle must be identical for every player, but Claude writes different clues on every call. So each day's puzzle (per difficulty) is generated **once**, saved as a JSON file, and every player is served that saved copy. Unlimited puzzles can be generated on demand (or pre-generated in batches to control API cost).
 - **Will learn:** reading and writing files, caching, why "same input, same output" matters.
 

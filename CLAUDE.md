@@ -41,12 +41,13 @@ Context for Claude Code when working in this repository.
 - **Done:** Step 13b, faster word matching: counters in `findMatches` (13b-1), `matchCache` returning COPIES because `solve` shuffles the lists it gets (13b-2), and a `Trie` for cache misses (13b-3, written by Claude at the user's request). 5 puzzles ~150 ms; the timing limit is back to 5 s.
 - **Done:** Step 14, clue numbering: `App.numberGrid(blackSquares)` returns `int[][]` clue numbers (0 = none), using left/above + 3-long run checks.
 - **Done:** Step 15, AI-written clues via the Claude API (user's design: generate clues only for the ~10 answers in each puzzle, with an easy/medium/hard difficulty; no open clue dataset exists, see CLUES.md). `ClueWriter.java` holds the key loading (done) 15a `buildPrompt` (tuned with the user over 6 rounds: harder difficulty definitions, playful wording, clues scaled to each word's familiarity, a small-daily-crossword style guide written in our own words), 15b `findProblems`, 15c `writeClues` (`claude-opus-5-5`, structured output into `ClueSet`, one retry). The live API test only runs with `-Dexec.args=live`; don't run it without the user's OK (it costs money).
-- **Current step:** Step 16, the `Puzzle` object + JSON (16a assemble, 16b hand-written `toJson`).
+- **Done:** Step 16, `Puzzle.java`: `Puzzle.create(blackSquares, filledGrid, clueSet, mode, seed, difficulty)` builds sorted Across/Down `Entry` records; `toJson()` hand-builds JSON (16b written by Claude at the user's request; the user knows JSON and sees it as AI-appropriate boilerplate). Tests validate it with Jackson (comes with the Claude SDK).
+- **Current step:** Step 17, save generated puzzles so the daily puzzle (and its AI clues) is identical for everyone.
 - **Scope (changed 2026-10-07):** the game is a website. Steps 17–26 were redesigned: 17 save generated puzzles (daily cache), 18 Spring Boot API (`/api/daily`, `/api/unlimited`), 19–22 board, controls, win/timer/score, check/reveal, 23 daily + unlimited modes, 24 save progress/stats/scores/settings in browser storage, 25 JUnit, 26 mobile + deploy (API key server-side, rate-limit unlimited).
 - **Roadmap numbering:** Step 13b was inserted instead of renumbering, because code comments and docs refer to later step numbers (e.g. "Step 23" for the daily seed). The roadmap has 27 steps.
 - **Solver:** `solve(remaining, filledGrid, wordsByLength, usedWords, random)` removes slots from `remaining` as it fills them, so callers pass a mutable copy (`new ArrayList<>(allSlots)`, never `List.of(...)`). It picks the most-constrained slot each time; a fixed all-across-first order took >200s without finishing.
 - **Teaching style:** each step is framed like a LeetCode problem (problem comment + `// TODO` stub + PASS/FAIL test calls in `main`). The user writes the solution.
-- **Not playable yet.** The generator, numbering and AI clues work; there is no `Puzzle` object, server or web UI yet.
+- **Not playable yet.** The generator, numbering and AI clues work; a `Puzzle` can be built and turned into JSON; there is no puzzle storage, server or web UI yet.
 
 ## Planned architecture
 
