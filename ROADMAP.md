@@ -1,11 +1,11 @@
 # Schmoll Crossword: Full Roadmap
 
 Every step needed to go from an empty Java project to a mini crossword **website** with a daily puzzle (the same for everyone), an unlimited mode, scores, stats and settings.
-Each step is set up like a LeetCode problem: a problem statement, an empty method, and PASS/FAIL tests in `main`.
+Each step is set up like a LeetCode problem: a problem statement, an empty method, and tests (PASS/FAIL lines in `main` until Step 25, JUnit since).
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 24 of 27 steps done.** The game is fully playable in the browser, with Daily and Unlimited modes. The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 26 of 27 steps done.** The game is fully playable in the browser (phones included), with Daily and Unlimited modes, and is tested with JUnit. Left: final frontend changes, then putting the site online on Render (Step 26).
 
 ---
 
@@ -145,7 +145,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **What:** click to select, type to fill, Backspace, arrow keys, Across/Down toggle, highlight the current word and clue.
 - **Done (built by Claude):** click a square (click again or Space to flip Across/Down), type to fill and auto-advance (to the next word at the end), Backspace, arrow keys (turn first, then move; skip black squares), Tab/Shift+Tab/Enter between clues, click a clue to jump to it, highlighted word + selected square + active clue, a clue bar above the board. Letters survive switching difficulty (same grid). Checked with 14 automated play tests in headless Edge.
 - **Ideas to know:** one `game` state object is the source of truth; every action changes the state, then `render()` redraws the page from it. Keyboard input comes from `keydown` events.
-- **Known for later:** phones need an on-screen keyboard (Step 26).
+- **Known for later:** phones need an on-screen keyboard (done in Step 26).
 
 ### ✅ Step 21: Win detection, timer and score
 - **What:** a running timer, pause, a "You solved it!" screen, and a **score** based on time, difficulty and how many checks/reveals were used.
@@ -165,17 +165,28 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Done (built by Claude):** a Home screen (Daily / Unlimited cards, today's status, countdown to the next daily, streak) and mode tabs; the URL after `#` picks the screen (`#daily`, `#unlimited`), so Back and bookmarks work. Unlimited has a New puzzle button and earns no points. Each mode keeps its game while you visit the other. Also in this step, at the owner's request: **board on the left, clues on the right** (stacked on phones), **easier clue definitions** for every difficulty, and **fewer hard words** (most SCOWL level-35 words moved to the too-hard list, keeping a hand-picked everyday list: 3,930 answers of 3–5 letters). Fixed: unlimited seeds are kept below 2^53 so JavaScript reads them exactly. Verified with 19 new browser checks (71 total).
 - **Ideas to know:** one page with several screens shown/hidden by the URL hash; why big Java `long`s lose precision in JavaScript.
 
-### 🔨 Step 24: Save progress, stats, scores and settings
+### ✅ Step 24: Save progress, stats, scores and settings
 - **What:** remember a half-finished puzzle, solve times, scores, daily streaks and win stats. A **settings** screen: difficulty, allow harder words (`SKIP_TOO_HARD_WORDS`), timer on/off, theme. Everything is saved in the browser (`localStorage`), with no accounts needed.
+- **Done:** each mode's game is saved after every change (`schmoll.progress`) and restored on reload (a daily only if it's today's). A **Stats** screen (total points, dailies solved, streaks, best/average time, history table) and a **Settings** screen (default difficulty, harder words in Unlimited, show timer, light/dark theme, reset), saved in `schmoll.settings`; the theme is applied before the page draws so dark mode doesn't flash. "Harder words" asks for `/api/unlimited?hardWords=true`, and `PuzzleController.wordsFor` picks the word list (the daily always uses the everyday list).
 - **Will learn:** browser storage, JSON in JavaScript, designing a settings model.
 
-### ⬜ Step 25: Tests
+### ✅ Step 25: Tests
 - **What:** move the PASS/FAIL checks in `main` into real JUnit tests.
-- **Will learn:** JUnit, `mvn test`, why real test frameworks beat print statements.
+- **Done (built by Claude at the owner's request):** 62 JUnit tests in `src/test/java/com/crossword`, one class per part of the game (`WordListTest`, `SlotTest`, `SolverTest`, `FindMatchesSpeedTest`, `TrieTest`, `GridTest`, `ClueWriterTest`, `PuzzleTest`, `PuzzleStoreTest`, `PuzzleControllerTest`, `RateLimiterTest`). The paid Claude checks are in `LiveClaudeTest`, skipped unless you run `mvn test -Dlive=true`. `App.main` is now a short demo that prints a puzzle. While porting, a new test caught a real bug: the match cache mixed up the two word lists from Step 24 (fixed in `findMatches`).
+- **Learned:** `@Test`, `assertEquals(expected, actual)`, `assertThrows`, `@BeforeEach`, `@ParameterizedTest` (one test, many seeds), `@TempDir`, skipping tests with `@EnabledIfSystemProperty`, and why a failing test stops the build.
+- **Related LeetCode:** none: this one is about tooling.
 
-### ⬜ Step 26: Mobile layout and deploy
+### 🔨 Step 26: Mobile layout and deploy
 - **What:** make it work on phones and put the website online so friends can play. The API key lives only on the server, and unlimited mode gets a rate limit so API costs stay small (the game is free with no ads).
+- **Done (built by Claude at the owner's request):**
+  - **Phones:** an on-screen keyboard (with ⇄ for Across/Down and ⌫) and ‹ › buttons beside the clue bar, shown only on touch screens (`@media (pointer: coarse)`), plus a tighter layout under 480px. Tapping the clue bar switches direction everywhere. Verified with 25 browser checks at phone size (390×844, touch) and desktop size.
+  - **Rate limit:** `RateLimiter.java` (sliding window): 10 Unlimited puzzles per player (IP address) per hour and 200 for everyone per day, changeable through environment variables. Over the limit = HTTP 429 and a friendly message.
+  - **Ready to host:** `Dockerfile`, `application.properties` (`PORT`, real client IPs behind the host's proxy), `PUZZLE_DIR` for a persistent disk, `TZ` for when the daily changes. The key comes from the host's `ANTHROPIC_API_KEY` secret.
+  - **Safe on a real server:** grid filling takes turns (`synchronized buildGrid`), because the solver's cache isn't safe for two requests at once, and the cache starts fresh when the word list changes.
+  - Fixed: an Unlimited error (or a slow Unlimited load) no longer covers the Daily screen.
+- **Left:** final frontend changes, then put it online on **Render** (the owner's choice; see "Putting it online" in README.md).
 - **Will learn:** responsive CSS, hosting a Java app, secrets in production, rate limiting.
+- **Related LeetCode:** 933. Number of Recent Calls, 359. Logger Rate Limiter (the sliding window behind the rate limit).
 
 ---
 
@@ -209,3 +220,6 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 | 21 | `d32de58` |
 | 22 | `3a9718e` |
 | 23 | `a95bb6e` |
+| 24 | `7d80205` |
+| 25 | `65f7ff1` |
+| 26 (phones, rate limit, deploy prep) | `72f7c6c` |
