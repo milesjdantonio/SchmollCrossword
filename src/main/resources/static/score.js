@@ -28,8 +28,25 @@ function calculateScore(difficulty, seconds, squaresChecked = 0, squaresRevealed
 }
 
 // ---------------------------------------------------------------------------------------------
-// Streaks (display only). Saved dailies are keyed by seed, e.g. "20261007" = 2026-10-07.
+// Streaks (display only). Saved dailies are keyed by day + difficulty, e.g. "20261007-easy".
+// Solving ANY of the day's three dailies keeps the streak alive.
 // ---------------------------------------------------------------------------------------------
+
+// The day a daily's seed belongs to: 202610071 (easy daily, design pass) -> "20261007"; old seeds 20261007 too
+function seedDay(seed) {
+    return String(seed).slice(0, 8);
+}
+
+// The score key for a daily puzzle: "20261007-easy"
+function scoreKey(puzzle) {
+    return seedDay(puzzle.seed) + "-" + puzzle.difficulty;
+}
+
+// Has at least one of today's dailies been solved (not surrendered)?
+function todayIsDone(scores, today = new Date()) {
+    const day = dayKey(today);
+    return Object.keys(scores).some(key => key.slice(0, 8) === day && !scores[key].surrendered);
+}
 
 // Today's daily key in the player's own calendar, e.g. "20261007"
 function dayKey(date) {
@@ -40,7 +57,8 @@ function dayKey(date) {
 // so a streak doesn't look broken in the morning); best = the longest run ever.
 function calculateStreaks(scores, today = new Date()) {
     // A surrendered daily (whole puzzle revealed) doesn't count as done for the streak
-    const done = new Set(Object.keys(scores).filter(key => !scores[key].surrendered));
+    // A day counts once, whichever difficulties were solved ("20261007-easy" -> "20261007")
+    const done = new Set(Object.keys(scores).filter(key => !scores[key].surrendered).map(key => key.slice(0, 8)));
 
     let current = 0;
     const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());

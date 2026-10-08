@@ -109,6 +109,43 @@ public class App {
 
     // Same, but you choose: loadWords(false) includes the too-hard words (the tests use this to compare)
     static Map<Integer, List<String>> loadWords(boolean skipTooHardWords) throws IOException {
+        return loadWords(skipTooHardWords, false);
+    }
+
+    /*
+     * ===== Design pass: the answer words get harder with the difficulty =====
+     *
+     *   easy   -> only the most common words (SCOWL levels 10-20): skips too-hard AND not-easy words
+     *   medium -> the everyday list (the normal game): skips too-hard words
+     *   hard   -> adds the less common words, but skips the extremely hard ones (very-hard-words.txt)
+     *   hard + "Allow harder words" (Unlimited only) -> everything except offensive words
+     *
+     * not-easy-words.txt lists the everyday words that are NOT in SCOWL levels 10-20.
+     * very-hard-words.txt is the Step 13c too-hard list (SCOWL 40/50 + archaic words); see WORDLISTS.md.
+     */
+    static Map<Integer, List<String>> loadWordsFor(String difficulty) throws IOException {
+        return loadWordsFor(difficulty, false);
+    }
+
+    static Map<Integer, List<String>> loadWordsFor(String difficulty, boolean allowVeryHardWords) throws IOException {
+        switch (difficulty) {
+            case "easy":   return loadWords(true, true);
+            case "medium": return loadWords(true, false);
+            case "hard":   return allowVeryHardWords ? loadWords(false, false) : loadWordsSkipping(loadWordSet("very-hard-words.txt"));
+            default: throw new IllegalArgumentException("difficulty must be easy, medium or hard: " + difficulty);
+        }
+    }
+
+    // The full version: skip too-hard words and/or not-easy words (offensive words are always skipped)
+    static Map<Integer, List<String>> loadWords(boolean skipTooHardWords, boolean skipNotEasyWords) throws IOException {
+        // When the setting is off, use an empty set so nothing is skipped
+        Set<String> tooHard = skipTooHardWords ? loadTooHardWords() : new HashSet<>();
+        if (skipNotEasyWords) tooHard.addAll(loadWordSet("not-easy-words.txt"));   // easy: skip these too
+        return loadWordsSkipping(tooHard);
+    }
+
+    // Reads words.txt, skipping offensive words and every word in tooHard
+    static Map<Integer, List<String>> loadWordsSkipping(Set<String> tooHard) throws IOException {
         Map<Integer, List<String>> wordsByLength = new HashMap<>();
 
         InputStream inputStream = App.class.getClassLoader().getResourceAsStream("words.txt");
@@ -117,8 +154,6 @@ public class App {
         }
 
         Set<String> blocked = loadBlockedWords(); // read the blocklist ONCE, then reuse it for every word below
-        // Same idea for the too-hard list. When the setting is off, use an empty set so nothing is skipped.
-        Set<String> tooHard = skipTooHardWords ? loadTooHardWords() : new HashSet<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;

@@ -4,12 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Schmoll Crossword</title>
+    <!-- Fonts (design pass): Nunito for text, Caveat for hand-written touches. Both SIL Open Font License. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap">
     <link rel="stylesheet" href="style.css">
     <script>
         // Apply the saved theme before the page is drawn, so dark mode doesn't flash white first
         try {
             const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
             document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";
+            document.documentElement.dataset.design = s.design === "garden" ? "garden" : "classic";
         } catch (err) { /* storage blocked: light theme */ }
     </script>
 </head>
@@ -23,6 +28,10 @@
             <a href="#unlimited" data-view="unlimited">Unlimited</a>
             <a href="#stats" data-view="stats">Stats</a>
             <a href="#settings" data-view="settings">Settings</a>
+            <!-- Sound on/off (design pass); the icon is drawn in CSS-friendly SVG -->
+            <button type="button" class="sound-toggle" id="sound-toggle" aria-pressed="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path class="speaker" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg>
+            </button>
         </nav>
     </header>
 
@@ -31,17 +40,22 @@
         <section id="home-view" class="home" hidden>
             <p class="today-date" id="today-date"></p>
             <div class="mode-cards">
-                <a class="mode-card" href="#daily">
+                <div class="mode-card daily-card">
                     <h2>Daily</h2>
-                    <p>One puzzle a day, the same for everyone. Earns points and keeps your streak.</p>
+                    <p>Three puzzles a day, the same for everyone. Each one earns points; any one keeps your streak.</p>
+                    <div class="daily-chips">
+                        <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
+                        <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
+                        <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
+                    </div>
                     <p class="card-status" id="daily-status"></p>
-                </a>
+                </div>
                 <a class="mode-card" href="#unlimited">
                     <h2>Unlimited</h2>
-                    <p>A brand-new puzzle whenever you want. Just for fun: no points.</p>
+                    <p>A brand-new puzzle whenever you want. Harder difficulties use harder words. Just for fun: no points.</p>
                 </a>
             </div>
-            <p class="streak-line" id="home-streak"></p>
+            <div class="streak-line" id="home-streak"></div>
         </section>
 
         <!-- Stats (Step 24): daily puzzles only, worked out from the scores saved in this browser -->
@@ -50,6 +64,7 @@
                 <h1>Your stats</h1>
                 <p class="subtitle">Daily puzzles only · saved in this browser</p>
             </div>
+            <div class="stats-streak" id="stats-streak"></div>
             <div class="stat-tiles" id="stat-tiles"></div>
             <table class="history" id="history" hidden>
                 <thead>
@@ -74,15 +89,23 @@
                         <label><input type="radio" name="difficulty" value="medium"> Medium</label>
                         <label><input type="radio" name="difficulty" value="hard"> Hard</label>
                     </div>
-                    <p class="hint">What Daily and Unlimited start on. You can still switch on the puzzle screen.</p>
+                    <p class="hint">What Daily and Unlimited start on. Easy uses the most common words, Hard adds rarer ones. You can still switch on the puzzle screen.</p>
                 </fieldset>
 
                 <fieldset>
                     <legend>Harder words</legend>
                     <div class="options">
-                        <label><input type="checkbox" name="hardWords"> Allow harder words in Unlimited</label>
+                        <label><input type="checkbox" name="hardWords"> Allow extremely hard words in Unlimited Hard</label>
                     </div>
-                    <p class="hint">Adds less common answers. The daily always uses the everyday list, so it's the same for everyone.</p>
+                    <p class="hint">Hard normally skips the rarest words (like OVOID or ADZE). This adds them back. The daily never uses them, so it's the same for everyone.</p>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Sound</legend>
+                    <div class="options">
+                        <label><input type="checkbox" name="sound"> Play sounds</label>
+                    </div>
+                    <p class="hint">Soft sounds for typing, finished words and wins. The speaker button at the top does the same.</p>
                 </fieldset>
 
                 <fieldset>
@@ -106,8 +129,9 @@
                         <h3>Design</h3>
                         <div class="options">
                             <label><input type="radio" name="design" value="classic"> Classic</label>
+                            <label><input type="radio" name="design" value="garden"> Garden</label>
                         </div>
-                        <p class="hint">More designs are coming with the design pass.</p>
+                        <p class="hint">Classic: paper and pencil, with confetti when you win. Garden: vines grow between your letters, finished words bloom into flowers, and a solve lets the garden take over the screen.</p>
                     </div>
                 </fieldset>
 
@@ -126,7 +150,7 @@
                 <p class="subtitle" id="game-subtitle"></p>
             </div>
 
-            <!-- Difficulty picker: in Daily it's the same grid with different clues; in Unlimited it starts a new puzzle -->
+            <!-- Difficulty picker: in Daily it switches between today's three puzzles (✓ = solved); in Unlimited it starts a new puzzle -->
             <nav class="difficulty" aria-label="Difficulty">
                 <button type="button" data-difficulty="easy">Easy</button>
                 <button type="button" data-difficulty="medium" class="active">Medium</button>
@@ -198,6 +222,9 @@
     </main>
 
     <script src="score.js"></script>
+    <script src="sound.js"></script>
+    <script src="designs.js"></script>
+    <script src="garden.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

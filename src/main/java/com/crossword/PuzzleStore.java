@@ -15,13 +15,14 @@ import java.util.Random;
  * ===== Step 17: Save generated puzzles =====
  *
  * The daily puzzle must be IDENTICAL for everyone, but Claude writes different clues on every call
- * (and every call costs money). So:
- *   - one GRID per date (the date is the seed), shared by easy, medium and hard
- *   - one set of CLUES per difficulty, written by Claude only the FIRST time that difficulty is asked for,
- *     then saved as a file and served from the file forever after
+ * (and every call costs money). So each daily is written by Claude only the FIRST time it's asked for,
+ * then saved as a file and served from the file forever after.
  *
- *   puzzles/daily/2026-10-07-easy.json     <- same grid,
- *   puzzles/daily/2026-10-07-medium.json   <- different clues
+ * Design pass: there are THREE dailies every day, one per difficulty, each with its own grid
+ * (seed from date + difficulty), its own word list (easier words on easy) and its own clues.
+ *
+ *   puzzles/daily/2026-10-07-easy.json     <- three different
+ *   puzzles/daily/2026-10-07-medium.json   <- puzzles
  *   puzzles/daily/2026-10-07-hard.json
  */
 public class PuzzleStore {
@@ -54,6 +55,13 @@ public class PuzzleStore {
      */
     static long seedForDate(LocalDate date) {
         return date.getYear() * 10000 + date.getMonthValue() * 100 + date.getDayOfMonth();
+    }
+
+    // Design pass: each difficulty's daily gets its own seed (date seed + one digit), so its own grid.
+    // Example:  2026-10-07 easy -> 202610071, medium -> 202610072, hard -> 202610073
+    static long dailySeed(LocalDate date, String difficulty) {
+        int digit = difficulty.equals("easy") ? 1 : difficulty.equals("medium") ? 2 : 3;
+        return seedForDate(date) * 10 + digit;
     }
 
     /*
@@ -127,7 +135,7 @@ public class PuzzleStore {
 
     // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
     static String generateDaily(LocalDate date, String difficulty, Map<Integer, List<String>> wordsByLength) {
-        long seed = seedForDate(date);
+        long seed = dailySeed(date, difficulty);
         char[][] grid = buildGrid(seed, wordsByLength);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {

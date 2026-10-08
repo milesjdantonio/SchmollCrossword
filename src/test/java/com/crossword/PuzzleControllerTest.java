@@ -15,7 +15,8 @@ class PuzzleControllerTest {
 
     // A limit of 0 means every unlimited request is refused, so a test can never trigger a real (paid) puzzle
     private final PuzzleController controller =
-            new PuzzleController(TestWords.everyday(), TestWords.withHardWords(), new RateLimiter(0, 0));
+            new PuzzleController(java.util.Map.of("easy", TestWords.easy(), "medium", TestWords.everyday(), "hard", TestWords.hard()),
+                    TestWords.withHardWords(), new RateLimiter(0, 0));
 
     @Test
     void validDifficulties() {
@@ -35,12 +36,18 @@ class PuzzleControllerTest {
         assertEquals(400, unlimited.getStatusCode().value());
     }
 
-    // Step 24: Settings > "Allow harder words in Unlimited" picks the bigger word list
+    // Design pass: harder difficulties use bigger word lists
     @Test
-    void hardWordsSettingPicksTheBiggerList() {
-        assertTrue(controller.wordsFor(true).get(5).contains("OVOID"));
-        assertFalse(controller.wordsFor(false).get(5).contains("OVOID"));
-        assertFalse(controller.wordsFor(true).get(4).contains("DICK"), "offensive words are blocked either way");
+    void difficultyPicksTheWordList() {
+        assertTrue(controller.wordsFor("hard").get(5).contains("ALIBI"), "less common words are Hard");
+        assertFalse(controller.wordsFor("medium").get(5).contains("ALIBI"));
+        assertFalse(controller.wordsFor("hard").get(5).contains("OVOID"), "extremely hard words need the setting");
+        assertTrue(controller.wordsFor("hard", true).get(5).contains("OVOID"));
+        assertFalse(controller.wordsFor("medium", true).get(5).contains("OVOID"), "the setting only changes Hard");
+        assertTrue(controller.wordsFor("medium").get(5).contains("MANGO"));
+        assertFalse(controller.wordsFor("easy").get(5).contains("MANGO"), "level-35 words aren't easy");
+        assertTrue(controller.wordsFor("easy").get(5).contains("HOUSE"));
+        assertFalse(controller.wordsFor("hard", true).get(4).contains("DICK"), "offensive words are blocked either way");
     }
 
     // Step 26: over the limit = HTTP 429 "too many requests", before any puzzle (or Claude call) is made

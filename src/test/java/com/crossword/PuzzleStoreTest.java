@@ -21,6 +21,28 @@ class PuzzleStoreTest {
         assertEquals(20261008L, PuzzleStore.seedForDate(oct7.plusDays(1)), "next day, different seed");
     }
 
+    // Design pass: three dailies a day, each with its own seed (so its own grid)
+    @Test
+    void eachDifficultyHasItsOwnDailySeed() {
+        assertEquals(202610071L, PuzzleStore.dailySeed(oct7, "easy"));
+        assertEquals(202610072L, PuzzleStore.dailySeed(oct7, "medium"));
+        assertEquals(202610073L, PuzzleStore.dailySeed(oct7, "hard"));
+    }
+
+    // The easy list is smaller, so check it can still fill the grid for many seeds (and only with easy words)
+    @Test
+    void easyWordsFillEveryGrid() {
+        java.util.Set<String> easyWords = new java.util.HashSet<>();
+        TestWords.easy().values().forEach(easyWords::addAll);
+        for (long seed = 1; seed <= 40; seed++) {
+            char[][] grid = PuzzleStore.buildGrid(seed, TestWords.easy());
+            for (Slot slot : Slot.findAllSlots(PuzzleStore.SHAPE)) {
+                String word = slot.getPattern(grid);
+                org.junit.jupiter.api.Assertions.assertTrue(easyWords.contains(word), "seed " + seed + ": " + word);
+            }
+        }
+    }
+
     @Test
     void dailyFileNameAndFolder() {
         Path hardFile = PuzzleStore.dailyFile(PuzzleStore.DAILY_FOLDER, oct7, "hard");

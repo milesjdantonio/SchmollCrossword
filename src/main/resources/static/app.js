@@ -1,6 +1,8 @@
 // Schmoll Crossword: draws the puzzle from the server (Step 19), lets you play it (Step 20-22),
 // switches between the Home, Daily and Unlimited screens (Step 23), saves progress, stats
 // and settings in this browser (Step 24), and has an on-screen keyboard for phones (Step 26).
+// Design pass (DESIGN.md): three dailies a day (one per difficulty), sounds (sound.js), and designs
+// (designs.js, garden.js) that decorate the board and celebrate a win.
 
 const statusEl = document.getElementById("status");
 const puzzleEl = document.getElementById("puzzle");
@@ -54,7 +56,7 @@ const game = {
 // Settings (Step 24), saved in this browser
 // ---------------------------------------------------------------------------------------------
 const SETTINGS_KEY = "schmoll.settings";
-const DEFAULT_SETTINGS = { difficulty: "medium", hardWords: false, showTimer: true, theme: "light", design: "classic" };
+const DEFAULT_SETTINGS = { difficulty: "medium", hardWords: false, showTimer: true, theme: "light", design: "classic", sound: true };
 
 function loadSettings() {
     try {
@@ -76,15 +78,38 @@ function saveSettings() {
 
 // Make the page match the settings
 function applySettings() {
+    const designChanged = document.documentElement.dataset.design !== settings.design;
     document.documentElement.dataset.theme = settings.theme;
     document.documentElement.dataset.design = settings.design;
     timerEl.hidden = !settings.showTimer;
+    Sound.setEnabled(settings.sound);
+    drawSoundButton();
+    if (game.cells.length) {
+        render();   // redraw the board in the new design (adds or removes the garden)
+        if (designChanged && game.solved && !game.surrendered) Designs.celebrate(game, { instant: true });
+    }
 }
+
+// The speaker button in the top bar: sound on/off (the same setting as in Settings)
+function drawSoundButton() {
+    const button = document.getElementById("sound-toggle");
+    button.classList.toggle("off", !settings.sound);
+    button.setAttribute("aria-pressed", String(settings.sound));
+    button.setAttribute("aria-label", settings.sound ? "Sound on (click to mute)" : "Sound off (click to unmute)");
+    button.title = settings.sound ? "Mute sounds" : "Turn sounds on";
+}
+document.getElementById("sound-toggle").addEventListener("click", (event) => {
+    settings.sound = !settings.sound;
+    saveSettings();
+    event.currentTarget.blur();
+    Sound.play("type");   // a little click so you hear it's on
+});
 applySettings();
 
 // ---------------------------------------------------------------------------------------------
-// Daily scores, saved in this browser: { "20261007": { date, difficulty, seconds, points }, ... }
-// Keyed by the daily's seed, which is made from its date, so each daily puzzle has one entry.
+// Daily scores, saved in this browser: { "20261007-easy": { date, difficulty, seconds, points }, ... }
+// Keyed by day + difficulty (scoreKey in score.js): three dailies a day, each scored once.
+// (Before the design pass there was one daily a day, keyed "20261007"; those old entries still count.)
 // ---------------------------------------------------------------------------------------------
 const SCORES_KEY = "schmoll.dailyScores";
 
@@ -98,8 +123,9 @@ function loadDailyScores() {
 
 function saveDailyScore(puzzle, points, surrendered = false) {
     const scores = loadDailyScores();
-    if (scores[puzzle.seed]) return false;   // already completed today (at any difficulty): no extra points
-    scores[puzzle.seed] = {
+    const key = scoreKey(puzzle);
+    if (scores[key]) return false;           // this daily was already completed: no extra points
+    scores[key] = {
         date: new Date().toISOString().slice(0, 10),
         difficulty: puzzle.difficulty,
         seconds: game.seconds,
@@ -127,7 +153,8 @@ setInterval(() => {
 
 // ---------------------------------------------------------------------------------------------
 // Progress (Step 24): each mode's puzzle and game, saved in this browser so a reload doesn't lose them
-//   { daily: { puzzle, state, difficulty }, unlimited: { puzzle, state, difficulty } }
+//   { "daily-easy": { puzzle, state, difficulty }, "daily-medium": ..., unlimited: { puzzle, state, difficulty } }
+// Each daily difficulty is its own puzzle now, so each gets its own "slot".
 // ---------------------------------------------------------------------------------------------
 const PROGRESS_KEY = "schmoll.progress";
 
@@ -142,7 +169,7 @@ function loadProgress() {
 function saveProgress() {
     if (!game.puzzle) return;
     const all = loadProgress();
-    all[game.puzzle.mode] = { puzzle: game.puzzle, state: snapshot(), difficulty: difficultyFor[game.puzzle.mode] };
+    all[slotOf(game.puzzle)] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
     try {
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
     } catch (err) {
@@ -153,15 +180,19 @@ function saveProgress() {
 // On page load: bring back each mode's saved game (a daily only if it's today's)
 function restoreProgress() {
     const all = loadProgress();
-    for (const mode of ["daily", "unlimited"]) {
-        const saved = all[mode];
+    for (const slot of ["daily-easy", "daily-medium", "daily-hard", "unlimited"]) {
+        const saved = all[slot];
         if (!saved || !saved.puzzle || !saved.state) continue;
-        if (mode === "daily" && String(saved.puzzle.seed) !== dayKey(new Date())) continue;   // yesterday's daily
-        lastPuzzle[mode] = saved.puzzle;
-        savedGames[mode] = saved.state;
-        if (saved.difficulty) difficultyFor[mode] = saved.difficulty;
+        if (slot !== "unlimited" && seedDay(saved.puzzle.seed) !== dayKey(new Date())) continue;   // an old daily
+        lastPuzzle[slot] = saved.puzzle;
+        savedGames[slot] = saved.state;
+        if (slot === "unlimited" && saved.difficulty) difficultyFor.unlimited = saved.difficulty;
     }
 }
+
+// Where a puzzle's game is kept: one slot per daily difficulty, one for Unlimited
+const slotFor = (mode, difficulty) => mode === "daily" ? "daily-" + difficulty : "unlimited";
+const slotOf = puzzle => slotFor(puzzle.mode, puzzle.difficulty);
 
 function drawTimer() {
     const minutes = Math.floor(game.seconds / 60);
@@ -172,7 +203,7 @@ function drawTimer() {
 // Ask the server for a puzzle, then draw it.
 // mode "daily":     today's puzzle at that difficulty (saved on the server, so fast after the first time)
 // mode "unlimited": a brand-new puzzle (Claude writes its clues, so it takes a few seconds)
-const lastPuzzle = {};      // mode -> the last puzzle loaded, so coming back to a mode doesn't fetch a new one
+const lastPuzzle = {};      // slot -> the last puzzle loaded, so coming back to it doesn't fetch a new one
 let loadCounter = 0;        // ignore a slow answer if the player has already asked for something else
 
 async function loadPuzzle(mode, difficulty) {
@@ -185,8 +216,8 @@ async function loadPuzzle(mode, difficulty) {
     puzzleEl.hidden = true;
 
     try {
-        let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
-        if (mode === "unlimited" && settings.hardWords) url += "&hardWords=true";   // Settings: harder words (Unlimited only)
+        let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);   // the difficulty also picks the words
+        if (mode === "unlimited" && difficulty === "hard" && settings.hardWords) url += "&hardWords=true";   // Settings: extremely hard words
         const response = await fetch(url);
         if (response.status === 429) {   // Step 26: the server's rate limit for Unlimited
             throw new Error("you've made a lot of puzzles recently. Take a break and try again later, or play today's Daily.");
@@ -196,8 +227,8 @@ async function loadPuzzle(mode, difficulty) {
         }
         const puzzle = await response.json();   // the JSON from Puzzle.toJson()
         if (myLoad !== loadCounter) return;      // the player moved on while we waited
-        lastPuzzle[mode] = puzzle;
-        if (currentView() !== mode) return;      // they went to another screen: keep it for when they come back
+        lastPuzzle[slotOf(puzzle)] = puzzle;
+        if (currentView() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty)) return;   // they moved on: keep it for later
         startGame(puzzle);
         statusEl.hidden = true;
         puzzleEl.hidden = false;
@@ -209,7 +240,7 @@ async function loadPuzzle(mode, difficulty) {
 }
 
 // Each mode keeps its own game while you visit the other one (Step 24 will also keep it across page reloads)
-const savedGames = {};      // mode -> a copy of that mode's game
+const savedGames = {};      // slot -> a copy of that slot's game
 
 function snapshot() {
     return JSON.parse(JSON.stringify({
@@ -227,6 +258,7 @@ function restore(saved) {
         solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
         squaresRevealed: saved.squaresRevealed, row: saved.row, col: saved.col, direction: saved.direction
     });
+    winEl.classList.remove("enter");   // no slide-in when coming back to a finished puzzle
     winEl.querySelector("h2").textContent = saved.winTitle;
     winDetailsEl.textContent = saved.winText;
     winEl.hidden = !saved.winShown;
@@ -234,11 +266,11 @@ function restore(saved) {
 
 function startGame(puzzle) {
     // Remember the game we're leaving, in case the player comes back to that mode
-    if (game.puzzle && game.puzzle.mode !== puzzle.mode) savedGames[game.puzzle.mode] = snapshot();
+    if (game.puzzle && slotOf(game.puzzle) !== slotOf(puzzle)) savedGames[slotOf(game.puzzle)] = snapshot();
 
-    // Same grid as before (only the difficulty changed)? Keep what the player typed.
+    // Same grid as before? Keep what the player typed.
     const sameGrid = game.puzzle && game.puzzle.seed === puzzle.seed && game.puzzle.mode === puzzle.mode;
-    const saved = savedGames[puzzle.mode];
+    const saved = savedGames[slotOf(puzzle)];
     const restoring = !sameGrid && saved && saved.seed === puzzle.seed;
     game.puzzle = puzzle;
     if (restoring) {
@@ -267,6 +299,9 @@ function startGame(puzzle) {
         game.direction = "across";
     }
     render();
+    drawDifficultyMarks();
+    // Coming back to a solved puzzle: show the design's win decorations (already grown, no animation)
+    if (game.solved && !game.surrendered) Designs.celebrate(game, { instant: true });
 }
 
 // For every square, remember which Across and Down entry it belongs to
@@ -343,6 +378,7 @@ function fillClueList(listEl, entries) {
 }
 
 // Update the page to match the game state: letters, highlights, the current clue
+let lastClue = null;
 function render() {
     const current = currentEntry();
     const size = game.puzzle.size;
@@ -362,25 +398,32 @@ function render() {
     for (const [entry, item] of game.clueItems) {
         item.classList.toggle("active", entry === current);
     }
+    if (current && current !== lastClue) {      // a new clue slides in
+        clueBarEl.classList.remove("slide");
+        void clueBarEl.offsetWidth;             // (reading a size restarts the CSS animation)
+        clueBarEl.classList.add("slide");
+    }
+    lastClue = current;
     if (current) {
         clueBarEl.textContent = "";
         const label = document.createElement("strong");
         label.textContent = current.number + (current.direction === "across" ? "A" : "D");
         clueBarEl.append(label, " " + current.clue);
     }
+    Designs.update(game, boardEl, settings.design);   // the design's decorations (designs.js, garden.js)
     saveProgress();   // every change to the game is saved (Step 24)
 }
 
-// "Today's daily: 240 pts (medium) · Streak 3 days (best 5)"
+// "Today's medium: 240 pts · Streak 3 days (best 5)"
 function drawPointsToday() {
     const puzzle = game.puzzle;
     const scores = loadDailyScores();
-    const record = puzzle && puzzle.mode === "daily" ? scores[puzzle.seed] : null;
+    const record = puzzle && puzzle.mode === "daily" ? scores[scoreKey(puzzle)] : null;
     const streaks = calculateStreaks(scores);
     const parts = [];
     if (record) {
-        parts.push(record.surrendered ? "Today's daily: surrendered (0 pts)"
-                                      : "Today's daily: " + record.points + " pts (" + record.difficulty + ")");
+        parts.push(record.surrendered ? "Today's " + puzzle.difficulty + ": surrendered (0 pts)"
+                                      : "Today's " + puzzle.difficulty + ": " + record.points + " pts");
     }
     if (streaks.best > 0) {
         parts.push("Streak " + streaks.current + (streaks.current === 1 ? " day" : " days") + " (best " + streaks.best + ")");
@@ -417,14 +460,31 @@ function checkForWin() {
     if (puzzle.mode !== "daily") {
         winDetailsEl.textContent = "Time: " + time + ". Unlimited puzzles don't earn points.";
     } else {
+        const dayWasDone = todayIsDone(loadDailyScores());
         const points = calculateScore(puzzle.difficulty, game.seconds, game.squaresChecked, game.squaresRevealed);
         const counted = saveDailyScore(puzzle, points);
         winDetailsEl.textContent = counted
-            ? "Time: " + time + " · " + points + " points for today's daily (" + puzzle.difficulty + ")" + help + "."
-            : "Time: " + time + ". Today's daily was already completed, so no extra points.";
+            ? "Time: " + time + " · " + points + " points for today's " + puzzle.difficulty + " daily" + help + "."
+            : "Time: " + time + ". This daily was already completed, so no extra points.";
+        if (counted && !dayWasDone) setTimeout(() => Sound.play("streak"), 1400);   // the first daily today: streak kept
+        const scores = loadDailyScores();
+        const left = ["easy", "medium", "hard"].filter(d => !scores[seedDay(puzzle.seed) + "-" + d]);
+        if (counted && left.length) winDetailsEl.textContent += " Still to play today: " + left.join(", ") + ".";
     }
-    winEl.hidden = false;
+    showWin();
     drawPointsToday();
+    drawDifficultyMarks();
+    Sound.play("win");
+    Designs.celebrate(game);   // the design's win animation (confetti, the garden taking over, ...)
+}
+
+// Show the win panel with its slide-in animation (played once: showing the screen again mustn't replay it)
+winEl.addEventListener("animationend", () => winEl.classList.remove("enter"));
+function showWin() {
+    winEl.hidden = false;
+    winEl.classList.remove("enter");
+    void winEl.offsetWidth;
+    winEl.classList.add("enter");
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -448,10 +508,13 @@ function scopeCells(scope) {
 function check(scope) {
     const cells = scopeCells(scope);
     game.squaresChecked += cells.length;
+    let anyWrong = false;
     for (const [row, col] of cells) {
         const letter = game.letters[row][col];
         game.wrong[row][col] = letter !== "" && letter !== game.puzzle.solution[row][col];
+        if (game.wrong[row][col]) anyWrong = true;
     }
+    Sound.play(anyWrong ? "wrong" : "type");
     render();
 }
 
@@ -469,6 +532,7 @@ function reveal(scope) {
             game.squaresRevealed++;
         }
     }
+    Sound.play("reveal");
     if (scope === "puzzle") {
         surrender();
     } else {
@@ -485,13 +549,14 @@ function surrender() {
     if (game.puzzle.mode === "daily") {
         const counted = saveDailyScore(game.puzzle, 0, true);
         winDetailsEl.textContent = counted
-            ? "You surrendered today's daily: 0 points, and it doesn't count toward your streak."
-            : "Puzzle revealed. Today's daily was already completed earlier.";
+            ? "You surrendered today's " + game.puzzle.difficulty + " daily: 0 points, and it doesn't count toward your streak."
+            : "Puzzle revealed. This daily was already completed earlier.";
     } else {
         winDetailsEl.textContent = "Puzzle revealed.";
     }
-    winEl.hidden = false;
+    showWin();
     drawPointsToday();
+    drawDifficultyMarks();
 }
 
 for (const button of document.querySelectorAll("#helpers button")) {
@@ -580,6 +645,8 @@ function typeLetter(letter) {
     if (!game.revealed[game.row][game.col]) {        // revealed squares are locked: the cursor just moves on
         game.letters[game.row][game.col] = letter;
         game.wrong[game.row][game.col] = false;      // a new letter clears the Check mark
+        popCell(game.row, game.col);
+        Sound.play("type");
     }
     checkForWin();
     const entry = currentEntry();
@@ -598,9 +665,18 @@ function typeLetter(letter) {
     render();
 }
 
+// A typed letter pops in (CSS class "typed"; removing and re-adding it restarts the animation)
+function popCell(row, col) {
+    const cell = game.cells[row][col];
+    cell.classList.remove("typed");
+    void cell.offsetWidth;
+    cell.classList.add("typed");
+}
+
 function backspace() {
     const clear = (row, col) => {
         if (game.revealed[row][col]) return;          // revealed squares stay
+        if (game.letters[row][col] !== "") Sound.play("erase");
         game.letters[row][col] = "";
         game.wrong[row][col] = false;
     };
@@ -754,13 +830,22 @@ function showView() {
     document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b =>
         b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
 
-    if (game.puzzle && game.puzzle.mode === view) {          // already this mode's game:
-        statusEl.hidden = true;                               // hide the other mode's "Loading…" or error message
+    drawDifficultyMarks();
+    showPuzzleFor(view);
+}
+
+// Show the puzzle for a mode at its current difficulty: the one already on screen, a saved one, or a new one
+function showPuzzleFor(view) {
+    const slot = slotFor(view, difficultyFor[view]);
+    if (game.puzzle && slotOf(game.puzzle) === slot) {       // already this puzzle:
+        loadCounter++;                                        // forget any slower load still on its way
+        statusEl.hidden = true;                               // hide another puzzle's "Loading…" or error message
         puzzleEl.hidden = false;
         return;
     }
-    if (lastPuzzle[view]) {
-        startGame(lastPuzzle[view]);                      // come back to the puzzle you left
+    if (lastPuzzle[slot]) {
+        loadCounter++;
+        startGame(lastPuzzle[slot]);                          // come back to the puzzle you left
         statusEl.hidden = true;
         puzzleEl.hidden = false;
     } else {
@@ -768,23 +853,61 @@ function showView() {
     }
 }
 
-// Home screen: today's daily status, the countdown, and the streak
+// Daily difficulty buttons: a ✓ on each daily solved today (an × if it was revealed)
+function drawDifficultyMarks() {
+    const scores = loadDailyScores();
+    const today = dayKey(new Date());
+    const isDaily = currentView() === "daily";
+    document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => {
+        const record = isDaily ? scores[today + "-" + b.dataset.difficulty] : null;
+        b.classList.toggle("done", !!record && !record.surrendered);
+        b.classList.toggle("given-up", !!record && !!record.surrendered);
+    });
+}
+
+// Home screen: today's three dailies (✓ when solved), the countdown, and the streak with its fire
 function drawHome() {
     const scores = loadDailyScores();
-    const today = scores[dayKey(new Date())];
-    if (!today) {
-        dailyStatusEl.textContent = "Today's puzzle is ready.";
-    } else if (today.surrendered) {
-        dailyStatusEl.textContent = "Today: revealed (0 pts).";
-    } else {
-        dailyStatusEl.textContent = "Done today: " + today.points + " pts (" + today.difficulty + ").";
-    }
+    const today = dayKey(new Date());
+    let solvedCount = 0;
+    document.querySelectorAll(".daily-chip").forEach(chip => {
+        const record = scores[today + "-" + chip.dataset.difficulty];
+        const state = chip.querySelector(".chip-state");
+        chip.classList.toggle("done", !!record && !record.surrendered);
+        chip.classList.toggle("given-up", !!record && !!record.surrendered);
+        if (!record) state.textContent = "Play";
+        else if (record.surrendered) state.textContent = "Revealed";
+        else { state.textContent = "✓ " + record.points + " pts"; solvedCount++; }
+    });
+    dailyStatusEl.textContent = solvedCount === 3 ? "All three done today!"
+        : solvedCount > 0 ? solvedCount + " of 3 done today." : "Three new puzzles are ready.";
     const streaks = calculateStreaks(scores);
-    homeStreakEl.textContent = streaks.best > 0
-        ? "Streak: " + streaks.current + (streaks.current === 1 ? " day" : " days") + " · best " + streaks.best
-        : "";
+    homeStreakEl.innerHTML = "";
+    if (streaks.best > 0) homeStreakEl.appendChild(streakBadge(streaks));
     drawCountdown();
 }
+
+// The streak number with moving fire behind it (bigger flames for longer streaks; none at 0)
+function streakBadge(streaks) {
+    const badge = document.createElement("div");
+    const n = streaks.current;
+    badge.className = "streak-badge";
+    badge.dataset.level = n === 0 ? 0 : n < 3 ? 1 : n < 7 ? 2 : 3;
+    badge.innerHTML =
+        '<div class="fire" aria-hidden="true">' +
+            '<span class="flame f1"></span><span class="flame f2"></span><span class="flame f3"></span>' +
+            '<span class="ember e1"></span><span class="ember e2"></span><span class="ember e3"></span>' +
+        '</div>' +
+        '<div class="streak-text"><span class="streak-num"></span><span class="streak-label"></span></div>';
+    badge.querySelector(".streak-num").textContent = n;
+    badge.querySelector(".streak-label").textContent = "day streak · best " + streaks.best;
+    return badge;
+}
+
+// A chip on the Home screen opens that difficulty's daily
+document.querySelectorAll(".daily-chip").forEach(chip => {
+    chip.addEventListener("click", () => { difficultyFor.daily = chip.dataset.difficulty; });
+});
 
 // "Next daily in 5h 12m 30s" (until midnight, your time)
 function drawCountdown() {
@@ -793,13 +916,13 @@ function drawCountdown() {
     const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
     const total = Math.max(0, Math.floor((midnight - now) / 1000));
     const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
-    const done = !!loadDailyScores()[dayKey(now)];
+    const done = todayIsDone(loadDailyScores());
     const base = dailyStatusEl.textContent.split(" Next daily")[0];
     dailyStatusEl.textContent = done ? base + " Next daily in " + h + "h " + m + "m " + s + "s." : base;
     if (total === 0) drawHome();   // midnight: a new daily is out
 }
 
-// Difficulty buttons. Daily: same grid, different clues (your letters stay). Unlimited: a new puzzle.
+// Difficulty buttons. Daily: switch to that difficulty's daily (each keeps its own game). Unlimited: a new puzzle.
 for (const button of document.querySelectorAll(".difficulty button[data-difficulty]")) {
     button.addEventListener("click", () => {
         const view = currentView();
@@ -807,7 +930,8 @@ for (const button of document.querySelectorAll(".difficulty button[data-difficul
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.remove("active"));
         button.classList.add("active");
         button.blur();       // so Space/Enter go to the puzzle, not back to the button
-        loadPuzzle(view, button.dataset.difficulty);
+        if (view === "daily") showPuzzleFor("daily");
+        else loadPuzzle(view, button.dataset.difficulty);
     });
 }
 
@@ -822,7 +946,7 @@ newPuzzleEl.addEventListener("click", () => {
 // ---------------------------------------------------------------------------------------------
 const formatTime = seconds => Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
 
-// "20261007" -> "Wed, Oct 7, 2026"
+// "20261007" (or "20261007-easy") -> "Wed, Oct 7, 2026"
 function formatDayKey(key) {
     const date = new Date(Number(key.slice(0, 4)), Number(key.slice(4, 6)) - 1, Number(key.slice(6, 8)));
     return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
@@ -835,6 +959,10 @@ function drawStats() {
     const times = solved.map(k => scores[k].seconds).filter(s => typeof s === "number");
     const streaks = calculateStreaks(scores);
     const totalPoints = solved.reduce((sum, k) => sum + (scores[k].points || 0), 0);
+
+    const streakEl = document.getElementById("stats-streak");
+    streakEl.innerHTML = "";
+    if (streaks.best > 0) streakEl.appendChild(streakBadge(streaks));
 
     const tiles = [
         [totalPoints, "total points"],
@@ -889,10 +1017,11 @@ function drawSettings() {
     const form = settingsFormEl.elements;
     for (const input of form.difficulty) input.checked = input.value === settings.difficulty;
     for (const input of form.theme) input.checked = input.value === settings.theme;
-    const designs = form.design.length === undefined ? [form.design] : form.design;   // only one option for now
+    const designs = form.design.length === undefined ? [form.design] : form.design;   // (a single radio button isn't a list)
     for (const input of designs) input.checked = input.value === settings.design;
     form.hardWords.checked = settings.hardWords;
     form.showTimer.checked = settings.showTimer;
+    form.sound.checked = settings.sound;
 }
 
 settingsFormEl.addEventListener("change", (event) => {
@@ -903,8 +1032,9 @@ settingsFormEl.addEventListener("change", (event) => {
         settings[input.name] = input.value;
     }
     if (input.name === "difficulty") {
-        // the new default applies to modes that haven't started a game yet
-        for (const mode of ["daily", "unlimited"]) if (!lastPuzzle[mode]) difficultyFor[mode] = input.value;
+        // the new default applies to the Daily tab, and to Unlimited if it hasn't started a game yet
+        difficultyFor.daily = input.value;
+        if (!lastPuzzle.unlimited) difficultyFor.unlimited = input.value;
     }
     saveSettings();
 });

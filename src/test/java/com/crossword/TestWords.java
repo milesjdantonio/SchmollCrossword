@@ -12,6 +12,33 @@ final class TestWords {
 
     private static Map<Integer, List<String>> everyday;
     private static Map<Integer, List<String>> withHardWords;
+    private static Map<Integer, List<String>> easy;
+
+    private static Map<Integer, List<String>> hard;
+
+    // The hard list (design pass): less common words, but not the extremely hard ones
+    static synchronized Map<Integer, List<String>> hard() {
+        if (hard == null) {
+            try {
+                hard = App.loadWordsFor("hard");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        return hard;
+    }
+
+    // The easy list (design pass): only SCOWL level 10-20 words
+    static synchronized Map<Integer, List<String>> easy() {
+        if (easy == null) {
+            try {
+                easy = App.loadWordsFor("easy");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+        return easy;
+    }
 
     // The normal list: blocked and too-hard words skipped
     static synchronized Map<Integer, List<String>> everyday() {

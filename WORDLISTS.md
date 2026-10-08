@@ -164,3 +164,22 @@ Edit the file to add or remove words.
   - Related: https://github.com/gregpoulos/crossword-owl (an open word list project for constructors)
 - **Overview of crossword word lists** (sizes, costs, scoring): https://tcampbell.substack.com/p/shopping-for-wordlists
 - **ENABLE** (current `words.txt`): public domain Scrabble-style list. The original download source wasn't recorded when it was added.
+
+## Design pass: an easier list for Easy (2026-10-08)
+
+Difficulty now picks the answer words. **Easy** uses only everyday answers that are also in SCOWL size levels
+10 or 20 (the most common English words), which leaves 2,541 answers of 3–5 letters. The other 1,389 everyday
+answers are listed in `src/main/resources/not-easy-words.txt` (generated from the same SCOWL 2020.12.07 release
+linked below: `english-words.10/20` + `american-words.10/20`). It is derived from SCOWL and the existing list, so
+the same licenses and notices apply. Medium = the everyday list.
+
+**Hard** adds the less common words (the level-35 words that Step 23 moved into the too-hard list), but skips the
+extremely hard ones: `very-hard-words.txt` (9,336 words) is exactly the Step 13c too-hard list (all SCOWL level
+40/50 words except the everyday keep list, plus archaic/crossword-only level-35 words like EKED and METE).
+Settings "Allow extremely hard words in Unlimited Hard" adds them back; the daily never uses them.
+
+## Fonts (design pass)
+
+- **Nunito** and **Caveat**, loaded from Google Fonts. Both are under the SIL Open Font License 1.1, which allows
+  free use on websites. https://fonts.google.com/specimen/Nunito , https://fonts.google.com/specimen/Caveat
+- Sounds are generated in code (Web Audio API), so there are no sound files or licenses.

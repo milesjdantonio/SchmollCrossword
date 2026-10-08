@@ -31,9 +31,10 @@ import jakarta.servlet.http.HttpServletRequest; // everything about one incoming
 @RestController
 public class PuzzleController {
 
-    // Loaded ONCE when the server starts, then reused for every request (loading it per request would be slow)
-    private final Map<Integer, List<String>> wordsByLength;          // everyday words (the normal game, and every daily)
-    private final Map<Integer, List<String>> wordsWithHardWords;     // everyday + too-hard words (Settings: harder words)
+    // Loaded ONCE when the server starts, then reused for every request (loading it per request would be slow).
+    // Design pass: one word list per difficulty ("easy" -> common words only, "hard" -> harder words allowed).
+    private final Map<String, Map<Integer, List<String>>> wordsByDifficulty;
+    private final Map<Integer, List<String>> allWords;   // Hard + Settings "Allow harder words" (Unlimited only)
 
     // Step 26: limits how many paid unlimited puzzles can be made (see RateLimiter)
     private final RateLimiter unlimitedLimiter;
@@ -43,31 +44,27 @@ public class PuzzleController {
     @Autowired
     public PuzzleController(@Value("${schmoll.unlimited.per-person-per-hour}") int perPersonPerHour,
                             @Value("${schmoll.unlimited.everyone-per-day}") int everyonePerDay) throws IOException {
-        this(App.loadWords(), App.loadWords(false), new RateLimiter(perPersonPerHour, everyonePerDay));
+        this(Map.of("easy", App.loadWordsFor("easy"), "medium", App.loadWordsFor("medium"), "hard", App.loadWordsFor("hard")),
+             App.loadWordsFor("hard", true), new RateLimiter(perPersonPerHour, everyonePerDay));
     }
 
     // The tests use this one, handing in word lists they already loaded
-    PuzzleController(Map<Integer, List<String>> wordsByLength, Map<Integer, List<String>> wordsWithHardWords,
+    PuzzleController(Map<String, Map<Integer, List<String>>> wordsByDifficulty, Map<Integer, List<String>> allWords,
                      RateLimiter unlimitedLimiter) {
-        this.wordsByLength = wordsByLength;
-        this.wordsWithHardWords = wordsWithHardWords;
+        this.wordsByDifficulty = wordsByDifficulty;
+        this.allWords = allWords;
         this.unlimitedLimiter = unlimitedLimiter;
     }
 
-    /*
-     * ===== Step 24: Which word list? =====
-     *
-     * The website's Settings has "Allow harder words in Unlimited". When it's on, the browser asks for
-     * /api/unlimited?difficulty=medium&hardWords=true
-     *
-     * Return wordsWithHardWords when hardWords is true, otherwise wordsByLength.
-     * (The daily never calls this: it always uses the everyday list, so it's the same for everyone.)
-     *
-     * Example:  wordsFor(true) contains OVOID      wordsFor(false) doesn't
-     */
-    Map<Integer, List<String>> wordsFor(boolean hardWords) {
-        // "condition ? a : b" is a one-line if/else: a when the condition is true, otherwise b
-        return hardWords ? wordsWithHardWords : wordsByLength;
+    // The word list for a (valid, lowercase) difficulty
+    Map<Integer, List<String>> wordsFor(String difficulty) {
+        return wordsByDifficulty.get(difficulty);
+    }
+
+    // Step 24's setting, now for Hard only: "Allow harder words" adds the extremely hard words. Unlimited only:
+    // the daily never uses it, so the daily stays the same for everyone.
+    Map<Integer, List<String>> wordsFor(String difficulty, boolean hardWords) {
+        return hardWords && difficulty.equals("hard") ? allWords : wordsFor(difficulty);
     }
 
     /*
@@ -93,14 +90,15 @@ public class PuzzleController {
      *
      * 1. If the difficulty isn't valid, stop with:   throw badDifficulty(difficulty);
      * 2. Otherwise return today's daily puzzle for that difficulty (lowercased) from PuzzleStore.getDaily,
-     *    using PuzzleStore.DAILY_FOLDER, LocalDate.now() and this.wordsByLength.
+     *    using PuzzleStore.DAILY_FOLDER, LocalDate.now() and that difficulty's word list.
      */
     @GetMapping(value = "/api/daily", produces = MediaType.APPLICATION_JSON_VALUE)
     public String daily(@RequestParam(defaultValue = "medium") String difficulty) throws IOException {
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
         }
-        return PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, LocalDate.now(), difficulty.toLowerCase(), wordsByLength);
+        String level = difficulty.toLowerCase();
+        return PuzzleStore.getDaily(PuzzleStore.DAILY_FOLDER, LocalDate.now(), level, wordsFor(level));
     }
 
     /*
@@ -114,7 +112,7 @@ public class PuzzleController {
      */
     @GetMapping(value = "/api/unlimited", produces = MediaType.APPLICATION_JSON_VALUE)
     public String unlimited(@RequestParam(defaultValue = "medium") String difficulty,
-                            @RequestParam(defaultValue = "false") boolean hardWords,    // Step 24: Settings > harder words
+                            @RequestParam(defaultValue = "false") boolean hardWords,    // Settings > harder words (Hard only)
                             HttpServletRequest request) {                               // Step 26: who's asking
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
@@ -127,7 +125,7 @@ public class PuzzleController {
         // JavaScript can only hold whole numbers exactly up to 2^53 (about 9 quadrillion), so keep the
         // seed below that; otherwise the browser would see a rounded, wrong seed in the JSON.
         long seed = new Random().nextLong() & ((1L << 53) - 1);
-        return PuzzleStore.generateUnlimited(seed, difficulty.toLowerCase(), wordsFor(hardWords));
+        return PuzzleStore.generateUnlimited(seed, difficulty.toLowerCase(), wordsFor(difficulty.toLowerCase(), hardWords));
     }
 
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"
