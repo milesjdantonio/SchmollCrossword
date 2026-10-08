@@ -28,9 +28,12 @@ const game = {
     cells: [],           // cells[row][col]    = the square's <div> on the page
     clueItems: new Map(),// entry -> its <li> in the clue lists
     seconds: 0,          // the timer (Step 21)
-    solved: false,       // true once every square is right
-    checksUsed: 0,       // for the score (Step 22 adds Check/Reveal)
-    revealsUsed: 0
+    solved: false,       // true once every square is right (or the whole puzzle was revealed)
+    surrendered: false,  // true if "Reveal puzzle" was used: 0 points (Step 22)
+    wrong: [],           // wrong[row][col]    = true if Check marked this square wrong
+    revealed: [],        // revealed[row][col] = true if Reveal filled this square (stays marked)
+    squaresChecked: 0,   // for the score: every square looked at by Check
+    squaresRevealed: 0   // for the score: every square filled in by Reveal
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -47,14 +50,15 @@ function loadDailyScores() {
     }
 }
 
-function saveDailyScore(puzzle, points) {
+function saveDailyScore(puzzle, points, surrendered = false) {
     const scores = loadDailyScores();
     if (scores[puzzle.seed]) return false;   // already completed today (at any difficulty): no extra points
     scores[puzzle.seed] = {
         date: new Date().toISOString().slice(0, 10),
         difficulty: puzzle.difficulty,
         seconds: game.seconds,
-        points: points
+        points: points,
+        surrendered: surrendered
     };
     try {
         localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
@@ -107,12 +111,14 @@ function startGame(puzzle) {
     game.puzzle = puzzle;
     if (!sameGrid) {
         game.letters = puzzle.solution.map(row => Array.from(row, () => ""));
+        game.wrong = puzzle.solution.map(row => Array.from(row, () => false));
+        game.revealed = puzzle.solution.map(row => Array.from(row, () => false));
         game.seconds = 0;
         game.solved = false;
-        game.checksUsed = 0;
-        game.revealsUsed = 0;
+        game.surrendered = false;
+        game.squaresChecked = 0;
+        game.squaresRevealed = 0;
         winEl.hidden = true;
-        boardEl.classList.remove("solved");
     }
     drawTimer();
     drawPointsToday();
@@ -150,7 +156,8 @@ function indexEntries(puzzle) {
 function drawBoard(puzzle) {
     boardEl.innerHTML = "";
     boardEl.style.setProperty("--size", puzzle.size);
-    boardEl.classList.toggle("solved", game.solved);
+    boardEl.classList.toggle("solved", game.solved && !game.surrendered);
+    boardEl.classList.toggle("surrendered", game.surrendered);
     game.cells = [];
     for (let row = 0; row < puzzle.size; row++) {
         game.cells.push([]);
@@ -212,8 +219,12 @@ function render() {
             cell.querySelector(".letter").textContent = game.letters[row][col];
             cell.classList.toggle("in-word", current !== null && entryCovers(current, row, col));
             cell.classList.toggle("selected", row === game.row && col === game.col);
+            cell.classList.toggle("wrong", game.wrong[row][col]);
+            cell.classList.toggle("revealed", game.revealed[row][col]);
         }
     }
+    // Check/Reveal buttons do nothing once the puzzle is finished
+    document.querySelectorAll("#helpers button").forEach(b => { b.disabled = game.solved; });
     for (const [entry, item] of game.clueItems) {
         item.classList.toggle("active", entry === current);
     }
@@ -232,7 +243,10 @@ function drawPointsToday() {
     const record = puzzle && puzzle.mode === "daily" ? scores[puzzle.seed] : null;
     const streaks = calculateStreaks(scores);
     const parts = [];
-    if (record) parts.push("Today's daily: " + record.points + " pts (" + record.difficulty + ")");
+    if (record) {
+        parts.push(record.surrendered ? "Today's daily: surrendered (0 pts)"
+                                      : "Today's daily: " + record.points + " pts (" + record.difficulty + ")");
+    }
     if (streaks.best > 0) {
         parts.push("Streak " + streaks.current + (streaks.current === 1 ? " day" : " days") + " (best " + streaks.best + ")");
     }
@@ -261,18 +275,97 @@ function checkForWin() {
     boardEl.classList.add("solved");
     const time = timerEl.textContent;
     const puzzle = game.puzzle;
+    const help = game.squaresChecked + game.squaresRevealed > 0
+        ? " (" + game.squaresChecked + " squares checked, " + game.squaresRevealed + " revealed)" : "";
 
+    winEl.querySelector("h2").textContent = "You solved it!";
     if (puzzle.mode !== "daily") {
         winDetailsEl.textContent = "Time: " + time + ". Unlimited puzzles don't earn points.";
     } else {
-        const points = calculateScore(puzzle.difficulty, game.seconds, game.checksUsed, game.revealsUsed);
+        const points = calculateScore(puzzle.difficulty, game.seconds, game.squaresChecked, game.squaresRevealed);
         const counted = saveDailyScore(puzzle, points);
         winDetailsEl.textContent = counted
-            ? "Time: " + time + " · " + points + " points for today's daily (" + puzzle.difficulty + ")."
+            ? "Time: " + time + " · " + points + " points for today's daily (" + puzzle.difficulty + ")" + help + "."
             : "Time: " + time + ". Today's daily was already completed, so no extra points.";
     }
     winEl.hidden = false;
     drawPointsToday();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Check and Reveal (Step 22)
+// ---------------------------------------------------------------------------------------------
+
+// The open squares a scope covers: the selected square, its word, or the whole puzzle
+function scopeCells(scope) {
+    if (scope === "square") return [[game.row, game.col]];
+    if (scope === "word") return entryCells(currentEntry());
+    const cells = [];
+    for (let row = 0; row < game.puzzle.size; row++) {
+        for (let col = 0; col < game.puzzle.size; col++) {
+            if (!isBlock(row, col)) cells.push([row, col]);
+        }
+    }
+    return cells;
+}
+
+// Check: mark wrong letters (empty squares aren't marked). Costs 5 points per square in the scope.
+function check(scope) {
+    const cells = scopeCells(scope);
+    game.squaresChecked += cells.length;
+    for (const [row, col] of cells) {
+        const letter = game.letters[row][col];
+        game.wrong[row][col] = letter !== "" && letter !== game.puzzle.solution[row][col];
+    }
+    render();
+}
+
+// Reveal: fill in the right letter wherever it's empty or wrong. Costs 10 points per square filled.
+// Revealing the whole puzzle is a surrender.
+function reveal(scope) {
+    if (scope === "puzzle" && !confirm("Reveal the whole puzzle? This counts as giving up: 0 points, and it won't count toward your streak.")) {
+        return;
+    }
+    for (const [row, col] of scopeCells(scope)) {
+        if (game.letters[row][col] !== game.puzzle.solution[row][col]) {
+            game.letters[row][col] = game.puzzle.solution[row][col];
+            game.revealed[row][col] = true;
+            game.wrong[row][col] = false;
+            game.squaresRevealed++;
+        }
+    }
+    if (scope === "puzzle") {
+        surrender();
+    } else {
+        checkForWin();     // a reveal can finish the puzzle
+    }
+    render();
+}
+
+function surrender() {
+    game.solved = true;
+    game.surrendered = true;
+    boardEl.classList.add("surrendered");
+    winEl.querySelector("h2").textContent = "Puzzle revealed";
+    if (game.puzzle.mode === "daily") {
+        const counted = saveDailyScore(game.puzzle, 0, true);
+        winDetailsEl.textContent = counted
+            ? "You surrendered today's daily: 0 points, and it doesn't count toward your streak."
+            : "Puzzle revealed. Today's daily was already completed earlier.";
+    } else {
+        winDetailsEl.textContent = "Puzzle revealed.";
+    }
+    winEl.hidden = false;
+    drawPointsToday();
+}
+
+for (const button of document.querySelectorAll("#helpers button")) {
+    button.addEventListener("click", () => {
+        button.blur();   // keep the keyboard on the puzzle
+        if (game.solved) return;
+        if (button.dataset.action === "check") check(button.dataset.scope);
+        else reveal(button.dataset.scope);
+    });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -349,7 +442,10 @@ function selectEntry(entry) {
 }
 
 function typeLetter(letter) {
-    game.letters[game.row][game.col] = letter;
+    if (!game.revealed[game.row][game.col]) {        // revealed squares are locked: the cursor just moves on
+        game.letters[game.row][game.col] = letter;
+        game.wrong[game.row][game.col] = false;      // a new letter clears the Check mark
+    }
     checkForWin();
     const entry = currentEntry();
     const cells = entryCells(entry);
@@ -368,14 +464,19 @@ function typeLetter(letter) {
 }
 
 function backspace() {
-    if (game.letters[game.row][game.col] !== "") {
-        game.letters[game.row][game.col] = "";       // clear this square
+    const clear = (row, col) => {
+        if (game.revealed[row][col]) return;          // revealed squares stay
+        game.letters[row][col] = "";
+        game.wrong[row][col] = false;
+    };
+    if (game.letters[game.row][game.col] !== "" && !game.revealed[game.row][game.col]) {
+        clear(game.row, game.col);                    // clear this square
     } else {
         const cells = entryCells(currentEntry());
         const index = cells.findIndex(([r, c]) => r === game.row && c === game.col);
         if (index > 0) {
             [game.row, game.col] = cells[index - 1];  // step back and clear that square
-            game.letters[game.row][game.col] = "";
+            clear(game.row, game.col);
         }
     }
     render();

@@ -5,7 +5,7 @@ Each step is set up like a LeetCode problem: a problem statement, an empty metho
 
 Legend: ✅ done · 🔨 in progress · ⬜ not started
 
-**Progress: 22 of 27 steps done.** The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
+**Progress: 23 of 27 steps done.** The game is fully playable in the browser. The generator makes Wordle-level puzzles with AI-written clues. Next: package them for a website with daily and unlimited modes.
 
 ---
 
@@ -120,7 +120,7 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 
 ---
 
-## Phase 4: Make it a website 🔨
+## Phase 4: Make it a website ✅
 
 ### ✅ Step 17: Save generated puzzles (daily = same for everyone)
 - **What:** the daily puzzle must be identical for every player, but Claude writes different clues on every call. Design (project owner, 2026-10-07): **one grid per date** (the date is the seed) shared by easy, medium and hard, plus **one clue set per difficulty**, each written by Claude only the first time that difficulty is requested, then saved as `puzzles/daily/<date>-<difficulty>.json` and served from the file. Unlimited puzzles can be generated on demand (or pre-generated in batches to control API cost). `PuzzleStore.java`:
@@ -152,15 +152,15 @@ Legend: ✅ done · 🔨 in progress · ⬜ not started
 - **Done:** timer (pauses when the tab is hidden, stops on solve), win detection after every letter, a win panel, the board locks and turns green. Scoring designed by the project owner in `static/score.js`: **easy 100 / medium 150 / hard 200**, plus a **speed bonus starting at 100 that drops 10 per full minute** (never below 0), minus Check/Reveal penalties (Step 22). **Only daily puzzles earn points**, saved per daily in `localStorage` (`schmoll.dailyScores`, keyed by the daily's seed), and only the first solve of a day counts. **Streaks** (current and best consecutive days) are shown but never add points. Unlimited shows the time only. Verified with 16 automated browser checks.
 - **Learned:** designing a scoring formula, why points are saved per daily and only once, streak counting across months.
 
-### 🔨 Step 22: Check and Reveal
+### ✅ Step 22: Check and Reveal
 - **What:** check or reveal a square, a word or the whole puzzle, and mark wrong letters (each use lowers the score).
-- **Will learn:** reusing slot logic on the frontend.
+- **Done:** Check and Reveal buttons for square / word / puzzle. Check marks wrong letters with a red slash (a new letter clears it); Reveal fills in correct letters, which stay marked (blue with a corner triangle) and can't be typed over. Penalties (owner's design): **-5 per square checked** (Check word = word length, Check puzzle = every open square) and **-10 per square revealed** (only empty or wrong squares count). **Reveal puzzle = surrender**: asks first, gives 0 points, is saved as surrendered (so no points from re-solving that daily) and doesn't count toward the streak. Verified with 22 automated browser checks.
 
 ---
 
-## Phase 5: Modes, saving and launch ⬜
+## Phase 5: Modes, saving and launch 🔨
 
-### ⬜ Step 23: Daily and Unlimited modes
+### 🔨 Step 23: Daily and Unlimited modes
 - **What:** a home screen to pick a mode. **Daily:** today's date is the seed (builds on 12a), the same puzzle for everyone, one per day, with a countdown to the next one. The player picks easy, medium or hard (same grid, different clues); **solving it at any one difficulty completes that day's daily.** **Unlimited:** a new random puzzle whenever you want.
 - **Will learn:** dates and time zones, turning a date into a seed, routing between screens.
 

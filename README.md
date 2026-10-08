@@ -95,10 +95,10 @@ Legend: ✅ done · 🔨 **in progress (you are here)** · ⬜ not started
 - ✅ **Step 19: Game board UI.** A web page (HTML/CSS/JavaScript) that draws the 5×5 grid with numbers and lists the Across/Down clues.
 - ✅ **Step 20: Controls.** Click to select, type to fill, Backspace, arrow keys, switch Across/Down, highlight the current word and its clue, and jump to the next word.
 - ✅ **Step 21: Win detection, timer and score.** A running timer, pause, a "You solved it!" message, and a score from time, difficulty and checks/reveals used.
-- 🔨 **Step 22: Check and Reveal. ← YOU ARE HERE** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
+- ✅ **Step 22: Check and Reveal.** Check or reveal a square, word or the whole puzzle, and mark wrong letters.
 
 ### Phase 5: Modes, saving and launch
-- ⬜ **Step 23: Daily and Unlimited modes.** A home screen to pick a mode. Daily uses the date as the *seed* (same puzzle for everyone) with a countdown; Unlimited makes a new puzzle on demand.
+- 🔨 **Step 23: Daily and Unlimited modes. ← YOU ARE HERE** A home screen to pick a mode. Daily uses the date as the *seed* (same puzzle for everyone) with a countdown; Unlimited makes a new puzzle on demand.
 - ⬜ **Step 24: Save progress, stats, scores and settings.** Half-finished puzzles, scores, streaks, stats, and a settings screen (difficulty, harder words, timer, theme), all in browser storage.
 - ⬜ **Step 25: Tests.** Add JUnit tests for slot finding, pattern matching, numbering and the solver.
 - ⬜ **Step 26: Mobile layout and deploy.** Make it work on phones and put the website online, with the API key kept on the server and a rate limit on unlimited mode to keep costs small.

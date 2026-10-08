@@ -3,23 +3,27 @@
 // ===== The design (chosen by the project owner) =====
 //   points = base points for the difficulty
 //          + a speed bonus that starts at 100 and drops 10 for every full minute (never below 0)
-//          - penalties for Check / Reveal (Step 22; the numbers there are placeholders until decided)
+//          - 5 for every square CHECKED (Check square = 1 square, Check word = its length, Check puzzle = all squares)
+//          - 10 for every square REVEALED (only squares that were empty or wrong count)
+//   Revealing the whole puzzle is a surrender: 0 points, and it doesn't count toward the streak.
 //   Streaks are shown on screen only: they never add points.
 
 const SCORING = {
     basePoints: { easy: 100, medium: 150, hard: 200 },   // points for solving, by difficulty
     speedBonusStart: 100,     // bonus for solving in under a minute
     speedBonusLossPerMinute: 10,
-    checkPenalty: 10,         // points lost per Check used (placeholder until Step 22)
-    revealPenalty: 25         // points lost per square Revealed (placeholder until Step 22)
+    checkPenaltyPerSquare: 5,     // per square looked at by Check
+    revealPenaltyPerSquare: 10    // per square filled in by Reveal
 };
 
 // Points for one solved daily puzzle (never below 0)
-function calculateScore(difficulty, seconds, checksUsed = 0, revealsUsed = 0) {
+function calculateScore(difficulty, seconds, squaresChecked = 0, squaresRevealed = 0) {
     const base = SCORING.basePoints[difficulty] || 0;
     const fullMinutes = Math.floor(seconds / 60);
     const speedBonus = Math.max(0, SCORING.speedBonusStart - fullMinutes * SCORING.speedBonusLossPerMinute);
-    const points = base + speedBonus - checksUsed * SCORING.checkPenalty - revealsUsed * SCORING.revealPenalty;
+    const points = base + speedBonus
+        - squaresChecked * SCORING.checkPenaltyPerSquare
+        - squaresRevealed * SCORING.revealPenaltyPerSquare;
     return Math.max(0, points);
 }
 
@@ -35,7 +39,8 @@ function dayKey(date) {
 // { current, best }: current = consecutive days up to today (or up to yesterday, if today isn't done yet,
 // so a streak doesn't look broken in the morning); best = the longest run ever.
 function calculateStreaks(scores, today = new Date()) {
-    const done = new Set(Object.keys(scores));
+    // A surrendered daily (whole puzzle revealed) doesn't count as done for the streak
+    const done = new Set(Object.keys(scores).filter(key => !scores[key].surrendered));
 
     let current = 0;
     const day = new Date(today.getFullYear(), today.getMonth(), today.getDate());

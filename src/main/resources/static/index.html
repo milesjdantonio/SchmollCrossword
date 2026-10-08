@@ -36,6 +36,21 @@
                 </div>
                 <!-- The clue for the selected word -->
                 <div class="clue-bar" id="clue-bar"></div>
+                <!-- Check and Reveal (Step 22) -->
+                <div class="helpers" id="helpers">
+                    <div class="helper-row">
+                        <span class="helper-label">Check</span>
+                        <button type="button" data-action="check" data-scope="square">Square</button>
+                        <button type="button" data-action="check" data-scope="word">Word</button>
+                        <button type="button" data-action="check" data-scope="puzzle">Puzzle</button>
+                    </div>
+                    <div class="helper-row">
+                        <span class="helper-label">Reveal</span>
+                        <button type="button" data-action="reveal" data-scope="square">Square</button>
+                        <button type="button" data-action="reveal" data-scope="word">Word</button>
+                        <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
+                    </div>
+                </div>
                 <!-- The 5x5 board; app.js fills it with squares -->
                 <div class="board" id="board" aria-label="Crossword grid"></div>
             </div>

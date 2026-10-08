@@ -127,6 +127,44 @@ main {
 .win h2 { margin: 0 0 4px; font-size: 1.2rem; }
 .win p { margin: 0; }
 .board.solved .cell:not(.block) { background: #e4f1e1; }   /* soft green once solved */
+.board.surrendered .cell:not(.block) { background: #ece8e3; } /* grey once surrendered */
+
+/* Step 22: Check / Reveal */
+.helpers { margin-bottom: 10px; display: grid; gap: 6px; }
+.helper-row { display: flex; align-items: center; gap: 6px; }
+.helper-label { width: 3.6em; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.helper-row button {
+    flex: 1;
+    border: 1px solid #cfc7bd;
+    background: #fff;
+    border-radius: 6px;
+    padding: 4px 0;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.helper-row button:hover:not(:disabled) { border-color: var(--accent); }
+.helper-row button:disabled { opacity: 0.5; cursor: default; }
+
+/* A wrong letter found by Check: red slash across the square */
+.cell.wrong .letter { color: #b3261e; }
+.cell.wrong::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top right, transparent calc(50% - 1px), #b3261e 50%, transparent calc(50% + 1px));
+    pointer-events: none;
+}
+/* A square filled in by Reveal: stays marked with a corner triangle */
+.cell.revealed .letter { color: #2b5ea7; }
+.cell.revealed::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-top: 12px solid #2b5ea7;
+    border-left: 12px solid transparent;
+}
 
 /* The small clue number in a square's top-left corner */
 .cell .number {
