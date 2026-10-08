@@ -12,36 +12,119 @@ import java.util.Random;
 /*
  * ===== Challenge mode: bigger grids =====   (written by Claude at the user's request, 2026-10-08)
  *
- * A challenge puzzle is 7x7, so answers can be up to 7 letters long. Its black squares are placed at random
- * from the seed, but always symmetrically like a real crossword: turn the grid upside down (rotate it 180
- * degrees) and the black squares land on black squares. A pattern is only used if
+ * Each challenge picks its board size from its seed (see SIZES), so some days are bigger than others. Its black
+ * squares are random too, but always symmetric like a real crossword: turn the grid upside down (rotate it 180
+ * degrees) and the black squares land on black squares. Bigger boards sometimes get one right in the middle.
+ *
+ * A pattern is only used if
  *   - every white square is part of an across answer AND a down answer, each 3 or more letters long, and
  *   - all the white squares connect to each other (no island cut off from the rest).
- * Some random patterns can't be filled with real words, so fill() gives the solver a budget and moves on to the
- * next pattern when it runs out.
+ * Long runs of white squares are broken up with black squares, except for a few 6- and 7-letter answers that are
+ * kept on purpose: long answers crossing long answers are almost impossible to fill with everyday words.
+ *
+ * Filling: medium words first (the user asked for mostly medium words). Only if a pattern can't be filled with
+ * those does it try Hard's bigger list, and if that fails too, the next pattern. The solver gets a budget
+ * (App.solveBudget) for each try, so one stubborn pattern can't take forever.
  */
 public class ChallengeGrid {
 
-    static final int SIZE = 7;
+    static final int[] SIZES = {6, 7, 9};         // board sizes (measured: these fill fast; 8x8 can never keep a 6+ letter answer)
+    static final int BUDGET = 8_000;              // solve() calls per try
 
     // a filled challenge puzzle: where the black squares are, and the letters
     record Filled(boolean[][] blackSquares, char[][] grid) {}
 
-    // Random symmetric black squares for this seed (the same seed always gives the same pattern)
-    static boolean[][] shape(long seed) {
+    // The board size for a seed (the same seed always gives the same size)
+    static int sizeFor(long seed) {
+        return SIZES[new Random(seed ^ 0x5eedL).nextInt(SIZES.length)];
+    }
+
+    // A black square and its partner, rotated 180 degrees
+    private static void setPair(boolean[][] black, int r, int c) {
+        int n = black.length;
+        black[r][c] = true;
+        black[n - 1 - r][n - 1 - c] = true;
+    }
+
+    // Random symmetric black squares for this seed and size
+    static boolean[][] shape(long seed, int n) {
         Random random = new Random(seed);
         while (true) {
-            boolean[][] black = new boolean[SIZE][SIZE];
-            int pairs = 3 + random.nextInt(4);                  // 3 to 6 symmetric pairs: about 6 to 12 black squares
-            for (int i = 0; i < pairs; i++) {
-                int r = random.nextInt(SIZE), c = random.nextInt(SIZE);
-                black[r][c] = true;
-                black[SIZE - 1 - r][SIZE - 1 - c] = true;      // its partner, rotated 180 degrees
+            boolean[][] black = new boolean[n][n];
+            // bigger boards: sometimes a black square in the very middle (or a pair beside it on even sizes)
+            if (n >= 7 && random.nextInt(3) == 0) setPair(black, n / 2, (n - 1) / 2);
+            for (int i = random.nextInt(n / 3 + 1); i > 0; i--) setPair(black, random.nextInt(n), random.nextInt(n));
+            // keep this many answers of 6+ letters (never more than 7 letters); break up every other long run
+            int keepLong = 1 + random.nextInt(2) + (n >= 8 ? 1 : 0);
+            for (int step = 0; step < 80; step++) {
+                List<int[]> runs = runs(black);                        // {row, col, length, across ? 1 : 0}
+                List<int[]> tooLong = new ArrayList<>(), longOnes = new ArrayList<>();
+                for (int[] run : runs) {
+                    if (run[2] > 7) tooLong.add(run);
+                    else if (run[2] >= 6) longOnes.add(run);
+                }
+                int[] split;
+                if (!tooLong.isEmpty()) split = tooLong.get(random.nextInt(tooLong.size()));
+                else if (longOnes.size() > keepLong) split = longOnes.get(random.nextInt(longOnes.size()));
+                else break;
+                // where to put the black square: both leftover pieces must be 0 or at least 3 letters long
+                List<Integer> spots = new ArrayList<>();
+                for (int i = 0; i < split[2]; i++) {
+                    int before = i, after = split[2] - 1 - i;
+                    if ((before == 0 || before >= 3) && (after == 0 || after >= 3)) spots.add(i);
+                }
+                List<Integer> inside = new ArrayList<>(), ends = List.of(0, split[2] - 1);
+                for (int i : spots) if (i > 0 && i < split[2] - 1) inside.add(i);
+                // a run that's too long (8-9) is sometimes cut at one end instead of the middle, which leaves a 6- or
+                // 7-letter answer behind (cutting an 8 in the middle always leaves pieces of 5 or less)
+                boolean keepALongOne = split[2] > 7 && longOnes.size() < keepLong && random.nextBoolean();
+                List<Integer> pick = keepALongOne || inside.isEmpty() ? ends : inside;
+                int i = pick.get(random.nextInt(pick.size()));
+                setPair(black, split[0] + (split[3] == 1 ? 0 : i), split[1] + (split[3] == 1 ? i : 0));
             }
-            if (isValid(black)) {
+            // a black square can leave a white square stranded in a 1- or 2-letter run the other way: black those out
+            // too (crossword makers call them cheater squares), until every run is 3+ letters long
+            boolean changed = true;
+            while (changed) {
+                changed = false;
+                for (int r = 0; r < n; r++) {
+                    for (int c = 0; c < n; c++) {
+                        if (!black[r][c] && (run(black, r, c, true) < 3 || run(black, r, c, false) < 3)) {
+                            setPair(black, r, c);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+            int blacks = 0;
+            for (boolean[] row : black) for (boolean b : row) if (b) blacks++;
+            int longest = 0;
+            for (int[] run : runs(black)) longest = Math.max(longest, run[2]);
+            // a challenge must have at least one answer of 6+ letters, and isn't more than about 30% black
+            if (longest >= 6 && blacks <= n * n * 3 / 10 && isValid(black)) {         // at most about 30% black
                 return black;
             }
         }
+    }
+
+    // every run of white squares (across and down) as {row, col, length, across ? 1 : 0}
+    static List<int[]> runs(boolean[][] black) {
+        int n = black.length;
+        List<int[]> out = new ArrayList<>();
+        for (int a = 0; a < n; a++) {
+            for (int across = 0; across < 2; across++) {
+                int start = -1;
+                for (int b = 0; b <= n; b++) {
+                    boolean open = b < n && !(across == 1 ? black[a][b] : black[b][a]);
+                    if (open && start < 0) start = b;
+                    if (!open && start >= 0) {
+                        out.add(across == 1 ? new int[] {a, start, b - start, 1} : new int[] {start, a, b - start, 0});
+                        start = -1;
+                    }
+                }
+            }
+        }
+        return out;
     }
 
     static boolean isValid(boolean[][] black) {
@@ -84,20 +167,23 @@ public class ChallengeGrid {
         return len;
     }
 
-    // Fill a challenge grid for this seed. Tries one pattern after another until one fills within the budget.
+    // Fill a challenge grid for this seed: medium words first, Hard's list only if a pattern needs it.
     // Only call it while holding PuzzleStore's lock (the solver shares App's caches), see PuzzleStore.buildChallenge.
-    static Filled fill(long seed, Map<Integer, List<String>> wordsByLength) {
+    static Filled fill(long seed, Map<Integer, List<String>> mediumWords, Map<Integer, List<String>> hardWords) {
+        int n = sizeFor(seed);
         for (int attempt = 0; ; attempt++) {
-            boolean[][] black = shape(seed * 31 + attempt);
-            char[][] grid = new char[SIZE][SIZE];
-            for (char[] row : grid) Arrays.fill(row, '.');
-            App.solveBudget = 8_000;                            // about 1 second per grid on average (measured)
-            try {
-                if (App.solve(new ArrayList<>(Slot.findAllSlots(black)), grid, wordsByLength, new HashSet<>(), new Random(seed + attempt))) {
-                    return new Filled(black, grid);
+            boolean[][] black = shape(seed * 31 + attempt, n);
+            for (Map<Integer, List<String>> words : List.of(mediumWords, hardWords)) {
+                char[][] grid = new char[n][n];
+                for (char[] row : grid) Arrays.fill(row, '.');
+                App.solveBudget = BUDGET;
+                try {
+                    if (App.solve(new ArrayList<>(Slot.findAllSlots(black)), grid, words, new HashSet<>(), new Random(seed + attempt))) {
+                        return new Filled(black, grid);
+                    }
+                } finally {
+                    App.solveBudget = Long.MAX_VALUE;
                 }
-            } finally {
-                App.solveBudget = Long.MAX_VALUE;
             }
         }
     }

@@ -135,14 +135,27 @@ public class PuzzleStore {
 
     // Challenge mode: a 7x7 grid with random symmetric black squares (see ChallengeGrid). "synchronized" for the
     // same reason as buildGrid: the solver shares App's caches.
-    static synchronized ChallengeGrid.Filled buildChallenge(long seed, Map<Integer, List<String>> wordsByLength) {
-        return ChallengeGrid.fill(seed, wordsByLength);
+    static synchronized ChallengeGrid.Filled buildChallenge(long seed, Map<Integer, List<String>> mediumWords, Map<Integer, List<String>> hardWords) {
+        return ChallengeGrid.fill(seed, mediumWords, hardWords);
+    }
+
+    // Medium's word list, loaded once: challenges use medium words first (see ChallengeGrid.fill)
+    private static Map<Integer, List<String>> mediumWords = null;
+    private static synchronized Map<Integer, List<String>> mediumWords() {
+        if (mediumWords == null) {
+            try {
+                mediumWords = App.loadWordsFor("medium");
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        }
+        return mediumWords;
     }
 
     // A challenge puzzle as JSON. Its clues are written at the medium level: the bigger grid and its longer,
     // less common words are the challenge. COSTS MONEY (one API call).
     static String generateChallenge(long seed, String mode, Map<Integer, List<String>> wordsByLength) {
-        ChallengeGrid.Filled filled = buildChallenge(seed, wordsByLength);
+        ChallengeGrid.Filled filled = buildChallenge(seed, mediumWords(), wordsByLength);   // wordsByLength = Hard's list
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(filled.blackSquares())) {
             answers.add(slot.getPattern(filled.grid()));

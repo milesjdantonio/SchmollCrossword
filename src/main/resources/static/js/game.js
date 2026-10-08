@@ -732,6 +732,57 @@ const Game = (() => {
             else reveal(button.dataset.scope);
         });
     }
+    // ---------------------------------------------------------------------------------------------
+    // Report a problem: which clue (or the whole puzzle) and what's wrong. Saved on the server with the puzzle's
+    // seed (see ReportController.java), so the puzzle can be found again.
+    // ---------------------------------------------------------------------------------------------
+    $("#report-btn").addEventListener("click", () => { if (game.puzzle) openReport(); });
+    function openReport() {
+        const p = game.puzzle;
+        const modal = U.el("div", { class: "results ask-modal", role: "dialog", "aria-modal": "true", "aria-labelledby": "report-title" });
+        const select = U.el("select", { id: "report-clue" }, U.el("option", { value: "", text: "The whole puzzle" }),
+            ...[...p.across, ...p.down].map(e => U.el("option", { value: `${e.number}${e.direction === "across" ? "A" : "D"}: ${e.clue}`,
+                text: `${e.number} ${e.direction === "across" ? "Across" : "Down"}: ${e.clue}` })));
+        const current = game.direction === "across" ? game.acrossAt[game.row][game.col] : game.downAt[game.row][game.col];
+        if (current) select.value = `${current.number}${current.direction === "across" ? "A" : "D"}: ${current.clue}`;
+        const text = U.el("textarea", { id: "report-text", maxlength: "1000", placeholder: "What's wrong? (a clue that fits another word, a misspelling, an offensive word...)" });
+        const count = U.el("small", { class: "count", text: "0 / 1000" });
+        const err = U.el("p", { class: "report-err", "aria-live": "polite" });
+        const cancel = U.el("button", { type: "button", class: "btn ghost", text: "Cancel" });
+        const send = U.el("button", { type: "button", class: "btn primary", text: "Send report" });
+        modal.appendChild(U.el("div", { class: "res-card ask-card report-card" },
+            U.el("h2", { id: "report-title", class: "res-title ask-title", text: "Report a problem" }),
+            U.el("label", { for: "report-clue", text: "Which part?" }), select,
+            U.el("label", { for: "report-text", text: "What's wrong?" }), text, count, err,
+            U.el("div", { class: "res-actions" }, cancel, send)));
+        const close = () => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } };
+        addEventListener("keydown", onKey, true);
+        text.addEventListener("input", () => { count.textContent = `${text.value.length} / 1000`; });
+        cancel.addEventListener("click", close);
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
+        send.addEventListener("click", async () => {
+            if (!text.value.trim()) { err.textContent = "Please say what's wrong first."; text.focus(); return; }
+            send.disabled = true;
+            err.textContent = "";
+            try {
+                const response = await fetch("/api/report", { method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ seed: p.seed, mode: p.mode, difficulty: p.difficulty, clue: select.value, message: text.value.trim(), world: Worlds.current.id }) });
+                if (response.status === 429) throw new Error("You've sent a lot of reports recently. Please try again later.");
+                if (!response.ok) throw new Error("The report couldn't be saved (" + response.status + ").");
+                close();
+                FX.toast({ icon: "\u2705", kicker: "REPORT SENT", title: "Thank you!", text: "It's saved with this puzzle so it can be fixed." });
+                Sound.play("right");
+            } catch (e) {
+                err.textContent = e.message.startsWith("You've") || e.message.startsWith("The report") ? e.message : "Couldn't reach the server. Please try again.";
+                send.disabled = false;
+            }
+        });
+        overlay.appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add("in"));
+        setTimeout(() => text.focus({ preventScroll: true }), 80);
+    }
+
     // TEMPORARY (to be removed): fills in every answer one square at a time and plays the win. Saves nothing.
     $("#test-win").addEventListener("click", async event => {
         event.currentTarget.blur();

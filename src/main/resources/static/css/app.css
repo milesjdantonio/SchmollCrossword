@@ -477,8 +477,24 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 }
 .cell.block { background: var(--block); cursor: default; }
 /* Challenge mode's 7x7 board: smaller letters and numbers (beats each world's own letter size) */
-.board.big .cell { font-size: clamp(1.1rem, 6.1vw, 1.95rem); }
-.board.big .cell .num { top: 2px; left: 3px; font-size: .6rem; }
+.board.big .cell { font-size: calc(clamp(1.6rem, 8.6vw, 2.75rem) * 5.4 / var(--size)); }   /* 6x6 to 9x9 */
+.board.big .cell .num { top: 2px; left: 3px; font-size: calc(.72rem * 6 / var(--size)); }
+.report-btn { justify-self: center; padding: 4px 10px; border: 0; background: none; color: var(--muted); font: 700 .8rem var(--font-body); cursor: pointer; text-decoration: underline dotted; }
+.report-btn:hover { color: var(--accent); }
+.report-card { width: min(460px, 100%); text-align: left; }
+.report-card .ask-title { text-align: center; }
+.report-card label { display: block; margin: 10px 0 4px; font-weight: 800; font-size: .88rem; }
+.report-card select, .report-card textarea { width: 100%; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink); font: 600 .95rem var(--font-body); }
+.report-card textarea { min-height: 110px; resize: vertical; }
+.report-card .count { display: block; margin-top: 2px; color: var(--muted); font-size: .75rem; text-align: right; }
+.report-card .res-actions { margin-top: 14px; }
+.report-card .report-err { min-height: 1.2em; margin: 6px 0 0; color: var(--wrong); font-weight: 700; font-size: .85rem; }
+.about p { margin: 6px 0 10px; }
+.credits { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: .9rem; }
+.credits dt { font-weight: 900; color: var(--accent); }
+.credits dd { margin: 0; color: var(--muted); font-weight: 600; line-height: 1.45; }
+.credits a { color: var(--ink); }
+@media (max-width: 480px) { .credits { grid-template-columns: 1fr; gap: 2px; } .credits dd { margin-bottom: 8px; } }
 .cell.in-word { background: var(--word); }
 .cell.selected { background: var(--sel); }
 .cell .ltr { position: relative; z-index: 2; }

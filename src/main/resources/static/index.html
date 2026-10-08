@@ -70,7 +70,7 @@
                             <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-sub">7&times;7 grid &middot; longer words &middot; up to 500 pts</span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-sub">a bigger grid each day &middot; longer words &middot; up to 500 pts</span><span class="chip-state">Play</span></a>
                         </div>
                         <p class="card-status" id="daily-status"></p>
                         <p class="countdown" id="countdown"></p>
@@ -104,7 +104,7 @@
                         <button type="button" data-difficulty="easy">Easy</button>
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
-                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="Challenge: a bigger 7&times;7 grid with longer words, worth more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
+                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="Challenge: a bigger grid (6&times;6 to 9&times;9) with longer words, worth more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
                         <button type="button" class="new-puzzle" id="new-puzzle" hidden>&#8635; New puzzle</button>
                     </nav>
                 </div>
@@ -144,6 +144,7 @@
                             </div>
                             <!-- TEMPORARY test button (to be removed): fills in the answers and plays the win, nothing saved -->
                             <button type="button" class="test-win" id="test-win">Win (test)</button>
+                            <button type="button" class="report-btn" id="report-btn">&#9873; Report a problem with this puzzle</button>
                         </div>
                     </div>
                     <section class="clues">
@@ -240,6 +241,29 @@
                         <legend>Reset</legend>
                         <button type="button" class="btn danger" id="reset-data">Clear my progress, scores, achievements &amp; settings</button>
                         <p class="hint">Can't be undone.</p>
+                    </fieldset>
+                    <fieldset class="card about" id="about">
+                        <legend>About &amp; credits</legend>
+                        <p><b>Schmoll Crossword</b> is free, with no ads. A tiny crossword, three fresh ones every day, plus a bigger Challenge.</p>
+                        <dl class="credits">
+                            <dt>Code</dt>
+                            <dd>&copy; Miles D'Antonio. MIT License: anyone may reuse it as long as the copyright notice stays.
+                                <a href="https://github.com/milesjdantonio/SchmollCrossword" target="_blank" rel="noopener">Source code on GitHub</a></dd>
+                            <dt>Word list</dt>
+                            <dd>Built from <a href="http://wordlist.aspell.net/" target="_blank" rel="noopener">SCOWL</a> by Kevin Atkinson and
+                                <a href="https://www.spreadthewordlist.com/" target="_blank" rel="noopener">Spread the Word(list)</a> by Brooke Husic and
+                                Enrique Henestroza Anguiano. Adapted (only words in both lists, filtered by difficulty) and shared under
+                                <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>,
+                                which is why the game stays non-commercial.</dd>
+                            <dt>Clues</dt>
+                            <dd>Written for each puzzle by Claude, an AI model made by Anthropic, then checked by the game.
+                                Spot a bad one? Use &ldquo;Report a problem&rdquo; under the puzzle.</dd>
+                            <dt>Fonts</dt>
+                            <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Sniglet, Quicksand and Patua One,
+                                from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a>, under the SIL Open Font License.</dd>
+                            <dt>Art &amp; sound</dt>
+                            <dd>Every scene, animation and sound is drawn or made in code for this game. No image or sound files.</dd>
+                        </dl>
                     </fieldset>
                 </form>
             </section>
