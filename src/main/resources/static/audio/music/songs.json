@@ -1,0 +1,138 @@
+{
+ "paper": {
+  "file": "paper.mp3",
+  "loopStart": 8.95,
+  "loopEnd": 128.7598,
+  "title": "Unsolicited Trailer Music",
+  "author": "Emma_MA"
+ },
+ "garden": {
+  "file": "garden.mp3",
+  "loopStart": 5.6,
+  "loopEnd": 133.3744,
+  "title": "Qazijamjam Orchestral Battle Theme",
+  "author": "Emma_MA"
+ },
+ "squirrel": {
+  "file": "squirrel.mp3",
+  "loopStart": 7.3,
+  "loopEnd": 127.069,
+  "title": "This One Is Tough",
+  "author": "Loyalty Freak Music"
+ },
+ "candy": {
+  "file": "candy.mp3",
+  "loopStart": 23.27,
+  "loopEnd": 143.9417,
+  "title": "Toy Soldiers",
+  "author": "Zane Little Music"
+ },
+ "ocean": {
+  "file": "ocean.mp3",
+  "loopStart": 6.25,
+  "loopEnd": 138.1215,
+  "title": "Video Game Pirate",
+  "author": "iamoneabe"
+ },
+ "snow": {
+  "file": "snow.mp3",
+  "loopStart": 42.08,
+  "loopEnd": 185.8661,
+  "title": "Long Winter",
+  "author": "Indieteur"
+ },
+ "rain": {
+  "file": "rain.mp3",
+  "loopStart": 18.0,
+  "loopEnd": 138.8017,
+  "title": "Synthmetal Climax Theme",
+  "author": "Gradoa"
+ },
+ "sky": {
+  "file": "sky.mp3",
+  "loopStart": 18.75,
+  "loopEnd": 140.7907,
+  "title": "The Call for Unity",
+  "author": "vitalezzz"
+ },
+ "desert": {
+  "file": "desert.mp3",
+  "loopStart": 22.1053,
+  "loopEnd": 160.2632,
+  "title": "Riddle of the Sands (7/4)",
+  "author": "composed for this game"
+ },
+ "desert-p2": {
+  "file": "desert-p2.mp3",
+  "loopStart": 27.72,
+  "loopEnd": 165.4445,
+  "title": "Desert Settlement",
+  "author": "vitalezzz"
+ },
+ "carnival": {
+  "file": "carnival.mp3",
+  "loopStart": 4.1,
+  "loopEnd": 114.8356,
+  "title": "Ring Master",
+  "author": "Bobjt"
+ },
+ "arcade": {
+  "file": "arcade.mp3",
+  "loopStart": 14.4578,
+  "loopEnd": 144.5783,
+  "title": "Corrupted Signal (5/4)",
+  "author": "composed for this game"
+ },
+ "arcade-p2": {
+  "file": "arcade-p2.mp3",
+  "loopStart": 10.7,
+  "loopEnd": 129.1875,
+  "title": "Singularity",
+  "author": "vitalezzz"
+ },
+ "robot": {
+  "file": "robot.mp3",
+  "loopStart": 7.3,
+  "loopEnd": 126.0051,
+  "title": "Return of the Omega Droid",
+  "author": "Umplix"
+ },
+ "library": {
+  "file": "library.mp3",
+  "loopStart": 23.86,
+  "loopEnd": 159.5801,
+  "title": "Shadows Awaken Within",
+  "author": "vitalezzz"
+ },
+ "volcano": {
+  "file": "volcano.mp3",
+  "loopStart": 20.11,
+  "loopEnd": 153.6103,
+  "title": "Devoted Guard",
+  "author": "vitalezzz"
+ },
+ "space": {
+  "file": "space.mp3",
+  "loopStart": 15.89,
+  "loopEnd": 142.5327,
+  "title": "Outworld",
+  "author": "vitalezzz"
+ },
+ "space-p2": {
+  "file": "space-p2.mp3",
+  "loopStart": 19.34,
+  "loopEnd": 191.5644,
+  "title": "Pandemia",
+  "author": "nene"
+ },
+ "win": {
+  "file": "win.mp3",
+  "title": "Victory Fanfare",
+  "author": "ARoachIFoundOnMyPillow"
+ },
+ "lose": {
+  "file": "lose.mp3",
+  "title": "No Hope",
+  "author": "CleytonKauffman"
+ }
+}

@@ -138,23 +138,33 @@ public class PuzzleStore {
     // takes a few milliseconds) and keeps the one with the fewest avoided answers.
     static final int GRID_TRIES = 30;
     static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        return buildGrid(seed, wordsByLength, avoid, "");
+    }
+    // A campaign lesson can also ask for grids that suit it (favors: see Lesson.favorScore): then every try is
+    // scored as (lesson fit x 2 - repeats) and the best one is kept
+    static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors) {
         int size = SHAPE.length;
         char[][] best = null;
-        int bestRepeats = Integer.MAX_VALUE;
-        for (int attempt = 0; attempt < (avoid.isEmpty() ? 1 : GRID_TRIES) && bestRepeats > 0; attempt++) {
+        int bestRepeats = Integer.MAX_VALUE, bestScore = Integer.MIN_VALUE;
+        boolean lesson = favors != null && !favors.isEmpty();
+        for (int attempt = 0; attempt < (avoid.isEmpty() && !lesson ? 1 : GRID_TRIES) && (lesson || bestRepeats > 0); attempt++) {
             char[][] grid = new char[size][size];
             for (char[] row : grid) {
                 Arrays.fill(row, '.');
             }
             App.solve(new ArrayList<>(Slot.findAllSlots(SHAPE)), grid, wordsByLength, new HashSet<>(), new Random(seed + attempt));
             int repeats = 0;
+            List<String> answers = new ArrayList<>();
             for (Slot slot : Slot.findAllSlots(SHAPE)) {
                 String answer = slot.getPattern(grid);
+                answers.add(answer);
                 if (avoid.contains(answer) || App.sharesRoot(answer, avoid)) repeats++;
             }
-            if (repeats < bestRepeats) {
+            int score = lesson ? Lesson.favorScore(favors, answers) * 2 - repeats : -repeats;
+            if (score > bestScore) {
                 best = grid;
                 bestRepeats = repeats;
+                bestScore = score;
             }
         }
         return best;
@@ -194,24 +204,41 @@ public class PuzzleStore {
     // COSTS MONEY (one API call).
     static String generateBig(long seed, String mode, String difficulty, int size,
                               Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        return generateBig(seed, mode, difficulty, size, wordsByLength, avoid, "", "");
+    }
+    // the same for a campaign lesson: favors picks the best of a few grids for the lesson, focus goes to the clue writer
+    static final int BIG_LESSON_TRIES = 5;
+    static String generateBig(long seed, String mode, String difficulty, int size,
+                              Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors, String focus) {
         boolean expert = difficulty.equals("expert");
-        ChallengeGrid.Filled filled = buildChallenge(seed, size, expert ? wordsByLength : mediumWords(), wordsByLength, avoid);
-        List<String> answers = new ArrayList<>();
-        for (Slot slot : Slot.findAllSlots(filled.blackSquares())) {
-            answers.add(slot.getPattern(filled.grid()));
+        ChallengeGrid.Filled filled = null;
+        List<String> answers = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (int attempt = 0; attempt < (favors.isEmpty() ? 1 : BIG_LESSON_TRIES); attempt++) {
+            ChallengeGrid.Filled f = buildChallenge(seed + attempt * 1000L, size, expert ? wordsByLength : mediumWords(), wordsByLength, avoid);
+            List<String> list = new ArrayList<>();
+            for (Slot slot : Slot.findAllSlots(f.blackSquares())) {
+                list.add(slot.getPattern(f.grid()));
+            }
+            int score = Lesson.favorScore(favors, list);
+            if (score > bestScore) { filled = f; answers = list; bestScore = score; }
         }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, expert ? "hard" : "medium");
+        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, expert ? "hard" : "medium", focus);
         return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, difficulty).toJson();
     }
 
     // A normal 5x5 puzzle as JSON. COSTS MONEY (one API call).
     static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
-        char[][] grid = buildGrid(seed, wordsByLength, avoid);
+        return generateSmall(seed, mode, difficulty, wordsByLength, avoid, "", "");
+    }
+    static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid,
+                                String favors, String focus) {
+        char[][] grid = buildGrid(seed, wordsByLength, avoid, favors);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {
             answers.add(slot.getPattern(grid));
         }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
+        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty, focus);
         return Puzzle.create(SHAPE, grid, clues, mode, seed, difficulty).toJson();
     }
 
@@ -288,9 +315,11 @@ public class PuzzleStore {
         String difficulty = Campaign.difficulty(section, level);
         long seed = Campaign.seed(section, boss ? level + 1 : level);    // the boss's board: the next seed along
         Set<String> avoid = recentCampaignAnswers(folder, section, level, boss);
+        // every level is a lesson (Lesson.java): a grid that suits it, and clues that train its skill
+        String favors = Lesson.favors(section.world(), level), focus = Lesson.clueFocus(section.world(), level);
         String json = Campaign.bigGrid(difficulty)
-                ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid)
-                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid);
+                ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid, favors, focus)
+                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid, favors, focus);
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
@@ -306,7 +335,8 @@ public class PuzzleStore {
         Set<String> avoid = new HashSet<>(recentCampaignAnswers(folder, section, Campaign.LEVELS, true));
         avoid.addAll(answersIn(List.of(campaignFile(folder, section, Campaign.LEVELS, false), campaignFile(folder, section, Campaign.LEVELS, true))));
         long seed = Campaign.seed(section, Campaign.LEVELS + 2);
-        String json = generateBig(seed, "campaign", Campaign.phase2Difficulty(section), Campaign.phase2Size(section), wordsByLength, avoid);
+        String json = generateBig(seed, "campaign", Campaign.phase2Difficulty(section), Campaign.phase2Size(section), wordsByLength, avoid,
+                "", Lesson.clueFocus(section.world(), Campaign.LEVELS));
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;

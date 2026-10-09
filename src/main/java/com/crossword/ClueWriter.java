@@ -103,6 +103,12 @@ public class ClueWriter {
      * Related LeetCode: none. Prompt writing is the "AI at work" skill in this step.
      */
     static String buildPrompt(List<String> answers, String difficulty) {
+        return buildPrompt(answers, difficulty, "");
+    }
+
+    // Campaign levels are lessons (see Lesson.java): `focus` says what this puzzle's clues should train.
+    // Added by Claude at the user's request (2026-10-09). "" = a normal puzzle.
+    static String buildPrompt(List<String> answers, String difficulty, String focus) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("Write one original crossword clue for each answer below.\n\n");
@@ -166,6 +172,12 @@ public class ClueWriter {
         // No more "at least one fill-in-the-blank": forcing one in is how the vague blanks happened
         sb.append("- Mix clue types across the puzzle (straight definitions, a famous phrase, something people say), "
                 + "but never force a type in. A clear, exact definition is always a good clue.\n\n");
+
+        if (focus != null && !focus.isBlank()) {
+            sb.append("This puzzle is a lesson in a crossword-solving course: each level trains one skill, so the solver "
+                    + "keeps improving until they solve like a professional. All the rules above still apply. For this puzzle:\n");
+            sb.append(focus.strip()).append("\n\n");
+        }
 
         sb.append("Answers (one per line):\n");
         for (String answer : answers) {
@@ -255,13 +267,17 @@ public class ClueWriter {
      * Related LeetCode: none. This is API integration, the most common "AI at work" task.
      */
     static ClueSet writeClues(List<String> answers, String difficulty) {
+        return writeClues(answers, difficulty, "");
+    }
+    // the same, for a campaign lesson (focus: see buildPrompt above)
+    static ClueSet writeClues(List<String> answers, String difficulty, String focus) {
         AnthropicClient client = createClient();
 
         StructuredMessageCreateParams<ClueSet> params = MessageCreateParams.builder()
             .model(modelFor(difficulty))                      // see EASY_MODEL and MODEL at the top
             .maxTokens(16000L)
             .outputConfig(ClueSet.class)                       // "reply as a ClueSet": the SDK makes the JSON schema
-            .addUserMessage(buildPrompt(answers, difficulty))  // your Step 15a prompt
+            .addUserMessage(buildPrompt(answers, difficulty, focus))  // your Step 15a prompt (plus a campaign lesson, if any)
             .build();
 
         ClueSet clues = null;

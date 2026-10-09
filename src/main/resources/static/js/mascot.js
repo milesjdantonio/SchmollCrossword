@@ -40,7 +40,10 @@ const Mascot = (() => {
         achievement: ["Ooh, a new achievement!"]
     };
     const world = () => Worlds.current;
-    function lineFor(event) {
+    function lineFor(event, info) {
+        // in the campaign it talks about your lesson, your boss and the story (campaign.js)
+        const camp = typeof Campaign !== "undefined" && Campaign.mascotLine ? Campaign.mascotLine(event, info) : null;
+        if (camp) return camp;
         const w = world(), list = (w && w.lines && w.lines[event]) || SHARED[event] || SHARED.tips;
         let line = U.pick(list);
         if (list.length > 1 && line === lastSaid) line = U.pick(list);
@@ -131,6 +134,7 @@ const Mascot = (() => {
     Bus.on("surrender", () => react("surrender", { mood: "sad" }));
     Bus.on("results", info => {
         if (info.test && !info.campaign) return say("Test win! Nothing was saved.", { mood: "wow" });
+        if (info.campaign) { const camp = lineFor("win", info); if (camp) return say(camp, { mood: "happy", hold: 9000 }); }
         let line = lineFor("win");
         if (info.firstToday && info.streak > 1) line += ` That's a ${info.streak}-day streak!`;
         else if (info.mode === "daily" && info.left && info.left.length) line += ` Still to play today: ${info.left.join(", ")}.`;

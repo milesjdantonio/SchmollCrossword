@@ -177,7 +177,8 @@ const Sound = (() => {
     // ---- recorded sounds and boss music (free CC0 sound libraries, see static/audio/CREDITS.txt) ----
     // sample("punch")  plays audio/sfx/punch.mp3 (loaded the first time it's asked for; a sound that isn't loaded
     //                  yet just doesn't play that once)
-    // music("boss-loop-1", { loop })  plays a music track from audio/music, fading out the one before
+    // music("paper-loop", { loop, rate, then })  plays a music track from audio/music, fading out the one before.
+    //                  then: a track that starts when this one ends (a boss's intro runs into its fight loop)
     const buffers = {}, loadingBuf = {};
     function load(path) {
         if (buffers[path] || loadingBuf[path] || !ctx) return;
@@ -202,23 +203,32 @@ const Sound = (() => {
     // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
     let musicBus = null, track = null;
     const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
-    async function music(name, { loop = true, v = 0.32, fade = 0.8 } = {}) {
+    // songs.json: each boss song's loop points. A song file starts with its intro, then the browser loops
+    // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
+    let songs = null;
+    const songList = () => songs || (songs = fetch("audio/music/songs.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
+    async function music(name, { loop = true, v = 0.32, fade = 0.8, rate = 1, then = null, thenOpts = {}, offset = 0, fromLoop = false } = {}) {
         if (!init()) return;
         if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicOn() ? 1 : 0; musicBus.connect(master); }
         stopMusic(fade);
         if (!name) return;
         const path = `audio/music/${name}.mp3`;
         const me = (track = { name, gain: null, src: null });
-        const buf = buffers[path] || await load(path);
+        const [buf, list] = await Promise.all([buffers[path] || load(path), songList()]);
         if (!buf || track !== me) return;
+        const info = list[name];
         const src = ctx.createBufferSource(), gain = ctx.createGain();
         src.buffer = buf;
         src.loop = loop;
-        if (loop) { src.loopStart = 0.03; src.loopEnd = buf.duration - 0.03; }      // skip the MP3's silent padding
+        src.playbackRate.value = rate;
+        if (!loop && then) src.onended = () => { if (track === me) music(then, { v, fade: 0.05, ...thenOpts }); };
+        if (loop && info && info.loopEnd) { src.loopStart = info.loopStart; src.loopEnd = Math.min(info.loopEnd, buf.duration); }
+        else if (loop) { src.loopStart = 0.03; src.loopEnd = buf.duration - 0.03; }      // skip the MP3's silent padding
+        if (fromLoop && info && info.loopStart) offset = info.loopStart;               // skip the intro (a fight that's already going)
         gain.gain.setValueAtTime(0.0001, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(v, ctx.currentTime + 0.25);
         src.connect(gain).connect(musicBus);
-        src.start();
+        src.start(0, offset);
         me.gain = gain;
         me.src = src;
     }
@@ -241,5 +251,6 @@ const Sound = (() => {
         try { fn(...args); } catch (err) { console.error("Sound", err); }
     }
 
-    return { play, custom, sample, preload, music, stopMusic, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    const hasSong = async name => !!(await songList())[name];
+    return { play, custom, sample, preload, music, stopMusic, hasSong, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

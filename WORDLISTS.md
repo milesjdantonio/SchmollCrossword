@@ -227,9 +227,14 @@ with links is in `static/audio/CREDITS.txt`.
 | Source | What | License |
 |---|---|---|
 | [Kenney: Impact, Interface, Sci-fi Sounds, RPG Audio, Music Jingles](https://kenney.nl/assets/category:Audio) | ~75 short boss-fight sound effects | CC0 |
-| [Sinister Boss Appears!](https://opengameart.org/content/sinister-boss-appears) by cynicmusic | boss intro (first 7 s) | CC0 |
-| [Dramatic Boss Encounter](https://opengameart.org/content/dramatic-boss-encounter) by cynicmusic | phase 2 sting (first 4.5 s) | CC0 |
-| [Basilisk Boss Battle Loop](https://opengameart.org/content/basilisk-boss-battle-loop) by beardalaxy | phase 1 music | CC0 |
-| [Boss Battle (loop)](https://opengameart.org/content/boss-battle-loop) by Alex McCulloch | phase 2 music (he asks to be credited) | CC0 |
+| 16 songs from [OpenGameArt](https://opengameart.org/) (full list in `static/audio/CREDITS.txt`) | one song per boss (its start is the intro, then a seamless 2:00-2:30 loop), plus phase-2 songs for the Sphinx, Glitch and the Void, and win/lose music | CC0, checked on each track's own page |
+| [GeneralUser GS](https://schristiancollins.com/generaluser.php) SoundFont by S. Christian Collins (via [FluidSynth](https://www.fluidsynth.org/)) | the instruments for the two songs composed for the game (the Sphinx in 7/4, Glitch in 5/4) | free for any music made with it; only the rendered MP3s are in the repo |
+| [Dramatic Boss Encounter](https://opengameart.org/content/dramatic-boss-encounter) by cynicmusic | the phase 2 sting (first 4.5 s) | CC0 |
+
+How the music was chosen without ears (Claude can't hear; the full reasoning is in `boss-music/README.md`): a script searched OpenGameArt by theme (chiptune, ocean,
+winter, desert, circus, spooky, lava, robot...), kept only pages whose own license is CC0, and `listen.py` (scratch
+script) measured each candidate's length, loudness over time, tempo, brightness, key and silences; spectrograms were
+looked at for the intros. Too-quiet or too-sparse intros were swapped, silent tails trimmed, fading endings turned
+into crossfaded loops, and every file evened out to the same loudness.
 
 Everything else is still synthesized in code (`sound.js`, `powers.js`, the worlds).

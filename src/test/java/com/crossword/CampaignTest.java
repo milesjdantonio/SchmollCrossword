@@ -107,8 +107,9 @@ class CampaignTest {
     @Test
     void mapJsonListsEveryLevel() {
         String json = Campaign.mapJson();
-        assertTrue(json.startsWith("[{\"world\":\"paper\",\"levels\":[\"easy\",\"easy\",\"easy\",\"easy\",\"easy\"],\"sizes\":[5,5,5,5,5],\"phase2\":[\"challenge\",6]}"));
-        assertTrue(json.endsWith("{\"world\":\"space\",\"levels\":[\"expert\",\"expert\",\"expert\",\"expert\",\"expert\"],\"sizes\":[9,9,9,9,9],\"phase2\":[\"expert\",9]}]"));
+        assertTrue(json.startsWith("[{\"world\":\"paper\",\"levels\":[\"easy\",\"easy\",\"easy\",\"easy\",\"easy\"],\"sizes\":[5,5,5,5,5],\"lessons\":["));
+        assertTrue(json.contains("{\"world\":\"space\",\"levels\":[\"expert\",\"expert\",\"expert\",\"expert\",\"expert\"],\"sizes\":[9,9,9,9,9],\"lessons\":["));
+        assertTrue(json.endsWith("\"phase2\":[\"expert\",9]}]"));          // each level's lesson: see LessonTest
     }
 
     @Test

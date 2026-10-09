@@ -36,7 +36,7 @@ const Game = (() => {
     const lastPuzzle = {};   // slot -> the last puzzle loaded, so coming back to it doesn't fetch a new one
     const savedGames = {};   // slot -> a copy of that slot's game
     let loadCounter = 0;     // ignore a slow answer if the player has already asked for something else
-    let lastInput = performance.now(), idleSaid = false, clockStoppedUntil = 0;
+    let lastInput = performance.now(), idleSaid = false, clockStoppedUntil = 0, clockHeld = false;
 
     // Each daily difficulty is its own puzzle, so its own "slot"; Unlimited has one slot
     // Campaign levels (#level) each have their own slot too: "campaign-garden-3"
@@ -119,7 +119,7 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     setInterval(() => {
         if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden || gameViewEl.hidden || FX.playing) return;
-        if (performance.now() < clockStoppedUntil) return;          // a campaign Time Stop item
+        if (performance.now() < clockStoppedUntil || clockHeld) return;   // a campaign Time Stop item, or a boss still getting ready
         game.seconds++;
         drawTimer();
         if (game.seconds % 5 === 0) saveProgress();
@@ -1087,6 +1087,19 @@ const Game = (() => {
         render();
         checkForWin();
     }
+    // Boss moves: Reboot unlocks your locked letters (not revealed ones); returns the squares it unlocked
+    function unlockLetters() {
+        const out = [];
+        if (!game.puzzle) return out;
+        for (const [r, c] of scopeCells("puzzle")) if (game.locked[r][c] && !game.revealed[r][c]) { game.locked[r][c] = false; out.push([r, c]); }
+        render();
+        return out;
+    }
+    // Red Pen: mark squares as wrong (or clear the marks) without counting as a Check
+    function markCells(list, on) {
+        for (const [r, c] of list) if (game.wrong[r]) game.wrong[r][c] = on;
+        render();
+    }
     // the squares holding a wrong letter
     const wrongCells = () => (game.puzzle ? scopeCells("puzzle").filter(([r, c]) => game.letters[r][c] && game.letters[r][c] !== game.puzzle.solution[r][c]) : []);
     // Truth Mirage: mark the wrong letters (like Check, but free); the marks go when you type over them
@@ -1159,6 +1172,8 @@ const Game = (() => {
         Bus.emit("puzzle", { fresh: false, puzzle, phase: true });
     }
     // stop the clock for a while
+    // hold the clock until released (a boss fight waiting for the boss's puzzle)
+    function holdClock(on) { clockHeld = !!on; }
     function stopClock(seconds) { clockStoppedUntil = Math.max(clockStoppedUntil, performance.now()) + seconds * 1000; }
     const clockStopped = () => Math.max(0, (clockStoppedUntil - performance.now()) / 1000);
     // how many squares are right, of how many
@@ -1171,7 +1186,7 @@ const Game = (() => {
     restoreProgress();
 
     return {
-        restartSlot, endLoss, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, startPhase, revealFree, clearWrong, lockRight, stopClock, clockStopped, progress,
+        restartSlot, endLoss, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
         openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),

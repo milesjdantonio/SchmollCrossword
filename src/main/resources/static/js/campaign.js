@@ -56,6 +56,21 @@ const Campaign = (() => {
 
     const sizeOf = (s, level) => (s.sizes ? s.sizes[level - 1] : 5);
     const phase2Of = s => (s && s.phase2 ? s.phase2 : ["challenge", 6]);          // a boss's second puzzle: [difficulty, size]
+    // Lessons (the user's goal: keep improving the player, making them practise something different each level
+    // until they're a pro). Every level teaches one skill (Lesson.java on the server): its clues train it, and its
+    // third star is a goal that fits it.
+    const lessonOf = (si, level) => (map && map[si] && map[si].lessons ? map[si].lessons[level - 1] : null);
+    // the third star's goal: [text, check(game, puzzle)]
+    function starGoal(lesson, d, size) {
+        const p = par(d, size), t = k => Math.round(p * k / 5) * 5;
+        switch (lesson && lesson.star) {
+            case "brisk": return [`Finish under ${U.fmtTime(t(0.75))}`, g => g.seconds <= t(0.75)];
+            case "fast": return [`Finish under ${U.fmtTime(t(0.6))} (speed!)`, g => g.seconds <= t(0.6)];
+            case "nocheck": return ["Don't use Check", g => !g.checks];
+            case "clean": return ["No Check at all (a clean solve)", g => !g.checks && !g.squaresChecked];
+            default: return [`Finish under ${U.fmtTime(p)}`, g => g.seconds <= p];
+        }
+    }
     const record = (si, level) => data.levels[keyOf(map[si].world, level)];
     const cleared = (si, level) => !!(map && map[si] && record(si, level));
     function unlocked(si, level) {
@@ -383,15 +398,26 @@ const Campaign = (() => {
         box.appendChild(body);
         body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `WORLD ${si + 1} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
         body.appendChild(U.el("h2", { text: boss ? bossOf(s.world).name : `${Worlds.byId[s.world].name} ${l}` }));
+        if (boss && bossOf(s.world).story) body.appendChild(U.el("p", { class: "cm-story", text: bossOf(s.world).story }));
         if (boss) body.appendChild(U.el("p", { class: "cm-taunt", text: `"${bossOf(s.world).taunt}"` }));
         if (boss) {
             const th = Powers.threat(si, map.length), moves = Powers.MOVES[s.world] || [];
-            body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)} · attacks about every ${Math.round(th.every)}s · ${th.windup.toFixed(1)}s to block · enraged under ${th.rageAt}% HP` + (th.double ? " · chains its attacks when enraged" : "") }));
-            body.appendChild(U.el("p", { class: "cm-moves", text: "Its moves: " + moves.map(m => `${m.icon} ${m.name} (${m.desc})`).join(" · ") }));
+            body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)}` }));
+            // its moves, in a menu on the left of the sheet
+            box.insertBefore(U.el("div", { class: "cm-moves-menu" }, U.el("small", { text: "ITS MOVES" }),
+                ...moves.map(m => U.el("div", { class: "cm-move" }, U.el("span", { class: "cm-move-icon", text: m.icon }),
+                    U.el("div", {}, U.el("b", { text: m.name }), U.el("small", { text: "It " + m.desc }))))), box.children[1] || null);
         }
+        const lesson = lessonOf(si, l);
+        if (lesson) body.appendChild(U.el("div", { class: "cm-lesson" },
+            U.el("small", { text: boss ? "BOSS REVIEW" : `LESSON ${l} OF 4` + (lesson.round > 1 ? ` · ROUND ${lesson.round}` : "") }),
+            U.el("b", { text: `📘 ${lesson.name}` }),
+            U.el("p", { text: lesson.practise }),
+            U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` })));
         body.appendChild(U.el("p", { class: "cm-rules", text: boss
-            ? `A race in two phases: solve the boss's puzzle, then a bigger ${label(...phase2Of(s))} in phase 2, before the boss solves its own boards. Every word you finish hits it; chain words for combos and charge your Super. When it winds up an attack, finish a word to block it.`
-            : `Three stars: solve it, don't use Reveal, and finish in under ${U.fmtTime(par(d, sizeOf(s, l)))}.` }));
+            ? "A race: solve your puzzle before the boss solves its own. Every word you finish hits it; chain words for combos and charge your Super. When it winds up an attack, finish a word to block it."
+            : `${label(d, sizeOf(s, l))}. Three stars: ★ solve it · ★ no Reveal · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}.` }));
+        if (boss) body.appendChild(loadoutBox(() => drawDetail()));
         const prize = abilityPrize(si, l);
         if (prize) body.appendChild(U.el("p", { class: "cm-prize" + (rec ? " got" : ""), text: rec ? `Ability unlocked here: ${prize.icon} ${prize.name}` : `Clear it to unlock an ability: ${prize.icon} ${prize.name}` }));
         if (rec) body.appendChild(U.el("p", { class: "cm-best", text: `Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)} · ${U.fmtTime(rec.seconds || 0)}` }));
@@ -460,7 +486,7 @@ const Campaign = (() => {
     function play(world, level) {
         data.playing = { world, level };
         save();
-        if (level === 5) fight = null;                 // a boss fight always starts from the beginning
+        if (level === 5) { fight = null; prefetchBoss(world); }   // a boss fight always starts from the beginning
         Sound.play("start");
         // a level that was finished (or given up) starts again from scratch
         Game.restartSlot(slotName());
@@ -469,6 +495,16 @@ const Campaign = (() => {
     }
 
     const slotName = () => data.playing ? "campaign-" + keyOf(data.playing.world, data.playing.level) : "campaign-none";
+    // A boss fight needs three puzzles: yours, the boss's own board and phase 2. New ones take a while (Claude writes
+    // their clues, one at a time on the server), so they're asked for the moment you press Fight, not after your
+    // puzzle has arrived (the intro used to start ~10 seconds late, after you could already type).
+    let bossFetch = null;
+    function prefetchBoss(world) {
+        const base = `/api/campaign?world=${encodeURIComponent(world)}&level=5`;
+        const get = url => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(new Error("the server answered " + r.status))));
+        bossFetch = { world, board: get(base + "&boss=true"), phase2: get(base + "&phase=2").catch(() => null) };
+        bossFetch.board.catch(() => null);
+    }
     function apiUrl() {
         const p = data.playing;
         return `/api/campaign?world=${encodeURIComponent(p.world)}&level=${p.level}`;
@@ -493,7 +529,7 @@ const Campaign = (() => {
             mode: "campaign", difficulty: puzzle.difficulty, stage: `WORLD ${c.si + 1}-${c.level}`,
             kicker: boss ? `WORLD ${c.si + 1} · BOSS BATTLE` : `WORLD ${c.si + 1} · LEVEL ${c.level}`,
             title: boss ? bossOf(c.world).name : w.name,
-            sub: boss ? bossOf(c.world).taunt : `${label(puzzle.difficulty, puzzle.size)} · three stars under ${U.fmtTime(par(puzzle.difficulty, puzzle.size))}`,
+            sub: boss ? bossOf(c.world).taunt : (lessonOf(c.si, c.level) ? `Lesson: ${lessonOf(c.si, c.level).name} · ★ ${starGoal(lessonOf(c.si, c.level), puzzle.difficulty, puzzle.size)[0]}` : label(puzzle.difficulty, puzzle.size)),
             stardate: `SECTOR ${c.si + 1}.${c.level}`
         };
     }
@@ -537,9 +573,11 @@ const Campaign = (() => {
             if (fight && fight.phase === 2) earned.push(["Beat both phases", true]);
             if (fight && fight.bestCombo > 1) earned.push([`Best combo: ×${fight.bestCombo}`, true]);
         } else {
-            const limit = par(d, puzzle.size), noReveal = !game.squaresRevealed, quick = game.seconds <= limit;
-            stars = 1 + (noReveal ? 1 : 0) + (quick ? 1 : 0);
-            earned.push(["Solved it", true], ["No Reveal used", noReveal], [`Under ${U.fmtTime(limit)}`, quick]);
+            const lesson = lessonOf(c.si, c.level), [goal, check] = starGoal(lesson, d, puzzle.size);
+            const noReveal = !game.squaresRevealed, met = check(game, puzzle);
+            stars = 1 + (noReveal ? 1 : 0) + (met ? 1 : 0);
+            earned.push(["Solved it", true], ["No Reveal used", noReveal], [goal, met]);
+            if (lesson) earned.push([`Skill practised: ${lesson.name}`, true]);
         }
         skipping = false;
         const key = keyOf(c.world, c.level), old = data.levels[key];
@@ -576,7 +614,8 @@ const Campaign = (() => {
         const c = current();
         if (!c) return "";
         const rec = data.levels[keyOf(c.world, c.level)];
-        return rec ? `Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)} · ${U.fmtTime(rec.seconds || 0)}` : `World ${c.si + 1} · ${c.level === 5 ? "Boss" : "Level " + c.level}`;
+        const lesson = lessonOf(c.si, c.level), what = lesson && c.level < 5 ? `📘 ${lesson.name}` : `World ${c.si + 1} · ${c.level === 5 ? "Boss" : "Level " + c.level}`;
+        return rec ? `${what} · Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)}` : what;
     }
     function next(n) {
         if (!n) { location.hash = "#campaign"; return; }
@@ -642,10 +681,12 @@ const Campaign = (() => {
     }
     // the abilities you bring: the ones you picked (if still unlocked), else this world's
     const loadout = () => {
-        const list = (data.loadout || []).filter(id => abilityById[id] && unlockedAbility(abilityById[id]));
-        if (list.length) return list.slice(0, 3);
+        const list = [...new Set((data.loadout || []).filter(id => abilityById[id] && unlockedAbility(abilityById[id])))].slice(0, 3);
+        if (list.length >= 3) return list;
+        // fill the empty slots: this world's abilities first, then the newest unlocked ones
         const here = data.playing ? ABILITIES.filter(a => a.world === data.playing.world && unlockedAbility(a)) : [];
-        return (here.length ? here : unlockedAbilities().slice(-3)).map(a => a.id);
+        for (const a of [...here, ...unlockedAbilities().reverse()]) if (list.length < 3 && !list.includes(a.id)) list.push(a.id);
+        return list;
     };
 
     // ---------------------------------------------------------------------------------------------
@@ -670,8 +711,6 @@ const Campaign = (() => {
                     U.el("span", { class: "shop-coins", text: `🪙 ${data.coins}` }),
                     U.el("button", { type: "button", class: "btn ghost small", text: "Close ✕", onclick: close })),
                 tabs);
-            const scroll = U.el("div", { class: "shop-scroll" });
-            card.appendChild(scroll);
             const buy = (price, give) => () => {
                 if (data.coins < price) return;
                 data.coins -= price;
@@ -680,6 +719,25 @@ const Campaign = (() => {
                 give(); save(); Sound.play("coin"); draw();
                 Achievements.announce(Achievements.campaign({ bought: data.bought, spent: data.spent }));
             };
+            // your 3 equipped abilities, always at the top: easy to buy more uses (the user's request)
+            const eqBar = U.el("div", { class: "shop-equipped" }, U.el("small", { text: "EQUIPPED (KEYS 1-3)" }));
+            const eqRow = U.el("div", { class: "se-row" });
+            for (let i = 0; i < 3; i++) {
+                const a = abilityById[eq[i]];
+                eqRow.appendChild(a ? U.el("div", { class: "se-slot", style: { "--c": a.fx.color } },
+                    U.el("span", { class: "se-icon", text: a.icon }),
+                    U.el("div", { class: "se-text" }, U.el("b", { text: a.name }), U.el("small", { text: `×${data.owned[a.id] || 0} uses · key ${i + 1}` })),
+                    U.el("button", { type: "button", class: "btn small primary", text: `+1 · 🪙 ${a.price}`, disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
+                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }),
+                    U.el("button", { type: "button", class: "btn small ghost", text: "Change", onclick: () => pickAbility(i, draw) }))
+                    : U.el("div", { class: "se-slot empty" }, U.el("span", { class: "se-icon", text: "+" }),
+                        U.el("div", { class: "se-text" }, U.el("b", { text: "Empty" }), U.el("small", { text: `key ${i + 1}` })),
+                        U.el("button", { type: "button", class: "btn small", text: "Pick", onclick: () => pickAbility(i, draw) })));
+            }
+            eqBar.appendChild(eqRow);
+            card.appendChild(eqBar);
+            const scroll = U.el("div", { class: "shop-scroll" });
+            card.appendChild(scroll);
             if (tab === "items") {
                 scroll.appendChild(U.el("p", { class: "shop-note", text: "Items work in any campaign level, bosses included. Use them from the item bar under the board." }));
                 const grid = U.el("div", { class: "shop-grid" });
@@ -691,9 +749,7 @@ const Campaign = (() => {
                 scroll.appendChild(grid);
             } else {
                 scroll.appendChild(U.el("p", { class: "shop-note", text: `Each world has 3 abilities for boss fights: clear its Level 1, Level 3 and its boss to unlock them (${FREE_USES} free uses each). Bring up to 3 into a fight; use them with keys 1, 2 and 3.` + (TEST_UNLOCK_ALL ? " Testing: everything is unlocked for now." : "") }));
-                scroll.appendChild(U.el("div", { class: "shop-loadout" }, U.el("b", { text: "Bringing:" }),
-                    ...(eq.length ? eq.map((id, i) => U.el("span", { class: "shop-eq", text: `${i + 1}. ${abilityById[id].icon} ${abilityById[id].name} ×${data.owned[id] || 0}` }))
-                        : [U.el("span", { class: "shop-eq none", text: "Nothing yet: clear Level 1 to unlock your first ability" })])));
+                // (what you bring is shown in the equipped bar at the top of the shop)
                 for (const world of WORLD_ORDER) {
                     const w = Worlds.byId[world];
                     if (!w) continue;
@@ -728,6 +784,60 @@ const Campaign = (() => {
         document.getElementById("overlay").appendChild(modal);
         requestAnimationFrame(() => { modal.classList.add("in"); const b = modal.querySelector(".shop-tab.on"); if (b) b.focus({ preventScroll: true }); });
         Sound.play("select");
+    }
+
+    // ---- your 3 abilities: any 3 you've unlocked, from any world (the user's request) ----
+    // The box on a boss's level sheet: 3 slots; click one to pick what goes in it
+    function loadoutBox(redraw) {
+        const eq = loadout();
+        const box = U.el("div", { class: "cm-loadout" }, U.el("small", { text: "YOUR 3 ABILITIES (KEYS 1-3)" }));
+        const row = U.el("div", { class: "lo-row" });
+        for (let i = 0; i < 3; i++) {
+            const a = abilityById[eq[i]];
+            row.appendChild(U.el("button", { type: "button", class: "lo-slot" + (a ? "" : " empty"), style: a ? { "--c": a.fx.color } : {}, title: a ? `${a.name}: ${a.desc}` : "Pick an ability",
+                onclick: () => pickAbility(i, redraw) },
+                U.el("span", { class: "lo-icon", text: a ? a.icon : "+" }), U.el("b", { text: a ? a.name : "Empty" }), U.el("small", { text: a ? `×${data.owned[a.id] || 0} · key ${i + 1}` : `key ${i + 1}` })));
+        }
+        box.appendChild(row);
+        return box;
+    }
+    // Pick an ability for slot i, from every unlocked ability in every world
+    function pickAbility(slot, redraw) {
+        const modal = U.el("div", { class: "results shop-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "pick-title" });
+        const card = U.el("div", { class: "shop-card" });
+        const close = () => { modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const eq = loadout();
+        const scroll = U.el("div", { class: "shop-scroll" }, U.el("p", { class: "shop-note", text: `Choose the ability for key ${slot + 1}. Any unlocked ability from any world works in any boss fight.` }));
+        for (const world of WORLD_ORDER) {
+            const list = ABILITIES.filter(a => a.world === world && unlockedAbility(a));
+            if (!list.length) continue;
+            scroll.appendChild(U.el("h3", { class: "shop-world", style: { "--c": biome(world).node } }, U.el("span", { text: `${Worlds.byId[world].icon} ${Worlds.byId[world].name}` })));
+            const grid = U.el("div", { class: "shop-grid" });
+            for (const a of list) {
+                const at = eq.indexOf(a.id);
+                grid.appendChild(U.el("button", { type: "button", class: "shop-item-card ability pick" + (at === slot ? " on" : ""), style: { "--c": a.fx.color },
+                    onclick: () => {
+                        const l = loadout().slice(0, 3);
+                        while (l.length < 3) l.push(null);
+                        const was = l.indexOf(a.id);
+                        if (was >= 0) l[was] = l[slot];                 // already equipped elsewhere: swap the two
+                        l[slot] = a.id;
+                        data.loadout = l.filter(Boolean);
+                        save(); Sound.play("select"); close(); redraw && redraw(); drawAbilityBar();
+                    } },
+                    U.el("span", { class: "sic-icon", text: a.icon }), U.el("b", { text: a.name }), U.el("p", { class: "sic-effect", text: a.desc }),
+                    U.el("small", { class: "sic-unlock", text: `×${data.owned[a.id] || 0} uses` + (at >= 0 ? ` · on key ${at + 1}` : "") })));
+            }
+            scroll.appendChild(grid);
+        }
+        card.append(U.el("div", { class: "shop-head" },
+            U.el("div", { class: "shop-title" }, U.el("small", { text: "LOADOUT" }), U.el("h2", { id: "pick-title", text: `Key ${slot + 1}` })),
+            U.el("button", { type: "button", class: "btn ghost small", text: "Close ✕", onclick: close })), scroll);
+        modal.appendChild(card);
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
+        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+        document.getElementById("overlay").appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add("in"));
     }
 
     // ---- the item bar under the board, in campaign levels ----
@@ -783,6 +893,7 @@ const Campaign = (() => {
     function useItem(id) {
         const it = itemById[id];
         if (!it || U.view() !== "level" || !Game.state.puzzle || Game.state.solved || (data.items[id] || 0) <= 0) return;
+        if (fight && !fight.over && fight.me.itemlock > 0) { FX.toast({ icon: "🧱", kicker: "BLOCKED", title: it.name, text: "The boss's Firewall blocks your items for a few seconds.", ms: 2200 }); Sound.play("wrong"); return; }
         const boss = data.playing && data.playing.level === 5;
         let n = 0, text = "";
         if (id === "letter") { n = Game.revealFree("square"); text = "The right letter is in."; }
@@ -822,7 +933,8 @@ const Campaign = (() => {
     const BOT_PACE = { easy: 1.4, medium: 1.15, hard: 1, challenge: 1.05, expert: 0.95 };
     // timers on the boss (seconds left), and what the status line calls them
     const BOSS_TIMERS = { freeze: "❄️ Frozen", slow: "🍬 Sticky", blind: "🥧 Can't see", stutter: "🤧 Sneezing", hypno: "🤹 Hypnotized", crash: "🍡 Sugar crash",
-        bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer" };
+        bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer",
+        haste: "🛩️ Hasted" };
     // timers on your side (good ones)
     const MY_BUFFS = { sun: "☀️ +8s per word", lucky: "🌈 Combo locked", fireup: "🧨 Super ×2", hot: "🔥 Words stun", overclock: "⚡ Overclock",
         armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed" };
@@ -830,7 +942,13 @@ const Campaign = (() => {
     const ME_TEXT = { crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
         ink: "🦑 Board blurred", whirl: "🌀 Board spinning", freeze: "🥶 Can't type", whiteout: "🌨️ Snowed in", downpour: "🌧️ Clock ×2", gale: "🌪️ Cursor blown",
         twister: "🌀 Direction flipping", riddle: "🐪 Clues backwards", sandblast: "🏜️ Sandy keys", mirror: "🪞 Mirrored", confetti: "🎉 Confetti", lock: "🔒 Word locked",
-        static: "📺 Static", haunting: "👻 Ghost letters", lights: "🕯️ Lights out", gravity: "🪐 Heavy keys", flare: "☀️ Blinded" };
+        static: "📺 Static", haunting: "👻 Fake letters", lights: "🕯️ Lights out", gravity: "🪐 Heavy keys", flare: "☀️ Blinded",
+        inkblot: "🖋️ Ink blot", nobackspace: "🖊️ No Backspace", fakecheck: "🖍️ Red pen lies", minion: "🐛 Aphid! Click it", seal: "🌿 Abilities sealed",
+        darkcreep: "🌑 Nightfall", jitter: "🍭 Shaking", fumble: "🧈 Butterfingers", tidal: "🌊 Washed away", backwards: "↩️ Riptide", shrink: "🐙 Squeezed",
+        avalanche: "🏔️ Avalanche", slowmo: "🧤 Numb fingers", shatter: "🧊 Cracked board", halffog: "🌊 Flooded", quake: "🌩️ Letters falling", upside: "✈️ Upside down",
+        flicker: "☁️ Cloud cover", mirageclue: "🌅 Clue bar lies", clueswap: "🥜 Clues shuffled", taunt: "🎩 Stuck on its word", comboban: "💢 No combos", echo: "🔁 Echo",
+        mask: "🔣 Corrupted letters", itemlock: "🧱 Items blocked", numberless: "💾 No numbers", fakeclue: "😈 A clue lies", oneword: "📜 Torn clues", toll: "♨️ Words cost 5s",
+        vowels: "🕳️ No vowels" };
 
     let fight = null, lastKeyAt = 0;
     const panel = U.el("aside", { class: "boss-panel", hidden: true, "aria-label": "The boss" });
@@ -860,30 +978,44 @@ const Campaign = (() => {
             log: [], myLog: [], hits: 0, blocks: 0, supers: 0, itemsUsed: 0, kinds: new Set(), extraLife: false, lifeUsed: false, thorns: null, snow: null };
         drawPanel(true);
         try {
-            const r = await fetch(apiUrl() + "&boss=true");
-            if (!r.ok) throw new Error("the server answered " + r.status);
-            const p = await r.json();
+            if (!bossFetch || bossFetch.world !== data.playing.world) prefetchBoss(data.playing.world);
+            const pre = bossFetch;
+            waiting(true);                                    // cover the board until the boss is ready
+            const p = await pre.board;
             if (!fight || fight.key !== key) return;
+            waiting(false);
             setBossPuzzle(p, p.seed);
             drawPanel(true);
             // phase 2's puzzle, fetched now so it's ready when phase 1 is solved
             const myFight = fight;
-            fetch(apiUrl() + "&phase=2").then(r2b => (r2b.ok ? r2b.json() : null)).then(p2 => {
+            pre.phase2.then(p2 => {
                 if (p2 && fight === myFight) { fight.phase2 = Object.assign(p2, { mode: "campaign", world: data.playing.world, level: 5, phase: 2 }); updateHp(); drawFight(); }
             }).catch(() => null);
             Sound.preload(Powers.ALL_SAMPLES);
             if (fresh !== false && U.view() === "level" && !Game.state.solved) {
                 fight.intro = true;
-                Sound.music("boss-intro", { loop: false, v: 0.42, fade: 0.3 });          // the boss's entrance (CC0 music, audio/CREDITS.txt)
+                // each boss has its own song: it starts with the song's own intro, then loops its fight section (audio/CREDITS.txt)
+                Sound.music(fight.world, { v: 0.4, fade: 0.3 });
                 await FX.cinematic(cc => Bosses.intro(cc, fight.world));
                 if (fight) fight.intro = false;
                 speak(bossOf(fight.world).taunt);
             }
-            if (fight && fightOn()) Sound.music("boss-loop-1", { fade: 1.2 });
+            else if (fight && fightOn()) Sound.music(fight.world, { fade: 1.2, fromLoop: true });
         } catch (err) {
+            waiting(false, "Couldn't load the boss's puzzle: " + err.message);
             const l = panel.querySelector(".bp-loading");
             if (l) l.textContent = "Couldn't load the boss's puzzle: " + err.message;
         }
+    }
+    // While the boss's puzzle is still coming: a cover over your board, no typing, and your clock waits
+    const waitEl = U.el("div", { class: "boss-wait", hidden: true, html: `<span class="spinner" aria-hidden="true"></span><b>The boss is preparing its puzzle…</b><small>The fight starts as soon as it's ready.</small>` });
+    document.querySelector(".board-wrap").appendChild(waitEl);
+    function waiting(on, error) {
+        waitEl.hidden = !on && !error;
+        waitEl.classList.toggle("error", !!error);
+        if (error) waitEl.querySelector("b").textContent = error;
+        else waitEl.querySelector("b").textContent = "The boss is preparing its puzzle…";
+        Game.holdClock(on);
     }
     // the boss's board: a fresh copy of a puzzle, its words in a random order
     function setBossPuzzle(p, seed) {
@@ -906,6 +1038,7 @@ const Campaign = (() => {
     }
     function hidePanel() {
         panel.hidden = true;
+        if (!waitEl.hidden) waiting(false);
         meStatus.innerHTML = "";
         document.querySelectorAll(".bh-combo").forEach(el => el.remove());
         warnEl.hidden = true;
@@ -931,7 +1064,7 @@ const Campaign = (() => {
                 <div class="bp-board-wrap"><div class="bp-board"></div><div class="bp-fog" aria-hidden="true"></div><p class="bp-loading">The boss is getting ready…</p></div>
                 <details class="bp-clues"><summary>The boss's clues</summary><div class="bp-clue-cols"><div><h3>Across</h3><ol class="bp-across"></ol></div><div><h3>Down</h3><ol class="bp-down"></ol></div></div></details>`;
             panel.querySelector(".bp-who b").textContent = b.name;
-            if (fight.phase2 || fight.phase === 2) panel.querySelector(".bp-who b").appendChild(U.el("span", { class: "bp-phase", text: fight.phase === 2 ? "PHASE 2" : "PHASE 1" }));
+            if (fight.phase === 2) panel.querySelector(".bp-who b").appendChild(U.el("span", { class: "bp-phase", text: "PHASE 2" }));
             panel.classList.toggle("phase2", fight.phase === 2);
             drawAbilityBar();
             if (fight.puzzle) {
@@ -1000,6 +1133,9 @@ const Campaign = (() => {
         if (f.boss.buryN > 0) st.push(`🍂 ${f.boss.buryN} buried`);
         if (f.boss.junk > 0) st.push(`🖋️ ${f.boss.junk} blots`);
         if (f.boss.haunt) st.push("👻 Haunted page");
+        if (f.boss.ward) st.push("☂️ Umbrella up");
+        if (f.powerNext) st.push("🔴 Next attack ×2");
+        if (f.ambush) st.push("🪶 Next attack: no warning");
         panel.classList.toggle("st-haunt", !!f.boss.haunt);
         panel.classList.toggle("st-calm", f.buff.calm > 0);
         if (f.enraged) st.push("😡 ENRAGED");
@@ -1050,6 +1186,9 @@ const Campaign = (() => {
         }
         for (const [k, v] of Object.entries(f.me)) if (v > 0 && ME_TEXT[k]) chips.push(["m-" + k, "", `${ME_TEXT[k]} · ${Math.ceil(v)}s`]);
         if (f.thorns) chips.push(["thorns", "", `🌹 Thorns · ${Math.ceil(f.thorns.t)}s`]);
+        if (f.gum) chips.push(["gum", "", `🫧 Gum: click it ${3 - f.gum.hits}× · ${Math.ceil(f.gum.t)}s`]);
+        if (f.bombAt) chips.push(["bomb", "", `💣 Bomb! Type the right letter · ${Math.ceil(f.bombAt.t)}s`, f.bombAt.t / 8]);
+        if (f.curse) chips.push(["curse", "", `🦂 Finish a word · ${Math.ceil(f.curse.t)}s`, f.curse.t / 15]);
         drawChips(chips);
     }
     function drawChips(chips) {
@@ -1090,7 +1229,7 @@ const Campaign = (() => {
         if (b.crash > 0) return b.crash > 12 ? 2 : 0;                       // Sugar Crash: 3s at double speed, then nothing
         if (b.stutter > 0 && b.stutter % 3 > 1.9) return 0;                   // Pollen Puff: a sneeze every 3 seconds
         if (b.hypno > 0 && performance.now() - lastKeyAt < 1000) return 0;   // Juggling Act: it watches you type
-        let s = f.rate * (f.enraged ? f.th.rageSpeed : 1);
+        let s = f.rate * (f.enraged ? f.th.rageSpeed : 1) * (b.haste > 0 ? 2 : 1);
         if (b.slow > 0) s *= 0.33;
         if (b.quick > 0) s /= 1 + 0.18 * (f.quickN || 0);                    // Quicksand: slower with every letter
         return s;
@@ -1222,7 +1361,11 @@ const Campaign = (() => {
     function onWord({ cells }) {
         if (!fightOn() || !fight.puzzle) return;
         const f = fight, now = performance.now();
-        f.combo = f.buff.lucky > 0 || now - f.lastWordAt < COMBO_GAP ? f.combo + 1 : 1;
+        f.combo = f.me.comboban > 0 ? 1 : f.buff.lucky > 0 || now - f.lastWordAt < COMBO_GAP ? f.combo + 1 : 1;
+        f.myWords = (f.myWords || 0) + 1;
+        f.lastMyWord = cells;
+        if (f.curse) { f.curse = null; floatText("Cured! 🦂", true); }
+        if (f.me.toll > 0) { f.limit -= 5; floatText("-5s ♨️", false); }
         f.lastWordAt = now;
         f.bestCombo = Math.max(f.bestCombo, f.combo);
         const dmg = Math.round(cells.length * 4 * (1 + (f.combo - 1) * 0.25));
@@ -1331,7 +1474,7 @@ const Campaign = (() => {
     async function useAbility(id) {
         const a = abilityById[id];
         if (!a || !fightOn() || !fight.puzzle || fight.intro || (data.owned[id] || 0) <= 0) return;
-        const why = cantUse(a);
+        const why = fight.me.seal > 0 ? "Your abilities are wrapped in weeds for a few seconds." : cantUse(a);
         if (why) { FX.toast({ icon: a.icon, kicker: "NOT NOW", title: a.name, text: why, ms: 2200 }); Sound.play("wrong"); return; }
         data.owned[id]--;
         save();
@@ -1342,9 +1485,20 @@ const Campaign = (() => {
         const castP = Powers.cast(a, { fromEl: boardArea(), bossEl: portraitEl(), bossBoard: bossBoardEl() });
         if (a.fx.on !== "me") await castP;                       // effects on the boss happen when the shot lands
         if (fight !== f || f.over) return;
+        if (f.boss.ward && a.fx.on !== "me") {                   // Umbrella: this one bounces off
+            f.boss.ward = 0;
+            Bosses.cutin(f.world, "BLOCKED!", `${a.name} bounced off its umbrella`);
+            speak("Ha! Nice try.", 1800);
+            drawFight();
+            return;
+        }
         const portrait = portraitEl();
         if (portrait) U.restart(portrait, a.fx.on === "me" ? "buff" : "hit");
+        const bossBefore = f.letters.map(r => [...r]), myBefore = Game.state.letters.map(r => [...r]);
         applyAbility(a);
+        // the big effect (spells.js), aimed at the squares this ability just changed
+        if (a.fx.on === "me") Spells.play(a.kind, { cells: myChanges(myBefore), area: document.getElementById("board"), from: U.center(boardArea()), to: U.center(document.getElementById("board")) });
+        else Spells.play(a.kind, { cells: bossChanges(bossBefore), area: bossBoardEl(), from: U.center(boardArea()), to: U.center(bossBoardEl()) });
         if (a.fx.on !== "me" && Math.random() < 0.7) speak(U.pick(["Ow!", "Hey! Cut that out!", "Argh!", "My board!", "You'll pay for that!"]), 1800);
         updateHp();
         drawFight();
@@ -1423,6 +1577,17 @@ const Campaign = (() => {
         }
         if (g.solved) return;
     }
+    // the squares that changed since a snapshot, with their old letters (for the spells)
+    function bossChanges(before) {
+        const f = fight, out = [];
+        before.forEach((row, r) => row.forEach((ch, c) => { if (ch && ch !== "." && ch !== BLOT && f.letters[r][c] !== ch && f.cells) out.push({ el: f.cells[r][c], ch }); }));
+        return out;
+    }
+    function myChanges(before) {
+        const g = Game.state, out = [];
+        before.forEach((row, r) => row.forEach((ch, c) => { if (g.letters[r][c] !== ch) out.push({ el: Game.cellEl(r, c), ch: ch || g.letters[r][c] }); }));
+        return out;
+    }
     // Chomper: a pixel monster eats along the boss's board in a zigzag, one square at a time
     function chomp() {
         const f = fight, n = f.puzzle.size, path = [];
@@ -1486,17 +1651,25 @@ const Campaign = (() => {
     }
 
     // ---- the boss's turn to be mean: first a wind-up (finish a word to block it), then the attack lands ----
+    // Each boss has 5 moves (the user asked for 5, all of them doing something that really hurts); it picks one at
+    // random, never the same one twice in a row.
     function windUp(chained = false) {
         const f = fight, moves = Powers.MOVES[f.world] || Powers.MOVES.paper;
-        f.pending = moves[f.moveIdx++ % moves.length];
+        let i = Math.floor(Math.random() * moves.length);
+        if (moves.length > 1 && i === f.lastMove) i = (i + 1 + Math.floor(Math.random() * (moves.length - 1))) % moves.length;
+        f.lastMove = i;
+        f.pending = moves[i];
         f.pendingChained = chained;
-        f.windup = f.th.windup * (chained ? 0.7 : 1) * (f.buff.firewall > 0 ? 2 : 1);
+        // Silent Wings: the next attack comes with (almost) no warning
+        f.windup = f.ambush ? 0.4 : f.th.windup * (chained ? 0.7 : 1) * (f.buff.firewall > 0 ? 2 : 1);
+        f.ambush = false;
         f.windupMax = f.windup;
         const portrait = portraitEl();
         if (portrait) U.restart(portrait, "charge");
         Powers.chargeSound(f.world);
         Powers.aura(portrait, [f.pending.icon], "orbit", 4, f.windup * 1000);
         speak(chained ? `And ${f.pending.name}, too!` : `${f.pending.name}... get ready!`, 2400);
+        if (Math.random() < 0.4) Mascot.say(U.pick([`${f.pending.name} is coming! Finish a word to block it!`, "Quick, finish a word!", "Block it! Any word will do!"]), { mood: "wow", hold: 2500 });
         drawFight();
     }
     async function attack() {
@@ -1528,28 +1701,37 @@ const Campaign = (() => {
         Bosses.cutin(f.world, mv.name + "!", "It " + mv.desc);
         FX.shake(9, 420);
         FX.flash(b.color, 380, 0.22);
-        await Powers.strike(f.world, mv, { fromEl: portrait || panel, toEl: boardArea() });
+        const selfMove = ["ambush", "ward", "haste", "powerup", "heal", "snapfinish"].includes(mv.kind);     // moves that power the boss up
+        await U.wait(U.motion() === "still" ? 0 : 750);         // let the cut-in clear, so the strike itself can be seen
         if (fight !== f || f.over || !fightOn()) return;
+        await Powers.strike(f.world, mv, { fromEl: portrait || panel, toEl: selfMove ? (portrait || panel) : boardArea() });
+        if (fight !== f || f.over || !fightOn()) return;
+        const myBefore = Game.state.letters.map(r => [...r]);
         hitMe(mv);
-        if (f.buff.silver > 0) { f.limit += 20; f.super = Math.min(100, f.super + 40); floatText("+20s ☁️"); }
+        Spells.play("m-" + mv.kind, { cells: myChanges(myBefore), area: selfMove ? (portrait || panel) : document.getElementById("board"),
+            from: U.center(portrait || panel), to: U.center(selfMove ? (portrait || panel) : document.getElementById("board")) });
+        if (f.buff.silver > 0 && !selfMove) { f.limit += 20; f.super = Math.min(100, f.super + 40); floatText("+20s ☁️"); }
         speak(U.pick(["Take that!", "Ha! Try writing now!", b.taunt]));
         applyMe();
         updateHp();
         drawFight();
         chain();
     }
-    // what a boss move does to you (durations get longer with each boss, and Frost Armor halves them)
+    // what a boss move does to you (durations get longer with each boss, Frost Armor halves them, Pressure Build doubles one)
     function hitMe(mv) {
         const f = fight, g = Game.state, armor = f.buff.armor > 0;
-        const dur = mv.d * f.th.power * (armor ? 0.5 : 1);
+        const dur = mv.d * f.th.power * (armor ? 0.5 : 1) * (f.powerNext ? 2 : 1);
+        if (mv.kind !== "powerup") f.powerNext = false;
         const open = () => scopeAll().filter(([r, c]) => !Game.isLocked(r, c));
         const filled = () => open().filter(([r, c]) => g.letters[r][c]);
         const shuffle = list => list.sort(() => Math.random() - 0.5);
+        const ids = list => new Set(list.map(([r, c]) => r + "," + c));
+        const wordsOf = () => [...g.puzzle.across, ...g.puzzle.down];
         switch (mv.kind) {
             case "rubout": Game.eraseLetters(armor ? 2 : 3); break;
             case "thorns": {
                 const cells = shuffle(open().filter(([r, c]) => !g.letters[r][c])).slice(0, armor ? 2 : 3);
-                f.thorns = { cells: new Set(cells.map(([r, c]) => r + "," + c)), t: dur };
+                f.thorns = { cells: ids(cells), t: dur };
                 break;
             }
             case "acorns": {                                                     // swap pairs of your letters around
@@ -1565,7 +1747,7 @@ const Campaign = (() => {
             }
             case "lightning": {                                                  // the word with the most of your letters in it
                 let best = null, most = 0;
-                for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+                for (const e of wordsOf()) {
                     const n = Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c)).length;
                     if (n > most) { most = n; best = e; }
                 }
@@ -1574,7 +1756,7 @@ const Campaign = (() => {
             }
             case "glitch": {
                 const right = shuffle(filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])).slice(0, armor ? 2 : 3);
-                Game.setLetters(right.map(([r, c]) => [r, c, String.fromCharCode(65 + ((g.puzzle.solution[r][c].charCodeAt(0) - 65 + 1 + Math.floor(Math.random() * 24)) % 26))]));
+                Game.setLetters(right.map(([r, c]) => [r, c, wrongLetter(g.puzzle.solution[r][c])]));
                 break;
             }
             case "lag": {
@@ -1600,7 +1782,7 @@ const Campaign = (() => {
             case "heatwave": f.limit -= Math.round(dur); floatText(`-${Math.round(dur)}s 🥵`, false); break;
             case "collapse": {
                 const outs = [];
-                for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+                for (const e of wordsOf()) {
                     const cells = Game.cellsOf(e);
                     if (!cells.every(([r, c]) => g.letters[r][c])) continue;
                     const loose = cells.filter(([r, c]) => !Game.isLocked(r, c) && !outs.some(([r2, c2]) => r2 === r && c2 === c));
@@ -1610,55 +1792,213 @@ const Campaign = (() => {
                 Game.setLetters(outs.map(([r, c]) => [r, c, ""]));
                 break;
             }
-            case "whiteout": {
-                f.snow = new Set(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length / 2)).map(([r, c]) => r + "," + c));
-                f.me.whiteout = dur;
+            case "whiteout": f.snow = ids(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length / 2))); f.me.whiteout = dur; break;
+            case "avalanche": f.snow = new Set(); f.me.avalanche = dur; break;                     // grows every second (see the clock)
+            case "crumple": f.folds = ids(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length * 0.35))); f.me.crumple = dur; break;
+            case "confetti": f.piles = ids(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length * 0.5))); f.me.confetti = dur; break;
+            case "fakecheck": {                                                  // Red Pen: right letters marked wrong
+                const right = shuffle(filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])).slice(0, armor ? 2 : 4);
+                f.redPen = right;
+                Game.markCells(right, true);
+                f.me.fakecheck = dur;
+                break;
+            }
+            case "minion": {                                                     // Aphid: eats letters until you click it
+                f.me.minion = dur;
+                spawnMinion();
+                break;
+            }
+            case "drain": f.super = 0; f.combo = 0; floatText("Super drained!", false); break;
+            case "steal": {
+                const ids2 = loadout().filter(id => (data.owned[id] || 0) > 0);
+                if (ids2.length) {
+                    const id = U.pick(ids2);
+                    data.owned[id]--;
+                    save();
+                    drawAbilityBar();
+                    FX.toast({ icon: "🐿️", kicker: "STOLEN", title: abilityById[id].name, text: "The boss stole one use.", ms: 2400 });
+                }
+                break;
+            }
+            case "ambush": f.ambush = true; break;
+            case "bubble": {                                                     // Gum Bubble: your word is sealed in gum
+                const e = currentMyEntry();
+                if (e) f.gum = { cells: ids(Game.cellsOf(e)), hits: 0, t: dur };
+                break;
+            }
+            case "shift": {                                                      // Dune Shift: a word's letters slide over by one
+                let best = null;
+                for (const e of wordsOf()) {
+                    const cells = Game.cellsOf(e);
+                    if (cells.every(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c)) && (!best || cells.length > Game.cellsOf(best).length)) best = e;
+                }
+                if (!best) best = wordsOf().find(e => Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c)).length >= 2);
+                if (best) {
+                    const cells = Game.cellsOf(best).filter(([r, c]) => !Game.isLocked(r, c));
+                    const letters = cells.map(([r, c]) => g.letters[r][c]);
+                    Game.setLetters(cells.map(([r, c], i) => [r, c, letters[(i + letters.length - 1) % letters.length]]));
+                }
+                break;
+            }
+            case "curse": f.curse = { t: dur, words: f.myWords || 0 }; break;
+            case "bomb": {                                                       // Cannonball: defuse it with the right letter
+                const spots = shuffle(open().filter(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]));
+                if (spots.length) f.bombAt = { r: spots[0][0], c: spots[0][1], t: dur };
+                break;
+            }
+            case "taunt": {                                                      // Ringmaster's Call: stuck on its word
+                const e = U.pick(wordsOf().filter(w => Game.cellsOf(w).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]))) || currentMyEntry();
+                if (e) {
+                    const item = g.clueItems.get(e);
+                    if (item) item.click();
+                }
+                f.me.taunt = dur;
+                break;
+            }
+            case "comboban": f.combo = 0; f.me.comboban = dur; break;
+            case "unlock": {
+                const freed = Game.unlockLetters();
+                Game.setLetters(shuffle(freed).slice(0, armor ? 1 : 2).map(([r, c]) => [r, c, ""]));
+                floatText(`${freed.length} unlocked`, false);
+                break;
+            }
+            case "wordthief": {
+                const cells = (f.lastMyWord || []).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c));
+                Game.setLetters(cells.map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "fakeclue": {                                                   // Possession: one clue tells a lie
+                const mine = wordsOf().filter(w => Game.cellsOf(w).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]));
+                const target = U.pick(mine), others = f.puzzle ? [...f.puzzle.across, ...f.puzzle.down] : [];
+                const lie = others.find(o => target && o.length === target.length && o.clue !== target.clue) || U.pick(others);
+                if (target && lie) f.lie = { entry: target, text: lie.clue };
+                f.me.fakeclue = dur;
+                break;
+            }
+            // moves that power the boss up
+            case "ward": f.boss.ward = 1; break;
+            case "haste": f.boss.haste = Math.max(f.boss.haste || 0, dur); break;
+            case "powerup": f.powerNext = true; break;
+            case "heal": for (let i = 0; i < Math.round(mv.d * (armor ? 0.5 : 1)); i++) { const empty = bossNextEmpty(); if (!empty) break; write(empty); } refreshDone(); break;
+            case "snapfinish": {
+                if (!f.word) f.word = f.queue.find(e => !f.done.includes(e)) || null;
+                if (f.word) { for (const cell of Game.cellsOf(f.word)) if (!real(cell[0], cell[1])) { f.letters[cell[0]][cell[1]] = f.puzzle.solution[cell[0]][cell[1]]; f.log.push(cell); } refreshDone(); f.word = null; }
+                if (f.done.length === f.puzzle.across.length + f.puzzle.down.length) lose("boss");
                 break;
             }
             default: f.me[mv.kind] = dur;
         }
-        if (mv.kind === "hoot" || mv.kind === "riddle") rewriteClues();
+        if (["hoot", "riddle", "clueswap", "oneword", "fakeclue"].includes(mv.kind)) rewriteClues();
     }
     const scopeAll = () => { const g = Game.state, out = []; g.puzzle.solution.forEach((row, r) => [...row].forEach((ch, c) => { if (ch !== ".") out.push([r, c]); })); return out; };
+    const wrongLetter = right => String.fromCharCode(65 + ((right.charCodeAt(0) - 65 + 1 + Math.floor(Math.random() * 24)) % 26));
+    const bossNextEmpty = () => { const f = fight; for (const e of f.queue) { if (f.done.includes(e)) continue; const empty = Game.cellsOf(e).find(([r, c]) => !f.letters[r][c]); if (empty) return empty; } return null; };
+
+    // Aphid Swarm: a bug sits on one of your letters, eats it, and hops to the next one, until you click it
+    let minionEl = null;
+    function spawnMinion() {
+        removeMinion();
+        minionEl = U.el("button", { type: "button", class: "minion", "aria-label": "An aphid! Click it", text: "🐛" });
+        minionEl.addEventListener("click", e => {
+            e.stopPropagation();
+            if (!fight) return;
+            fight.me.minion = 0;
+            Powers.aura(minionEl, ["💥", "✨"], "pop", 8, 700);
+            Sound.custom(Powers.ABILITIES.find(a => a.kind === "knock").sound);
+            floatText("Squashed! 🐛", true);
+            removeMinion();
+        });
+        document.querySelector(".board-wrap").appendChild(minionEl);
+        fight.minionAcc = 2;
+    }
+    function removeMinion() { if (minionEl) { minionEl.remove(); minionEl = null; } }
+    function moveMinion() {
+        const g = Game.state, wrap = document.querySelector(".board-wrap");
+        const targets = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c));
+        const [r, c] = targets.length ? U.pick(targets) : U.pick(scopeAll());
+        const cell = Game.cellEl(r, c);
+        if (!cell || !minionEl || !wrap) return;
+        const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+        minionEl.style.left = (a.left - w.left + a.width / 2) + "px";
+        minionEl.style.top = (a.top - w.top + a.height / 2) + "px";
+        if (g.letters[r][c] && !Game.isLocked(r, c)) setTimeout(() => { if (minionEl && fight && fight.me.minion > 0) { Game.setLetters([[r, c, ""]]); U.restart(cell, "scorched"); } }, 600);
+    }
 
     // ---- the boss's effects on you, shown on the page ----
     let savedClues = null;
     function rewriteClues() {
-        const m = fight ? fight.me : {};
-        const items = [...document.querySelectorAll(".clues .clue-text")], bar = document.querySelector("#clue-bar .cb-text");
+        const f = fight, m = f ? f.me : {};
+        const items = [...document.querySelectorAll(".clues .clue-text")];
         if (!savedClues) savedClues = items.map(n => n.textContent);
         const jumble = t => t.split(" ").map(w => (w.length > 3 ? w[0] + [...w.slice(1, -1)].sort(() => Math.random() - 0.5).join("") + w.slice(-1) : w)).join(" ");
         const mirror = t => [...t].reverse().join("");
-        items.forEach((n, i) => { const t = savedClues[i]; n.textContent = m.hoot > 0 ? jumble(t) : m.riddle > 0 ? mirror(t) : t; });
-        if (bar && (m.hoot > 0 || m.riddle > 0)) bar.textContent = m.hoot > 0 ? jumble(bar.textContent) : mirror(bar.textContent);
+        const order = m.clueswap > 0 ? savedClues.map((t, i) => i).sort(() => Math.random() - 0.5) : null;
+        const lieAt = m.fakeclue > 0 && f.lie ? [...Game.state.clueItems.keys()].indexOf(f.lie.entry) : -1;
+        items.forEach((n, i) => {
+            let t = order ? savedClues[order[i]] : savedClues[i];
+            if (i === lieAt) t = f.lie.text;
+            if (m.hoot > 0) t = jumble(t);
+            else if (m.riddle > 0) t = mirror(t);
+            else if (m.oneword > 0) t = t.split(" ")[0] + " …";
+            n.textContent = t;
+        });
+        fixClueBar();
     }
+    // the clue bar follows the same tricks (and Mirage puts a different clue there)
+    function fixClueBar() {
+        const f = fight, m = f ? f.me : {}, bar = document.querySelector("#clue-bar .cb-text"), e = currentMyEntry();
+        if (!bar || !e) return;
+        const items = [...Game.state.clueItems.keys()], i = items.indexOf(e), list = [...document.querySelectorAll(".clues .clue-text")];
+        if (m.mirageclue > 0) {
+            if (!f.mirage || f.mirage.entry !== e) f.mirage = { entry: e, text: U.pick(items.filter(x => x !== e)).clue };
+            bar.textContent = f.mirage.text;
+        } else if (savedClues && list[i]) bar.textContent = list[i].textContent;
+    }
+    const CLUE_TRICKS = ["hoot", "riddle", "clueswap", "oneword", "fakeclue"];
+    const AREA_FX = ["crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock", "taunt",
+        "inkblot", "nobackspace", "jitter", "tidal", "shrink", "shatter", "halffog", "upside", "flicker", "darkcreep", "numberless", "slowmo", "fumble", "backwards", "echo", "mask", "vowels"];
     function applyMe() {
         const f = fight, m = f ? f.me : {}, on = k => m[k] > 0;
         const area = boardArea(), clues = document.querySelector(".clues"), board = document.getElementById("board");
         if (!area || !board) return;
         area.classList.toggle("fx-blind", on("ink"));
         clues.classList.toggle("fx-blind", on("ink"));
-        for (const k of ["crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock"]) area.classList.toggle("fx-" + k, on(k));
+        for (const k of AREA_FX) area.classList.toggle("fx-" + k, on(k));
+        clues.classList.toggle("fx-numberless", on("numberless"));
         board.classList.toggle("fx-smudge", on("sour"));
         board.classList.toggle("fx-frozen", on("freeze"));
         clues.classList.toggle("fx-petals", on("petals"));
         flareEl.classList.toggle("on", on("flare"));
+        if (on("darkcreep")) area.style.setProperty("--dark", Math.min(0.97, 1 - m.darkcreep / Math.max(1, f.darkMax || m.darkcreep)).toFixed(2));
         // the clue text tricks end: put the clues back
-        if (savedClues && !on("hoot") && !on("riddle")) {
+        if (savedClues && !CLUE_TRICKS.some(on)) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
             savedClues = null;
             Game.render();
         }
-        // squares: snow, thorns, ghost letters
+        if (on("mirageclue") || savedClues) fixClueBar();
+        else if (f) f.mirage = null;
+        // squares: snow, thorns, folds, confetti, gum, ghost and masked letters, the bomb
         const g = Game.state;
         if (g.puzzle && g.cells) scopeAll().forEach(([r, c]) => {
             const cell = Game.cellEl(r, c), id = r + "," + c;
             if (!cell) return;
-            cell.classList.toggle("snowed", on("whiteout") && !!f.snow && f.snow.has(id));
+            cell.classList.toggle("snowed", (on("whiteout") || on("avalanche")) && !!f.snow && f.snow.has(id));
             cell.classList.toggle("thorny", !!(f && f.thorns && f.thorns.cells.has(id)));
+            cell.classList.toggle("folded", on("crumple") && !!f.folds && f.folds.has(id));
+            cell.classList.toggle("piled", on("confetti") && !!f.piles && f.piles.has(id));
+            cell.classList.toggle("gummed", !!(f && f.gum && f.gum.cells.has(id)));
+            cell.classList.toggle("bombed", !!(f && f.bombAt && f.bombAt.r === r && f.bombAt.c === c));
+            cell.style.setProperty("--sx", on("shatter") ? ((r % 2 ? 1 : -1) * (6 + (c % 3) * 3)) + "px" : "0px");
+            // Haunting: fake letters in empty squares that look exactly like real ones
             const ghost = cell.querySelector(".ghost-ltr");
             if (on("haunting") && !g.letters[r][c]) { if (!ghost) cell.appendChild(U.el("span", { class: "ghost-ltr", text: String.fromCharCode(65 + Math.floor(Math.random() * 26)) })); }
             else if (ghost) ghost.remove();
+            // Corrupted Font: your letters show as other letters. Event Horizon: vowels vanish from view
+            const ltr = g.letters[r][c], shown = cell.querySelector(".mask-ltr");
+            const fake = on("mask") && ltr ? String.fromCharCode(65 + (ltr.charCodeAt(0) - 65 + 7) % 26) : on("vowels") && "AEIOU".includes(ltr) ? " " : null;
+            if (fake != null && ltr) { if (!shown) cell.appendChild(U.el("span", { class: "mask-ltr", text: fake })); else if (shown.textContent !== fake) shown.textContent = fake; cell.classList.add("masked"); }
+            else { if (shown) shown.remove(); cell.classList.remove("masked"); }
         });
         // Lights Out: a small circle of light around your cursor
         if (on("lights") && g.cells) {
@@ -1669,18 +2009,24 @@ const Campaign = (() => {
                 area.style.setProperty("--ly", (a.top + a.height / 2 - w.top) + "px");
             }
         }
+        if (!on("minion")) removeMinion();
     }
     function clearMe(keepShield = false) {
         if (fight && !keepShield) { fight.me = {}; fight.thorns = null; }
-        const m = fight ? fight.me : {};
-        fight && Object.keys(m).forEach(k => { if (typeof m[k] === "number" && k !== "shield" && k !== "reflect") m[k] = 0; });
+        const f = fight, m = f ? f.me : {};
+        f && Object.keys(m).forEach(k => { if (typeof m[k] === "number" && k !== "shield" && k !== "reflect") m[k] = 0; });
+        if (f) {
+            if (f.redPen) { Game.markCells(f.redPen, false); f.redPen = null; }
+            f.gum = null; f.bombAt = null; f.curse = null; f.snow = null; f.folds = null; f.piles = null; f.lie = null; f.mirage = null;
+        }
+        removeMinion();
         const area = boardArea(), board = document.getElementById("board"), clues = document.querySelector(".clues");
         if (area) area.className = area.className.split(" ").filter(c => !c.startsWith("fx-")).join(" ");
-        if (clues) clues.classList.remove("fx-blind", "fx-petals");
+        if (clues) clues.classList.remove("fx-blind", "fx-petals", "fx-numberless");
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .snowed, #board .thorny").forEach(n => n.classList.remove("snowed", "thorny"));
-        document.querySelectorAll("#board .ghost-ltr").forEach(n => n.remove());
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked"); n.style.removeProperty("--sx"); });
+        document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
             savedClues = null;
@@ -1689,16 +2035,19 @@ const Campaign = (() => {
     }
 
     // ---- keys: 1-3 abilities, 4 super; and the boss's tricks that mess with your typing ----
-    let heavy = null;
+    let heavy = null, lastLetterAt = 0;
     function letterBlocked(letter) {
-        const f = fight, g = Game.state, now = performance.now();
+        const f = fight, g = Game.state, now = performance.now(), here = g.row + "," + g.col;
         if (f.me.freeze > 0) return "freeze";
-        if (f.thorns && f.thorns.cells.has(g.row + "," + g.col)) return "thorns";
+        if (f.thorns && f.thorns.cells.has(here)) return "thorns";
+        if (f.gum && f.gum.cells.has(here)) return "gum";
         if (f.me.sandblast > 0 && Math.random() < 0.35) return "sand";
+        if (f.me.slowmo > 0 && now - lastLetterAt < 700) return "slow";
         if (f.me.gravity > 0) {
             if (!heavy || heavy.key !== letter || now - heavy.at > 1500) { heavy = { key: letter, at: now }; return "heavy"; }
             heavy = null;
         }
+        lastLetterAt = now;
         return null;
     }
     function bump(why) {
@@ -1708,8 +2057,12 @@ const Campaign = (() => {
         if (cell) U.restart(cell, why === "heavy" ? "heavy" : "shake");
         if (why === "sand") Powers.aura(cell, ["🟫"], "pop", 3, 600);
         if (why === "thorns") Powers.aura(cell, ["🌹"], "pop", 2, 600);
+        if (why === "gum") Powers.aura(cell, ["🩷"], "pop", 2, 600);
+        if (why === "slow") Powers.aura(cell, ["🧤"], "pop", 1, 500);
     }
+    const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0);
     addEventListener("keydown", e => {
+        if (!waitEl.hidden && /^[a-zA-Z]$|^Backspace$/.test(e.key) && U.view() === "level") { e.preventDefault(); e.stopPropagation(); return; }
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.target.closest && e.target.closest("input, select, textarea")) return;
         if (/^[1-3]$/.test(e.key)) { const id = loadout()[+e.key - 1]; if (id) { e.preventDefault(); useAbility(id); } return; }
@@ -1721,8 +2074,8 @@ const Campaign = (() => {
             if (why) { e.preventDefault(); e.stopPropagation(); bump(why); }
             return;
         }
-        if (f.me.freeze > 0 && (e.key === "Backspace" || e.key === "Delete")) { e.preventDefault(); e.stopPropagation(); bump("freeze"); return; }
-        if (f.me.lock > 0 && ["Tab", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); e.stopPropagation(); bump("lock"); }
+        if ((f.me.freeze > 0 || f.me.nobackspace > 0) && (e.key === "Backspace" || e.key === "Delete")) { e.preventDefault(); e.stopPropagation(); bump("freeze"); return; }
+        if (lockedIn() && ["Tab", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); e.stopPropagation(); bump("lock"); }
     }, true);
     document.getElementById("keyboard").addEventListener("click", e => {
         if (!fightOn()) return;
@@ -1733,20 +2086,25 @@ const Campaign = (() => {
             lastKeyAt = performance.now();
             const why = letterBlocked(key);
             if (why) { e.stopPropagation(); bump(why); }
-        } else if (fight.me.freeze > 0 || (key === "⇄" && fight.me.lock > 0)) { e.stopPropagation(); bump("freeze"); }
+        } else if (fight.me.freeze > 0 || (key === "⌫" && fight.me.nobackspace > 0) || (key === "⇄" && lockedIn())) { e.stopPropagation(); bump("freeze"); }
     }, true);
-    // System Lock: clicking another word or clue does nothing
+    // System Lock and Ringmaster's Call: clicking another word or clue does nothing. Gum: click it 3 times to pop it
     for (const sel of ["#board", ".clues", "#clue-bar"]) document.querySelector(sel).addEventListener("click", e => {
-        if (!fightOn() || !(fight.me.lock > 0)) return;
-        const cur = currentMyEntry(), cellEl = e.target.closest(".cell");
-        if (cellEl && cur) {
-            const inWord = Game.cellsOf(cur).some(([r, c]) => Game.cellEl(r, c) === cellEl);
-            if (inWord) return;
+        if (!fightOn()) return;
+        const f = fight, cellEl = e.target.closest(".cell");
+        if (f.gum && cellEl && cellEl.classList.contains("gummed")) {
+            if (++f.gum.hits >= 3) { f.gum = null; Powers.aura(cellEl, ["💥", "🩷"], "pop", 6, 700); floatText("Popped! 🫧", true); }
+            else U.restart(cellEl, "heavy");
+            applyMe();
         }
+        if (!lockedIn()) return;
+        const cur = currentMyEntry();
+        if (cellEl && cur && Game.cellsOf(cur).some(([r, c]) => Game.cellEl(r, c) === cellEl)) return;
         e.stopPropagation();
         bump("lock");
     }, true);
-    // your letters: Overclock zaps, Sticky Floor holds the cursor, Lag Spike remembers what you typed
+    // your letters: Overclock zaps, Sticky Floor holds the cursor, Lag Spike remembers what you typed,
+    // Butterfingers fumbles, Echo Bug copies, Riptide pulls you backwards, the bomb gets defused
     Bus.on("type", ({ row, col, letter }) => {
         if (!fightOn()) return;
         const f = fight, g = Game.state;
@@ -1760,6 +2118,15 @@ const Campaign = (() => {
                 Powers.fly(from, toCell ? U.center(toCell) : U.center(panel), "⚡", "line", 300).then(() => { if (fight === f && !f.over) { wipe([target], true); drawFight(); } });
             }
         }
+        if (f.bombAt && f.bombAt.r === row && f.bombAt.c === col && letter === g.puzzle.solution[row][col]) {
+            Powers.aura(Game.cellEl(row, col), ["✂️", "✨"], "pop", 6, 700);
+            floatText("Defused! 💣", true);
+            f.bombAt = null;
+        }
+        if (f.me.fumble > 0 && Math.random() < 0.3) setTimeout(() => { if (!g.solved && g.letters[row][col] === letter) Game.setLetters([[row, col, wrongLetter(letter)]]); }, 0);
+        const cells = Game.cellsOf(currentMyEntry()), at = cells.findIndex(([r, c]) => r === row && c === col);
+        if (f.me.echo > 0 && at >= 0 && at + 1 < cells.length) { const [r2, c2] = cells[at + 1]; setTimeout(() => { if (!g.solved && !Game.isLocked(r2, c2)) Game.setLetters([[r2, c2, letter]]); }, 0); }
+        if (f.me.backwards > 0 && at > 0) setTimeout(() => { if (!g.solved) { [g.row, g.col] = cells[at - 1]; Game.render(); } }, 0);
         if (f.me.sticky > 0) setTimeout(() => { if (!g.solved && g.puzzle) { g.row = row; g.col = col; Game.render(); } }, 0);
         updateHp();
     });
@@ -1769,18 +2136,23 @@ const Campaign = (() => {
     setInterval(() => {
         const now = performance.now(), dt = Math.min(0.5, (now - lastTick) / 1000);
         lastTick = now;
-        if (Sound.musicPlaying && Sound.musicPlaying.startsWith("boss-loop") && !fightOn()) Sound.stopMusic(1.5);
+        if (Sound.musicPlaying && Sound.musicPlaying !== "win" && Sound.musicPlaying !== "lose" && !fightOn() && !(fight && fight.phase === 1.5)) Sound.stopMusic(1.5);
         if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results") || root.classList.contains("intro-on")) return;
         const f = fight, g = Game.state;
         botStep(dt);
         if (f.over) return;
+        const before = { ...f.me };
         for (const k of Object.keys(f.me)) if (typeof f.me[k] === "number" && k !== "shield" && k !== "reflect" && f.me[k] > 0) f.me[k] = Math.max(0, f.me[k] - dt);
         for (const k of Object.keys(f.buff)) if (f.buff[k] > 0) f.buff[k] = Math.max(0, f.buff[k] - dt);
+        if (f.me.darkcreep > 0 && !(before.darkcreep > 0 && f.darkMax)) f.darkMax = f.me.darkcreep;
+        if (!(f.me.darkcreep > 0)) f.darkMax = 0;
+        if (before.fakecheck > 0 && !(f.me.fakecheck > 0) && f.redPen) { Game.markCells(f.redPen.filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c]), false); f.redPen = null; }
         if (f.thorns && (f.thorns.t -= dt) <= 0) f.thorns = null;
+        if (f.gum && (f.gum.t -= dt) <= 0) f.gum = null;
         if (f.me.downpour > 0) f.limit -= dt;                               // Downpour: your clock runs twice as fast
         if (f.me.gale > 0 && (f.galeAcc = (f.galeAcc || 0) + dt) >= 2.5) {  // Gale: the cursor is blown somewhere else
             f.galeAcc = 0;
-            const cells = scopeAll(), [r, c] = U.pick(cells);
+            const [r, c] = U.pick(scopeAll());
             g.row = r; g.col = c;
             if (g.direction === "across" && !g.acrossAt[r][c]) g.direction = "down";
             if (g.direction === "down" && !g.downAt[r][c]) g.direction = "across";
@@ -1792,9 +2164,46 @@ const Campaign = (() => {
             const other = g.direction === "across" ? "down" : "across";
             if ((other === "across" ? g.acrossAt : g.downAt)[g.row][g.col]) { g.direction = other; Game.render(); }
         }
-        if (f.me.confetti > 0 && Math.random() < dt * 4) {
+        if (f.me.avalanche > 0 && (f.avAcc = (f.avAcc || 0) + dt) >= 1) {  // Avalanche: two more squares buried every second
+            f.avAcc = 0;
+            const free = scopeAll().filter(([r, c]) => !f.snow.has(r + "," + c));
+            for (const [r, c] of free.sort(() => Math.random() - 0.5).slice(0, 2)) f.snow.add(r + "," + c);
+        }
+        if (f.me.confetti > 0 && (f.cfAcc = (f.cfAcc || 0) + dt) >= 2.5) {  // Confetti: the piles shift around
+            f.cfAcc = 0;
+            f.piles = new Set(scopeAll().sort(() => Math.random() - 0.5).slice(0, Math.ceil(scopeAll().length * 0.5)).map(([r, c]) => r + "," + c));
+        }
+        if (f.me.confetti > 0 && Math.random() < dt * 5) {
             const a = boardArea().getBoundingClientRect();
-            FX.burst({ x: a.left + Math.random() * a.width, y: a.top, n: 10, colors: ["#ff5c6c", "#ffd23f", "#4fc3f7", "#7be36b", "#c08bff"], shape: "rect", speed: [40, 120], angle: Math.PI / 2, spread: 0.8, gravity: 260, life: [1.4, 2.2], size: [6, 11] });
+            FX.burst({ x: a.left + Math.random() * a.width, y: a.top, n: 12, colors: ["#ff5c6c", "#ffd23f", "#4fc3f7", "#7be36b", "#c08bff"], shape: "rect", speed: [40, 120], angle: Math.PI / 2, spread: 0.8, gravity: 260, life: [1.4, 2.2], size: [6, 11] });
+        }
+        if (f.me.flicker > 0 && (f.flAcc = (f.flAcc || 0) + dt) >= 0.5) {  // Cloud Cover: clouds drift over random squares
+            f.flAcc = 0;
+            const all = scopeAll();
+            all.forEach(([r, c]) => { const el = Game.cellEl(r, c); if (el) el.classList.toggle("clouded", Math.random() < 0.45); });
+        } else if (!(f.me.flicker > 0)) document.querySelectorAll("#board .clouded").forEach(n => n.classList.remove("clouded"));
+        if (f.me.quake > 0 && (f.qkAcc = (f.qkAcc || 0) + dt) >= 2) {      // Thunder Roll: a letter falls out every 2 seconds
+            f.qkAcc = 0;
+            const loose = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c));
+            if (loose.length) { const [r, c] = U.pick(loose); Game.setLetters([[r, c, ""]]); FX.shake(6, 300); }
+        }
+        if (f.me.minion > 0 && (f.minionAcc = (f.minionAcc || 0) + dt) >= 2.5) { f.minionAcc = 0; moveMinion(); }
+        if (f.bombAt && (f.bombAt.t -= dt) <= 0) {                           // the Cannonball goes off
+            const { r, c } = f.bombAt, n = g.puzzle.size;
+            f.bombAt = null;
+            const hit = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dr, dc]) => [r + dr, c + dc])
+                .filter(([r2, c2]) => r2 >= 0 && c2 >= 0 && r2 < n && c2 < n && g.puzzle.solution[r2][c2] !== "." && g.letters[r2][c2] && !Game.isLocked(r2, c2));
+            hit.forEach(([r2, c2]) => { const el = Game.cellEl(r2, c2); if (el) U.restart(el, "scorched"); });
+            Game.setLetters(hit.map(([r2, c2]) => [r2, c2, ""]));
+            const at = Game.cellEl(r, c);
+            if (at) { const p = U.center(at); FX.burst({ x: p.x, y: p.y, n: 50, colors: ["#ff9f1c", "#ff3d00", "#ffd23f", "#2b2233"], shape: "star", speed: [150, 500], gravity: 300, life: [0.5, 1], size: [4, 9] }); }
+            Sound.custom(Powers.MOVES.carnival.find(m => m.kind === "bomb").sound);
+            FX.shake(12, 500);
+        }
+        if (f.curse && (f.curse.t -= dt) <= 0) {                              // Scorpion Sting: no word in time costs 20 seconds
+            f.curse = null;
+            f.limit -= 20;
+            floatText("-20s 🦂", false);
         }
         if (f.combo > 1 && !(f.buff.lucky > 0) && now - f.lastWordAt > COMBO_GAP) f.combo = 0;
         if (f.enraged === false && f.buff.calm === 0 && f.hp <= f.th.rageAt) updateHp();
@@ -1836,7 +2245,7 @@ const Campaign = (() => {
             surrender: ["You gave up this fight.", "Retreat!", "Every boss can be beaten. Try a different set of abilities from the shop."] }[why] || [];
         Game.endLoss({ title: why === "boss" ? `${b.name} wins` : why === "time" ? "Out of time" : "Gave up", text: text[0] });
         Sound.play("wrong");
-        Sound.stopMusic(1);
+        Sound.music("lose", { loop: false, v: 0.42, fade: 1 });           // game-over music
         FX.shake(10, 420);
         loseCard({ world: f.world, level: 5, kicker: why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: text[2], art: bossSvg(f.world) });
         speak(why === "surrender" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
@@ -1851,6 +2260,13 @@ const Campaign = (() => {
         drawItemBar();
     });
     Bus.on("word", onWord);
+    // a lesson's tip, when you start it fresh
+    Bus.on("puzzle", ({ fresh, puzzle }) => {
+        const c = current();
+        if (!fresh || !c || c.level === 5 || !puzzle || puzzle.mode !== "campaign") return;
+        const lesson = lessonOf(c.si, c.level);
+        if (lesson) setTimeout(() => FX.toast({ icon: "📘", kicker: `LESSON · ${lesson.name.toUpperCase()}`, title: lesson.practise, text: `💡 ${lesson.tip}`, ms: 7000 }), 1200);
+    });
     Bus.on("surrender", () => { if (fight && !fight.over && isBossLevel(Game.state.puzzle)) { fight.over = true; fight.pending = null; clearMe(); drawFight(); } });
 
     // Phase 2 (the user's design): solving the boss's first puzzle doesn't end the fight. The boss powers up full screen,
@@ -1870,9 +2286,10 @@ const Campaign = (() => {
         warnEl.hidden = true;
         const portrait = portraitEl();
         if (portrait) { const p = U.center(portrait); damageNumber(p, 50, 3); }
-        Sound.music("boss-phase", { loop: false, v: 0.45, fade: 0.4 });
+        // phase 2: a sting, then the boss's own phase-2 song if it has one (the Sphinx, Glitch, the Void), else its song's loop a little faster
+        const p2 = await Sound.hasSong(f.world + "-p2");
+        Sound.music("boss-phase", { loop: false, v: 0.45, fade: 0.4, then: p2 ? f.world + "-p2" : f.world, thenOpts: p2 ? {} : { rate: 1.06, fromLoop: true } });
         await FX.cinematic(cc => Bosses.phase(cc, f.world, `${label(d2, s2)}!`, "A bigger puzzle for you. The boss starts over on the board you just solved."));
-        Sound.music("boss-loop-2", { fade: 1 });
         if (fight !== f || f.over) return;
         const p1 = Game.state.puzzle;
         Game.startPhase(f.phase2);
@@ -1900,7 +2317,7 @@ const Campaign = (() => {
         warnEl.hidden = true;
         drawFight();
         panel.classList.add("ko");
-        Sound.stopMusic(0.6);
+        Sound.music("win", { loop: false, v: 0.45, fade: 0.6 });          // victory music
         Sound.sample("ko", { v: 0.6 });
         await c.wait(250);
         await Bosses.ko(c, fight.world);
@@ -1912,6 +2329,48 @@ const Campaign = (() => {
         return left >= 0.5 ? 3 : left >= 0.25 ? 2 : 1;
     }
 
+
+    // ---------------------------------------------------------------------------------------------
+    // The mascot's lines in the campaign (the user asked for dialogue that fits): it talks about the lesson you're
+    // on, the boss you're fighting and the Lexicon's story. null = use its normal line.
+    // ---------------------------------------------------------------------------------------------
+    const SKILL_WORD = {
+        definitions: ["That's a straight definition, cracked!", "Plain clue, plain answer. Nailed it."], blanks: ["The phrase filled itself in!", "Hum the phrase, fill the blank. Perfect."],
+        plurals: ["Plural clue, plural answer. You spotted it!", "See that S at the end? That's the trick."], tense: ["You matched the tense!", "-ED clue, -ED answer. Nice."],
+        crossings: ["The crossings gave it away. That's the pro move.", "Down helped Across. Exactly right."], synonyms: ["Same meaning, same part of speech. Got it!"],
+        categories: ["Example and category: you read the direction right!"], speech: ["You heard that one out loud!"], speed: ["Keep moving, keep moving!", "Fast! Don't stop now."],
+        wordplay: ["You didn't take the '?' literally. Clever!"], double: ["The OTHER meaning! You saw through it."], misdirection: ["It tried to trick you and you didn't fall for it."],
+        parts: ["You read the grammar. That's how pros do it."], theme: ["That one fits the theme!"], long: ["A long one! That opens the whole grid."],
+        clean: ["Careful and clean. No checking needed."], mixed: ["Every trick in the book!"]
+    };
+    function mascotLine(event, info) {
+        const v = U.view();
+        if (v === "campaign") {
+            if (event === "start" || event === "hello") { const f = map ? frontier() : null; return f ? `${Worlds.byId[map[f.si].world].name}'s page of the Lexicon is waiting. Next up: ${f.level === 5 ? bossOf(map[f.si].world).name : "Level " + f.level}.` : null; }
+            return null;
+        }
+        if (v !== "level" || !data.playing) return null;
+        const c = current();
+        if (!c) return null;
+        const boss = c.level === 5, lesson = lessonOf(c.si, c.level), b = bossOf(c.world);
+        switch (event) {
+            case "start": return boss ? `${b.name} has the ${Worlds.byId[c.world].name} page. Finish words to hit it, and finish one fast when it winds up an attack!`
+                : lesson ? `Lesson: ${lesson.name}. ${lesson.tip}` : null;
+            case "word": return boss ? U.pick(["Direct hit!", "It felt that one!", "Keep the combo going!", "Again, again!"]) : lesson && SKILL_WORD[lesson.id] ? U.pick(SKILL_WORD[lesson.id]) : null;
+            case "idle": return boss ? U.pick(["Try an ability: keys 1, 2 and 3!", "Your Super charges with every word. Key 4!", "Fill the short words first, they cross the long ones."]) : lesson ? `Remember the lesson: ${lesson.tip}` : null;
+            case "wrong": return lesson && lesson.id === "clean" ? "Careful: only trust letters that work across AND down." : null;
+            case "surrender": return boss ? `${b.name} keeps the page for now. Try different abilities from the shop!` : "Every pro has had a tough level. Try it again with the tip in mind.";
+            case "win": {
+                const cm = info && info.campaign;
+                if (!cm) return null;
+                if (cm.boss) return cm.finished ? "The Lexicon is whole again! Every word is back. You did it!" : `You won back the ${Worlds.byId[c.world].name} page! ${cm.newWorld ? `On to ${cm.newWorld.name}.` : ""}`;
+                const next = cm.next && cm.next.world === c.world && cm.next.level < 5 ? lessonOf(c.si, cm.next.level) : null;
+                const stars = cm.stars === 3 ? "Three stars: lesson mastered!" : `${cm.stars} star${cm.stars > 1 ? "s" : ""}. Replay it for the rest.`;
+                return `${stars}${next ? ` Next lesson: ${next.name}.` : cm.next && cm.next.level === 5 ? ` Next: ${b.name}!` : ""}`;
+            }
+            default: return null;
+        }
+    }
 
     // ---------------------------------------------------------------------------------------------
     // The home screen's campaign card
@@ -1934,6 +2393,43 @@ const Campaign = (() => {
     // Buttons and keys on the map page
     // ---------------------------------------------------------------------------------------------
     $("#cm-shop").addEventListener("click", () => openShop("items"));
+    $("#cm-skills").addEventListener("click", () => openSkills());
+    // The skill book: every skill in the course, where it's taught, and how well you've done (3 stars everywhere = mastered)
+    function openSkills() {
+        const skills = new Map();
+        map.forEach((s, si) => (s.lessons || []).forEach((lesson, i) => {
+            if (!lesson || lesson.id === "review") return;
+            if (!skills.has(lesson.id)) skills.set(lesson.id, { lesson, levels: [] });
+            skills.get(lesson.id).levels.push({ si, level: i + 1, world: s.world, name: lesson.name });
+        }));
+        const modal = U.el("div", { class: "results shop-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "skills-title" });
+        const card = U.el("div", { class: "shop-card" });
+        const close = () => { modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        let mastered = 0;
+        const list = U.el("div", { class: "skill-list" });
+        for (const { lesson, levels } of skills.values()) {
+            const stars = levels.map(x => (record(x.si, x.level) || {}).stars || 0), done = stars.every(n => n === 3);
+            if (done) mastered++;
+            list.appendChild(U.el("div", { class: "skill-card" + (done ? " mastered" : "") },
+                U.el("div", { class: "sk-head" }, U.el("b", { text: lesson.name.replace(/ I+$/, "") }), U.el("span", { class: "sk-badge", text: done ? "🏅 Mastered" : `${stars.filter(n => n === 3).length}/${levels.length} perfect` })),
+                U.el("p", { text: lesson.practise }),
+                U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` }),
+                U.el("div", { class: "sk-levels" }, ...levels.map((x, k) => U.el("button", { type: "button", class: "sk-level", title: `Play ${Worlds.byId[x.world].name} ${x.level}`,
+                    text: `${Worlds.byId[x.world].icon} ${x.si + 1}-${x.level} ${"★".repeat(stars[k])}${"☆".repeat(3 - stars[k])}`,
+                    onclick: () => { close(); data.section = x.si; data.sel = x.level; save(); drawBar(); drawDetail(); drawDynamic(); scrollToLevel(x.si, x.level, true); } })))));
+        }
+        card.append(U.el("div", { class: "shop-head" },
+            U.el("div", { class: "shop-title" }, U.el("small", { text: "THE COURSE" }), U.el("h2", { id: "skills-title", text: "Skill book" })),
+            U.el("span", { class: "shop-coins", text: `🏅 ${mastered} / ${skills.size} mastered` }),
+            U.el("button", { type: "button", class: "btn ghost small", text: "Close ✕", onclick: close })),
+            U.el("div", { class: "shop-scroll" }, U.el("p", { class: "shop-note", text: "Every level teaches one skill, and the skills come back later, harder. Get 3 stars on every level of a skill to master it. Master them all and you're a pro." }), list));
+        modal.appendChild(card);
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
+        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+        document.getElementById("overlay").appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add("in"));
+        Sound.play("select");
+    }
     addEventListener("keydown", e => {
         if (U.view() !== "campaign" || !map || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("#overlay .results")) return;
         if (e.key === "Escape" && sheetOpen) { e.preventDefault(); closeSheet(); }
@@ -1941,7 +2437,7 @@ const Campaign = (() => {
 
     return {
         onView, showMap, play, ready: fetchMap, nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
-        isBossLevel, abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
+        isBossLevel, mascotLine, abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         testMove: mv => { if (fightOn()) { fight.pending = mv; attack(); } },          // for automated tests
         get playing() { return data.playing; }, get fight() { return fight; }
     };

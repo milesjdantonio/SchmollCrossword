@@ -17,3 +17,7 @@ desktop.ini
 
 # Generated puzzles (daily cache), made at run time
 puzzles/
+
+# boss music copies for listening in VS Code (the game's own files are in static/audio/music)
+boss-music/*
+!boss-music/README.md

@@ -464,6 +464,27 @@ const Bosses = (() => {
     // =============================================================================================
     // Rendering
     // =============================================================================================
+    // The story (the user asked for lore: why are you fighting them?). The Lexicon, the great book that holds every
+    // word, was torn apart, and each world's boss grabbed a piece of it. Win back every piece, world by world.
+    //   story: the level sheet's paragraph · stakes: one line on the VS screen
+    const LORE = {
+        paper: { story: "The Lexicon, the book that holds every word in the world, was torn to pieces in the night, and its pages scattered across fifteen worlds. In the Notebook, the Big Eraser grabbed the first page. It wants a perfectly blank world: no words, no doodles, no homework, nothing.", stakes: "Win back the first page of the Lexicon before every word is rubbed out." },
+        garden: { story: "Queen Thistle planted her page of the Lexicon in the middle of the Garden, and now nothing grows there but thorns. The flowers are wilting and the bees have gone quiet. She says words are weeds.", stakes: "Free the Garden's page from the thorns and let the flowers talk again." },
+        squirrel: { story: "Old Grumbleowl has hoarded the forest's page in the hollow of the oldest oak, and he hoots every clue into nonsense so nobody can read it. The squirrels can't find their stashes without their words.", stakes: "Wake the owl and take the forest's page back from his hollow." },
+        candy: { story: "King Sourgum dissolved his page of the Lexicon in a vat of sour syrup, and every sweet in Candy Hills now tastes like vinegar. He thinks sour is the only flavour anyone deserves.", stakes: "Fish the page out of the syrup and make Candy Hills sweet again." },
+        ocean: { story: "The Kraken dragged the Coral Reef's page down to the deepest trench and wrapped it in eight arms. Without its words the reef has lost its colours, and the fish swim in circles.", stakes: "Dive to the trench and pry the page out of the Kraken's grip." },
+        snow: { story: "The Yeti froze his page of the Lexicon inside a glacier, and the whole valley froze with it. Snow Day has turned into Snow Year, and it won't stop.", stakes: "Thaw the glacier, take back the page, and let spring come." },
+        rain: { story: "Thunderhead parks over Rainy City and soaks every street sign until the words run off. Its page of the Lexicon is hidden somewhere inside the storm.", stakes: "Fly into the storm and bring the city's words back before they wash away." },
+        sky: { story: "Sir Squall blew the Sky Kingdom's page so high that it's stuck in his castle in the clouds, and he blows away anyone who comes near. The kingdom can't send a single letter.", stakes: "Climb the wind to his castle and catch the page before it's gone for good." },
+        desert: { story: "The Sphinx buried its page of the Lexicon under the dunes and guards the spot with riddles. Every traveller who answers wrong forgets one more word.", stakes: "Answer the Sphinx's riddles and dig up the desert's page." },
+        carnival: { story: "The Ringmaster turned the carnival's page into the star of his show: every night it's juggled, shot from a cannon and hidden under three shells. The crowd loves it. The words are exhausted.", stakes: "Steal the show, win the page, and close the circus of confusion." },
+        arcade: { story: "Glitch crawled into the arcade's machines and corrupted their page of the Lexicon into garbage code. High scores are gone, and every game says ERR0R.", stakes: "Debug the arcade and restore the page, one clean word at a time." },
+        robot: { story: "Mega Unit X decided words are inefficient and fed the factory's page into its shredder, one line at a time. Its machines now speak only in beeps.", stakes: "Shut down Mega Unit X before it shreds the last line." },
+        library: { story: "The Phantom Librarian haunts the stacks and has bound the library's page into a book that reads itself backwards. Anyone who solves a clue out loud gets shushed into silence.", stakes: "Break the Phantom's spell and take the page back from the haunted shelves." },
+        volcano: { story: "Magma Wyrm swallowed its page of the Lexicon and sleeps on it in the heart of the volcano. Every time it snores, the island shakes and another word melts.", stakes: "Wake the Wyrm and pull the page out of the fire before it melts." },
+        space: { story: "The Void tore the Lexicon apart in the first place. It wants every word in the universe to fall into it and disappear. The last page, and all the pieces you've won back, are what stand in its way.", stakes: "This is it. Put the Lexicon back together and close the Void forever." }
+    };
+    for (const k of Object.keys(LORE)) if (B[k]) Object.assign(B[k], LORE[k]);
     const info = world => B[world] || B.paper;
     function inner(world) {
         const id = "bz" + (++counter) + "-", u = name => id + name;
@@ -644,7 +665,7 @@ const Bosses = (() => {
         const b = info(world), still = U.motion() === "still";
         const el = U.el("div", { class: "bfx-intro", style: { "--boss": b.color, "--a1": b.arena[0], "--a2": b.arena[1] }, "aria-hidden": "true",
             html: `<div class="bi-bg"></div><div class="bi-band"></div><div class="bi-boss">${svg(world)}</div>
-                <div class="bi-text"><small>BOSS BATTLE</small><b>${U.esc(b.name)}</b><em>"${U.esc(b.taunt)}"</em></div><div class="bi-vs">VS</div><div class="bi-fight">FIGHT!</div>` });
+                <div class="bi-text"><small>BOSS BATTLE</small><b>${U.esc(b.name)}</b><em>"${U.esc(b.taunt)}"</em>${b.stakes ? `<p class="bi-stakes">${U.esc(b.stakes)}</p>` : ""}</div><div class="bi-vs">VS</div><div class="bi-fight">FIGHT!</div>` });
         document.getElementById("overlay").appendChild(el);
         c.cleanup(() => el.remove());
         Sound.play("whoosh");
@@ -653,7 +674,7 @@ const Bosses = (() => {
         Sound.play("boom");
         FX.shake(10, 400);
         el.classList.add("slam");
-        await c.wait(1500);
+        await c.wait(b.stakes ? 2700 : 1500);                  // time to read why you're fighting
         if (c.skipped) return;
         el.classList.add("fight");
         Sound.play("start");

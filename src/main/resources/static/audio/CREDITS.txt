@@ -1,10 +1,12 @@
 Schmoll Crossword: recorded sounds and music
 =============================================
 
-Every file in this folder is in the public domain (Creative Commons Zero, CC0 1.0):
+Every recorded file in this folder is in the public domain (Creative Commons Zero, CC0 1.0):
 https://creativecommons.org/publicdomain/zero/1.0/
-CC0 needs no credit, but the authors are thanked here anyway. The files were converted to MP3 (and the two
-intro clips shortened and faded out) for this game.
+CC0 needs no credit, but the authors are thanked here anyway. Each track's own page on OpenGameArt.org lists it as
+CC0 (checked one by one). For this game the songs were converted to MP3, given the same gentle mastering (a little
+more low end and air, a wider stereo image, a hall reverb, even loudness), and each song's file was cut so that it
+starts with its own intro and loops a 2:00-2:30 section seamlessly (loop points in music/songs.json).
 
 Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
   Impact Sounds      https://kenney.nl/assets/impact-sounds
@@ -13,12 +15,30 @@ Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
   RPG Audio          https://kenney.nl/assets/rpg-audio
   Music Jingles      https://kenney.nl/assets/music-jingles   (jingle-*.mp3)
 
-Music (audio/music), all CC0 on OpenGameArt.org
-  boss-intro.mp3   the opening of "Sinister Boss Appears!" by cynicmusic (cynicmusic.com, pixelsphere.org)
-                   https://opengameart.org/content/sinister-boss-appears
-  boss-phase.mp3   the opening of "Dramatic Boss Encounter" by cynicmusic
-                   https://opengameart.org/content/dramatic-boss-encounter
-  boss-loop-1.mp3  "Basilisk Boss Battle Loop" by beardalaxy
-                   https://opengameart.org/content/basilisk-boss-battle-loop
-  boss-loop-2.mp3  "Boss Battle (loop)" by Alex McCulloch (Pro Sensory), who asks to be named in the credits
-                   https://opengameart.org/content/boss-battle-loop
+Boss music (audio/music). All from https://opengameart.org/content/<page>
+  file            track                                   author                 page
+  paper.mp3       Unsolicited Trailer Music               Emma_MA                unsolicited-trailer-music
+  garden.mp3      Qazijamjam Orchestral Battle Theme      Emma_MA                qazijamjam-orchestral-battle-theme
+  squirrel.mp3    This One Is Tough                       Loyalty Freak Music    this-one-is-tough
+  candy.mp3       Toy Soldiers                            Zane Little Music      toy-soldiers
+  ocean.mp3       Video Game Pirate                       iamoneabe              video-game-pirate
+  snow.mp3        Long Winter                             Indieteur              long-winter
+  rain.mp3        Synthmetal Climax Theme                 Gradoa                 synthmetal-climax-theme
+  sky.mp3         The Call for Unity                      vitalezzz              the-call-for-unity
+  desert-p2.mp3   Desert Settlement                       vitalezzz              desert-settlement
+  carnival.mp3    Ring Master                             Bobjt                  ring-master
+  arcade-p2.mp3   Singularity                             vitalezzz              singularity-0
+  robot.mp3       Return of the Omega Droid               Umplix                 return-of-the-omega-droid
+  library.mp3     Shadows Awaken Within                   vitalezzz              shadows-awaken-within
+  volcano.mp3     Devoted Guard                           vitalezzz              devoted-guard
+  space.mp3       Outworld                                vitalezzz              outworld
+  space-p2.mp3    Pandemia                                nene                   pandemia
+  boss-phase.mp3  the opening of Dramatic Boss Encounter  cynicmusic             dramatic-boss-encounter
+  win.mp3         Victory Fanfare                         ARoachIFoundOnMyPillow victory-fanfare
+  lose.mp3        No Hope (from Game Over Theme)          CleytonKauffman        game-over-theme
+
+Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
+https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
+FluidSynth):
+  desert.mp3      Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani
+  arcade.mp3      Corrupted Signal, in 5/4 (3+2), E minor: square and saw leads, synth bass, drums, stutters

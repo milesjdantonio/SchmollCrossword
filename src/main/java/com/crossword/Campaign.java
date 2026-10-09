@@ -97,6 +97,11 @@ public class Campaign {
                 if (level > 1) sb.append(",");
                 sb.append(size(s, level));
             }
+            sb.append("],\"lessons\":[");
+            for (int level = 1; level <= LEVELS; level++) {
+                if (level > 1) sb.append(",");
+                sb.append(Lesson.json(s.world(), level));                  // what each level teaches (Lesson.java)
+            }
             sb.append("],\"phase2\":[\"").append(phase2Difficulty(s)).append("\",").append(phase2Size(s)).append("]}");
         }
         return sb.append("]").toString();
