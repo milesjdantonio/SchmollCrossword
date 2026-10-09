@@ -384,6 +384,11 @@ const Campaign = (() => {
         body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `WORLD ${si + 1} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
         body.appendChild(U.el("h2", { text: boss ? bossOf(s.world).name : `${Worlds.byId[s.world].name} ${l}` }));
         if (boss) body.appendChild(U.el("p", { class: "cm-taunt", text: `"${bossOf(s.world).taunt}"` }));
+        if (boss) {
+            const th = Powers.threat(si, map.length), moves = Powers.MOVES[s.world] || [];
+            body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)} · attacks about every ${Math.round(th.every)}s · ${th.windup.toFixed(1)}s to block · enraged under ${th.rageAt}% HP` + (th.double ? " · chains its attacks when enraged" : "") }));
+            body.appendChild(U.el("p", { class: "cm-moves", text: "Its moves: " + moves.map(m => `${m.icon} ${m.name} (${m.desc})`).join(" · ") }));
+        }
         body.appendChild(U.el("p", { class: "cm-rules", text: boss
             ? `A race in two phases: solve the boss's puzzle, then a bigger ${label(...phase2Of(s))} in phase 2, before the boss solves its own boards. Every word you finish hits it; chain words for combos and charge your Super. When it winds up an attack, finish a word to block it.`
             : `Three stars: solve it, don't use Reveal, and finish in under ${U.fmtTime(par(d, sizeOf(s, l)))}.` }));
@@ -553,7 +558,16 @@ const Campaign = (() => {
         else if (next) { data.section = c.si; data.sel = next.level; }
         save();
         drawItemBar();
+        const bossesBeaten = map.filter(s => data.levels[keyOf(s.world, 5)]).length;
+        const stats = {
+            levels: Object.keys(data.levels).length, bosses: bossesBeaten, allBosses: map.length, stars: Object.values(data.levels).reduce((n, r) => n + r.stars, 0),
+            perfectWorld: map.some(s => [1, 2, 3, 4, 5].every(l => (data.levels[keyOf(s.world, l)] || {}).stars === 3)),
+            boss, difficulty: d, test: !!game.testWin
+        };
+        if (boss && fight) Object.assign(stats, { hits: fight.hits, blocks: fight.blocks, combo: fight.bestCombo, kinds: fight.kinds.size, used: fight.used + fight.itemsUsed,
+            left: Math.max(0, fight.limit - game.seconds), lifeUsed: fight.lifeUsed, phase2: fight.phase === 2 });
         return {
+            campaignStats: stats,
             campaign: { stars, best: data.levels[key].stars, earned, boss, firstClear, next, world: c.world, level: c.level, si: c.si, coins, totalCoins: data.coins,
                 newWorld: boss && firstClear && next ? Worlds.byId[next.world] : null, finished: boss && c.si === map.length - 1, newAbility, freeUses: FREE_USES }
         };
@@ -571,70 +585,11 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Abilities (boss fights): 3 per world. What each kind does:
-    //   freeze  the boss stops typing             slow   the boss types at a third of its speed
-    //   blind   the boss stops AND loses its place (its unfinished word is wiped)
-    //   erase   the boss's last finished word is wiped     shield  blocks the boss's next attack
-    //   time    more time on your clock                    hint    right letters appear in your puzzle
+    // Abilities (boss fights): 3 per world, each one different (no repeats, no stronger copies; the user's rule).
+    // What they are, how they look and sound is in powers.js; what each one does is in useAbility below.
     // ---------------------------------------------------------------------------------------------
-    const KIND_TEXT = {
-        freeze: d => `Freezes the boss for ${d}s.`, slow: d => `The boss writes at a third of its speed for ${d}s.`,
-        blind: d => `Blinds the boss for ${d}s: it stops and loses its place in its word.`, erase: () => "Wipes the boss's last finished word.",
-        shield: () => "Blocks the boss's next attack.", time: d => `Adds ${d}s to your clock.`, hint: d => `Fills in ${d} right letter${d > 1 ? "s" : ""} in your puzzle.`
-    };
-    // world, id, name, icon, kind, strength, a description in the world's own words
-    const ABILITY_LIST = [
-        ["paper", "ink", "Ink Splat", "🖋️", "blind", 6, "Flick a fat blot of ink right across the boss's page."],
-        ["paper", "rub", "Eraser Rub", "🩹", "erase", 0, "Rub out the last word the boss wrote. It has to write it all over again."],
-        ["paper", "wall", "Paper Wall", "📄", "shield", 0, "Fold a wall of paper that soaks up the boss's next attack."],
-        ["garden", "pollen", "Pollen Puff", "🌼", "blind", 7, "A sneezy cloud of pollen: the boss can't see and forgets where it was."],
-        ["garden", "vine", "Vine Snare", "🌿", "freeze", 6, "Vines wrap around the boss's hands so it can't write."],
-        ["garden", "sun", "Sunny Hour", "☀️", "time", 30, "Warm sunshine slows the day down: more time on your clock."],
-        ["squirrel", "acorn", "Acorn Toss", "🌰", "freeze", 5, "Bonk! An acorn to the head stuns the boss for a moment."],
-        ["squirrel", "leaves", "Leaf Pile", "🍂", "blind", 7, "Bury the boss's board under a big heap of autumn leaves."],
-        ["squirrel", "stash", "Stash Peek", "🐿️", "hint", 2, "Peek into the squirrels' secret stash: right letters appear in your puzzle."],
-        ["candy", "taffy", "Sticky Taffy", "🍬", "slow", 10, "Gooey taffy all over the boss's pencil: it writes at a crawl."],
-        ["candy", "rush", "Sugar Rush", "🍭", "time", 35, "A burst of sugar energy: extra time on your clock."],
-        ["candy", "gumdrop", "Gumdrop Wall", "🧁", "shield", 0, "A bouncy gumdrop wall bounces the boss's next attack away."],
-        ["ocean", "inkcloud", "Ink Cloud", "🦑", "blind", 8, "Squid ink! The boss is lost in a dark cloud."],
-        ["ocean", "bubble", "Bubble Trap", "🫧", "freeze", 7, "Trap the boss in a bubble. It floats around, unable to write."],
-        ["ocean", "tide", "Tide Pull", "🌊", "erase", 0, "The tide washes the boss's last finished word right off its board."],
-        ["snow", "snowball", "Snowball", "⛄", "freeze", 6, "A snowball to the face freezes the boss in place."],
-        ["snow", "blizzard", "Blizzard", "🌨️", "blind", 8, "A whiteout storm: the boss can't see its own board."],
-        ["snow", "icewall", "Ice Wall", "🧊", "shield", 0, "A wall of solid ice blocks the boss's next attack."],
-        ["rain", "puddle", "Puddle Splash", "💦", "slow", 12, "Soak the boss's paper: it writes slowly while it dries."],
-        ["rain", "thunder", "Thunderclap", "⚡", "freeze", 7, "A crack of thunder makes the boss freeze in fright."],
-        ["rain", "rainbow", "Rainbow Peek", "🌈", "hint", 3, "Follow the rainbow: right letters appear in your puzzle."],
-        ["sky", "gust", "Gust", "🌬️", "erase", 0, "A gust of wind blows the boss's last word clean off its board."],
-        ["sky", "cloud", "Cloud Cover", "☁️", "blind", 9, "Hide the boss's board behind a thick, fluffy cloud."],
-        ["sky", "tailwind", "Tailwind", "🪁", "time", 40, "Ride the tailwind: lots of extra time on your clock."],
-        ["desert", "sandstorm", "Sandstorm", "🏜️", "blind", 9, "Sand in its eyes: the boss stops and loses its place."],
-        ["desert", "quicksand", "Quicksand", "⏳", "slow", 14, "The boss sinks into quicksand and can barely move its pencil."],
-        ["desert", "mirage", "Mirage", "🪞", "shield", 0, "A shimmering mirage tricks the boss's next attack into missing."],
-        ["carnival", "pie", "Pie in the Face", "🥧", "blind", 9, "Splat! A cream pie to the face blinds the boss."],
-        ["carnival", "juggle", "Juggling Act", "🤹", "freeze", 8, "The boss can't help stopping to watch your juggling act."],
-        ["carnival", "cotton", "Cotton Candy", "🍡", "slow", 14, "Sticky cotton candy fingers: the boss writes slowly."],
-        ["arcade", "glitchbomb", "Glitch Bomb", "👾", "erase", 0, "A glitch corrupts the boss's last finished word into nothing."],
-        ["arcade", "pause", "Pause Button", "⏸️", "freeze", 9, "Press pause on the boss (and only the boss)."],
-        ["arcade", "extralife", "Extra Life", "🕹️", "time", 45, "1-UP! A big chunk of extra time on your clock."],
-        ["robot", "emp", "EMP", "🔌", "freeze", 10, "An electric pulse shuts the boss down for a while."],
-        ["robot", "oil", "Oil Slick", "🛢️", "slow", 16, "The boss's gears slip in a puddle of oil: very slow writing."],
-        ["robot", "field", "Force Field", "🛡️", "shield", 0, "A humming force field absorbs the boss's next attack."],
-        ["library", "dust", "Dust Cloud", "📚", "blind", 10, "Clap two old books together: a cloud of dust blinds the boss."],
-        ["library", "shush", "Shush!", "🤫", "freeze", 9, "SHHH! The boss freezes, embarrassed."],
-        ["library", "bookmark", "Bookmark", "🔖", "hint", 3, "Your bookmark remembers the answers: right letters appear."],
-        ["volcano", "ash", "Ash Cloud", "🌋", "blind", 11, "A cloud of volcanic ash smothers the boss's board."],
-        ["volcano", "lava", "Lava Flow", "🔥", "erase", 0, "Lava melts the boss's last finished word away."],
-        ["volcano", "cool", "Cool Down", "🧯", "time", 50, "Cool off: a huge chunk of extra time on your clock."],
-        ["space", "blackhole", "Black Hole", "🕳️", "erase", 0, "A tiny black hole swallows the boss's last finished word."],
-        ["space", "warp", "Time Warp", "🌀", "slow", 18, "Bend time around the boss: it writes very, very slowly."],
-        ["space", "starlight", "Starlight", "✨", "hint", 4, "Starlight shows the way: right letters appear in your puzzle."]
-    ];
     const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "robot", "library", "volcano", "space"];
-    const ABILITIES = ABILITY_LIST.map(([world, id, name, icon, kind, d, flavor]) => {
-        const tier = WORLD_ORDER.indexOf(world);
-        return { id: world + "-" + id, world, name, icon, kind, d, flavor, price: 30 + tier * 8 + (kind === "erase" || kind === "hint" ? 15 : 0), desc: KIND_TEXT[kind](d) };
-    });
+    const ABILITIES = Powers.ABILITIES.map(a => ({ ...a, price: 30 + WORLD_ORDER.indexOf(a.world) * 8 }));
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
     // Unlocking (the user's design): a world's 1st ability unlocks when you clear its level 1, the 2nd at level 3,
@@ -717,7 +672,14 @@ const Campaign = (() => {
                 tabs);
             const scroll = U.el("div", { class: "shop-scroll" });
             card.appendChild(scroll);
-            const buy = (price, give) => () => { if (data.coins < price) return; data.coins -= price; give(); save(); Sound.play("coin"); draw(); };
+            const buy = (price, give) => () => {
+                if (data.coins < price) return;
+                data.coins -= price;
+                data.bought = (data.bought || 0) + 1;
+                data.spent = (data.spent || 0) + price;
+                give(); save(); Sound.play("coin"); draw();
+                Achievements.announce(Achievements.campaign({ bought: data.bought, spent: data.spent }));
+            };
             if (tab === "items") {
                 scroll.appendChild(U.el("p", { class: "shop-note", text: "Items work in any campaign level, bosses included. Use them from the item bar under the board." }));
                 const grid = U.el("div", { class: "shop-grid" });
@@ -786,6 +748,37 @@ const Campaign = (() => {
             itemBar.appendChild(b);
         }
         itemBar.appendChild(U.el("button", { type: "button", class: "cm-item shop", title: "Open the shop", text: "🛒", onclick: () => openShop("items") }));
+        itemBar.appendChild(U.el("button", { type: "button", class: "cm-item giveup", title: "Give up this level", text: "🏳️ Give up", onclick: e => { e.currentTarget.blur(); giveUp(); } }));
+    }
+    // Give up (the user asked for it on bosses and every level): ends the level without revealing the answers.
+    // Nothing is saved, so you can try it again straight away.
+    async function giveUp() {
+        const g = Game.state;
+        if (U.view() !== "level" || !g.puzzle || g.solved || !data.playing) return;
+        const boss = data.playing.level === 5;
+        const ok = await U.ask({ title: boss ? "Give up this fight?" : "Give up this level?", text: boss ? "The boss wins this round. You can ask for a rematch right away." : "The level won't be cleared. You can try it again right away.", yes: "Give up", no: "Keep playing" });
+        if (!ok || g.solved) return;
+        if (boss && fight && !fight.over) { lose("surrender"); return; }
+        const { world, level } = data.playing;
+        Game.endLoss({ title: "Gave up", text: "Level not cleared. Try it again whenever you like." });
+        Sound.play("wrong");
+        loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · GAVE UP`, title: "Maybe next time!", note: "Items like Letter Reveal and Clear Wrong (in the shop) can help with a tough one." });
+    }
+    // the "you lost" card with Retry / Shop / Map
+    function loseCard({ world, level, kicker, title, note, art }) {
+        const modal = U.el("div", { class: "results", role: "dialog", "aria-modal": "true" });
+        const card = U.el("div", { class: "res-card lose-card", style: { "--boss": level === 5 ? bossOf(world).color : biome(world).node } },
+            art ? U.el("div", { class: "lose-art", html: art }) : null,
+            U.el("small", { class: "res-kicker", text: kicker }),
+            U.el("h2", { class: "res-title", text: title }),
+            U.el("p", { class: "res-note", text: note }),
+            U.el("div", { class: "res-actions" },
+                U.el("button", { type: "button", class: "btn primary", text: level === 5 ? "Rematch ▶" : "Try again ▶", onclick: () => { modal.remove(); play(world, level); } }),
+                U.el("button", { type: "button", class: "btn", text: "🛒 Shop", onclick: () => openShop(level === 5 ? "abilities" : "items") }),
+                U.el("button", { type: "button", class: "btn ghost", text: "Map", onclick: () => { modal.remove(); location.hash = "#campaign"; } })));
+        modal.appendChild(card);
+        document.getElementById("overlay").appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add("in"));
     }
     function useItem(id) {
         const it = itemById[id];
@@ -805,6 +798,7 @@ const Campaign = (() => {
         }
         if (!n) { FX.toast({ icon: it.icon, kicker: "NOTHING TO DO", title: it.name, text: id === "clear" ? "No wrong letters on the board." : id === "lock" ? "No unlocked right letters yet." : "That square is already right.", ms: 2200 }); return; }
         data.items[id]--;
+        if (fight && !fight.over) fight.itemsUsed++;
         save();
         Sound.play("sparkle");
         FX.toast({ icon: it.icon, kicker: "ITEM USED", title: it.name, text, ms: 2000 });
@@ -813,82 +807,96 @@ const Campaign = (() => {
 
     // ---------------------------------------------------------------------------------------------
     // Boss fights: a 1v1 race against a bot that solves its own puzzle next to yours. Solve yours first, before
-    // your clock runs out. Made interactive (the user asked for more):
+    // your clock runs out.
     //   - every word you finish HITS the boss (its HP bar is your puzzle still to solve), with damage numbers
     //   - words finished close together build a COMBO, and combos charge your SUPER (key 4): a big full-screen strike
     //   - the boss WINDS UP its attacks for a few seconds: finish a word in time to BLOCK it
-    //   - under a third of its HP left, the boss gets ENRAGED: faster, angrier, and the arena turns red
-    //   - the fight is shown full screen: an arena behind everything, a VS intro, attack cut-ins and a K.O.
+    //   - low on HP, the boss gets ENRAGED: faster, angrier, and the arena turns red
+    //   - each boss fights harder than the one before (Powers.threat): more frequent attacks, shorter wind-ups,
+    //     longer effects, less spare time, earlier rage, and late bosses chain two moves when enraged
+    // The boss's moves (Powers.MOVES) each do their own thing to you; see attack() and applyMe().
     // ---------------------------------------------------------------------------------------------
-    // What each boss does to YOU: blind (your board blurs), scramble (clues jumbled), freeze (you can't type),
-    // smudge (your letters go invisible), erase (a few of your letters are wiped, never locked ones)
-    const BOSS_MOVES = {
-        paper: [["Rub Out", "erase", 3], ["Smudge", "smudge", 6]], garden: [["Thorn Tangle", "freeze", 3], ["Petal Storm", "blind", 5]],
-        squirrel: [["Hoot Hoot", "scramble", 7], ["Night Eyes", "blind", 5]], candy: [["Sour Splash", "smudge", 6], ["Sticky Floor", "freeze", 3]],
-        ocean: [["Ink Jet", "blind", 6], ["Whirlpool", "scramble", 8]], snow: [["Deep Freeze", "freeze", 4], ["Whiteout", "blind", 6]],
-        rain: [["Lightning", "erase", 3], ["Fog Bank", "blind", 6]], sky: [["Gale", "scramble", 8], ["Twister", "erase", 3]],
-        desert: [["Riddle", "scramble", 9], ["Sand Blast", "blind", 7]], carnival: [["Funhouse Mirror", "scramble", 9], ["Spotlight", "blind", 7]],
-        arcade: [["Glitch", "smudge", 8], ["Lag Spike", "freeze", 4]], robot: [["System Lock", "freeze", 5], ["Static", "smudge", 8]],
-        library: [["Shhh!", "freeze", 5], ["Lights Out", "blind", 8]], volcano: [["Eruption", "erase", 4], ["Smoke", "blind", 8]],
-        space: [["Gravity Well", "freeze", 5], ["Event Horizon", "scramble", 10], ["Collapse", "erase", 4]]
-    };
-    const MOVE_ICON = { blind: "🙈", scramble: "🔀", freeze: "❄️", smudge: "👻", erase: "💥" };
-    const MOVE_TEXT = { blind: "Your board is blurred", scramble: "Your clues are jumbled", freeze: "You can't type", smudge: "Your letters are invisible", erase: "Letters wiped" };
-    const WINDUP = 3.2;               // seconds of warning before an attack lands
     const COMBO_GAP = 15000;          // ms between words to keep a combo going
-    const ENRAGE_AT = 34;             // boss HP (%) that makes it angry
-
-    // how long the boss takes to solve its puzzle: the level's par time times this (your time limit is 10% more)
+    const BLOT = "✱";                // an ink blot on the boss's board (Ink Splat)
+    // how long the boss takes to solve its puzzle: the level's par time times this
     const BOT_PACE = { easy: 1.4, medium: 1.15, hard: 1, challenge: 1.05, expert: 0.95 };
-    const BOSS_EVERY = { easy: 34, medium: 30, hard: 27, challenge: 30, expert: 26 };       // seconds between the boss's attacks
+    // timers on the boss (seconds left), and what the status line calls them
+    const BOSS_TIMERS = { freeze: "❄️ Frozen", slow: "🍬 Sticky", blind: "🥧 Can't see", stutter: "🤧 Sneezing", hypno: "🤹 Hypnotized", crash: "🍡 Sugar crash",
+        bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer" };
+    // timers on your side (good ones)
+    const MY_BUFFS = { sun: "☀️ +8s per word", lucky: "🌈 Combo locked", fireup: "🧨 Super ×2", hot: "🔥 Words stun", overclock: "⚡ Overclock",
+        armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed" };
+    // what each boss move does to you, for the status chips
+    const ME_TEXT = { crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
+        ink: "🦑 Board blurred", whirl: "🌀 Board spinning", freeze: "🥶 Can't type", whiteout: "🌨️ Snowed in", downpour: "🌧️ Clock ×2", gale: "🌪️ Cursor blown",
+        twister: "🌀 Direction flipping", riddle: "🐪 Clues backwards", sandblast: "🏜️ Sandy keys", mirror: "🪞 Mirrored", confetti: "🎉 Confetti", lock: "🔒 Word locked",
+        static: "📺 Static", haunting: "👻 Ghost letters", lights: "🕯️ Lights out", gravity: "🪐 Heavy keys", flare: "☀️ Blinded" };
 
-    let fight = null;
+    let fight = null, lastKeyAt = 0;
     const panel = U.el("aside", { class: "boss-panel", hidden: true, "aria-label": "The boss" });
     document.getElementById("puzzle").appendChild(panel);
     const meStatus = U.el("div", { class: "me-status", "aria-live": "polite" });
     document.querySelector(".hud-row").after(meStatus);
     const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "assertive" });
     document.querySelector(".board-wrap").prepend(warnEl);
+    const flareEl = U.el("div", { class: "fx-flare-screen", "aria-hidden": "true" });
+    document.body.appendChild(flareEl);
     const isBossLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && data.playing.level === 5);
     const fightOn = () => !!(fight && !fight.over && U.view() === "level" && isBossLevel(Game.state.puzzle) && !Game.state.solved);
+    const boardArea = () => document.querySelector(".board-area");
+    const portraitEl = () => panel.querySelector(".bp-portrait");
+    const bossBoardEl = () => panel.querySelector(".bp-board-wrap");
 
     async function startFight(fresh) {
         const key = keyOf(data.playing.world, data.playing.level);
         if (!fresh && fight && fight.key === key) { showPanel(); return; }
         await fetchMap().catch(() => null);
         const c = current(), d = c && c.difficulty ? c.difficulty : "medium";
+        const th = Powers.threat(c ? c.si : 0, map ? map.length : 15);
         const botTime = par(d, c ? c.size : 5) * (BOT_PACE[d] || 1) * (1 - Math.max(0, c ? c.si : 0) * 0.012);
-        fight = { key, world: data.playing.world, puzzle: null, letters: null, queue: [], word: null, acc: 0,
-            botTime, limit: Math.round(botTime * 1.1), done: [], boss: {}, me: {}, nextMove: 18, moveIdx: 0, over: false, rate: 1, used: 0,
-            combo: 0, bestCombo: 0, lastWordAt: -1e9, super: 0, pending: null, windup: 0, enraged: false, hp: 100, intro: false, phase: 1, phase2: null };
+        fight = { key, world: data.playing.world, th, puzzle: null, letters: null, queue: [], word: null, acc: 0,
+            botTime, limit: Math.round(botTime * th.margin), done: [], boss: {}, me: {}, buff: {}, nextMove: th.first, moveIdx: 0, over: false, rate: 1, used: 0,
+            combo: 0, bestCombo: 0, lastWordAt: -1e9, super: 0, pending: null, windup: 0, windupMax: 1, enraged: false, hp: 100, intro: false, phase: 1, phase2: null,
+            log: [], myLog: [], hits: 0, blocks: 0, supers: 0, itemsUsed: 0, kinds: new Set(), extraLife: false, lifeUsed: false, thorns: null, snow: null };
         drawPanel(true);
         try {
             const r = await fetch(apiUrl() + "&boss=true");
             if (!r.ok) throw new Error("the server answered " + r.status);
             const p = await r.json();
             if (!fight || fight.key !== key) return;
-            fight.puzzle = p;
-            fight.letters = p.solution.map(row => Array.from(row, ch => (ch === "." ? "." : "")));
-            const entries = [...p.across, ...p.down];
-            fight.letterCount = p.solution.join("").replace(/\./g, "").length;
-            const r2 = U.rng(p.seed);
-            fight.queue = entries.map(e => ({ e, k: r2() })).sort((a, b) => a.k - b.k).map(x => x.e);
+            setBossPuzzle(p, p.seed);
             drawPanel(true);
             // phase 2's puzzle, fetched now so it's ready when phase 1 is solved
             const myFight = fight;
             fetch(apiUrl() + "&phase=2").then(r2b => (r2b.ok ? r2b.json() : null)).then(p2 => {
                 if (p2 && fight === myFight) { fight.phase2 = Object.assign(p2, { mode: "campaign", world: data.playing.world, level: 5, phase: 2 }); updateHp(); drawFight(); }
             }).catch(() => null);
+            Sound.preload(Powers.ALL_SAMPLES);
             if (fresh !== false && U.view() === "level" && !Game.state.solved) {
                 fight.intro = true;
+                Sound.music("boss-intro", { loop: false, v: 0.42, fade: 0.3 });          // the boss's entrance (CC0 music, audio/CREDITS.txt)
                 await FX.cinematic(cc => Bosses.intro(cc, fight.world));
                 if (fight) fight.intro = false;
                 speak(bossOf(fight.world).taunt);
             }
+            if (fight && fightOn()) Sound.music("boss-loop-1", { fade: 1.2 });
         } catch (err) {
             const l = panel.querySelector(".bp-loading");
             if (l) l.textContent = "Couldn't load the boss's puzzle: " + err.message;
         }
+    }
+    // the boss's board: a fresh copy of a puzzle, its words in a random order
+    function setBossPuzzle(p, seed) {
+        const f = fight;
+        f.puzzle = p;
+        f.letters = p.solution.map(row => Array.from(row, ch => (ch === "." ? "." : "")));
+        f.letterCount = p.solution.join("").replace(/\./g, "").length;
+        const r2 = U.rng(seed);
+        f.queue = [...p.across, ...p.down].map(e => ({ e, k: r2() })).sort((a, b) => a.k - b.k).map(x => x.e);
+        f.done = [];
+        f.word = null;
+        f.acc = 0;
+        f.log = [];
     }
     function showPanel() {
         panel.hidden = false;
@@ -899,6 +907,7 @@ const Campaign = (() => {
     function hidePanel() {
         panel.hidden = true;
         meStatus.innerHTML = "";
+        document.querySelectorAll(".bh-combo").forEach(el => el.remove());
         warnEl.hidden = true;
         document.getElementById("puzzle").classList.remove("boss-mode");
         root.classList.remove("in-boss", "boss-enraged");
@@ -914,7 +923,7 @@ const Campaign = (() => {
         if (full) {
             panel.innerHTML = `
                 <div class="bp-stage"><div class="bp-portrait">${bossSvg(fight.world)}</div><div class="bp-speech" hidden></div><div class="bp-windup" hidden><i></i><span></span></div></div>
-                <div class="bp-who"><small>BOSS · ${U.esc(Worlds.byId[fight.world].name.toUpperCase())}</small><b></b><div class="bp-status"></div></div>
+                <div class="bp-who"><small>BOSS · ${U.esc(Worlds.byId[fight.world].name.toUpperCase())} · ${"💀".repeat(fight.th.stars)}</small><b></b><div class="bp-status"></div></div>
                 <div class="bp-bar bp-hp" title="The boss's HP: your puzzle still to solve"><i></i><span></span></div>
                 <div class="bp-bar bp-limit" title="Your time limit"><i></i><span></span></div>
                 <div class="bp-bar bp-race" title="The boss's progress on its own board"><i></i><span></span></div>
@@ -955,7 +964,7 @@ const Campaign = (() => {
         row.innerHTML = "";
         loadout().forEach((id, i) => {
             const a = abilityById[id], n = data.owned[id] || 0;
-            const btn = U.el("button", { type: "button", class: "bp-ab", disabled: n <= 0, title: `${a.name}: ${a.flavor} ${a.desc} (key ${i + 1})` },
+            const btn = U.el("button", { type: "button", class: "bp-ab", disabled: n <= 0, title: `${a.name}: ${a.desc} (key ${i + 1})`, style: { "--c": a.fx.color } },
                 U.el("span", { class: "bp-ab-icon", text: a.icon }), U.el("b", { text: a.name }), U.el("small", { text: `×${n} · key ${i + 1}` }));
             btn.addEventListener("click", () => { btn.blur(); useAbility(id); });
             row.appendChild(btn);
@@ -966,57 +975,94 @@ const Campaign = (() => {
         sup.addEventListener("click", () => { sup.blur(); useSuper(); });
         row.appendChild(sup);
     }
+    const real = (r, c) => { const ch = fight.letters[r][c]; return !!ch && ch !== "." && ch !== BLOT; };
     function drawFight() {
         if (!fight || panel.hidden) return;
-        const g = Game.state, left = Math.max(0, fight.limit - g.seconds);
+        const f = fight, g = Game.state, left = Math.max(0, f.limit - g.seconds);
         const limit = panel.querySelector(".bp-limit");
         if (!limit) return;
-        limit.querySelector("i").style.width = (left / fight.limit * 100).toFixed(1) + "%";
+        limit.querySelector("i").style.width = Math.min(100, left / f.limit * 100).toFixed(1) + "%";
         limit.querySelector("span").textContent = `⏱ Your time: ${U.fmtTime(left)} left` + (Game.clockStopped() > 0 ? ` · ⏸ ${Math.ceil(Game.clockStopped())}s` : "");
         limit.classList.toggle("danger", left <= 20);
         const hp = panel.querySelector(".bp-hp");
-        hp.querySelector("i").style.width = fight.hp.toFixed(1) + "%";
-        hp.querySelector("span").textContent = `❤ BOSS HP ${Math.ceil(fight.hp)}%`;
-        hp.classList.toggle("low", fight.hp <= ENRAGE_AT);
-        const filled = fight.letters ? fight.letters.flat().filter(ch => ch && ch !== ".").length : 0, pct = fight.letterCount ? filled / fight.letterCount : 0;
+        hp.querySelector("i").style.width = f.hp.toFixed(1) + "%";
+        hp.querySelector("span").textContent = `❤ BOSS HP ${Math.ceil(f.hp)}%`;
+        hp.classList.toggle("low", f.hp <= f.th.rageAt);
+        const filled = f.letters ? f.letters.flat().filter(ch => ch && ch !== "." && ch !== BLOT).length : 0, pct = f.letterCount ? filled / f.letterCount : 0;
         panel.querySelector(".bp-race i").style.width = (pct * 100).toFixed(1) + "%";
         panel.querySelector(".bp-race span").textContent = `✎ Boss's board: ${Math.round(pct * 100)}% done`;
         const st = [];
-        for (const [k, lbl] of [["freeze", "❄️ Frozen"], ["slow", "🐌 Slowed"], ["blind", "🙈 Blinded"]]) if (fight.boss[k] > 0) st.push(`${lbl} ${Math.ceil(fight.boss[k])}s`);
-        if (fight.enraged) st.push("😡 ENRAGED");
-        panel.querySelector(".bp-status").textContent = st.join(" · ") || (fight.puzzle ? "Solving…" : "");
-        panel.querySelector(".bp-fog").classList.toggle("on", fight.boss.blind > 0);
-        panel.classList.toggle("frozen", fight.boss.freeze > 0);
-        panel.classList.toggle("enraged", fight.enraged);
+        for (const [k, lbl] of Object.entries(BOSS_TIMERS)) {
+            if (f.boss[k] > 0) st.push(`${lbl} ${Math.ceil(k === "crash" && f.boss.crash > 12 ? f.boss.crash - 12 : f.boss[k])}s`);
+            panel.classList.toggle("st-" + k, f.boss[k] > 0);
+        }
+        if (f.boss.vines) st.push(`🌿 Vines ${Math.ceil(f.boss.vines.t)}s`);
+        if (f.boss.buryN > 0) st.push(`🍂 ${f.boss.buryN} buried`);
+        if (f.boss.junk > 0) st.push(`🖋️ ${f.boss.junk} blots`);
+        if (f.boss.haunt) st.push("👻 Haunted page");
+        panel.classList.toggle("st-haunt", !!f.boss.haunt);
+        panel.classList.toggle("st-calm", f.buff.calm > 0);
+        if (f.enraged) st.push("😡 ENRAGED");
+        panel.querySelector(".bp-status").textContent = st.join(" · ") || (f.puzzle ? "Solving…" : "");
+        panel.querySelector(".bp-fog").classList.toggle("on", f.boss.blind > 0);
+        panel.classList.toggle("frozen", f.boss.freeze > 0);
+        panel.classList.toggle("enraged", f.enraged);
         const sup = panel.querySelector(".bp-super");
         if (sup) {
-            sup.querySelector(".bp-super-fill").style.height = fight.super + "%";
-            sup.classList.toggle("ready", fight.super >= 100);
-            sup.disabled = fight.super < 100;
+            sup.querySelector(".bp-super-fill").style.height = f.super + "%";
+            sup.classList.toggle("ready", f.super >= 100);
+            sup.disabled = f.super < 100;
         }
         // the wind-up warning, on the boss and over your board
         const wu = panel.querySelector(".bp-windup");
-        if (fight.pending) {
-            const [name, kind] = fight.pending, k = fight.windup / WINDUP;
+        if (f.pending) {
+            const mv = f.pending, k = f.windup / f.windupMax;
             wu.hidden = false;
             wu.querySelector("i").style.width = (k * 100).toFixed(1) + "%";
-            wu.querySelector("span").textContent = `${MOVE_ICON[kind]} ${name}`;
+            wu.querySelector("span").textContent = `${mv.icon} ${mv.name}`;
             warnEl.hidden = false;
-            warnEl.innerHTML = `<b>⚠ ${U.esc(name)} incoming!</b><span>Finish a word to block it · ${fight.windup.toFixed(1)}s</span><i style="width:${(k * 100).toFixed(1)}%"></i>`;
+            warnEl.innerHTML = `<b>⚠ ${U.esc(mv.icon)} ${U.esc(mv.name)} incoming!</b><span>It ${U.esc(mv.desc)} · finish a word to block it · ${f.windup.toFixed(1)}s</span><i style="width:${(k * 100).toFixed(1)}%"></i>`;
         } else { wu.hidden = true; warnEl.hidden = true; }
-        if (fight.cells) {
-            fight.letters.forEach((row, r) => row.forEach((ch, c) => { if (ch !== ".") fight.cells[r][c].querySelector(".bp-ltr").textContent = ch; }));
-            const cur = fight.word;
-            fight.cells.flat().forEach(cell => cell.classList.remove("cur"));
-            if (cur) Game.cellsOf(cur).forEach(([r, c]) => fight.cells[r][c].classList.add("cur"));
-            for (const [e, li] of fight.items) { li.classList.toggle("done", fight.done.includes(e)); li.classList.toggle("active", e === cur); }
+        if (f.cells) {
+            const vines = f.boss.vines ? f.boss.vines.cells : null;
+            f.letters.forEach((row, r) => row.forEach((ch, c) => {
+                if (ch === ".") return;
+                const cell = f.cells[r][c];
+                cell.querySelector(".bp-ltr").textContent = ch;
+                cell.classList.toggle("blot", ch === BLOT);
+                cell.classList.toggle("vine", !!vines && vines.has(r + "," + c));
+            }));
+            const cur = f.word;
+            f.cells.flat().forEach(cell => cell.classList.remove("cur"));
+            if (cur) Game.cellsOf(cur).forEach(([r, c]) => f.cells[r][c].classList.add("cur"));
+            for (const [e, li] of f.items) { li.classList.toggle("done", f.done.includes(e)); li.classList.toggle("active", e === cur); }
         }
-        // what the boss is doing to you
-        const mine = Object.entries(fight.me).filter(([k, v]) => v > 0 && k !== "shield");
-        meStatus.innerHTML = "";
-        if (fight.me.shield) meStatus.appendChild(U.el("span", { class: "ms-chip good", text: "🛡️ Shield up" }));
-        if (fight.combo > 1) meStatus.appendChild(U.el("span", { class: "ms-chip combo", text: `🔥 Combo ×${fight.combo}` }));
-        for (const [k, v] of mine) meStatus.appendChild(U.el("span", { class: "ms-chip", text: `${MOVE_ICON[k]} ${MOVE_TEXT[k]} · ${Math.ceil(v)}s` }));
+        // your side: what helps you, what the boss is doing to you. The chips are kept (not rebuilt) while they stay,
+        // so their pop-in animation plays once instead of restarting ten times a second
+        const chips = [];
+        if (f.me.shield) chips.push(["shield", "good", "📄 Shield up"]);
+        if (f.me.reflect) chips.push(["reflect", "good", "🧁 Bounce ready"]);
+        if (f.extraLife) chips.push(["life", "good", "🕹️ Extra life"]);
+        for (const [k, lbl] of Object.entries(MY_BUFFS)) if (f.buff[k] > 0) chips.push(["b-" + k, "good", `${lbl} · ${Math.ceil(f.buff[k])}s`]);
+        if (f.combo > 1) {
+            const left = f.buff.lucky > 0 ? null : Math.max(0, (COMBO_GAP - (performance.now() - f.lastWordAt)) / 1000);
+            chips.push(["combo", "combo", `🔥 Combo ×${f.combo}` + (left == null ? " · locked" : ` · ${Math.ceil(left)}s`), left == null ? 1 : left / (COMBO_GAP / 1000)]);
+        }
+        for (const [k, v] of Object.entries(f.me)) if (v > 0 && ME_TEXT[k]) chips.push(["m-" + k, "", `${ME_TEXT[k]} · ${Math.ceil(v)}s`]);
+        if (f.thorns) chips.push(["thorns", "", `🌹 Thorns · ${Math.ceil(f.thorns.t)}s`]);
+        drawChips(chips);
+    }
+    function drawChips(chips) {
+        const keep = new Set(chips.map(c => c[0]));
+        for (const node of [...meStatus.children]) if (!keep.has(node.dataset.k)) node.remove();
+        chips.forEach(([k, cls, text, bar], i) => {
+            let node = meStatus.querySelector(`[data-k="${k}"]`);
+            if (!node) { node = U.el("span", { class: "ms-chip " + cls, "data-k": k }, U.el("span", { class: "ms-text" }), U.el("i", { class: "ms-bar" })); }
+            if (meStatus.children[i] !== node) meStatus.insertBefore(node, meStatus.children[i] || null);
+            const t = node.querySelector(".ms-text");
+            if (t.textContent !== text) t.textContent = text;
+            node.querySelector(".ms-bar").style.width = bar == null ? "0" : (bar * 100).toFixed(1) + "%";
+        });
     }
     // the boss says something, in a speech bubble by its portrait
     let speechTimer = 0;
@@ -1029,67 +1075,183 @@ const Campaign = (() => {
         clearTimeout(speechTimer);
         speechTimer = setTimeout(() => { el.hidden = true; }, ms);
     }
+    // a little "+8s" (or "-15s") that floats up from the time bar
+    function floatText(text, good = true) {
+        const bar = panel.querySelector(".bp-limit"), at = bar ? U.center(bar) : U.center(boardArea());
+        const el = U.el("div", { class: "bh-dmg small" + (good ? " good" : ""), text, style: { left: at.x + "px", top: at.y + "px" } });
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1100);
+    }
 
-    // the boss writes: one letter at a time, word by word, at a steady (slightly wobbly) pace
+    // ---- the boss writes: one letter at a time, word by word, at a steady (slightly wobbly) pace ----
+    function bossSpeed(f) {
+        const b = f.boss;
+        if (b.freeze > 0 || b.blind > 0 || b.bubble > 0 || b.dig > 0) return 0;
+        if (b.crash > 0) return b.crash > 12 ? 2 : 0;                       // Sugar Crash: 3s at double speed, then nothing
+        if (b.stutter > 0 && b.stutter % 3 > 1.9) return 0;                   // Pollen Puff: a sneeze every 3 seconds
+        if (b.hypno > 0 && performance.now() - lastKeyAt < 1000) return 0;   // Juggling Act: it watches you type
+        let s = f.rate * (f.enraged ? f.th.rageSpeed : 1);
+        if (b.slow > 0) s *= 0.33;
+        if (b.quick > 0) s /= 1 + 0.18 * (f.quickN || 0);                    // Quicksand: slower with every letter
+        return s;
+    }
     function botStep(dt) {
         const f = fight;
         if (!f.puzzle) return;
-        for (const k of ["freeze", "slow", "blind"]) if (f.boss[k] > 0) f.boss[k] = Math.max(0, f.boss[k] - dt);
-        if (f.boss.freeze > 0 || f.boss.blind > 0) return;
-        const perSec = f.letterCount / f.botTime * (f.boss.slow > 0 ? 0.33 : 1) * f.rate * (f.enraged ? 1.2 : 1);
-        f.acc += perSec * dt;
+        const b = f.boss;
+        for (const k of Object.keys(BOSS_TIMERS)) if (b[k] > 0) { b[k] = Math.max(0, b[k] - dt); if (b[k] === 0) bossTimerEnded(k); }
+        if (b.vines && (b.vines.t -= dt) <= 0) b.vines = null;
+        if (b.reverse > 0) {                                                   // Time Reversal: it un-writes instead
+            f.revAcc = (f.revAcc || 0) + dt;
+            while (f.revAcc >= 1) { f.revAcc -= 1; unwriteOne(); }
+            return;
+        }
+        const speed = bossSpeed(f);
+        if (!speed) return;
+        f.acc += f.letterCount / f.botTime * speed * dt;
         while (f.acc >= 1) {
             f.acc -= 1;
-            if (!f.word) {
-                f.word = f.queue.find(e => !f.done.includes(e)) || null;
-                f.rate = 0.75 + Math.random() * 0.5;
-                if (!f.word) break;
-            }
-            const cells = Game.cellsOf(f.word), empty = cells.find(([r, c]) => !f.letters[r][c]);
-            if (empty) {
-                const [r, c] = empty;
-                f.letters[r][c] = f.puzzle.solution[r][c];
-                if (f.cells) U.restart(f.cells[r][c], "pop");
-            }
-            if (!cells.some(([r, c]) => !f.letters[r][c])) {
-                // finished words: this one, and any crossing word its letters completed
-                for (const e of [...f.puzzle.across, ...f.puzzle.down]) if (!f.done.includes(e) && Game.cellsOf(e).every(([r, c]) => f.letters[r][c])) f.done.push(e);
-                f.word = null;
-                if (Math.random() < 0.35) speak(U.pick(["Ha! Another one!", "Too easy.", "Catch up, if you can!", "Done. Next!"]), 1800);
-                if (f.done.length === f.puzzle.across.length + f.puzzle.down.length) { lose("boss"); return; }
-            }
+            if (bossTick()) return;
         }
     }
+    const vineBlocked = e => { const v = fight.boss.vines; return !!v && Game.cellsOf(e).some(([r, c]) => v.cells.has(r + "," + c) && !real(r, c)); };
+    // one letter's worth of work; true when the boss has finished its board
+    function bossTick() {
+        const f = fight, b = f.boss;
+        if (!f.word) {
+            f.word = f.queue.find(e => !f.done.includes(e) && !vineBlocked(e)) || null;
+            f.rate = 0.75 + Math.random() * 0.5;
+            if (!f.word) return false;
+            if (b.buryN > 0) {                                                   // Leaf Pile: dig the clue out first
+                b.buryN--;
+                b.dig = 4;
+                Powers.aura(bossBoardEl(), ["🍂", "🍁"], "fall", 8, 1400);
+                return false;
+            }
+        }
+        if (vineBlocked(f.word)) { f.word = null; return false; }
+        const cells = Game.cellsOf(f.word), empty = cells.find(([r, c]) => !f.letters[r][c]);
+        if (empty) write(empty);
+        else {
+            const blot = cells.find(([r, c]) => f.letters[r][c] === BLOT);
+            if (blot) {                                                          // rub an ink blot out (it writes the letter next time)
+                f.letters[blot[0]][blot[1]] = "";
+                if (f.cells) U.restart(f.cells[blot[0]][blot[1]], "shake");
+                return false;
+            }
+        }
+        if (cells.every(([r, c]) => real(r, c))) {
+            const e = f.word;
+            f.word = null;
+            refreshDone();
+            finishedWord(e);
+            if (f.done.length === f.puzzle.across.length + f.puzzle.down.length) { lose("boss"); return true; }
+        }
+        return false;
+    }
+    function write([r, c]) {
+        const f = fight, b = f.boss, cell = f.cells && f.cells[r][c];
+        if (b.junk > 0) { b.junk--; f.letters[r][c] = BLOT; if (cell) U.restart(cell, "pop"); return; }
+        if (b.sand > 0 && Math.random() < 0.5) { if (cell) U.restart(cell, "blown"); return; }            // written, then blown away
+        f.letters[r][c] = f.puzzle.solution[r][c];
+        f.log.push([r, c]);
+        if (cell) U.restart(cell, "pop");
+        if (b.quick > 0) f.quickN = (f.quickN || 0) + 1;
+        if (b.ghost > 0 && (f.ghostN || 0) < 6) { f.ghostN = (f.ghostN || 0) + 1; Game.giveLetters(1); Powers.aura(boardArea(), ["👻"], "drift", 2, 1000); }
+    }
+    // a word on the boss's board was just finished: traps go off
+    function finishedWord(e) {
+        const f = fight, b = f.boss;
+        if (b.haunt) {
+            b.haunt = false;
+            wipe(Game.cellsOf(e), true);
+            Powers.aura(bossBoardEl(), ["👻", "💨"], "drift", 10, 1400);
+            Sound.custom(Powers.ABILITIES.find(a => a.kind === "haunt").sound);
+            speak("My word! Where did it go?!", 2200);
+            return;
+        }
+        if (b.lava > 0) {
+            wipe([Game.cellsOf(e)[0]], true);
+            Powers.aura(bossBoardEl(), ["🔥"], "rise", 6, 1000);
+            return;
+        }
+        if (Math.random() < 0.35) speak(U.pick(["Ha! Another one!", "Too easy.", "Catch up, if you can!", "Done. Next!"]), 1800);
+    }
+    // the boss's finished words, in the order it finished them
+    function refreshDone() {
+        const f = fight, full = e => Game.cellsOf(e).every(([r, c]) => real(r, c));
+        f.done = f.done.filter(full);
+        for (const e of [...f.puzzle.across, ...f.puzzle.down]) if (!f.done.includes(e) && full(e)) f.done.push(e);
+    }
+    // wipe letters on the boss's board. force: even letters of other finished words (they stop being finished)
+    function wipe(cells, force = false) {
+        const f = fight;
+        let n = 0;
+        for (const [r, c] of cells) {
+            if (!f.letters[r][c] || f.letters[r][c] === ".") continue;
+            if (!force && f.done.some(e => Game.cellsOf(e).some(([r2, c2]) => r2 === r && c2 === c))) continue;
+            f.letters[r][c] = "";
+            n++;
+            if (f.cells) { f.cells[r][c].querySelector(".bp-ltr").textContent = ""; U.restart(f.cells[r][c], "shake"); }
+        }
+        refreshDone();
+        if (f.word && !Game.cellsOf(f.word).some(([r, c]) => f.letters[r][c])) f.word = null;
+        return n;
+    }
+    function unwriteOne() {
+        const f = fight;
+        while (f.log.length) {
+            const [r, c] = f.log.pop();
+            if (real(r, c)) { wipe([[r, c]], true); return; }
+        }
+    }
+    const bossFilled = () => fight.letters.flatMap((row, r) => row.map((ch, c) => [r, c])).filter(([r, c]) => real(r, c));
+    function bossTimerEnded(k) {
+        const f = fight;
+        if (k === "worm") {                                                     // the wormhole closes: what went in is gone
+            const cells = f.log.slice(f.wormFrom || 0);
+            const n = wipe(cells, true);
+            Powers.aura(bossBoardEl(), ["🌀", "✨"], "swirl", 12, 1400);
+            if (n) speak(`${n} letters... sucked away!`, 2000);
+        }
+        if (k === "bubble") Powers.aura(bossBoardEl(), ["💥", "🫧"], "pop", 8, 900);
+        if (k === "crash") speak("Ugh... I need a nap...", 1800);
+    }
 
-    // your word hits the boss: a glowing shot from the word to its portrait, a damage number, combos, super charge
+    // ---- your words hit the boss: a glowing shot from the word to its portrait, a damage number, combos, Super ----
     function onWord({ cells }) {
         if (!fightOn() || !fight.puzzle) return;
         const f = fight, now = performance.now();
-        f.combo = now - f.lastWordAt < COMBO_GAP ? f.combo + 1 : 1;
+        f.combo = f.buff.lucky > 0 || now - f.lastWordAt < COMBO_GAP ? f.combo + 1 : 1;
         f.lastWordAt = now;
         f.bestCombo = Math.max(f.bestCombo, f.combo);
         const dmg = Math.round(cells.length * 4 * (1 + (f.combo - 1) * 0.25));
-        f.super = Math.min(100, f.super + 20 + (f.combo - 1) * 8);
+        f.super = Math.min(100, f.super + (20 + (f.combo - 1) * 8) * (f.buff.fireup > 0 ? 2 : 1));
+        if (f.buff.sun > 0) { f.limit += 8; floatText("+8s ☀️"); }
+        if (f.buff.hot > 0) { f.boss.freeze = Math.max(f.boss.freeze || 0, 2); Powers.aura(portraitEl(), ["🔥"], "rise", 6, 900); }
+        if (f.boss.bubble > 0) { f.boss.bubble = 0; bossTimerEnded("bubble"); speak("My bubble popped!", 1600); }
         // blocked an attack that was winding up?
         if (f.pending) {
-            const [name] = f.pending;
+            const mv = f.pending;
             f.pending = null;
             f.windup = 0;
+            f.blocks++;
             f.super = Math.min(100, f.super + 15);
-            Bosses.cutin(f.world, "BLOCKED!", `${name} was stopped`, { good: true });
-            Sound.play("right");
+            Bosses.cutin(f.world, "BLOCKED!", `${mv.name} was stopped`, { good: true });
+            Sound.sample("jingle-block", { v: 0.45 });
             speak(U.pick(["What?! Blocked?", "Grr... lucky!", "Not fair!"]));
         }
         const els = cells.map(([r, c]) => Game.cellEl(r, c)).filter(Boolean);
         const pts = els.map(el => U.center(el));
-        const from = pts.length ? { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length } : U.center(document.querySelector(".board-area"));
-        const portrait = panel.querySelector(".bp-portrait");
+        const from = pts.length ? { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length } : U.center(boardArea());
+        const portrait = portraitEl();
         const to = portrait ? U.center(portrait) : from;
         const land = () => {
             if (portrait) U.restart(portrait, "hit");
             damageNumber(to, dmg, f.combo);
             FX.burst({ x: to.x, y: to.y, n: 16 + f.combo * 4, colors: ["#fff", "#ffd23f", bossOf(f.world).color], shape: "star", speed: [120, 340], gravity: 260, life: [0.4, 0.8], size: [3, 6] });
             Sound.play("thud");
+            Sound.sample("hit", { v: 0.45 + Math.min(0.3, f.combo * 0.05), rate: 1 + Math.min(0.3, (f.combo - 1) * 0.06) });
         };
         if (U.motion() === "still") land();
         else {
@@ -1107,80 +1269,211 @@ const Campaign = (() => {
         document.body.appendChild(el);
         setTimeout(() => el.remove(), 1100);
     }
+    // the combo pop: next to the timer, never over the board (one at a time: two words finished by one letter show the final count)
     function comboPop(n) {
-        const el = U.el("div", { class: "bh-combo", html: `<small>COMBO</small><b>×${n}</b>` });
-        const area = document.querySelector(".board-wrap");
-        area.appendChild(el);
+        document.querySelectorAll(".bh-combo").forEach(el => el.remove());
+        const el = U.el("div", { class: "bh-combo" + (n >= 5 ? " hot" : ""), html: `<small>COMBO</small><b>×${n}</b>` });
+        document.querySelector(".hud-row").appendChild(el);
         Sound.play("tile", Math.min(8, n + 2));
         setTimeout(() => el.remove(), 1200);
     }
-    // the boss's HP is your puzzle still to solve; low HP makes it angry
+    // the boss's HP is your puzzle still to solve; low HP makes it angry (not while it's calmed)
     function updateHp() {
-        const { right, total } = Game.progress(), left = 1 - right / total;
+        const f = fight, { right, total } = Game.progress(), left = 1 - right / total;
         // with a phase 2 the boss's HP is split: phase 1 takes it from 100% to 50%, phase 2 from 50% to 0
-        fight.hp = Math.max(0, fight.phase === 2 ? 50 * left : fight.phase2 ? 50 + 50 * left : 100 * left);
-        if (!fight.enraged && fight.hp <= ENRAGE_AT && !Game.state.solved) {
-            fight.enraged = true;
+        f.hp = Math.max(0, f.phase === 2 ? 50 * left : f.phase2 ? 50 + 50 * left : 100 * left);
+        if (!f.enraged && !(f.buff.calm > 0) && f.hp <= f.th.rageAt && !Game.state.solved) {
+            f.enraged = true;
             root.classList.add("boss-enraged");
             Bosses.enrage(true);
-            Bosses.cutin(fight.world, "ENRAGED!", "It's faster and angrier now");
+            Bosses.cutin(f.world, "ENRAGED!", f.th.double ? "Faster, angrier, and it chains its attacks now" : "It's faster and angrier now");
             Sound.play("boom");
             FX.shake(10, 500);
             speak("ENOUGH! Now I'm angry!", 3000);
-            fight.nextMove = Math.min(fight.nextMove, 6);
+            f.nextMove = Math.min(f.nextMove, 6);
         }
     }
+    function setEnraged(on) {
+        fight.enraged = on;
+        root.classList.toggle("boss-enraged", on);
+        Bosses.enrage(on);
+    }
 
-    function useAbility(id) {
+    // ---- your abilities ----
+    // why an ability can't be used right now (null: it can)
+    function cantUse(a) {
+        const f = fight, g = Game.state;
+        const myBad = Object.values(f.me).some(v => v > 0 && v !== true) || f.thorns;
+        switch (a.kind) {
+            case "erase": case "scatter": return f.done.length ? null : "The boss hasn't finished a word yet.";
+            case "knock": case "undo": case "chomp": case "blackhole": return bossFilled().length ? null : "The boss's board is still empty.";
+            case "cleanse": return myBad ? null : "The boss isn't doing anything to you right now.";
+            case "shield": return f.me.shield ? "Your shield is already up." : null;
+            case "reflect": return f.me.reflect ? "Your bounce is already ready." : null;
+            case "extralife": return f.extraLife ? "You already have an extra life." : null;
+            case "haunt": return f.boss.haunt ? "The boss's next page is already haunted." : null;
+            case "calm": return f.buff.calm > 0 ? "The boss is already calm." : null;
+            case "check": return Game.wrongCells().length ? null : "No wrong letters on your board.";
+            case "autofill": return autoFillCells().length ? null : "No word is just one letter from done.";
+            case "cheat": { const e = currentMyEntry(); return e && Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]) ? null : "Your selected word is already right."; }
+            default: return null;
+        }
+    }
+    const currentMyEntry = () => { const g = Game.state; if (!g.acrossAt) return null; const a = g.acrossAt[g.row][g.col], d = g.downAt[g.row][g.col]; return g.direction === "across" ? a || d : d || a; };
+    function autoFillCells() {
+        const g = Game.state, out = [];
+        for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+            const wrong = Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]);
+            if (wrong.length === 1 && !out.some(([r, c]) => r === wrong[0][0] && c === wrong[0][1])) out.push(wrong[0]);
+        }
+        return out.slice(0, 4);
+    }
+    async function useAbility(id) {
         const a = abilityById[id];
         if (!a || !fightOn() || !fight.puzzle || fight.intro || (data.owned[id] || 0) <= 0) return;
+        const why = cantUse(a);
+        if (why) { FX.toast({ icon: a.icon, kicker: "NOT NOW", title: a.name, text: why, ms: 2200 }); Sound.play("wrong"); return; }
         data.owned[id]--;
-        fight.used++;
         save();
-        const f = fight, portrait = panel.querySelector(".bp-portrait");
-        if (a.kind === "freeze") f.boss.freeze = Math.max(f.boss.freeze || 0, a.d);
-        if (a.kind === "slow") f.boss.slow = Math.max(f.boss.slow || 0, a.d);
-        if (a.kind === "blind") {
-            f.boss.blind = Math.max(f.boss.blind || 0, a.d);
-            if (f.word) { wipe(Game.cellsOf(f.word)); f.word = null; }        // it loses its place
-        }
-        if (a.kind === "erase") {
-            const last = f.done.pop();
-            if (last) { wipe(Game.cellsOf(last)); f.done = f.done.filter(e => Game.cellsOf(e).every(([r, c]) => f.letters[r][c])); }
-        }
-        if (a.kind === "shield") f.me.shield = 1;
-        if (a.kind === "time") f.limit += a.d;
-        if (a.kind === "hint") Game.giveLetters(a.d);
-        if (portrait) U.restart(portrait, a.kind === "shield" || a.kind === "time" || a.kind === "hint" ? "buff" : "hit");
-        // a shot flies over to the boss's side
-        const from = U.center(document.querySelector(".board-area")), to = portrait ? U.center(portrait) : from;
-        if (U.motion() !== "still" && ["freeze", "slow", "blind", "erase"].includes(a.kind)) {
-            const shot = U.el("div", { class: "bh-shot", text: a.icon });
-            document.body.appendChild(shot);
-            shot.animate([{ transform: `translate(${from.x}px, ${from.y}px) scale(.6)` }, { transform: `translate(${(from.x + to.x) / 2}px, ${Math.min(from.y, to.y) - 100}px) scale(1.6)` }, { transform: `translate(${to.x}px, ${to.y}px) scale(1)` }],
-                { duration: 520, easing: "ease-in" }).onfinish = () => { shot.remove(); FX.burst({ x: to.x, y: to.y, n: 26, colors: ["#fff", biome(f.world).node, "#ffd23f"], shape: "star", speed: [100, 320], gravity: 200, life: [0.4, 0.9], size: [3, 7] }); Sound.play("thud"); };
-            speak(U.pick(["Ow!", "Hey! Cut that out!", "Argh!", "My board!"]), 1800);
-        }
-        Sound.play("whoosh");
-        FX.toast({ icon: a.icon, kicker: "YOU USED", title: a.name, text: a.desc, ms: 2200 });
+        const f = fight;
+        f.used++;
+        f.kinds.add(a.kind);
         drawAbilityBar();
+        const castP = Powers.cast(a, { fromEl: boardArea(), bossEl: portraitEl(), bossBoard: bossBoardEl() });
+        if (a.fx.on !== "me") await castP;                       // effects on the boss happen when the shot lands
+        if (fight !== f || f.over) return;
+        const portrait = portraitEl();
+        if (portrait) U.restart(portrait, a.fx.on === "me" ? "buff" : "hit");
+        applyAbility(a);
+        if (a.fx.on !== "me" && Math.random() < 0.7) speak(U.pick(["Ow!", "Hey! Cut that out!", "Argh!", "My board!", "You'll pay for that!"]), 1800);
+        updateHp();
         drawFight();
+    }
+    function applyAbility(a) {
+        const f = fight, b = f.boss, g = Game.state;
+        const max = (k, v) => { b[k] = Math.max(b[k] || 0, v); };
+        switch (a.kind) {
+            case "junk": b.junk = (b.junk || 0) + 5; break;
+            case "erase": { const last = f.done[f.done.length - 1]; if (last) wipe(Game.cellsOf(last)); break; }
+            case "shield": f.me.shield = 1; break;
+            case "stutter": max("stutter", 15); break;
+            case "vines": {
+                const open = f.letters.flatMap((row, r) => row.map((ch, c) => [r, c, ch])).filter(([, , ch]) => ch === "").map(([r, c]) => r + "," + c);
+                const pick = open.sort(() => Math.random() - 0.5).slice(0, 4);
+                b.vines = { cells: new Set(pick), t: 20 };
+                if (f.word && vineBlocked(f.word)) f.word = null;
+                break;
+            }
+            case "sun": f.buff.sun = 30; break;
+            case "knock": wipe(bossFilled().sort(() => Math.random() - 0.5).slice(0, 3), true); break;
+            case "bury": b.buryN = (b.buryN || 0) + 3; break;
+            case "hint": Game.giveLetters(2); break;
+            case "slow": max("slow", 10); break;
+            case "super": f.super = Math.min(100, f.super + 60); break;
+            case "reflect": f.me.reflect = 1; break;
+            case "cleanse": f.me = { shield: f.me.shield, reflect: f.me.reflect }; f.thorns = null; clearMe(true); break;
+            case "bubble": max("bubble", 15); break;
+            case "undo": { let n = 0; while (f.log.length && n < 6) { const [r, c] = f.log.pop(); if (real(r, c)) { wipe([[r, c]], true); n++; } } break; }
+            case "freeze": max("freeze", 6); break;
+            case "delay": f.nextMove += 30; break;
+            case "armor": f.buff.armor = 40; break;
+            case "wash": {
+                const inDone = new Set(f.done.flatMap(e => Game.cellsOf(e).map(([r, c]) => r + "," + c)));
+                wipe(bossFilled().filter(([r, c]) => !inDone.has(r + "," + c)));
+                f.word = null;
+                break;
+            }
+            case "counter":
+                if (f.pending) { Bosses.cutin(f.world, "COUNTERED!", `${f.pending.name} was cancelled`, { good: true }); f.pending = null; f.windup = 0; max("freeze", 4); }
+                else max("freeze", 2);
+                break;
+            case "lucky": f.buff.lucky = 30; f.combo += 2; f.bestCombo = Math.max(f.bestCombo, f.combo); f.lastWordAt = performance.now(); comboPop(f.combo); break;
+            case "scatter": wipe(f.done.slice(-6).map(e => U.pick(Game.cellsOf(e))), true); break;
+            case "silver": f.buff.silver = 40; break;
+            case "time": f.limit += 40; floatText("+40s 🪁"); break;
+            case "sand": max("sand", 12); break;
+            case "quicksand": max("quick", 20); f.quickN = 0; break;
+            case "check": Game.markWrong(); break;
+            case "blind": {
+                max("blind", 8);
+                if (f.word) { wipe(Game.cellsOf(f.word)); f.word = null; }
+                break;
+            }
+            case "hypno": max("hypno", 20); break;
+            case "crash": max("crash", 15); break;
+            case "chomp": chomp(); break;
+            case "cheat": flashAnswer(currentMyEntry()); break;
+            case "extralife": f.extraLife = true; break;
+            case "autofill": Game.fillCells(autoFillCells()); break;
+            case "overclock": f.buff.overclock = 15; f.ocN = 0; break;
+            case "firewall": f.buff.firewall = 30; if (f.pending) { f.windup *= 2; f.windupMax *= 2; } break;
+            case "calm": f.buff.calm = 30; if (f.enraged) { setEnraged(false); speak("...fine. I'll be quiet.", 2000); } break;
+            case "haunt": b.haunt = true; break;
+            case "ghost": max("ghost", 12); f.ghostN = 0; break;
+            case "hot": f.buff.hot = 20; break;
+            case "lavafloor": max("lava", 15); break;
+            case "fireup": f.buff.fireup = 25; break;
+            case "blackhole": {
+                const n = f.puzzle.size, m = Math.floor(n / 2);
+                wipe(bossFilled().filter(([r, c]) => Math.abs(r - m) <= 1 && Math.abs(c - m) <= 1), true);
+                break;
+            }
+            case "reverse": max("reverse", 10); f.revAcc = 0; break;
+            case "wormhole": max("worm", 10); f.wormFrom = f.log.length; break;
+        }
+        if (g.solved) return;
+    }
+    // Chomper: a pixel monster eats along the boss's board in a zigzag, one square at a time
+    function chomp() {
+        const f = fight, n = f.puzzle.size, path = [];
+        const startTop = Math.random() < 0.5;
+        for (let i = 0; i < n; i++) {
+            const r = startTop ? i : n - 1 - i;
+            for (let j = 0; j < n; j++) path.push([r, i % 2 ? n - 1 - j : j]);
+        }
+        let eaten = 0, step = 0;
+        const t = setInterval(() => {
+            if (fight !== f || f.over || eaten >= 8 || step >= path.length) { clearInterval(t); return; }
+            const [r, c] = path[step++];
+            const cell = f.cells && f.cells[r][c];
+            if (cell && !cell.classList.contains("block")) {
+                cell.classList.add("chomped");
+                setTimeout(() => cell.classList.remove("chomped"), 250);
+            }
+            if (real(r, c)) { wipe([[r, c]], true); eaten++; Sound.tone({ f: eaten % 2 ? 300 : 500, f2: 200, type: "square", d: 0.07, v: 0.04 }); }
+            drawFight();
+        }, 70);
+    }
+    // Cheat Code: the answer appears over your selected word for a moment
+    function flashAnswer(e) {
+        const g = Game.state;
+        if (!e) return;
+        for (const [r, c] of Game.cellsOf(e)) {
+            const cell = Game.cellEl(r, c);
+            if (!cell || g.letters[r][c] === g.puzzle.solution[r][c]) continue;
+            const ghost = U.el("span", { class: "cheat-ltr", text: g.puzzle.solution[r][c] });
+            cell.appendChild(ghost);
+            setTimeout(() => ghost.remove(), 2500);
+        }
     }
     // Super Strike: a full-screen hit that freezes the boss and wipes its last word
     function useSuper() {
         if (!fightOn() || !fight.puzzle || fight.intro || fight.super < 100) return;
         const f = fight;
         f.super = 0;
+        f.supers++;
         f.boss.freeze = Math.max(f.boss.freeze || 0, 7);
-        const last = f.done.pop();
-        if (last) { wipe(Game.cellsOf(last)); f.done = f.done.filter(e => Game.cellsOf(e).every(([r, c]) => f.letters[r][c])); }
+        const last = f.done[f.done.length - 1];
+        if (last) wipe(Game.cellsOf(last));
         if (f.word) { wipe(Game.cellsOf(f.word)); f.word = null; }
         if (f.pending) { f.pending = null; f.windup = 0; }
         Bosses.cutin(f.world, "SUPER STRIKE!", "Frozen 7s · its last word is gone", { good: true });
         Sound.play("boom");
+        Sound.sample("laser", { v: 0.5, rate: 0.8 });
+        Sound.sample("bell", { v: 0.4, t: 0.15 });
         FX.flash("#fff", 350, 0.6);
         FX.shake(14, 600);
-        const portrait = panel.querySelector(".bp-portrait");
+        const portrait = portraitEl();
         if (portrait) {
             U.restart(portrait, "hit");
             const p = U.center(portrait);
@@ -1191,107 +1484,328 @@ const Campaign = (() => {
         drawAbilityBar();
         drawFight();
     }
-    function wipe(cells) {
-        const f = fight;
-        for (const [r, c] of cells) {
-            if (f.done.some(e => Game.cellsOf(e).some(([r2, c2]) => r2 === r && c2 === c))) continue;   // part of another finished word
-            f.letters[r][c] = "";
-            if (f.cells) { f.cells[r][c].querySelector(".bp-ltr").textContent = ""; U.restart(f.cells[r][c], "shake"); }
-        }
-    }
 
-    // the boss's turn to be mean: first a wind-up (finish a word to block it), then the attack lands
-    function windUp() {
-        const f = fight, moves = BOSS_MOVES[f.world] || BOSS_MOVES.paper;
+    // ---- the boss's turn to be mean: first a wind-up (finish a word to block it), then the attack lands ----
+    function windUp(chained = false) {
+        const f = fight, moves = Powers.MOVES[f.world] || Powers.MOVES.paper;
         f.pending = moves[f.moveIdx++ % moves.length];
-        f.windup = WINDUP;
-        const portrait = panel.querySelector(".bp-portrait");
+        f.pendingChained = chained;
+        f.windup = f.th.windup * (chained ? 0.7 : 1) * (f.buff.firewall > 0 ? 2 : 1);
+        f.windupMax = f.windup;
+        const portrait = portraitEl();
         if (portrait) U.restart(portrait, "charge");
-        Sound.play("select");
-        speak(`${f.pending[0]}... get ready!`, 2400);
+        Powers.chargeSound(f.world);
+        Powers.aura(portrait, [f.pending.icon], "orbit", 4, f.windup * 1000);
+        speak(chained ? `And ${f.pending.name}, too!` : `${f.pending.name}... get ready!`, 2400);
         drawFight();
     }
-    function attack() {
-        const f = fight, [name, kind, d] = f.pending;
+    async function attack() {
+        const f = fight, mv = f.pending, b = bossOf(f.world);
         f.pending = null;
-        const b = bossOf(f.world), portrait = panel.querySelector(".bp-portrait");
+        const portrait = portraitEl();
         if (portrait) U.restart(portrait, "attack");
+        const chain = () => { if (f.th.double && f.enraged && !f.pendingChained && !f.over) setTimeout(() => { if (fight === f && fightOn() && !f.pending) windUp(true); }, 900); };
         if (f.me.shield) {
             f.me.shield = 0;
-            Bosses.cutin(f.world, "SHIELDED!", `${name} bounced off your shield`, { good: true });
+            Bosses.cutin(f.world, "SHIELDED!", `${mv.name} bounced off your Paper Wall`, { good: true });
             Sound.play("right");
             drawFight();
+            chain();
             return;
         }
-        Bosses.cutin(f.world, name + "!", MOVE_TEXT[kind] + (kind === "erase" ? "" : ` for ${d}s`));
-        Sound.play("boom");
+        if (f.me.reflect) {
+            f.me.reflect = 0;
+            f.boss.freeze = Math.max(f.boss.freeze || 0, Math.max(4, mv.d * f.th.power));
+            Bosses.cutin(f.world, "BOUNCED BACK!", `${mv.name} hit the boss instead: frozen`, { good: true });
+            Sound.custom(Powers.ABILITIES.find(a => a.kind === "reflect").sound);
+            Powers.aura(portrait, ["🧁", mv.icon], "pop", 10, 1200);
+            speak("Wha-? It came BACK?!", 2000);
+            drawFight();
+            chain();
+            return;
+        }
+        f.hits++;
+        Bosses.cutin(f.world, mv.name + "!", "It " + mv.desc);
         FX.shake(9, 420);
-        FX.flash(b.color, 380, 0.25);
-        if (kind === "erase") Game.eraseLetters(d);
-        else f.me[kind] = d;
-        if (kind === "scramble") scramble(true);
+        FX.flash(b.color, 380, 0.22);
+        await Powers.strike(f.world, mv, { fromEl: portrait || panel, toEl: boardArea() });
+        if (fight !== f || f.over || !fightOn()) return;
+        hitMe(mv);
+        if (f.buff.silver > 0) { f.limit += 20; f.super = Math.min(100, f.super + 40); floatText("+20s ☁️"); }
         speak(U.pick(["Take that!", "Ha! Try writing now!", b.taunt]));
         applyMe();
         updateHp();
         drawFight();
+        chain();
     }
-    // the effects on you, as classes on the page
-    let scrambled = null;
-    function applyMe() {
+    // what a boss move does to you (durations get longer with each boss, and Frost Armor halves them)
+    function hitMe(mv) {
+        const f = fight, g = Game.state, armor = f.buff.armor > 0;
+        const dur = mv.d * f.th.power * (armor ? 0.5 : 1);
+        const open = () => scopeAll().filter(([r, c]) => !Game.isLocked(r, c));
+        const filled = () => open().filter(([r, c]) => g.letters[r][c]);
+        const shuffle = list => list.sort(() => Math.random() - 0.5);
+        switch (mv.kind) {
+            case "rubout": Game.eraseLetters(armor ? 2 : 3); break;
+            case "thorns": {
+                const cells = shuffle(open().filter(([r, c]) => !g.letters[r][c])).slice(0, armor ? 2 : 3);
+                f.thorns = { cells: new Set(cells.map(([r, c]) => r + "," + c)), t: dur };
+                break;
+            }
+            case "acorns": {                                                     // swap pairs of your letters around
+                const list = shuffle(filled());
+                const sets = [];
+                for (let i = 0; i + 1 < list.length && sets.length < (armor ? 1 : 2) * 2; i += 2) {
+                    const [a, b2] = [list[i], list[i + 1]];
+                    if (g.letters[a[0]][a[1]] === g.letters[b2[0]][b2[1]]) continue;
+                    sets.push([a[0], a[1], g.letters[b2[0]][b2[1]]], [b2[0], b2[1], g.letters[a[0]][a[1]]]);
+                }
+                Game.setLetters(sets);
+                break;
+            }
+            case "lightning": {                                                  // the word with the most of your letters in it
+                let best = null, most = 0;
+                for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+                    const n = Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c)).length;
+                    if (n > most) { most = n; best = e; }
+                }
+                if (best) Game.setLetters(Game.cellsOf(best).filter(([r, c]) => !Game.isLocked(r, c)).slice(0, armor ? 2 : 99).map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "glitch": {
+                const right = shuffle(filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])).slice(0, armor ? 2 : 3);
+                Game.setLetters(right.map(([r, c]) => [r, c, String.fromCharCode(65 + ((g.puzzle.solution[r][c].charCodeAt(0) - 65 + 1 + Math.floor(Math.random() * 24)) % 26))]));
+                break;
+            }
+            case "lag": {
+                const back = [];
+                for (let i = f.myLog.length - 1; i >= 0 && back.length < (armor ? 2 : 4); i--) {
+                    const [r, c] = f.myLog[i];
+                    if (g.letters[r][c] && !Game.isLocked(r, c) && !back.some(([r2, c2]) => r2 === r && c2 === c)) back.push([r, c, ""]);
+                }
+                Game.setLetters(back);
+                break;
+            }
+            case "eruption": {
+                const n = g.puzzle.size, hits = [];
+                for (let k = 0; k < (armor ? 1 : 2); k++) {
+                    const r0 = Math.floor(Math.random() * n), c0 = Math.floor(Math.random() * n);
+                    for (const [dr, dc] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) hits.push([r0 + dr, c0 + dc]);
+                }
+                const ok = hits.filter(([r, c]) => r >= 0 && c >= 0 && r < n && c < n && g.puzzle.solution[r][c] !== "." && g.letters[r][c] && !Game.isLocked(r, c));
+                ok.forEach(([r, c]) => { const el = Game.cellEl(r, c); if (el) U.restart(el, "scorched"); });
+                Game.setLetters(ok.map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "heatwave": f.limit -= Math.round(dur); floatText(`-${Math.round(dur)}s 🥵`, false); break;
+            case "collapse": {
+                const outs = [];
+                for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+                    const cells = Game.cellsOf(e);
+                    if (!cells.every(([r, c]) => g.letters[r][c])) continue;
+                    const loose = cells.filter(([r, c]) => !Game.isLocked(r, c) && !outs.some(([r2, c2]) => r2 === r && c2 === c));
+                    if (loose.length) outs.push(U.pick(loose));
+                    if (outs.length >= (armor ? 3 : 6)) break;
+                }
+                Game.setLetters(outs.map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "whiteout": {
+                f.snow = new Set(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length / 2)).map(([r, c]) => r + "," + c));
+                f.me.whiteout = dur;
+                break;
+            }
+            default: f.me[mv.kind] = dur;
+        }
+        if (mv.kind === "hoot" || mv.kind === "riddle") rewriteClues();
+    }
+    const scopeAll = () => { const g = Game.state, out = []; g.puzzle.solution.forEach((row, r) => [...row].forEach((ch, c) => { if (ch !== ".") out.push([r, c]); })); return out; };
+
+    // ---- the boss's effects on you, shown on the page ----
+    let savedClues = null;
+    function rewriteClues() {
         const m = fight ? fight.me : {};
-        const area = document.querySelector(".board-area"), clues = document.querySelector(".clues"), board = document.getElementById("board");
-        area.classList.toggle("fx-blind", m.blind > 0);
-        clues.classList.toggle("fx-blind", m.blind > 0);
-        board.classList.toggle("fx-smudge", m.smudge > 0);
-        board.classList.toggle("fx-frozen", m.freeze > 0);
-        document.getElementById("clue-bar").classList.toggle("fx-scramble", m.scramble > 0);
-        if (!(m.scramble > 0) && scrambled) scramble(false);
+        const items = [...document.querySelectorAll(".clues .clue-text")], bar = document.querySelector("#clue-bar .cb-text");
+        if (!savedClues) savedClues = items.map(n => n.textContent);
+        const jumble = t => t.split(" ").map(w => (w.length > 3 ? w[0] + [...w.slice(1, -1)].sort(() => Math.random() - 0.5).join("") + w.slice(-1) : w)).join(" ");
+        const mirror = t => [...t].reverse().join("");
+        items.forEach((n, i) => { const t = savedClues[i]; n.textContent = m.hoot > 0 ? jumble(t) : m.riddle > 0 ? mirror(t) : t; });
+        if (bar && (m.hoot > 0 || m.riddle > 0)) bar.textContent = m.hoot > 0 ? jumble(bar.textContent) : mirror(bar.textContent);
     }
-    function clearMe() {
-        if (fight) fight.me = {};
-        ["fx-blind"].forEach(c => document.querySelectorAll("." + c).forEach(n => n.classList.remove(c)));
-        ["fx-smudge", "fx-frozen"].forEach(c => document.getElementById("board").classList.remove(c));
-        document.getElementById("clue-bar").classList.remove("fx-scramble");
-        if (scrambled) scramble(false);
-    }
-    function scramble(on) {
-        const items = document.querySelectorAll(".clues .clue-text");
-        if (on) {
-            if (!scrambled) scrambled = [...items].map(n => n.textContent);
-            items.forEach(n => { n.textContent = n.textContent.split(" ").map(w => w.length > 3 ? w[0] + [...w.slice(1, -1)].sort(() => Math.random() - 0.5).join("") + w.slice(-1) : w).join(" "); });
-        } else if (scrambled) {
-            items.forEach((n, i) => { if (scrambled[i] != null) n.textContent = scrambled[i]; });
-            scrambled = null;
+    function applyMe() {
+        const f = fight, m = f ? f.me : {}, on = k => m[k] > 0;
+        const area = boardArea(), clues = document.querySelector(".clues"), board = document.getElementById("board");
+        if (!area || !board) return;
+        area.classList.toggle("fx-blind", on("ink"));
+        clues.classList.toggle("fx-blind", on("ink"));
+        for (const k of ["crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock"]) area.classList.toggle("fx-" + k, on(k));
+        board.classList.toggle("fx-smudge", on("sour"));
+        board.classList.toggle("fx-frozen", on("freeze"));
+        clues.classList.toggle("fx-petals", on("petals"));
+        flareEl.classList.toggle("on", on("flare"));
+        // the clue text tricks end: put the clues back
+        if (savedClues && !on("hoot") && !on("riddle")) {
+            document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
+            savedClues = null;
+            Game.render();
+        }
+        // squares: snow, thorns, ghost letters
+        const g = Game.state;
+        if (g.puzzle && g.cells) scopeAll().forEach(([r, c]) => {
+            const cell = Game.cellEl(r, c), id = r + "," + c;
+            if (!cell) return;
+            cell.classList.toggle("snowed", on("whiteout") && !!f.snow && f.snow.has(id));
+            cell.classList.toggle("thorny", !!(f && f.thorns && f.thorns.cells.has(id)));
+            const ghost = cell.querySelector(".ghost-ltr");
+            if (on("haunting") && !g.letters[r][c]) { if (!ghost) cell.appendChild(U.el("span", { class: "ghost-ltr", text: String.fromCharCode(65 + Math.floor(Math.random() * 26)) })); }
+            else if (ghost) ghost.remove();
+        });
+        // Lights Out: a small circle of light around your cursor
+        if (on("lights") && g.cells) {
+            const cell = Game.cellEl(g.row, g.col), wrap = document.querySelector(".board-wrap");
+            if (cell && wrap) {
+                const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+                area.style.setProperty("--lx", (a.left + a.width / 2 - w.left) + "px");
+                area.style.setProperty("--ly", (a.top + a.height / 2 - w.top) + "px");
+            }
         }
     }
-    // keys: 1-3 abilities, 4 super; while frozen, typing does nothing
+    function clearMe(keepShield = false) {
+        if (fight && !keepShield) { fight.me = {}; fight.thorns = null; }
+        const m = fight ? fight.me : {};
+        fight && Object.keys(m).forEach(k => { if (typeof m[k] === "number" && k !== "shield" && k !== "reflect") m[k] = 0; });
+        const area = boardArea(), board = document.getElementById("board"), clues = document.querySelector(".clues");
+        if (area) area.className = area.className.split(" ").filter(c => !c.startsWith("fx-")).join(" ");
+        if (clues) clues.classList.remove("fx-blind", "fx-petals");
+        if (board) board.classList.remove("fx-smudge", "fx-frozen");
+        flareEl.classList.remove("on");
+        document.querySelectorAll("#board .snowed, #board .thorny").forEach(n => n.classList.remove("snowed", "thorny"));
+        document.querySelectorAll("#board .ghost-ltr").forEach(n => n.remove());
+        if (savedClues) {
+            document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
+            savedClues = null;
+            if (Game.state.puzzle) Game.render();
+        }
+    }
+
+    // ---- keys: 1-3 abilities, 4 super; and the boss's tricks that mess with your typing ----
+    let heavy = null;
+    function letterBlocked(letter) {
+        const f = fight, g = Game.state, now = performance.now();
+        if (f.me.freeze > 0) return "freeze";
+        if (f.thorns && f.thorns.cells.has(g.row + "," + g.col)) return "thorns";
+        if (f.me.sandblast > 0 && Math.random() < 0.35) return "sand";
+        if (f.me.gravity > 0) {
+            if (!heavy || heavy.key !== letter || now - heavy.at > 1500) { heavy = { key: letter, at: now }; return "heavy"; }
+            heavy = null;
+        }
+        return null;
+    }
+    function bump(why) {
+        const board = document.getElementById("board");
+        U.restart(board, "shake");
+        const cell = Game.cellEl(Game.state.row, Game.state.col);
+        if (cell) U.restart(cell, why === "heavy" ? "heavy" : "shake");
+        if (why === "sand") Powers.aura(cell, ["🟫"], "pop", 3, 600);
+        if (why === "thorns") Powers.aura(cell, ["🌹"], "pop", 2, 600);
+    }
     addEventListener("keydown", e => {
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
+        if (e.target.closest && e.target.closest("input, select, textarea")) return;
         if (/^[1-3]$/.test(e.key)) { const id = loadout()[+e.key - 1]; if (id) { e.preventDefault(); useAbility(id); } return; }
         if (e.key === "4") { e.preventDefault(); useSuper(); return; }
-        if (fight.me.freeze > 0 && (/^[a-zA-Z]$/.test(e.key) || e.key === "Backspace" || e.key === "Delete")) { e.preventDefault(); e.stopPropagation(); U.restart(document.getElementById("board"), "shake"); }
+        const f = fight;
+        if (/^[a-zA-Z]$/.test(e.key)) {
+            lastKeyAt = performance.now();
+            const why = letterBlocked(e.key.toUpperCase());
+            if (why) { e.preventDefault(); e.stopPropagation(); bump(why); }
+            return;
+        }
+        if (f.me.freeze > 0 && (e.key === "Backspace" || e.key === "Delete")) { e.preventDefault(); e.stopPropagation(); bump("freeze"); return; }
+        if (f.me.lock > 0 && ["Tab", "Enter", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) { e.preventDefault(); e.stopPropagation(); bump("lock"); }
     }, true);
-    document.getElementById("keyboard").addEventListener("click", e => { if (fightOn() && fight.me.freeze > 0) { e.stopPropagation(); } }, true);
+    document.getElementById("keyboard").addEventListener("click", e => {
+        if (!fightOn()) return;
+        const k = e.target.closest(".key");
+        if (!k) return;
+        const key = k.dataset.key;
+        if (/^[A-Z]$/.test(key)) {
+            lastKeyAt = performance.now();
+            const why = letterBlocked(key);
+            if (why) { e.stopPropagation(); bump(why); }
+        } else if (fight.me.freeze > 0 || (key === "⇄" && fight.me.lock > 0)) { e.stopPropagation(); bump("freeze"); }
+    }, true);
+    // System Lock: clicking another word or clue does nothing
+    for (const sel of ["#board", ".clues", "#clue-bar"]) document.querySelector(sel).addEventListener("click", e => {
+        if (!fightOn() || !(fight.me.lock > 0)) return;
+        const cur = currentMyEntry(), cellEl = e.target.closest(".cell");
+        if (cellEl && cur) {
+            const inWord = Game.cellsOf(cur).some(([r, c]) => Game.cellEl(r, c) === cellEl);
+            if (inWord) return;
+        }
+        e.stopPropagation();
+        bump("lock");
+    }, true);
+    // your letters: Overclock zaps, Sticky Floor holds the cursor, Lag Spike remembers what you typed
+    Bus.on("type", ({ row, col, letter }) => {
+        if (!fightOn()) return;
+        const f = fight, g = Game.state;
+        f.myLog.push([row, col]);
+        if (f.myLog.length > 40) f.myLog.shift();
+        if (f.buff.overclock > 0 && (f.ocN || 0) < 8 && letter === g.puzzle.solution[row][col]) {
+            const target = U.pick(bossFilled());
+            if (target) {
+                f.ocN = (f.ocN || 0) + 1;
+                const from = U.center(Game.cellEl(row, col)), toCell = f.cells && f.cells[target[0]][target[1]];
+                Powers.fly(from, toCell ? U.center(toCell) : U.center(panel), "⚡", "line", 300).then(() => { if (fight === f && !f.over) { wipe([target], true); drawFight(); } });
+            }
+        }
+        if (f.me.sticky > 0) setTimeout(() => { if (!g.solved && g.puzzle) { g.row = row; g.col = col; Game.render(); } }, 0);
+        updateHp();
+    });
 
-    // the fight's clock: everything moves only while you're actually playing
+    // ---- the fight's clock: everything moves only while you're actually playing ----
     let lastTick = performance.now();
     setInterval(() => {
         const now = performance.now(), dt = Math.min(0.5, (now - lastTick) / 1000);
         lastTick = now;
+        if (Sound.musicPlaying && Sound.musicPlaying.startsWith("boss-loop") && !fightOn()) Sound.stopMusic(1.5);
         if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results") || root.classList.contains("intro-on")) return;
-        const f = fight;
+        const f = fight, g = Game.state;
         botStep(dt);
         if (f.over) return;
-        for (const k of ["blind", "scramble", "freeze", "smudge"]) if (f.me[k] > 0) f.me[k] = Math.max(0, f.me[k] - dt);
-        if (f.combo > 1 && now - f.lastWordAt > COMBO_GAP) f.combo = 0;
+        for (const k of Object.keys(f.me)) if (typeof f.me[k] === "number" && k !== "shield" && k !== "reflect" && f.me[k] > 0) f.me[k] = Math.max(0, f.me[k] - dt);
+        for (const k of Object.keys(f.buff)) if (f.buff[k] > 0) f.buff[k] = Math.max(0, f.buff[k] - dt);
+        if (f.thorns && (f.thorns.t -= dt) <= 0) f.thorns = null;
+        if (f.me.downpour > 0) f.limit -= dt;                               // Downpour: your clock runs twice as fast
+        if (f.me.gale > 0 && (f.galeAcc = (f.galeAcc || 0) + dt) >= 2.5) {  // Gale: the cursor is blown somewhere else
+            f.galeAcc = 0;
+            const cells = scopeAll(), [r, c] = U.pick(cells);
+            g.row = r; g.col = c;
+            if (g.direction === "across" && !g.acrossAt[r][c]) g.direction = "down";
+            if (g.direction === "down" && !g.downAt[r][c]) g.direction = "across";
+            Game.render();
+            Powers.aura(Game.cellEl(r, c), ["💨"], "drift", 3, 700);
+        }
+        if (f.me.twister > 0 && (f.twAcc = (f.twAcc || 0) + dt) >= 2) {    // Twister: Across and Down keep swapping
+            f.twAcc = 0;
+            const other = g.direction === "across" ? "down" : "across";
+            if ((other === "across" ? g.acrossAt : g.downAt)[g.row][g.col]) { g.direction = other; Game.render(); }
+        }
+        if (f.me.confetti > 0 && Math.random() < dt * 4) {
+            const a = boardArea().getBoundingClientRect();
+            FX.burst({ x: a.left + Math.random() * a.width, y: a.top, n: 10, colors: ["#ff5c6c", "#ffd23f", "#4fc3f7", "#7be36b", "#c08bff"], shape: "rect", speed: [40, 120], angle: Math.PI / 2, spread: 0.8, gravity: 260, life: [1.4, 2.2], size: [6, 11] });
+        }
+        if (f.combo > 1 && !(f.buff.lucky > 0) && now - f.lastWordAt > COMBO_GAP) f.combo = 0;
+        if (f.enraged === false && f.buff.calm === 0 && f.hp <= f.th.rageAt) updateHp();
         if (f.pending) {
             f.windup -= dt;
             if (f.windup <= 0) attack();
         } else if (f.puzzle) {
             f.nextMove -= dt;
-            if (f.nextMove <= 0) { f.nextMove = (BOSS_EVERY[Game.state.puzzle.difficulty] || 30) * (f.enraged ? 0.65 : 1) * (0.8 + Math.random() * 0.4); windUp(); }
+            if (f.nextMove <= 0) { f.nextMove = f.th.every * (f.enraged ? 0.65 : 1) * (0.8 + Math.random() * 0.4); windUp(); }
         }
-        if (Game.state.seconds >= f.limit) { lose("time"); return; }
+        if (g.seconds >= f.limit) { lose("time"); return; }
         applyMe();
         drawFight();
     }, 100);
@@ -1299,28 +1813,33 @@ const Campaign = (() => {
     function lose(why) {
         const f = fight;
         if (!f || f.over) return;
+        // Extra Life: come back once (not when you give up yourself)
+        if (f.extraLife && why !== "surrender") {
+            f.extraLife = false;
+            f.lifeUsed = true;
+            f.limit = Math.max(f.limit, Game.state.seconds) + 30;
+            for (let i = 0; i < 2; i++) { const last = f.done[f.done.length - 1]; if (last) wipe(Game.cellsOf(last), true); }
+            f.word = null;
+            Powers.banner({ icon: "🕹️", name: "EXTRA LIFE!", text: "+30s, and the boss lost its last 2 words", color: "#4fdf6b", kicker: "1-UP" });
+            Sound.custom(Powers.ABILITIES.find(a => a.kind === "extralife").sound);
+            speak("WHAT? You're still here?!", 2400);
+            drawFight();
+            return;
+        }
         f.over = true;
         f.pending = null;
         clearMe();
         warnEl.hidden = true;
         const b = bossOf(f.world);
-        Game.endLoss({ title: why === "boss" ? `${b.name} wins` : "Out of time", text: why === "boss" ? "The boss finished its puzzle first." : "The clock ran out." });
+        const text = { boss: ["The boss finished its puzzle first.", `${b.name} got there first!`, "The boss solved its whole board before you. Block its attacks by finishing words, and save your Super for when it's close."],
+            time: ["The clock ran out.", "Out of time!", "Your clock ran out. Time abilities and the Time Stop item buy you more."],
+            surrender: ["You gave up this fight.", "Retreat!", "Every boss can be beaten. Try a different set of abilities from the shop."] }[why] || [];
+        Game.endLoss({ title: why === "boss" ? `${b.name} wins` : why === "time" ? "Out of time" : "Gave up", text: text[0] });
         Sound.play("wrong");
+        Sound.stopMusic(1);
         FX.shake(10, 420);
-        const modal = U.el("div", { class: "results", role: "dialog", "aria-modal": "true" });
-        const card = U.el("div", { class: "res-card lose-card", style: { "--boss": b.color } },
-            U.el("div", { class: "lose-art", html: bossSvg(f.world) }),
-            U.el("small", { class: "res-kicker", text: "BOSS FIGHT · LOST" }),
-            U.el("h2", { class: "res-title", text: why === "boss" ? `${b.name} got there first!` : "Out of time!" }),
-            U.el("p", { class: "res-note", text: why === "boss" ? "The boss solved its whole board before you. Block its attacks by finishing words, and save your Super for when it's close." : "Your clock ran out. Time abilities and the Time Stop item buy you more." }),
-            U.el("div", { class: "res-actions" },
-                U.el("button", { type: "button", class: "btn primary", text: "Rematch ▶", onclick: () => { modal.remove(); play(f.world, 5); } }),
-                U.el("button", { type: "button", class: "btn", text: "🛒 Shop", onclick: () => openShop("abilities") }),
-                U.el("button", { type: "button", class: "btn ghost", text: "Map", onclick: () => { modal.remove(); location.hash = "#campaign"; } })));
-        modal.appendChild(card);
-        document.getElementById("overlay").appendChild(modal);
-        requestAnimationFrame(() => modal.classList.add("in"));
-        speak(U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
+        loseCard({ world: f.world, level: 5, kicker: why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: text[2], art: bossSvg(f.world) });
+        speak(why === "surrender" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
         drawFight();
     }
 
@@ -1332,7 +1851,6 @@ const Campaign = (() => {
         drawItemBar();
     });
     Bus.on("word", onWord);
-    Bus.on("type", () => { if (fightOn()) updateHp(); });
     Bus.on("surrender", () => { if (fight && !fight.over && isBossLevel(Game.state.puzzle)) { fight.over = true; fight.pending = null; clearMe(); drawFight(); } });
 
     // Phase 2 (the user's design): solving the boss's first puzzle doesn't end the fight. The boss powers up full screen,
@@ -1350,26 +1868,21 @@ const Campaign = (() => {
         f.windup = 0;
         clearMe();
         warnEl.hidden = true;
-        const portrait = panel.querySelector(".bp-portrait");
+        const portrait = portraitEl();
         if (portrait) { const p = U.center(portrait); damageNumber(p, 50, 3); }
+        Sound.music("boss-phase", { loop: false, v: 0.45, fade: 0.4 });
         await FX.cinematic(cc => Bosses.phase(cc, f.world, `${label(d2, s2)}!`, "A bigger puzzle for you. The boss starts over on the board you just solved."));
+        Sound.music("boss-loop-2", { fade: 1 });
         if (fight !== f || f.over) return;
         const p1 = Game.state.puzzle;
         Game.startPhase(f.phase2);
         f.phase = 2;
-        // the boss's new board: the one you just solved
-        f.puzzle = p1;
-        f.letters = p1.solution.map(row => Array.from(row, ch => (ch === "." ? "." : "")));
-        f.letterCount = p1.solution.join("").replace(/\./g, "").length;
-        const r2 = U.rng(p1.seed + 7);
-        f.queue = [...p1.across, ...p1.down].map(e => ({ e, k: r2() })).sort((a, b) => a.k - b.k).map(x => x.e);
-        f.done = [];
-        f.word = null;
-        f.acc = 0;
+        setBossPuzzle(p1, p1.seed + 7);                 // the boss's new board: the one you just solved
         f.boss = {};
+        f.myLog = [];
         f.botTime = par(d2, s2) * (BOT_PACE[d2] || 1) * (1 - Math.max(0, c ? c.si : 0) * 0.012);
-        f.limit += Math.round(f.botTime * 1.1);
-        f.nextMove = 12;
+        f.limit += Math.round(f.botTime * f.th.margin);
+        f.nextMove = Math.max(6, f.th.first * 0.6);
         Bosses.arena(f.world).classList.add("phase2");
         drawPanel(true);
         updateHp();
@@ -1387,6 +1900,8 @@ const Campaign = (() => {
         warnEl.hidden = true;
         drawFight();
         panel.classList.add("ko");
+        Sound.stopMusic(0.6);
+        Sound.sample("ko", { v: 0.6 });
         await c.wait(250);
         await Bosses.ko(c, fight.world);
     }
@@ -1396,6 +1911,7 @@ const Campaign = (() => {
         const left = (fight.limit - Game.state.seconds) / fight.limit;
         return left >= 0.5 ? 3 : left >= 0.25 ? 2 : 1;
     }
+
 
     // ---------------------------------------------------------------------------------------------
     // The home screen's campaign card
@@ -1425,6 +1941,8 @@ const Campaign = (() => {
 
     return {
         onView, showMap, play, ready: fetchMap, nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
-        isBossLevel, abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, get playing() { return data.playing; }, get fight() { return fight; }
+        isBossLevel, abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
+        testMove: mv => { if (fightOn()) { fight.pending = mv; attack(); } },          // for automated tests
+        get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();

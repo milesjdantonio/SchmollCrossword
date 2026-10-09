@@ -31,7 +31,7 @@ class WordListTest {
     void findMatchesCountsWordsThatFit() {
         assertEquals(6, App.findMatches("C.T.", words).size(), "CATS, CITE, CITY, COTS, CUTE, CUTS (COTE is too hard)");
         assertEquals(1, App.findMatches("CAT", words).size(), "already a full word");
-        assertEquals(3334, App.findMatches(".....", words).size(), "every everyday 5-letter word (reviewed lists, 2026-10-08)");
+        assertEquals(3701, App.findMatches(".....", words).size(), "every everyday 5-letter word (reviewed lists, 2026-10-08)");
         assertEquals(0, App.findMatches("QZX..", words).size(), "nothing fits");
         assertEquals(0, App.findMatches("...............................", words).size(), "no words this long at all");
     }

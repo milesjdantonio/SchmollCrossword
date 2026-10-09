@@ -174,5 +174,72 @@ const Sound = (() => {
     }
 
 
-    return { play, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    // ---- recorded sounds and boss music (free CC0 sound libraries, see static/audio/CREDITS.txt) ----
+    // sample("punch")  plays audio/sfx/punch.mp3 (loaded the first time it's asked for; a sound that isn't loaded
+    //                  yet just doesn't play that once)
+    // music("boss-loop-1", { loop })  plays a music track from audio/music, fading out the one before
+    const buffers = {}, loadingBuf = {};
+    function load(path) {
+        if (buffers[path] || loadingBuf[path] || !ctx) return;
+        loadingBuf[path] = fetch(path).then(r => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
+            .then(b => new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)))
+            .then(buf => { buffers[path] = buf; return buf; })
+            .catch(() => null);
+        return loadingBuf[path];
+    }
+    function preload(names) { if (init()) names.forEach(n => load(n.includes("/") ? n : `audio/sfx/${n}.mp3`)); }
+    function sample(name, { v = 0.5, rate = 1, t = 0 } = {}) {
+        if (!Settings.get("sound") || !init() || !ready()) return;
+        const path = `audio/sfx/${name}.mp3`, buf = buffers[path];
+        if (!buf) { load(path); return; }
+        const src = ctx.createBufferSource(), gain = ctx.createGain();
+        src.buffer = buf;
+        src.playbackRate.value = rate;
+        gain.gain.value = v;
+        src.connect(gain).connect(fxBus);
+        src.start(ctx.currentTime + t);
+    }
+    // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
+    let musicBus = null, track = null;
+    const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
+    async function music(name, { loop = true, v = 0.32, fade = 0.8 } = {}) {
+        if (!init()) return;
+        if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicOn() ? 1 : 0; musicBus.connect(master); }
+        stopMusic(fade);
+        if (!name) return;
+        const path = `audio/music/${name}.mp3`;
+        const me = (track = { name, gain: null, src: null });
+        const buf = buffers[path] || await load(path);
+        if (!buf || track !== me) return;
+        const src = ctx.createBufferSource(), gain = ctx.createGain();
+        src.buffer = buf;
+        src.loop = loop;
+        if (loop) { src.loopStart = 0.03; src.loopEnd = buf.duration - 0.03; }      // skip the MP3's silent padding
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(v, ctx.currentTime + 0.25);
+        src.connect(gain).connect(musicBus);
+        src.start();
+        me.gain = gain;
+        me.src = src;
+    }
+    function stopMusic(fade = 0.8) {
+        const old = track;
+        track = null;
+        if (!old || !old.src || !ctx) return;
+        old.gain.gain.cancelScheduledValues(ctx.currentTime);
+        old.gain.gain.setValueAtTime(old.gain.gain.value, ctx.currentTime);
+        old.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + fade);
+        old.src.stop(ctx.currentTime + fade + 0.05);
+    }
+    Settings.on(key => {
+        if (musicBus && (key === "sound" || key === "bossMusic")) musicBus.gain.setTargetAtTime(musicOn() ? 1 : 0, ctx.currentTime, 0.1);
+    });
+
+    // a one-off sound written somewhere else (each campaign ability and boss move has its own, see powers.js)
+    function custom(fn, ...args) {
+        if (!Settings.get("sound") || !init() || !ready() || !fn) return;
+        try { fn(...args); } catch (err) { console.error("Sound", err); }
+    }
+
+    return { play, custom, sample, preload, music, stopMusic, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

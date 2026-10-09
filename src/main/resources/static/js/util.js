@@ -178,6 +178,7 @@ const Settings = (() => {
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)
         sound: true,            // sound effects (made in code, see sound.js)
+        bossMusic: true,        // music in campaign boss fights (CC0 tracks in audio/music)
         volume: 0.8,
         intro: true,            // play the start-up intro once per visit
         effects: "full"         // "full" or "lite"

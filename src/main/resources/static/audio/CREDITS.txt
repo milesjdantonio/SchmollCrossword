@@ -1,0 +1,24 @@
+Schmoll Crossword: recorded sounds and music
+=============================================
+
+Every file in this folder is in the public domain (Creative Commons Zero, CC0 1.0):
+https://creativecommons.org/publicdomain/zero/1.0/
+CC0 needs no credit, but the authors are thanked here anyway. The files were converted to MP3 (and the two
+intro clips shortened and faded out) for this game.
+
+Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
+  Impact Sounds      https://kenney.nl/assets/impact-sounds
+  Interface Sounds   https://kenney.nl/assets/interface-sounds
+  Sci-fi Sounds      https://kenney.nl/assets/sci-fi-sounds
+  RPG Audio          https://kenney.nl/assets/rpg-audio
+  Music Jingles      https://kenney.nl/assets/music-jingles   (jingle-*.mp3)
+
+Music (audio/music), all CC0 on OpenGameArt.org
+  boss-intro.mp3   the opening of "Sinister Boss Appears!" by cynicmusic (cynicmusic.com, pixelsphere.org)
+                   https://opengameart.org/content/sinister-boss-appears
+  boss-phase.mp3   the opening of "Dramatic Boss Encounter" by cynicmusic
+                   https://opengameart.org/content/dramatic-boss-encounter
+  boss-loop-1.mp3  "Basilisk Boss Battle Loop" by beardalaxy
+                   https://opengameart.org/content/basilisk-boss-battle-loop
+  boss-loop-2.mp3  "Boss Battle (loop)" by Alex McCulloch (Pro Sensory), who asks to be named in the credits
+                   https://opengameart.org/content/boss-battle-loop

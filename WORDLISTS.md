@@ -217,3 +217,19 @@ All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which
 - **Pacifico** and **Josefin Sans** (Rainy City). https://fonts.google.com/specimen/Pacifico ,
   https://fonts.google.com/specimen/Josefin+Sans
 - Sounds are generated in code (Web Audio API), so there are no sound files or licenses.
+
+## Sounds and music (2026-10-08)
+
+The user asked for a free sound library and boss music. Everything used is **CC0 (public domain)**, so it fits the
+free, no-ads CC BY-NC-SA game with no extra conditions. Files are in `static/audio` (converted to MP3); the full list
+with links is in `static/audio/CREDITS.txt`.
+
+| Source | What | License |
+|---|---|---|
+| [Kenney: Impact, Interface, Sci-fi Sounds, RPG Audio, Music Jingles](https://kenney.nl/assets/category:Audio) | ~75 short boss-fight sound effects | CC0 |
+| [Sinister Boss Appears!](https://opengameart.org/content/sinister-boss-appears) by cynicmusic | boss intro (first 7 s) | CC0 |
+| [Dramatic Boss Encounter](https://opengameart.org/content/dramatic-boss-encounter) by cynicmusic | phase 2 sting (first 4.5 s) | CC0 |
+| [Basilisk Boss Battle Loop](https://opengameart.org/content/basilisk-boss-battle-loop) by beardalaxy | phase 1 music | CC0 |
+| [Boss Battle (loop)](https://opengameart.org/content/boss-battle-loop) by Alex McCulloch | phase 2 music (he asks to be credited) | CC0 |
+
+Everything else is still synthesized in code (`sound.js`, `powers.js`, the worlds).

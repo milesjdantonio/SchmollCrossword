@@ -176,6 +176,9 @@ body {
 main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .screen.enter { animation: screen-in .5s cubic-bezier(.2, .9, .3, 1); }
 @keyframes screen-in { from { opacity: 0; transform: translateY(16px); } }
+/* Settings and Stats only fade in: in the heavier worlds the slide could start late and make the page jump */
+#settings-view.enter, #stats-view.enter { animation: screen-fade .35s ease-out; }
+@keyframes screen-fade { from { opacity: 0; } }
 @keyframes pop-in { from { opacity: 0; transform: translateY(-8px) scale(.94); } }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes stamp-in { from { opacity: 0; transform: scale(2.2) rotate(-12deg); } }

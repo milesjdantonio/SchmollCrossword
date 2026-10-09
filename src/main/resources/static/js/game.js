@@ -340,7 +340,7 @@ const Game = (() => {
         // keep the active clue in view in its list
         if (current && current !== lastClue) {
             const item = game.clueItems.get(current);
-            if (item && item.scrollIntoView && !U.touch()) item.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            if (item && !U.touch()) scrollClueIntoList(item);
             U.restart(clueBarEl, "slide");
         }
         lastClue = current;
@@ -366,6 +366,21 @@ const Game = (() => {
             }
         }
         saveProgress();
+    }
+
+    // Keep the active clue visible inside its own scrolling list, without moving the page (scrollIntoView also
+    // scrolls the whole window, which made the page jump when you clicked a square)
+    function scrollClueIntoList(item) {
+        let box = item.parentElement;
+        while (box && box !== document.body) {
+            const oy = getComputedStyle(box).overflowY;
+            if ((oy === "auto" || oy === "scroll") && box.scrollHeight > box.clientHeight) break;
+            box = box.parentElement;
+        }
+        if (!box || box === document.body) return;
+        const b = box.getBoundingClientRect(), r = item.getBoundingClientRect();
+        if (r.top < b.top) box.scrollBy({ top: r.top - b.top - 6, behavior: "smooth" });
+        else if (r.bottom > b.bottom) box.scrollBy({ top: r.bottom - b.bottom + 6, behavior: "smooth" });
     }
 
     function drawBanner() {
@@ -1045,6 +1060,41 @@ const Game = (() => {
         render();
     }
 
+    // Boss moves that change your letters: [[row, col, letter], ...] ("" wipes it). Locked squares are never touched.
+    function setLetters(list) {
+        if (!game.puzzle || game.solved) return 0;
+        let n = 0;
+        for (const [r, c, letter] of list) {
+            if (isLocked(r, c) || isBlock(r, c)) continue;
+            game.letters[r][c] = letter;
+            game.wrong[r][c] = false;
+            U.restart(game.cells[r][c], "shake");
+            n++;
+        }
+        render();
+        return n;
+    }
+    // Auto-Fill: the right letters in these squares, locked in
+    function fillCells(list) {
+        if (!game.puzzle || game.solved) return;
+        list.forEach(([r, c], i) => {
+            game.letters[r][c] = game.puzzle.solution[r][c];
+            game.wrong[r][c] = false;
+            game.locked[r][c] = true;
+            game.cells[r][c].style.setProperty("--d", (i * 90) + "ms");
+            U.restart(game.cells[r][c], "flip");
+        });
+        render();
+        checkForWin();
+    }
+    // the squares holding a wrong letter
+    const wrongCells = () => (game.puzzle ? scopeCells("puzzle").filter(([r, c]) => game.letters[r][c] && game.letters[r][c] !== game.puzzle.solution[r][c]) : []);
+    // Truth Mirage: mark the wrong letters (like Check, but free); the marks go when you type over them
+    function markWrong() {
+        for (const [r, c] of wrongCells()) { game.wrong[r][c] = true; U.restart(game.cells[r][c], "shake"); }
+        render();
+    }
+
     // Campaign shop items. A free reveal fills squares in like Reveal but doesn't count as using it (no penalty,
     // the "no Reveal" star stays); the letters lock like revealed ones.
     function revealFree(scope) {
@@ -1121,7 +1171,7 @@ const Game = (() => {
     restoreProgress();
 
     return {
-        restartSlot, endLoss, giveLetters, eraseLetters, startPhase, revealFree, clearWrong, lockRight, stopClock, clockStopped, progress,
+        restartSlot, endLoss, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, startPhase, revealFree, clearWrong, lockRight, stopClock, clockStopped, progress,
         openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),
