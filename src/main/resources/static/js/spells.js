@@ -24,10 +24,13 @@ const Spells = (() => {
         size();
         addEventListener("resize", size);
     }
+    // Effects stay on what they were aimed at when the page scrolls: each remembers the scroll position it started at,
+    // and is drawn shifted by however far the page has moved since (fixed: true for one that measures live positions)
     function add(fx) {
         if (still()) return;
         ensure();
         fx.t = 0;
+        fx.sx = scrollX; fx.sy = scrollY;
         effects.push(fx);
         if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
     }
@@ -37,9 +40,9 @@ const Spells = (() => {
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, innerWidth, innerHeight);
         // effects started while drawing (crumbs flying off an eraser...) join on the next frame instead of being lost
-        const now_ = effects;
+        const now_ = effects, sx = scrollX, sy = scrollY;
         effects = [];
-        const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
+        const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); if (!fx.fixed) g.translate(fx.sx - sx, fx.sy - sy); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
         effects = kept.concat(effects);
         if (effects.length) requestAnimationFrame(loop);
         else { running = false; g.clearRect(0, 0, innerWidth, innerHeight); }
@@ -305,6 +308,7 @@ const Spells = (() => {
             const ghost = U.el("div", { class: "spell-letter", text: ch, style: { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px",
                 font: cs ? cs.font : "800 24px sans-serif", color: cs ? cs.color : "#2b2233" } });
             document.body.appendChild(ghost);
+            U.pin(ghost);
             return { ghost, r };
         }).filter(Boolean);
     }
@@ -353,6 +357,7 @@ const Spells = (() => {
             const ghosts = letterGhosts(c.cells), pts = c.cells.length ? c.cells.map(x => mid(x.el)) : [centerOf(c.area)];
             const tool = U.el("div", { class: "spell-tool", text: emoji });
             document.body.appendChild(tool);
+            U.pin(tool);
             const frames = [];
             pts.forEach(p => { frames.push({ transform: `translate(${p.x - 20}px, ${p.y - 30}px) rotate(-20deg)` }, { transform: `translate(${p.x + 14}px, ${p.y - 24}px) rotate(15deg)` }, { transform: `translate(${p.x - 14}px, ${p.y - 30}px) rotate(-15deg)` }); });
             if (!still()) await tool.animate(frames, { duration: Math.max(500, pts.length * 260), easing: "ease-in-out" }).finished.catch(() => null);
@@ -429,6 +434,7 @@ const Spells = (() => {
             const ghosts = letterGhosts(c.cells), pts = c.cells.length ? c.cells.map(x => mid(x.el)) : [centerOf(c.area)];
             const ball = U.el("div", { class: "spell-tool", text: emoji });
             document.body.appendChild(ball);
+            U.pin(ball);
             let prev = c.from || { x: pts[0].x, y: pts[0].y - 200 };
             for (let i = 0; i < pts.length; i++) {
                 const p = pts[i];
@@ -458,6 +464,7 @@ const Spells = (() => {
             for (let i = 0; i < n; i++) setTimeout(() => {
                 const dot = U.el("div", { class: "spell-dot", style: { background: colors[i % colors.length], boxShadow: `0 0 10px ${colors[i % colors.length]}` } });
                 document.body.appendChild(dot);
+                U.pin(dot);
                 const mx = (from.x + to.x) / 2 + rnd(-140, 140), my = Math.min(from.y, to.y) - rnd(40, 160);
                 dot.animate([{ transform: `translate(${from.x}px, ${from.y}px) scale(.6)` }, { transform: `translate(${mx}px, ${my}px) scale(1.2)` }, { transform: `translate(${to.x}px, ${to.y}px) scale(.4)` }], { duration: 650, easing: "ease-in-out" }).onfinish = () => dot.remove();
             }, still() ? 0 : i * 22);

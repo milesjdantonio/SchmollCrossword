@@ -1108,6 +1108,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .switch input:focus-visible + .track { outline: 3px solid var(--accent-2); outline-offset: 2px; }
 .range { display: flex; align-items: center; gap: 12px; font-weight: 700; }
 .range input { flex: 1; accent-color: var(--accent); }
+.range output { min-width: 3em; text-align: right; font-variant-numeric: tabular-nums; }
 #replay-intro { margin-top: 12px; }
 
 /* ---------------------------------------------------------------------------------------------

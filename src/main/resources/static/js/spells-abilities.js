@@ -648,7 +648,7 @@
     // Chomper: a pixel chomper races along the boss's board, mouth flapping, gobbling letters and leaving pellets behind
     D("chomp", async c => {
         let last = null;
-        add({ life: 2.6, draw(ctx, k, t) {
+        add({ life: 2.6, fixed: true, draw(ctx, k, t) {           // follows the live squares itself
             const eaten = cellsOf(".bp-cell.chomped");
             if (eaten.length) last = mid(eaten[eaten.length - 1]);
             if (!last) return;

@@ -1012,7 +1012,7 @@ const Campaign = (() => {
     const BOT_PACE = { easy: 1.15, medium: 1.05, hard: 0.95, challenge: 1, expert: 0.95 };
     // ...and faster in every world (world 1: x1.15, world 15: x0.72) and every phase (x0.94 each); on top of that every
     // boss solves 15% faster than it used to (the user, 2026-10-09: "make each boss a little harder")
-    const BOSS_SPEEDUP = 0.85;
+    const BOSS_SPEEDUP = 0.72;
     const botTimeFor = (d, size, si, phase = 1) => par(d, size) * (BOT_PACE[d] || 1) * (1.15 - 0.43 * Math.max(0, si) / 14) * Math.pow(0.94, phase - 1) * BOSS_SPEEDUP;
     // the boss pushes harder when it's behind: up to +45% speed when you lead by 35% of the board
     const CATCH_UP = lead => 1 + Math.min(0.45, Math.max(0, lead - 0.08) * 1.6);
@@ -1047,15 +1047,19 @@ const Campaign = (() => {
             <div class="rb-side rb-boss"><div class="rb-who"><small>BOSS</small><b class="rb-pct">0%</b></div><div class="rb-face rb-boss-face"></div></div>` });
     document.getElementById("puzzle").before(raceEl);
     let raceShown = -1, raceFaceFor = "";
+    // Write to the page only when something changed: the fight redraws ten times a second, and every write (even of
+    // the same value) makes the browser redo styles and layout for the part of the page it touches
+    const setText = (el, t) => { if (el && el.textContent !== t) el.textContent = t; };
+    const setVar = (el, k, v) => { if (!el) return; const c = el._vars || (el._vars = {}); if (c[k] !== v) { c[k] = v; el.style.setProperty(k, v); } };
     function drawRace() {
         const f = fight;
         if (!f || raceEl.hidden) return;
         const me = myPct(), boss = bossPct(), lead = me - boss;
         // the knot: 50% when level, pushed most of the way to the boss's end when you're a whole board ahead
         const x = 50 + Math.max(-1, Math.min(1, lead)) * 44;
-        raceEl.style.setProperty("--x", x.toFixed(2) + "%");
-        raceEl.querySelector(".rb-me .rb-pct").textContent = Math.round(me * 100) + "%";
-        raceEl.querySelector(".rb-boss .rb-pct").textContent = Math.round(boss * 100) + "%";
+        setVar(raceEl, "--x", x.toFixed(1) + "%");
+        setText(raceEl.querySelector(".rb-me .rb-pct"), Math.round(me * 100) + "%");
+        setText(raceEl.querySelector(".rb-boss .rb-pct"), Math.round(boss * 100) + "%");
         const k = Math.round(lead * 100);
         const text = Math.abs(k) < 3 ? "Neck and neck!" : k > 0 ? `You're ahead by ${k}%` : `${bossOf(f.world).name} is ahead by ${-k}%`;
         const leadEl = raceEl.querySelector(".rb-lead");
@@ -1107,7 +1111,7 @@ const Campaign = (() => {
     const meStatus = U.el("div", { class: "me-status", "aria-live": "polite" });
     document.querySelector(".hud-row").after(meStatus);
     const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "assertive" });
-    document.querySelector(".hud-row").appendChild(warnEl);          // over the timer row: never over the clue or the board
+    raceEl.querySelector(".rb-track").appendChild(warnEl);           // right under the race bar's "who's ahead" label (the user's spot)
     const flareEl = U.el("div", { class: "fx-flare-screen", "aria-hidden": "true" });
     document.body.appendChild(flareEl);
     const isBossLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && data.playing.level === 5);
@@ -1125,7 +1129,7 @@ const Campaign = (() => {
         const botTime = botTimeFor(d, c ? c.size : 5, c ? c.si : 0);
         panel.classList.remove("ko");                    // the last boss you beat stays down; this one starts fresh
         fight = { key, id: Date.now(), world: data.playing.world, th, puzzle: null, letters: null, queue: [], word: null, acc: 0,
-            botTime, closest: 0, lead: 0, drips: [], done: [], boss: {}, me: {}, buff: {}, nextMove: th.first, moveIdx: 0, over: false, rate: 1, used: 0,
+            botTime, si: c ? c.si : 0, closest: 0, lead: 0, drips: [], done: [], boss: {}, me: {}, buff: {}, nextMove: th.first, moveIdx: 0, over: false, rate: 1, used: 0,
             combo: 0, bestCombo: 0, lastWordAt: -1e9, pending: null, windup: 0, windupMax: 1, enraged: false, intro: false, phase: 1, phases: special() ? 1 : 1 + laterPhases(c && map ? map[c.si] : null).length, next: {}, switching: false,
             log: [], myLog: [], hits: 0, blocks: 0, itemsUsed: 0, kinds: new Set(), extraLife: false, lifeUsed: false, thorns: null, snow: null };
         drawPanel(true);
@@ -1219,6 +1223,7 @@ const Campaign = (() => {
                 <div class="bp-stage"><div class="bp-portrait">${bossSvg(fight.world)}</div><div class="bp-speech" hidden></div><div class="bp-windup" hidden><i></i><span></span></div></div>
                 <div class="bp-who"><small>BOSS · ${U.esc(Worlds.byId[fight.world].name.toUpperCase())} · ${"💀".repeat(fight.th.stars)}</small><b></b><div class="bp-status"></div></div>
                 <div class="bp-bar bp-race" title="The boss's progress on its own board"><i></i><span></span></div>
+                <div class="bp-volume" title="Boss music volume: drag, or scroll the mouse wheel over it (also in Settings)"><button type="button" class="bp-vol-mute" aria-label="Boss music on or off"></button><input type="range" min="0" max="100" step="5" aria-label="Boss music volume"><output></output></div>
                 <div class="bp-abilities"><small>YOUR MOVES</small><div class="bp-ab-row"></div></div>
                 <div class="bp-board-wrap"><div class="bp-board"></div><div class="bp-fog" aria-hidden="true"></div><p class="bp-loading">The boss is getting ready…</p></div>`;
             // (the boss's clues aren't shown, or even written: the user, 2026-10-09, so its board costs nothing)
@@ -1226,6 +1231,7 @@ const Campaign = (() => {
             if (fight.phase >= 2) panel.querySelector(".bp-who b").appendChild(U.el("span", { class: "bp-phase", text: fight.phase === fight.phases && fight.phases > 2 ? "FINAL PHASE" : "PHASE " + fight.phase }));
             panel.classList.toggle("phase2", fight.phase >= 2);
             drawAbilityBar();
+            wireVolume();
             if (fight.puzzle) {
                 const p = fight.puzzle, board = panel.querySelector(".bp-board");
                 panel.querySelector(".bp-loading").remove();
@@ -1274,10 +1280,10 @@ const Campaign = (() => {
             let banner = box.querySelector(".ab-ward-banner");
             if (ward && !banner) { banner = U.el("div", { class: "ab-ward-banner", html: "<b>UMBRELLA UP</b><span>your next ability bounces off it</span>" }); row.before(banner); }
             else if (!ward && banner) banner.remove();
-            cover(row, sealed, "seal", "ABILITIES SEALED", sealed ? Math.ceil(f.me.seal) + `s · click ${5 - ((f.taps && f.taps.seal) || 0)}× to tear the weeds off` : "");
+            cover(row, sealed, "seal", "ABILITIES SEALED", sealed ? Math.ceil(f.me.seal) + `s · click ${7 - ((f.taps && f.taps.seal) || 0)}× to tear the weeds off` : "");
         }
         const items = document.querySelector(".cm-items");
-        if (items) cover(items, locked && fightOn(), "firewall", "ITEMS BLOCKED", locked ? "Firewall · " + Math.ceil(f.me.itemlock) + `s · click ${5 - ((f.taps && f.taps.itemlock) || 0)}× to hack through` : "");
+        if (items) cover(items, locked && fightOn(), "firewall", "ITEMS BLOCKED", locked ? "Firewall · " + Math.ceil(f.me.itemlock) + `s · click ${7 - ((f.taps && f.taps.itemlock) || 0)}× to hack through` : "");
     }
     // a cover over a whole row of buttons, so they can't be seen or used while the boss blocks them
     function cover(row, on, kind, title, text) {
@@ -1301,14 +1307,41 @@ const Campaign = (() => {
         if (!loadout().length) row.appendChild(U.el("p", { class: "bp-ab-none", text: "No abilities yet. Clear Level 1 and Level 3 of a world to unlock some." }));
     }
     const real = (r, c) => { const ch = fight.letters[r][c]; return !!ch && ch !== "." && ch !== BLOT; };
+    // The boss music's volume, right in the fight (the user: "when you're in a boss you don't have to travel menus")
+    function drawVolume() {
+        const box = panel.querySelector(".bp-volume");
+        if (!box) return;
+        const on = Settings.get("sound") && Settings.get("bossMusic") !== false, v = Math.round((Settings.get("musicVolume") ?? 1) * 100);
+        const range = box.querySelector("input");
+        if (document.activeElement !== range) range.value = v;
+        box.querySelector("output").textContent = on ? v + "%" : "off";
+        box.querySelector(".bp-vol-mute").textContent = !on ? "🔇" : v === 0 ? "🔈" : v < 60 ? "🔉" : "🔊";
+        box.classList.toggle("off", !on);
+    }
+    function wireVolume() {
+        const box = panel.querySelector(".bp-volume");
+        if (!box) return;
+        const range = box.querySelector("input");
+        const set = v => {
+            Settings.set("musicVolume", U.clamp(v, 0, 100) / 100);
+            if (v > 0 && Settings.get("bossMusic") === false) Settings.set("bossMusic", true);     // turning it up turns the music back on
+            drawVolume();
+        };
+        range.addEventListener("input", () => set(Number(range.value)));
+        range.addEventListener("change", () => range.blur());                                   // back to typing on the board
+        box.addEventListener("wheel", e => { e.preventDefault(); range.value = U.clamp(Number(range.value) + (e.deltaY < 0 ? 5 : -5), 0, 100); set(Number(range.value)); }, { passive: false });
+        box.querySelector(".bp-vol-mute").addEventListener("click", e => { Settings.set("bossMusic", Settings.get("bossMusic") === false); drawVolume(); e.currentTarget.blur(); });
+        drawVolume();
+    }
+    Settings.on(key => { if (key === "musicVolume" || key === "bossMusic" || key === "sound") drawVolume(); });
     function drawFight() {
         if (!fight || panel.hidden) return;
         const f = fight, g = Game.state;
         if (!panel.querySelector(".bp-race")) return;
         drawRace();
         const filled = f.letters ? f.letters.flat().filter(ch => ch && ch !== "." && ch !== BLOT).length : 0, pct = f.letterCount ? filled / f.letterCount : 0;
-        panel.querySelector(".bp-race i").style.width = (pct * 100).toFixed(1) + "%";
-        panel.querySelector(".bp-race span").textContent = `✎ Boss's board: ${Math.round(pct * 100)}% done`;
+        setVar(panel.querySelector(".bp-race i"), "width", (pct * 100).toFixed(1) + "%");
+        setText(panel.querySelector(".bp-race span"), `✎ Boss's board: ${Math.round(pct * 100)}% done`);
         const st = [];
         for (const [k, lbl] of Object.entries(BOSS_TIMERS)) {
             if (f.boss[k] > 0) st.push(`${lbl} ${Math.ceil(k === "crash" && f.boss.crash > 12 ? f.boss.crash - 12 : f.boss[k])}s`);
@@ -1324,7 +1357,7 @@ const Campaign = (() => {
         panel.classList.toggle("st-haunt", !!f.boss.haunt);
         panel.classList.toggle("st-calm", f.buff.calm > 0);
         if (f.enraged) st.push("😡 ENRAGED");
-        panel.querySelector(".bp-status").textContent = st.join(" · ") || (f.puzzle ? "Solving…" : "");
+        setText(panel.querySelector(".bp-status"), st.join(" · ") || (f.puzzle ? "Solving…" : ""));
         panel.querySelector(".bp-fog").classList.toggle("on", f.boss.blind > 0);
         panel.classList.toggle("frozen", f.boss.freeze > 0);
         panel.classList.toggle("enraged", f.enraged);
@@ -1333,28 +1366,31 @@ const Campaign = (() => {
         const wu = panel.querySelector(".bp-windup");
         if (f.pending) {
             const mv = f.pending, k = f.windup / f.windupMax;
-            wu.hidden = false;
-            wu.querySelector("i").style.width = (k * 100).toFixed(1) + "%";
-            wu.querySelector("span").textContent = `${mv.icon} ${mv.name}`;
-            warnEl.hidden = false;
+            if (wu.hidden) wu.hidden = false;
+            setVar(wu.querySelector("i"), "width", (k * 100).toFixed(1) + "%");
+            setText(wu.querySelector("span"), `${mv.icon} ${mv.name}`);
+            if (warnEl.hidden) warnEl.hidden = false;
             const it = INTERCEPT[mv.kind];
             const how = it && interceptEl ? `Counter: click the ${LOOK_NAME[it.look]}${it.hits > 1 ? ` ${it.hits}×` : ""} to turn it on the boss! Or finish a word to block it` : `Finish a word to block it${COUNTER[mv.kind] ? " · if it lands: " + COUNTER[mv.kind] : ""}`;
-            warnEl.innerHTML = `<b>⚠ ${U.esc(mv.icon)} ${U.esc(mv.name)} incoming! <em>${f.windup.toFixed(1)}s</em></b><span>${U.esc(how)}</span><i style="width:${(k * 100).toFixed(1)}%"></i>`;
-            warnEl.title = mv.desc;
-        } else { wu.hidden = true; warnEl.hidden = true; }
+            if (!warnEl.firstChild) warnEl.innerHTML = `<b><span class="mw-name"></span> <em></em></b><span class="mw-how"></span><i></i>`;   // built once, then only its parts change
+            setText(warnEl.querySelector(".mw-name"), `⚠ ${mv.icon} ${mv.name} incoming!`);
+            setText(warnEl.querySelector("em"), f.windup.toFixed(1) + "s");
+            setText(warnEl.querySelector(".mw-how"), how);
+            setVar(warnEl.querySelector("i"), "width", (k * 100).toFixed(1) + "%");
+            if (warnEl.title !== mv.desc) warnEl.title = mv.desc;
+        } else { if (!wu.hidden) wu.hidden = true; if (!warnEl.hidden) warnEl.hidden = true; }
         if (!f.pending && interceptEl) removeIntercept();
         if (f.cells) {
-            const vines = f.boss.vines ? f.boss.vines.cells : null;
+            const vines = f.boss.vines ? f.boss.vines.cells : null, cur = f.word;
+            const curCells = new Set(cur ? Game.cellsOf(cur).map(([r, c]) => r + "," + c) : []);
             f.letters.forEach((row, r) => row.forEach((ch, c) => {
                 if (ch === ".") return;
-                const cell = f.cells[r][c];
-                cell.querySelector(".bp-ltr").textContent = ch;
+                const cell = f.cells[r][c], id = r + "," + c;
+                setText(cell._ltr || (cell._ltr = cell.querySelector(".bp-ltr")), ch);
                 cell.classList.toggle("blot", ch === BLOT);
-                cell.classList.toggle("vine", !!vines && vines.has(r + "," + c));
+                cell.classList.toggle("vine", !!vines && vines.has(id));
+                cell.classList.toggle("cur", curCells.has(id));
             }));
-            const cur = f.word;
-            f.cells.flat().forEach(cell => cell.classList.remove("cur"));
-            if (cur) Game.cellsOf(cur).forEach(([r, c]) => f.cells[r][c].classList.add("cur"));
             for (const [e, li] of f.items) { li.classList.toggle("done", f.done.includes(e)); li.classList.toggle("active", e === cur); }
         }
         // your side: what helps you, what the boss is doing to you. The chips are kept (not rebuilt) while they stay,
@@ -1384,7 +1420,7 @@ const Campaign = (() => {
             if (meStatus.children[i] !== node) meStatus.insertBefore(node, meStatus.children[i] || null);
             const t = node.querySelector(".ms-text");
             if (t.textContent !== text) t.textContent = text;
-            node.querySelector(".ms-bar").style.width = bar == null ? "0" : (bar * 100).toFixed(1) + "%";
+            setVar(node.querySelector(".ms-bar"), "width", bar == null ? "0" : (bar * 100).toFixed(1) + "%");
         });
     }
     // the boss says something, in a speech bubble by its portrait
@@ -1850,35 +1886,35 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     // what to do about each move (shown on the warning and on the effect's chip)
     const COUNTER = {
-        rubout: "click the eraser to snatch it", crumple: "finished words don't fold · click a fold to smooth it", inkblot: "click the blot 4× to wipe it",
+        rubout: "click the eraser to snatch it", crumple: "finished words don't fold · click a fold to smooth it", inkblot: "click the blot 6× to wipe it",
         nobackspace: "click the marker cap to put it back on", fakecheck: "click a falsely marked square to expose the lie",
-        thorns: "click a thorn 3× to cut it", petals: "click the clue list to sweep the petals", minion: "click the aphid to send it back",
-        drain: "finish a word to water your board", seal: "click the weeds 5× to tear them off",
-        hoot: "click a clue to unscramble it", acorns: "click the branch to drop the acorns on the owl", darkcreep: "every word you finish pushes the night back",
+        thorns: "click a thorn 4× to cut it", petals: "click the clue list 6× to sweep the petals", minion: "click the aphid to send it back",
+        drain: "finish 2 words to water your board", seal: "click the weeds 7× to tear them off",
+        hoot: "click a clue to unscramble it", acorns: "click the branch to drop the acorns on the owl", darkcreep: "every word you finish pushes the night back a little",
         ambush: "catch the falling feather", steal: "slap the paw away",
-        sour: "letters in finished words stay visible", sticky: "double-click a square to come unstuck", jitter: "the more you solve, the steadier it gets",
+        sour: "letters in finished words stay visible", sticky: "double-click the board twice to come unstuck", jitter: "the more you solve, the steadier it gets",
         bubble: "click the gum 3× to pop it", fumble: "squares in finished words never slip",
-        ink: "click the board to wipe the ink away", whirl: "click the whirlpool to plug it", tidal: "the more you solve, the less it moves",
-        backwards: "the riptide can't pull you back past a right letter", shrink: "click the board 4× to push the pressure back",
+        ink: "click the board to wipe the ink away", whirl: "click the whirlpool to plug it", tidal: "each finished Across row steadies it a third: 3 rows stop it",
+        backwards: "the riptide can't pull you back past a right letter", shrink: "click the board 6× to push the pressure back",
         freeze: "smash the icicle (3 clicks)", whiteout: "click a snowy square to brush it off", avalanche: "finished words never get buried",
-        slowmo: "every right letter you type warms your fingers", shatter: "click the board to fit the pieces back",
+        slowmo: "every right letter you type warms your fingers a little", shatter: "click the board to fit the pieces back",
         lightning: "click the spark to ground it", downpour: "finish the word, or click a running letter to save it",
-        halffog: "finished words near the bottom dam the flood", quake: "letters in finished words can't shake loose", ward: "click the umbrella 3× to tear it",
-        gale: "click the gust to break it up", twister: "it can't spin you inside a half-solved word", upside: "double-click the board to flip it back",
+        halffog: "each finished Across word in the bottom half holds it back a third: 3 rows stop it", quake: "letters in finished words can't shake loose", ward: "click the boss 5× to tear its umbrella",
+        gale: "click the gust to break it up", twister: "it can't spin you inside a half-solved word", upside: "double-click the board twice to flip it back",
         flicker: "click a cloud to blow it away", haste: "click the wings to clip them",
         riddle: "click a clue to read it the right way round", sandblast: "plug the sand jet (2 clicks)", mirageclue: "click the clue bar to dispel the mirage",
         shift: "click the word within 6s to slide it back", curse: "finish a word to cure it and poison the boss",
-        mirror: "double-click the board to break the mirror", confetti: "click a pile to sweep it away", clueswap: "click a clue to put it back",
+        mirror: "double-click the board twice to break the mirror", confetti: "click a pile to sweep it away", clueswap: "click a clue to put it back",
         bomb: "type its right letter to defuse it and throw it back", taunt: "finish the word to break free",
-        glitch: "click a glitched square to repair it", lag: "click the loading wheel 3×", comboban: "finish 2 words within 6s to break the ban",
+        glitch: "click a glitched square to repair it", lag: "click the loading wheel 3×", comboban: "finish 2 words within 5s to break the ban",
         echo: "echoes can't overwrite right letters", mask: "click a letter to decode it",
         haunting: "click a ghost letter to banish it", lights: "every word you finish brightens the light", fakeclue: "click the lying clue to expose it",
         wordthief: "click your word to hold it down", oneword: "click a torn clue to tape it back",
-        lock: "finish the word to break the lock", static: "click the board 3× to clear the static", unlock: "hit Cancel on the reboot",
-        itemlock: "click the firewall 5× to hack through", numberless: "finish a word to restore the numbers",
-        eruption: "click the target 2× to cool the lava", heatwave: "finish a word to cool them down", powerup: "click the vent 3× to let the pressure out",
-        heal: "click the lava stream 2× to block it", toll: "click the boss 3× to douse the fire",
-        gravity: "click the board 4× to break the gravity well", flare: "click the flare before it bursts", collapse: "click the collapsing star 2×",
+        lock: "finish the word to break the lock", static: "click the board 5× to clear the static", unlock: "hit Cancel on the reboot",
+        itemlock: "click the firewall 7× to hack through", numberless: "finish 2 words to restore the numbers",
+        eruption: "click the target 2× to cool the lava", heatwave: "finish 2 words to cool them down", powerup: "click the vent 3× to let the pressure out",
+        heal: "click the lava stream 2× to block it", toll: "click the boss 5× to douse the fire",
+        gravity: "click the board 6× to break the gravity well", flare: "click the flare before it bursts", collapse: "click the collapsing star 2×",
         snapfinish: "close the warp gate (2 clicks)", vowels: "vowels in finished words stay visible"
     };
     // the boss gets a taste of its own move
@@ -1889,6 +1925,13 @@ const Campaign = (() => {
     const bossLoseWord = () => { const f = fight, e = f.word || f.done[f.done.length - 1]; if (e) wipe(Game.cellsOf(e), true); f.word = null; refreshDone(); };
     // squares in words you've got right (they resist some moves)
     const safeCells = () => (Game.state.puzzle ? doneCells() : new Set());
+    // the rows that have a finished (right) Across word
+    function doneAcrossRows() {
+        const g = Game.state, rows = new Set();
+        if (!g.puzzle) return rows;
+        for (const e of g.puzzle.across) if (Game.cellsOf(e).every(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])) rows.add(e.row);
+        return rows;
+    }
     // INTERCEPTS: where the target appears (a container and a spot in it, in %), what it looks like, how many clicks, the payback
     const ICON = {
         sun: '<circle cx="32" cy="32" r="14" fill="#fff6c0"/><g stroke="#ffd23f" stroke-width="5" stroke-linecap="round">' + Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4; return `<line x1="${32 + Math.cos(a) * 20}" y1="${32 + Math.sin(a) * 20}" x2="${32 + Math.cos(a) * 28}" y2="${32 + Math.sin(a) * 28}"/>`; }).join("") + '</g>',
@@ -1913,73 +1956,77 @@ const Campaign = (() => {
         star: '<circle cx="32" cy="32" r="10" fill="#fff"/><circle cx="32" cy="32" r="18" fill="none" stroke="#c6b8ff" stroke-width="4" stroke-dasharray="6 5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#8a6bff" stroke-width="2"/>',
         umbrella: '<path d="M8 30 Q32 2 56 30 Z" fill="#ff5c6c" stroke="#2b2233" stroke-width="2.5"/><path d="M32 30 L32 52 Q32 58 26 56" stroke="#2b2233" stroke-width="3" fill="none"/>'
     };
-    const at = (sel, x, y) => ({ sel, x, y });
     const LOOK_NAME = { sun: "flare", eraser: "eraser", cap: "marker cap", branch: "branch", feather: "feather", paw: "paw", spiral: "whirlpool", icicle: "icicle",
         spark: "spark", swirl: "gust", wings: "wings", jet: "sand jet", wheel: "loading wheel", hand: "ghost hand", bar: "reboot bar", target: "target", gauge: "pressure gauge",
         stream: "lava stream", gate: "warp gate", star: "collapsing star", umbrella: "umbrella" };
     const INTERCEPT = {
-        rubout: { look: "eraser", hits: 2, where: () => at(".board-wrap", 70, 18), back: () => { bossLose(3); return "You snatched the eraser: the boss's board loses 3 letters"; } },
-        nobackspace: { look: "cap", hits: 1, where: () => at(".board-wrap", 82, 70), back: () => { fight.boss.junk = (fight.boss.junk || 0) + 3; return "Capped! Its next 3 letters come out as ink blots"; } },
-        acorns: { look: "branch", hits: 2, where: () => at(".board-wrap", 50, 6), back: () => { bossStun(3); return "The acorns land on the owl: stunned for 3s"; } },
-        ambush: { look: "feather", hits: 1, where: () => at(".board-wrap", 20 + Math.random() * 60, 25 + Math.random() * 40), back: () => { bossStun(1.5); return "Caught the feather: no sneak attack"; } },
-        steal: { look: "paw", hits: 1, where: () => at(".bp-ab-row", 50, 50), back: () => { bossLose(2); return "Slapped away! The boss drops 2 of its letters"; } },
-        whirl: { look: "spiral", hits: 2, where: () => at(".board-wrap", 50, 50), back: () => { bossLoseWord(); return "You plugged the whirlpool: it swallows the Kraken's own word"; } },
-        freeze: { look: "icicle", hits: 3, where: () => at(".clue-bar-row", 88, 50), back: () => { bossStun(3); return "Icicle smashed: the Yeti is frozen instead (3s)"; } },
-        lightning: { look: "spark", hits: 1, where: () => sparkSpot(), back: () => { bossLoseWord(); return "Grounded! The lightning strikes the boss's own word"; } },
-        gale: { look: "swirl", hits: 2, where: () => at(".board-wrap", 25, 30), back: () => { bossBlind(3); return "Gust broken: the dust blows into the knight's eyes (3s)"; } },
-        haste: { look: "wings", hits: 2, where: () => at(".bp-portrait", 50, 45), back: () => { bossSlow(5); return "Wings clipped: it writes at a third of its speed for 5s"; } },
-        sandblast: { look: "jet", hits: 2, where: () => at(".board-wrap", 8, 50), back: () => { fight.boss.sand = Math.max(fight.boss.sand || 0, 6); return "The sand blows back: its letters keep blowing away (6s)"; } },
-        lag: { look: "wheel", hits: 3, where: () => at(".board-wrap", 50, 45), back: () => { bossStun(3); return "The boss lags instead: frozen for 3s"; } },
-        wordthief: { look: "hand", hits: 1, where: () => lastWordSpot(), back: () => { const f = fight, e = f.done[f.done.length - 1]; if (e) wipe(Game.cellsOf(e), true); refreshDone(); return "You held your word down: the ghost throws the boss's word instead"; } },
-        unlock: { look: "bar", hits: 1, where: () => at(".board-wrap", 50, 12), back: () => { bossStun(4); return "Reboot cancelled: the robot reboots itself (4s)"; } },
-        eruption: { look: "target", hits: 2, where: () => at(".board-wrap", 30 + Math.random() * 40, 30 + Math.random() * 40), back: () => { bossLose(2); return "You cooled the lava: it splashes back on the wyrm (-2 letters)"; } },
-        powerup: { look: "gauge", hits: 3, where: () => at(".bp-portrait", 78, 30), back: () => { bossStun(2); return "Pressure let out: the wyrm sputters (2s)"; } },
-        heal: { look: "stream", hits: 2, where: () => at(".bp-portrait", 25, 72), back: () => { bossLose(2); return "You blocked the lava: it cools on the boss's own board (-2 letters)"; } },
-        flare: { look: "sun", hits: 1, where: () => at(".board-wrap", 50, 8), back: () => { bossBlind(4); return "The flare is turned back: the Void is blinded for 4s"; } },
-        collapse: { look: "star", hits: 2, where: () => lastWordSpot(), back: () => { bossLose(3); return "Stabilised! The collapse pulls 3 letters out of the boss instead"; } },
-        snapfinish: { look: "gate", hits: 2, where: () => at(".bp-portrait", 75, 72), back: () => { bossLoseWord(); return "Warp gate closed: the word it was on is lost"; } },
-        ward: { look: "umbrella", hits: 2, where: () => at(".bp-portrait", 50, 20), back: () => { bossStun(1.5); return "You knocked the umbrella out of its hands"; } }
+        rubout: { look: "eraser", hits: 2, back: () => { bossLose(3); return "You snatched the eraser: the boss's board loses 3 letters"; } },
+        nobackspace: { look: "cap", hits: 1, back: () => { fight.boss.junk = (fight.boss.junk || 0) + 3; return "Capped! Its next 3 letters come out as ink blots"; } },
+        acorns: { look: "branch", hits: 2, back: () => { bossStun(3); return "The acorns land on the owl: stunned for 3s"; } },
+        ambush: { look: "feather", hits: 1, back: () => { bossStun(1.5); return "Caught the feather: no sneak attack"; } },
+        steal: { look: "paw", hits: 1, back: () => { bossLose(2); return "Slapped away! The boss drops 2 of its letters"; } },
+        whirl: { look: "spiral", hits: 2, back: () => { bossLoseWord(); return "You plugged the whirlpool: it swallows the Kraken's own word"; } },
+        freeze: { look: "icicle", hits: 3, back: () => { bossStun(3); return "Icicle smashed: the Yeti is frozen instead (3s)"; } },
+        lightning: { look: "spark", hits: 1, back: () => { bossLoseWord(); return "Grounded! The lightning strikes the boss's own word"; } },
+        gale: { look: "swirl", hits: 2, back: () => { bossBlind(3); return "Gust broken: the dust blows into the knight's eyes (3s)"; } },
+        haste: { look: "wings", hits: 2, back: () => { bossSlow(5); return "Wings clipped: it writes at a third of its speed for 5s"; } },
+        sandblast: { look: "jet", hits: 2, back: () => { fight.boss.sand = Math.max(fight.boss.sand || 0, 6); return "The sand blows back: its letters keep blowing away (6s)"; } },
+        lag: { look: "wheel", hits: 3, back: () => { bossStun(3); return "The boss lags instead: frozen for 3s"; } },
+        wordthief: { look: "hand", hits: 1, back: () => { const f = fight, e = f.done[f.done.length - 1]; if (e) wipe(Game.cellsOf(e), true); refreshDone(); return "You held your word down: the ghost throws the boss's word instead"; } },
+        unlock: { look: "bar", hits: 1, back: () => { bossStun(4); return "Reboot cancelled: the robot reboots itself (4s)"; } },
+        eruption: { look: "target", hits: 2, back: () => { bossLose(2); return "You cooled the lava: it splashes back on the wyrm (-2 letters)"; } },
+        powerup: { look: "gauge", hits: 3, back: () => { bossStun(2); return "Pressure let out: the wyrm sputters (2s)"; } },
+        heal: { look: "stream", hits: 2, back: () => { bossLose(2); return "You blocked the lava: it cools on the boss's own board (-2 letters)"; } },
+        flare: { look: "sun", hits: 1, back: () => { bossBlind(4); return "The flare is turned back: the Void is blinded for 4s"; } },
+        collapse: { look: "star", hits: 2, back: () => { bossLose(3); return "Stabilised! The collapse pulls 3 letters out of the boss instead"; } },
+        snapfinish: { look: "gate", hits: 2, back: () => { bossLoseWord(); return "Warp gate closed: the word it was on is lost"; } },
+        ward: { look: "umbrella", hits: 2, back: () => { bossStun(1.5); return "You knocked the umbrella out of its hands"; } }
     };
-    // the spot over your most-filled word (Lightning), or your last finished word (Poltergeist, Collapse)
-    function spotOf(cells) {
-        const wrap = document.querySelector(".board-wrap");
-        if (!cells || !cells.length || !wrap) return at(".board-wrap", 50, 30);
-        const w = wrap.getBoundingClientRect(), [r, c] = cells[Math.floor(cells.length / 2)], el = Game.cellEl(r, c);
-        if (!el) return at(".board-wrap", 50, 30);
-        const a = el.getBoundingClientRect();
-        return at(".board-wrap", (a.left + a.width / 2 - w.left) / w.width * 100, (a.top + a.height / 2 - w.top) / w.height * 100);
-    }
-    function sparkSpot() {
-        const g = Game.state;
-        let best = null, most = 0;
-        for (const e of [...g.puzzle.across, ...g.puzzle.down]) { const n = Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c)).length; if (n > most) { most = n; best = e; } }
-        return spotOf(best ? Game.cellsOf(best) : null);
-    }
-    const lastWordSpot = () => spotOf(fight.lastMyWord);
     let interceptEl = null;
+    // the target turns up somewhere random on the screen, drifts about, and jumps somewhere new after every hit
+    // (the user: "the click counterplay should be pretty hard"); later bosses' targets move faster
+    const TARGET = 58;
+    function randomSpot() {
+        const m = 20 + TARGET / 2, top = 64;
+        return { x: m + Math.random() * Math.max(1, innerWidth - 2 * m), y: top + m + Math.random() * Math.max(1, innerHeight - top - 2 * m) };
+    }
     function spawnIntercept(f, mv) {
         removeIntercept();
         const it = INTERCEPT[mv.kind];
-        if (!it || f.ambush) return;                    // Silent Wings: no warning, no target
-        const w = it.where(), box = document.querySelector(w.sel) || document.querySelector(".board-wrap");
-        if (!box) return;
-        let left = it.hits;
-        const el = U.el("button", { type: "button", class: "counter-target look-" + it.look, "aria-label": "Counter: " + COUNTER[mv.kind], title: COUNTER[mv.kind],
-            style: { left: w.x + "%", top: w.y + "%", "--c": bossOf(f.world).color },
-            html: `<svg viewBox="0 0 64 64" aria-hidden="true">${ICON[it.look] || ICON.target}</svg><span class="ct-label">${it.hits > 1 ? `Click ×${it.hits}` : "Click!"}</span><i class="ct-ring"></i>` });
-        if (getComputedStyle(box).position === "static") box.style.position = "relative";
+        if (!it || f.windup < 1) return;                // Silent Wings: no warning, no target
+        let left = it.hits, p = randomSpot(), a = Math.random() * Math.PI * 2, prev = performance.now();
+        const speed = 45 + (f.si || 0) * 9;
+        const el = U.el("button", { type: "button", class: "counter-target look-" + it.look, "aria-label": "Counter: click the " + LOOK_NAME[it.look], title: "Click the " + LOOK_NAME[it.look],
+            style: { "--c": bossOf(f.world).color },
+            html: `<svg viewBox="0 0 64 64" aria-hidden="true">${ICON[it.look] || ICON.target}</svg><span class="ct-label">${it.hits > 1 ? `×${it.hits}` : "Click!"}</span><i class="ct-ring"></i>` });
+        const place = () => { el.style.left = p.x.toFixed(1) + "px"; el.style.top = p.y.toFixed(1) + "px"; };
+        const drift = now => {
+            if (!el.isConnected) return;
+            const dt = Math.min(0.05, (now - prev) / 1000), m = 20 + TARGET / 2;
+            prev = now;
+            a += (Math.random() - 0.5) * 3 * dt;
+            p.x += Math.cos(a) * speed * dt; p.y += Math.sin(a) * speed * dt;
+            if (p.x < m || p.x > innerWidth - m) { a = Math.PI - a; p.x = U.clamp(p.x, m, innerWidth - m); }
+            if (p.y < 64 + m || p.y > innerHeight - m) { a = -a; p.y = U.clamp(p.y, 64 + m, innerHeight - m); }
+            place();
+            requestAnimationFrame(drift);
+        };
+        place();
         el.addEventListener("pointerdown", e => {
             e.preventDefault(); e.stopPropagation();
             if (fight !== f || f.pending !== mv) return;
             left--;
-            U.restart(el, "hit");
             Sound.tone({ f: 500 + (it.hits - left) * 160, f2: 900, d: 0.08, v: 0.12, type: "triangle" });
-            const p = U.center(el);
-            FX.burst({ x: p.x, y: p.y, n: 10, colors: ["#fff", bossOf(f.world).color], shape: "star", speed: [80, 220], gravity: 200, life: [0.3, 0.6], size: [2, 5] });
-            if (left <= 0) countered(f, mv, it);
-            else el.querySelector(".ct-label").textContent = `Click ×${left}`;
+            const at = U.center(el);
+            FX.burst({ x: at.x, y: at.y, n: 10, colors: ["#fff", bossOf(f.world).color], shape: "star", speed: [80, 220], gravity: 200, life: [0.3, 0.6], size: [2, 5] });
+            if (left <= 0) { countered(f, mv, it); return; }
+            el.querySelector(".ct-label").textContent = `×${left}`;
+            p = randomSpot(); a = Math.random() * Math.PI * 2;         // it jumps away
+            place();
+            U.restart(el, "hop");
         });
-        box.appendChild(el);
+        document.body.appendChild(el);
+        if (U.motion() !== "still") requestAnimationFrame(drift);
         interceptEl = el;
     }
     function removeIntercept() { if (interceptEl) { interceptEl.remove(); interceptEl = null; } }
@@ -2007,7 +2054,7 @@ const Campaign = (() => {
         let hit = false;
         if (r >= 0) {
             if (f.snow && f.snow.has(id) && (f.me.whiteout > 0 || f.me.avalanche > 0)) { f.snow.delete(id); f.cleared = f.cleared || new Set(); f.cleared.add(id); puff(cellEl, ["❄️"]); hit = true; }
-            if (f.thorns && f.thorns.cells.has(id)) { f.thornHits = f.thornHits || {}; if ((f.thornHits[id] = (f.thornHits[id] || 0) + 1) >= 3) { f.thorns.cells.delete(id); puff(cellEl, ["🍂", "✂️"]); floatText("Thorn cut! ✂️"); } else U.restart(cellEl, "shake"); hit = true; }
+            if (f.thorns && f.thorns.cells.has(id)) { f.thornHits = f.thornHits || {}; if ((f.thornHits[id] = (f.thornHits[id] || 0) + 1) >= 4) { f.thorns.cells.delete(id); puff(cellEl, ["🍂", "✂️"]); floatText("Thorn cut! ✂️"); } else U.restart(cellEl, "shake"); hit = true; }
             if (f.me.confetti > 0 && f.piles && f.piles.has(id)) { f.piles.delete(id); (f.swept = f.swept || new Set()).add(id); puff(cellEl, ["🎉"]); hit = true; }
             if (f.me.flicker > 0 && cellEl.classList.contains("clouded")) { (f.clearSky = f.clearSky || new Set()).add(id); cellEl.classList.remove("clouded"); puff(cellEl, ["☁️"]); hit = true; }
             if (f.me.mask > 0 && cellEl.classList.contains("masked")) { (f.decoded = f.decoded || new Set()).add(id); puff(cellEl, ["✨"]); hit = true; }
@@ -2034,24 +2081,28 @@ const Campaign = (() => {
         }
         // the moves you break by working at the whole board
         const tap = (k, n, msg) => { if (f.me[k] > 0) { f.taps = f.taps || {}; if ((f.taps[k] = (f.taps[k] || 0) + 1) >= n) { f.me[k] = 0; f.taps[k] = 0; floatText(msg); applyMe(); } hit = true; } };
-        tap("inkblot", 4, "Blot wiped! 🧽");
-        tap("static", 3, "Static cleared! 📺");
-        tap("shrink", 4, "Pressure pushed back! 🌊");
-        tap("gravity", 4, "Gravity well broken! 🪐");
-        if (f.me.ink > 0) { f.me.ink = Math.max(0, f.me.ink - 1.5); hit = true; }
-        if (f.me.shatter > 0) { f.me.shatter = Math.max(0, f.me.shatter - 2); hit = true; }
+        tap("inkblot", 6, "Blot wiped! 🧽");
+        tap("static", 5, "Static cleared! 📺");
+        tap("shrink", 6, "Pressure pushed back! 🌊");
+        tap("gravity", 6, "Gravity well broken! 🪐");
+        if (f.me.ink > 0) { f.me.ink = Math.max(0, f.me.ink - 0.8); hit = true; }
+        if (f.me.shatter > 0) { f.me.shatter = Math.max(0, f.me.shatter - 1); hit = true; }
         if (hit) { applyMe(); drawFight(); }
     }
     function boardDoubleClick() {
         if (!fightOn()) return;
         const f = fight;
-        for (const [k, msg] of [["mirror", "Mirror broken! 🪞"], ["upside", "Flipped back! ✈️"], ["sticky", "Unstuck! 🍯"]]) if (f.me[k] > 0) { f.me[k] = 0; floatText(msg); }
+        f.taps = f.taps || {};
+        for (const [k, msg] of [["mirror", "Mirror broken! 🪞"], ["upside", "Flipped back! ✈️"], ["sticky", "Unstuck! 🍯"]]) if (f.me[k] > 0) {
+            if ((f.taps[k] = (f.taps[k] || 0) + 1) >= 2) { f.me[k] = 0; f.taps[k] = 0; floatText(msg); }     // two double-clicks
+            else floatText("Once more!");
+        }
         applyMe(); drawFight();
     }
     function clueClick(e) {
         if (!fightOn()) return;
         const f = fight, li = e.target.closest(".clues li");
-        if (f.me.petals > 0) { f.taps = f.taps || {}; if ((f.taps.petals = (f.taps.petals || 0) + 1) >= 4) { f.me.petals = 0; f.taps.petals = 0; floatText("Petals swept away! 🌸"); } }
+        if (f.me.petals > 0) { f.taps = f.taps || {}; if ((f.taps.petals = (f.taps.petals || 0) + 1) >= 6) { f.me.petals = 0; f.taps.petals = 0; floatText("Petals swept away! 🌸"); } }
         if (!li) { applyMe(); return; }
         const items = [...document.querySelectorAll(".clues li")], i = items.indexOf(li);
         if (f.me.fakeclue > 0 && f.lie && Game.state.clueItems.get(f.lie.entry) === li) { f.lie = null; f.me.fakeclue = 0; bossStun(2); floatText("Lie exposed! Boss stunned 2s 😈"); }
@@ -2063,8 +2114,8 @@ const Campaign = (() => {
         if (!fightOn()) return;
         const f = fight;
         f.taps = f.taps || {};
-        if (f.boss.ward && (f.taps.ward = (f.taps.ward || 0) + 1) >= 3) { f.boss.ward = 0; f.taps.ward = 0; floatText("Umbrella torn! ☂️"); Powers.aura(portraitEl(), ["💧"], "pop", 8, 700); }
-        if (f.me.toll > 0 && (f.taps.toll = (f.taps.toll || 0) + 1) >= 3) { f.me.toll = 0; f.taps.toll = 0; floatText("Fire doused! ♨️"); Powers.aura(portraitEl(), ["💧"], "pop", 8, 700); }
+        if (f.boss.ward && (f.taps.ward = (f.taps.ward || 0) + 1) >= 5) { f.boss.ward = 0; f.taps.ward = 0; floatText("Umbrella torn! ☂️"); Powers.aura(portraitEl(), ["💧"], "pop", 8, 700); }
+        if (f.me.toll > 0 && (f.taps.toll = (f.taps.toll || 0) + 1) >= 5) { f.me.toll = 0; f.taps.toll = 0; floatText("Fire doused! ♨️"); Powers.aura(portraitEl(), ["💧"], "pop", 8, 700); }
         drawFight();
     }
     function coverClick(e) {
@@ -2074,7 +2125,7 @@ const Campaign = (() => {
         f.taps = f.taps || {};
         U.restart(cov, "shake");
         Sound.tone({ f: 300 + (f.taps[k] || 0) * 80, f2: 200, d: 0.07, v: 0.12, type: "square" });
-        if ((f.taps[k] = (f.taps[k] || 0) + 1) >= 5) { f.me[k] = 0; f.taps[k] = 0; floatText(k === "seal" ? "Weeds torn off! 🌿" : "Firewall hacked! 🧱"); }
+        if ((f.taps[k] = (f.taps[k] || 0) + 1) >= 7) { f.me[k] = 0; f.taps[k] = 0; floatText(k === "seal" ? "Weeds torn off! 🌿" : "Firewall hacked! 🧱"); }
         drawFight();
     }
     document.querySelector(".board-wrap").addEventListener("click", boardClick, true);
@@ -2085,11 +2136,15 @@ const Campaign = (() => {
     // a right word finished: some moves can't stand that
     function counterOnWord() {
         const f = fight, now = performance.now();
-        for (const [k, msg] of [["drain", "Board watered! 🌱"], ["heatwave", "Cooled down! ❄️"], ["numberless", "Numbers back! 💾"]]) if (f.me[k] > 0) { f.me[k] = 0; floatText(msg); }
+        f.taps = f.taps || {};
+        for (const [k, msg] of [["drain", "Board watered! 🌱"], ["heatwave", "Cooled down! ❄️"], ["numberless", "Numbers back! 💾"]]) if (f.me[k] > 0) {
+            if ((f.taps["w-" + k] = (f.taps["w-" + k] || 0) + 1) >= 2) { f.me[k] = 0; f.taps["w-" + k] = 0; floatText(msg); }   // two words
+            else floatText("1 more word!");
+        }
         if (f.me.lock > 0 || f.me.taunt > 0) { f.me.lock = 0; f.me.taunt = 0; bossStun(2); floatText("Broke free! Boss stunned 2s"); }
-        if (f.me.darkcreep > 0) f.me.darkcreep = Math.max(0, f.me.darkcreep - 3);
+        if (f.me.darkcreep > 0) f.me.darkcreep = Math.max(0, f.me.darkcreep - 1.5);
         if (f.me.lights > 0) f.lightsBonus = (f.lightsBonus || 0) + 1;
-        if (f.me.comboban > 0) { f.banWords = (f.banWords || []).filter(t => now - t < 6000); f.banWords.push(now); if (f.banWords.length >= 2) { f.me.comboban = 0; f.banWords = []; floatText("Combo ban broken! 💢"); } }
+        if (f.me.comboban > 0) { f.banWords = (f.banWords || []).filter(t => now - t < 5000); f.banWords.push(now); if (f.banWords.length >= 2) { f.me.comboban = 0; f.banWords = []; floatText("Combo ban broken! 💢"); } }
     }
 
     function windUp(chained = false, forced = null) {
@@ -2160,8 +2215,11 @@ const Campaign = (() => {
         chain();
     }
     // what a boss move does to you (durations get longer with each boss, Frost Armor halves them, Pressure Build doubles one)
+    const COUNTER_STATE = { confetti: "swept", flicker: "clearSky", mask: "decoded", haunting: "banished", lights: "lightsBonus", fakecheck: "exposed", comboban: "banWords" };
     function hitMe(mv) {
         const f = fight, g = Game.state, armor = f.buff.armor > 0;
+        if (COUNTER_STATE[mv.kind]) f[COUNTER_STATE[mv.kind]] = null;
+        if (f.taps) { f.taps[mv.kind] = 0; f.taps["w-" + mv.kind] = 0; }
         const dur = mv.d * f.th.power * (armor ? 0.5 : 1) * (f.powerNext ? 2 : 1);
         if (mv.kind !== "powerup") f.powerNext = false;
         const open = () => scopeAll().filter(([r, c]) => !Game.isLocked(r, c));
@@ -2403,6 +2461,7 @@ const Campaign = (() => {
     const CLUE_TRICKS = ["hoot", "riddle", "clueswap", "oneword", "fakeclue"];
     const AREA_FX = ["crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock", "taunt",
         "inkblot", "nobackspace", "jitter", "tidal", "shrink", "shatter", "halffog", "upside", "flicker", "darkcreep", "numberless", "slowmo", "fumble", "backwards", "echo", "mask", "vowels"];
+    const FLOOD_HOLD = 5;                                   // seconds Flash Flood stays at its full height
     function applyMe() {
         const f = fight, m = f ? f.me : {}, on = k => m[k] > 0;
         const area = boardArea(), clues = document.querySelector(".clues"), board = document.getElementById("board");
@@ -2415,22 +2474,24 @@ const Campaign = (() => {
         board.classList.toggle("fx-frozen", on("freeze"));
         board.classList.toggle("fx-wilt", on("drain"));
         // progress protects you: the flood stops at your finished words, the shaking and the tide ease off as you solve
-        const safe = safeCells(), pct = myPct(), size = Game.state.puzzle ? Game.state.puzzle.size : 5;
-        let dam = -1;
-        safe.forEach(id => { dam = Math.max(dam, +id.split(",")[0]); });
-        // Flash Flood rises over its whole duration and can cover the entire board, but stops at the lowest finished word
+        const safe = safeCells(), pct = myPct(), size = Game.state.puzzle ? Game.state.puzzle.size : 5, rows = doneAcrossRows();
+        // Flash Flood rises over its whole duration and can cover the entire board. Each finished Across word in the
+        // bottom half holds it back by a third (the user: "you need like 3 rows of words to stop it")
         if (on("halffog")) {
             f.floodMax = Math.max(f.floodMax || 0, m.halffog);
-            const rise = 25 + 75 * (1 - m.halffog / f.floodMax), dammed = dam < 0 ? 100 : (size - 1 - dam) / size * 100;
-            area.style.setProperty("--flood", Math.min(rise, dammed).toFixed(1) + "%");
+            const low = [...rows].filter(r => r >= size - Math.ceil(size / 2)).length;
+            // it rises until 5 seconds are left, then stays at its height for those 5 seconds (the user's rule)
+            const rise = 25 + 75 * Math.min(1, (f.floodMax - m.halffog) / Math.max(1.5, f.floodMax - FLOOD_HOLD)), dammed = Math.max(0, 100 - 34 * low);
+            setVar(area, "--flood", Math.min(rise, dammed).toFixed(1) + "%");
             area.classList.toggle("flood-dammed", dammed < rise);
         } else if (f) { f.floodMax = 0; area.classList.remove("flood-dammed"); }
-        area.style.setProperty("--jit", Math.max(0.2, 1 - pct).toFixed(2));
-        area.style.setProperty("--tide", (46 * Math.max(0.15, 1 - pct)).toFixed(1) + "%");
-        area.style.setProperty("--lr", (46 + 22 * ((f && f.lightsBonus) || 0)) + "px");
+        setVar(area, "--jit", Math.max(0.45, 1 - 0.55 * pct).toFixed(2));
+        setVar(area, "--tide", (46 * Math.max(0, 1 - rows.size / 3)).toFixed(1) + "%");     // 3 finished rows hold it still
+        setVar(area, "--lr", (46 + 12 * ((f && f.lightsBonus) || 0)) + "px");
+        if (f && !on("lights")) f.lightsBonus = 0;
         clues.classList.toggle("fx-petals", on("petals"));
         flareEl.classList.toggle("on", on("flare"));
-        if (on("darkcreep")) area.style.setProperty("--dark", Math.min(0.97, 1 - m.darkcreep / Math.max(1, f.darkMax || m.darkcreep)).toFixed(2));
+        if (on("darkcreep")) setVar(area, "--dark", Math.min(0.97, 1 - m.darkcreep / Math.max(1, f.darkMax || m.darkcreep)).toFixed(2));
         // the clue text tricks end: put the clues back
         if (savedClues && !CLUE_TRICKS.some(on)) {
             if (f) f.fixedClues = null;
@@ -2452,7 +2513,7 @@ const Campaign = (() => {
             cell.classList.toggle("piled", on("confetti") && !!f.piles && f.piles.has(id));
             cell.classList.toggle("gummed", !!(f && f.gum && f.gum.cells.has(id)));
             cell.classList.toggle("bombed", !!(f && f.bombAt && f.bombAt.r === r && f.bombAt.c === c));
-            cell.style.setProperty("--sx", on("shatter") ? ((r % 2 ? 1 : -1) * (6 + (c % 3) * 3)) + "px" : "0px");
+            setVar(cell, "--sx", on("shatter") ? ((r % 2 ? 1 : -1) * (6 + (c % 3) * 3)) + "px" : "0px");
             // Haunting: fake letters in empty squares that look exactly like real ones
             const ghost = cell.querySelector(".ghost-ltr");
             if (on("haunting") && !g.letters[r][c] && !(f.banished && f.banished.has(id))) { if (!ghost) cell.appendChild(U.el("span", { class: "ghost-ltr", text: String.fromCharCode(65 + Math.floor(Math.random() * 26)) })); }
@@ -2469,8 +2530,8 @@ const Campaign = (() => {
             const cell = Game.cellEl(g.row, g.col), wrap = document.querySelector(".board-wrap");
             if (cell && wrap) {
                 const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-                area.style.setProperty("--lx", (a.left + a.width / 2 - w.left) + "px");
-                area.style.setProperty("--ly", (a.top + a.height / 2 - w.top) + "px");
+                setVar(area, "--lx", Math.round(a.left + a.width / 2 - w.left) + "px");
+                setVar(area, "--ly", Math.round(a.top + a.height / 2 - w.top) + "px");
             }
         }
         if (!on("minion")) removeMinion();
@@ -2489,7 +2550,7 @@ const Campaign = (() => {
         if (clues) clues.classList.remove("fx-blind", "fx-petals", "fx-numberless");
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked"); n.style.removeProperty("--sx"); });
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
         document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
@@ -2597,7 +2658,7 @@ const Campaign = (() => {
         }
         // the boss's typing tricks (their changes are marked too)
         const bossEdit = fn => setTimeout(() => { const before = g.letters.map(r => [...r]); fn(); Game.markBossChanges(before); }, 0);
-        if (f.me.slowmo > 0 && letter === g.puzzle.solution[row][col]) f.me.slowmo = Math.max(0, f.me.slowmo - 1);   // right letters warm your fingers
+        if (f.me.slowmo > 0 && letter === g.puzzle.solution[row][col]) f.me.slowmo = Math.max(0, f.me.slowmo - 0.4);   // right letters warm your fingers
         if (f.me.fumble > 0 && Math.random() < 0.3 && !safeCells().has(row + "," + col)) bossEdit(() => { if (!g.solved && g.letters[row][col] === letter) Game.setLetters([[row, col, wrongLetter(letter)]]); });
         const cells = Game.cellsOf(currentMyEntry()), at = cells.findIndex(([r, c]) => r === row && c === col);
         if (f.me.echo > 0 && at >= 0 && at + 1 < cells.length) { const [r2, c2] = cells[at + 1]; bossEdit(() => { if (!g.solved && !Game.isLocked(r2, c2) && g.letters[r2][c2] !== g.puzzle.solution[r2][c2]) Game.setLetters([[r2, c2, letter]]); }); }

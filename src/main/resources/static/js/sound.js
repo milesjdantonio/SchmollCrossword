@@ -215,6 +215,7 @@ const Sound = (() => {
     // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
     let musicBus = null, track = null;
     const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
+    const musicLevel = () => (musicOn() ? Math.max(0, Math.min(1, Settings.get("musicVolume") ?? 1)) : 0);
     // songs.json: each boss song's loop points. A song file starts with its build-up (the user's design: the intro is
     // music that builds up and runs straight into the song), the song proper starts at "hit", then the browser loops
     // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
@@ -222,7 +223,7 @@ const Sound = (() => {
     const songList = () => songs || (songs = fetch("audio/music/songs.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
     async function music(name, { loop = true, v = 0.32, fade = 0.8, rate = 1, then = null, thenOpts = {}, offset = 0, fromLoop = false } = {}) {
         if (!init()) return;
-        if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicOn() ? 1 : 0; musicBus.connect(master); }
+        if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); }
         stopMusic(fade);
         if (!name) return;
         const path = `audio/music/${name}.mp3`;
@@ -269,7 +270,7 @@ const Sound = (() => {
         old.src.stop(ctx.currentTime + fade + 0.05);
     }
     Settings.on(key => {
-        if (musicBus && (key === "sound" || key === "bossMusic")) musicBus.gain.setTargetAtTime(musicOn() ? 1 : 0, ctx.currentTime, 0.1);
+        if (musicBus && (key === "sound" || key === "bossMusic" || key === "musicVolume")) musicBus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, 0.05);
     });
 
     // a one-off sound written somewhere else (each campaign ability and boss move has its own, see powers.js)

@@ -86,8 +86,12 @@ const U = (() => {
     };
 
     // How much motion the player wants: "full", "lite" (fewer particles, 30 fps scenes) or "still" (no animation)
+    // (asked every frame by every animation, so the system setting is read once and then followed by its change event)
+    const reduceMQ = matchMedia("(prefers-reduced-motion: reduce)");
+    let reduce = reduceMQ.matches;
+    reduceMQ.addEventListener("change", e => { reduce = e.matches; });
     function motion() {
-        if (matchMedia("(prefers-reduced-motion: reduce)").matches) return "still";
+        if (reduce) return "still";
         return Settings.get("effects") === "lite" ? "lite" : "full";
     }
 
@@ -122,6 +126,25 @@ const U = (() => {
         return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
     }
 
+    // Keep a position: fixed piece over the page content it was placed on (a letter flying off the board...) while the
+    // page scrolls: it's moved by however far the page has scrolled since. Uses the CSS translate property, so the
+    // piece's own transform animations still work. Call it after the piece is in the page.
+    const pinned = new Set();
+    function movePins() {
+        for (const n of pinned) {
+            if (!n.isConnected) { pinned.delete(n); continue; }
+            n.style.translate = `${n._pinX - scrollX}px ${n._pinY - scrollY}px`;
+        }
+        if (!pinned.size) removeEventListener("scroll", movePins);
+    }
+    function pin(node) {
+        node._pinX = scrollX;
+        node._pinY = scrollY;
+        if (!pinned.size) addEventListener("scroll", movePins, { passive: true });
+        pinned.add(node);
+        return node;
+    }
+
     // An in-page yes/no question (instead of the browser's confirm() box). Resolves true for yes.
     // Escape, a click outside, or the "no" button answer no; "no" has focus, so a stray Enter is safe.
     function ask({ title, text = "", yes = "Yes", no = "Cancel" }) {
@@ -154,7 +177,7 @@ const U = (() => {
         });
     }
 
-    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask };
+    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
@@ -180,6 +203,7 @@ const Settings = (() => {
         sound: true,            // sound effects (made in code, see sound.js)
         bossMusic: true,        // music in campaign boss fights (CC0 tracks in audio/music)
         volume: 0.8,
+        musicVolume: 1,         // boss music, on top of the main volume (Settings, and the slider in every boss fight)
         intro: true,            // play the start-up intro once per visit
         effects: "full"         // "full" or "lite"
     };

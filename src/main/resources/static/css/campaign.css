@@ -245,7 +245,7 @@
     border: 2px solid #ff5c6c; box-shadow: 0 0 0 3px rgba(255, 92, 108, .3), 0 6px 18px rgba(0, 0, 0, .3); animation: me-warn-shake .35s ease-in-out infinite alternate; pointer-events: none; }
 .me-warn b { display: block; font: 900 .95rem/1.2 var(--font-body); color: #ffd23f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me-warn b em { font-style: normal; color: #fff; }
-.me-warn span { display: block; font: 700 .72rem/1.25 var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me-warn > span { display: block; font: 700 .72rem/1.25 var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me-warn i { position: absolute; left: 0; bottom: 0; height: 4px; background: #ff5c6c; }
 @keyframes me-warn-shake { from { transform: rotate(-.4deg); } to { transform: rotate(.4deg); } }
 .board-area.fx-blind .board-wrap, .clues.fx-blind { filter: blur(7px); transition: filter .3s; }
@@ -812,3 +812,22 @@
 @media (prefers-reduced-motion: reduce) { .counter-target, .counter-target .ct-ring { animation: none; } }
 /* Flash Flood held back by a finished word: a dam line on top of the water */
 .board-area.fx-halffog.flood-dammed .board-wrap::after { border-top: 4px solid #8a5a2b; box-shadow: 0 -3px 0 #c9945a; }
+/* the attack warning hangs under the race bar's "who's ahead" label */
+.rb-track .me-warn { inset: auto; left: 50%; top: calc(100% + 30px); width: min(480px, 86vw); min-height: 46px; transform: translateX(-50%); z-index: 8; }
+.rb-track .me-warn { animation: me-warn-pop .25s cubic-bezier(.2, 1.5, .4, 1), me-warn-nudge .35s ease-in-out .25s infinite alternate; }
+@keyframes me-warn-pop { from { transform: translateX(-50%) scale(.6); opacity: 0; } }
+@keyframes me-warn-nudge { from { transform: translateX(-50%) rotate(-.6deg); } to { transform: translateX(-50%) rotate(.6deg); } }
+/* the counter target lives anywhere on the screen (fixed), smaller, and jumps after each hit */
+.counter-target { position: fixed; width: 58px; height: 58px; margin: -29px 0 0 -29px; z-index: 9450; touch-action: none; }
+.counter-target .ct-label { font-size: .68rem; }
+.counter-target.hop { animation: ct-in .22s cubic-bezier(.2, 1.6, .4, 1), ct-pulse .7s ease-in-out .22s infinite alternate; }
+/* performance: the boss's animated parts make the browser redo the SVG's layout every frame. The portrait keeps them;
+   the tiny race-bar face and the faded giant in the arena don't need them (the giant still breathes as a whole) */
+.rb-boss-face svg *, .ba-giant svg * { animation: none !important; }
+/* the boss music volume, in the fight */
+.bp-volume { display: flex; align-items: center; gap: 8px; margin: 6px 2px 0; padding: 4px 10px 4px 4px; border-radius: 999px; background: color-mix(in srgb, var(--boss, #888) 10%, var(--surface-2, #f4f0f6)); border: 1.5px solid color-mix(in srgb, var(--boss, #888) 30%, transparent); }
+.bp-volume input { flex: 1; min-width: 0; accent-color: var(--boss, var(--accent)); cursor: pointer; }
+.bp-volume output { min-width: 3.2em; text-align: right; font: 800 .78rem var(--font-body); color: var(--ink-soft, #6b6178); font-variant-numeric: tabular-nums; }
+.bp-vol-mute { width: 30px; height: 30px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-solid, #fff); font-size: 15px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+.bp-vol-mute:hover { transform: scale(1.08); }
+.bp-volume.off input { opacity: .45; }

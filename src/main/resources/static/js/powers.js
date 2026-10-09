@@ -306,7 +306,7 @@ const Powers = (() => {
             B("Ice Crack", "🧊", "shatter", 9, "your board cracks into sliding pieces", { proj: "🧊", aura: ["🧊", "✳️"], motion: "spark" })],
         rain: [B("Lightning", "⚡", "lightning", 1, "strikes one of your words, wiping it", { proj: "⚡", aura: ["⚡", "💥"], motion: "spark" }),
             B("Downpour", "🌧️", "downpour", 8, "makes your letters run: each one you type washes away after 4s unless its word is finished", { proj: "🌧️", aura: ["💧", "💧"], motion: "fall" }),
-            B("Flash Flood", "🌊", "halffog", 9, "floods the bottom half of your board", { proj: "🌊", aura: ["💧", "🌊"], motion: "rise" }),
+            B("Flash Flood", "🌊", "halffog", 13, "floods your board from the bottom up, then holds at its height for 5s", { proj: "🌊", aura: ["💧", "🌊"], motion: "rise" }),
             B("Thunder Roll", "🌩️", "quake", 8, "thunder shakes a letter out of your board every 2 seconds", { proj: "🌩️", aura: ["⚡", "💥"], motion: "spark" }),
             B("Umbrella", "☂️", "ward", 1, "opens an umbrella: your next ability bounces off", { proj: "☂️", aura: ["☂️", "💧"], motion: "pop" })],
         sky: [B("Gale", "🌪️", "gale", 9, "blows your cursor to random squares", { proj: "🌪️", aura: ["💨", "🍃"], motion: "drift" }),

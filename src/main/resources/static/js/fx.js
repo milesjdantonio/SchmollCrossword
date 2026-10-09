@@ -28,17 +28,28 @@ const FX = (() => {
 
     function kick() {
         if (raf) return;
+        lastSX = scrollX; lastSY = scrollY;
         last = performance.now();
         raf = requestAnimationFrame(loop);
     }
+    // Particles and effects stay on what they were aimed at when the page scrolls (the snow inside the snow globe...):
+    // particles are moved by the scroll, effects drawn shifted by however far the page moved since they started
+    // (fixed: true for a full-screen one)
+    let lastSX = scrollX, lastSY = scrollY;
     function loop(now) {
         const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
+        const sx = scrollX, sy = scrollY, mx = lastSX - sx, my = lastSY - sy;
+        lastSX = sx; lastSY = sy;
+        if (mx || my) for (const p of parts) { p.x += mx; p.y += my; }
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, W, H);
         effects = effects.filter(e => {
             let alive = true;
-            try { alive = e.update(dt) !== false; if (alive) e.draw(g, W, H); } catch (err) { console.error(err); alive = false; }
+            try {
+                alive = e.update(dt) !== false;
+                if (alive) { g.save(); if (!e.fixed) g.translate(e.sx - sx, e.sy - sy); e.draw(g, W, H); g.restore(); }
+            } catch (err) { console.error(err); alive = false; }
             return alive;
         });
         g.globalCompositeOperation = "source-over";
@@ -228,6 +239,7 @@ const FX = (() => {
     }
 
     function add(effect) {
+        effect.sx = scrollX; effect.sy = scrollY;
         effects.push(effect);
         kick();
         return effect;

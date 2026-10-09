@@ -706,6 +706,7 @@
         const streaks = Array.from({ length: 260 }, () => ({ a: Math.random() * TAU, d: U.rand(0, 1), sp: U.rand(0.5, 1.6) }));
         let wt = 0;
         FX.add({
+            fixed: true,                                        // full-screen warp streaks
             update: dt => (wt += dt) < 1.8,
             draw(g) {
                 const k = wt / 1.8, fade = k < 0.15 ? k / 0.15 : 1 - (k - 0.15) / 0.85, Rr = Math.hypot(W, H) / 2;

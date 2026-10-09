@@ -274,6 +274,9 @@ const App = (() => {
         f.sound.checked = s.sound;
         f.intro.checked = s.intro;
         f.volume.value = Math.round(s.volume * 100);
+        f.bossMusic.checked = s.bossMusic !== false;
+        f.musicVolume.value = Math.round((s.musicVolume ?? 1) * 100);
+        $("#music-vol-out").textContent = f.musicVolume.value + "%";
         $("#mode-note").hidden = !locked;
         $("#mode-note").textContent = `${w.name} is always ${w.modes[0]}.`;
     }
@@ -285,6 +288,14 @@ const App = (() => {
         else { Settings.set(input.name, input.value); Sound.play("select"); }
     });
     form.elements.volume.addEventListener("input", e => Settings.set("volume", Number(e.target.value) / 100));
+    // boss music volume: drag it or scroll the mouse wheel over it (the same setting as the slider in a boss fight)
+    const mv = form.elements.musicVolume;
+    mv.addEventListener("input", () => { Settings.set("musicVolume", Number(mv.value) / 100); $("#music-vol-out").textContent = mv.value + "%"; });
+    mv.closest("label").addEventListener("wheel", e => {
+        e.preventDefault();
+        mv.value = U.clamp(Number(mv.value) + (e.deltaY < 0 ? 5 : -5), 0, 100);
+        mv.dispatchEvent(new Event("input"));
+    }, { passive: false });
     // About & credits: report a problem with the puzzle you're playing (or go play one first)
     $("#about-report").addEventListener("click", () => {
         if (Game.state.puzzle) Game.openReport();
