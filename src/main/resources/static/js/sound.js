@@ -181,14 +181,26 @@ const Sound = (() => {
     //                  then: a track that starts when this one ends (a boss's intro runs into its fight loop)
     const buffers = {}, loadingBuf = {};
     function load(path) {
-        if (buffers[path] || loadingBuf[path] || !ctx) return;
+        if (buffers[path]) return Promise.resolve(buffers[path]);
+        if (loadingBuf[path]) return loadingBuf[path];              // already on its way (preloaded): wait for that one
+        if (!ctx) return Promise.resolve(null);
         loadingBuf[path] = fetch(path).then(r => (r.ok ? r.arrayBuffer() : Promise.reject(r.status)))
             .then(b => new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)))
             .then(buf => { buffers[path] = buf; return buf; })
-            .catch(() => null);
+            .catch(() => { delete loadingBuf[path]; return null; });    // a failed download can be tried again later
         return loadingBuf[path];
     }
     function preload(names) { if (init()) names.forEach(n => load(n.includes("/") ? n : `audio/sfx/${n}.mp3`)); }
+    // A decoded song is big (about 50 MB for 2.5 minutes), so only the last few songs stay in memory
+    const MUSIC_KEEP = 3, musicUsed = [];
+    function keepSong(path) {
+        const i = musicUsed.indexOf(path);
+        if (i >= 0) musicUsed.splice(i, 1);
+        musicUsed.push(path);
+        while (musicUsed.length > MUSIC_KEEP) { const old = musicUsed.shift(); if (!track || `audio/music/${track.name}.mp3` !== old) { delete buffers[old]; delete loadingBuf[old]; } }
+    }
+    // start loading a song now, so it can play the moment it's needed (a boss's next phase)
+    function preloadMusic(name) { if (!init() || !name) return; const path = `audio/music/${name}.mp3`; keepSong(path); load(path); }
     function sample(name, { v = 0.5, rate = 1, t = 0 } = {}) {
         if (!Settings.get("sound") || !init() || !ready()) return;
         const path = `audio/sfx/${name}.mp3`, buf = buffers[path];
@@ -203,7 +215,8 @@ const Sound = (() => {
     // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
     let musicBus = null, track = null;
     const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
-    // songs.json: each boss song's loop points. A song file starts with its intro, then the browser loops
+    // songs.json: each boss song's loop points. A song file starts with its build-up (the user's design: the intro is
+    // music that builds up and runs straight into the song), the song proper starts at "hit", then the browser loops
     // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
     let songs = null;
     const songList = () => songs || (songs = fetch("audio/music/songs.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
@@ -213,9 +226,11 @@ const Sound = (() => {
         stopMusic(fade);
         if (!name) return;
         const path = `audio/music/${name}.mp3`;
-        const me = (track = { name, gain: null, src: null });
+        keepSong(path);
+        let started;
+        const me = (track = { name, gain: null, src: null, hit: 0, t0: 0, rate, offset, ready: new Promise(r => (started = r)) });
         const [buf, list] = await Promise.all([buffers[path] || load(path), songList()]);
-        if (!buf || track !== me) return;
+        if (!buf || track !== me) { started(false); return; }
         const info = list[name];
         const src = ctx.createBufferSource(), gain = ctx.createGain();
         src.buffer = buf;
@@ -231,6 +246,18 @@ const Sound = (() => {
         src.start(0, offset);
         me.gain = gain;
         me.src = src;
+        Object.assign(me, { hit: (info && info.hit) || 0, t0: ctx.currentTime, offset });
+        started(true);
+    }
+    // Resolves when the playing song's build-up reaches the song proper (its "hit"), so a cinematic's big moment can
+    // land on the downbeat. Right away when there's no music (or it's off); never later than max ms.
+    async function buildDone(max = 12000) {
+        const me = track;
+        if (!me || !musicOn()) return;
+        const ok = await Promise.race([me.ready, new Promise(r => setTimeout(() => r(false), 4000))]);
+        if (!ok || track !== me || !me.hit) return;
+        const pos = me.offset + (ctx.currentTime - me.t0) * me.rate, wait = (me.hit - pos) / me.rate;
+        if (wait > 0) await new Promise(r => setTimeout(r, Math.min(max, wait * 1000)));
     }
     function stopMusic(fade = 0.8) {
         const old = track;
@@ -252,5 +279,5 @@ const Sound = (() => {
     }
 
     const hasSong = async name => !!(await songList())[name];
-    return { play, custom, sample, preload, music, stopMusic, hasSong, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    return { play, custom, sample, preload, preloadMusic, music, stopMusic, hasSong, buildDone, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

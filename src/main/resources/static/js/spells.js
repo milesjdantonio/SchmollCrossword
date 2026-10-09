@@ -32,11 +32,15 @@ const Spells = (() => {
         if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
     }
     function loop(now) {
-        const dt = Math.min(0.05, (now - last) / 1000);
+        const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));      // a frame can be stamped just before "last": never step back
         last = now;
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, innerWidth, innerHeight);
-        effects = effects.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); fx.draw(g, fx.t / fx.life, fx.t); g.restore(); } return alive; });
+        // effects started while drawing (crumbs flying off an eraser...) join on the next frame instead of being lost
+        const now_ = effects;
+        effects = [];
+        const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
+        effects = kept.concat(effects);
         if (effects.length) requestAnimationFrame(loop);
         else { running = false; g.clearRect(0, 0, innerWidth, innerHeight); }
     }
@@ -500,5 +504,9 @@ const Spells = (() => {
         try { await fn({ cells: [], ...ctx }); } catch (err) { console.error("spell", kind, err); }
     }
     const has = kind => !!PLAYS[kind];
-    return { play, has, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays };
+    // for spells-abilities.js: the drawing kit, and a way to give a kind its own effect
+    const kit = { add, wait, rect, mid, rnd, jag, stroke, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays, glitchBars, clockFace, letterGhosts, leave, R,
+        still, lite, get dpr() { return dpr; } };
+    const define = (kind, fn) => { PLAYS[kind] = fn; };
+    return { play, has, define, kit, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays };
 })();

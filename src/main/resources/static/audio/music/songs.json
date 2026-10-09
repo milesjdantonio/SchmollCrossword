@@ -1,138 +1,284 @@
 {
  "paper": {
   "file": "paper.mp3",
-  "loopStart": 8.95,
-  "loopEnd": 128.7598,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 126.3098,
   "title": "Unsolicited Trailer Music",
-  "author": "Emma_MA"
+  "author": "Emma_MA",
+  "page": "unsolicited-trailer-music"
  },
  "garden": {
   "file": "garden.mp3",
-  "loopStart": 5.6,
-  "loopEnd": 133.3744,
-  "title": "Qazijamjam Orchestral Battle Theme",
-  "author": "Emma_MA"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 112.431,
+  "title": "Flowerbed Fields",
+  "author": "Zane Little Music",
+  "page": "flowerbed-fields-loop"
  },
  "squirrel": {
   "file": "squirrel.mp3",
-  "loopStart": 7.3,
-  "loopEnd": 127.069,
-  "title": "This One Is Tough",
-  "author": "Loyalty Freak Music"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 127.8265,
+  "title": "Catch Me If You Can",
+  "author": "poinl",
+  "page": "catch-me-if-you-can"
  },
  "candy": {
   "file": "candy.mp3",
-  "loopStart": 23.27,
-  "loopEnd": 143.9417,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 127.1717,
   "title": "Toy Soldiers",
-  "author": "Zane Little Music"
+  "author": "Zane Little Music",
+  "page": "toy-soldiers"
  },
  "ocean": {
   "file": "ocean.mp3",
-  "loopStart": 6.25,
-  "loopEnd": 138.1215,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 138.3715,
   "title": "Video Game Pirate",
-  "author": "iamoneabe"
+  "author": "iamoneabe",
+  "page": "video-game-pirate"
  },
  "snow": {
   "file": "snow.mp3",
-  "loopStart": 42.08,
-  "loopEnd": 185.8661,
-  "title": "Long Winter",
-  "author": "Indieteur"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 153.9832,
+  "title": "Black Diamond",
+  "author": "Joth",
+  "page": "black-diamond"
+ },
+ "snow-p2": {
+  "file": "snow-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 118.5,
+  "title": "Hard Boss Battle 2",
+  "author": "MintoDog",
+  "page": "hard-boss-battle-2"
  },
  "rain": {
   "file": "rain.mp3",
-  "loopStart": 18.0,
-  "loopEnd": 138.8017,
-  "title": "Synthmetal Climax Theme",
-  "author": "Gradoa"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 150.2828,
+  "title": "Wednesday Night Funk Fusion",
+  "author": "Zane Little Music",
+  "page": "wednesday-night-funk-fusion"
+ },
+ "rain-p2": {
+  "file": "rain-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 98.6239,
+  "title": "Done (rock and jazz)",
+  "author": "Pro Sensory",
+  "page": "done-rock-and-jazz"
  },
  "sky": {
   "file": "sky.mp3",
-  "loopStart": 18.75,
-  "loopEnd": 140.7907,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 128.5407,
   "title": "The Call for Unity",
-  "author": "vitalezzz"
+  "author": "vitalezzz",
+  "page": "the-call-for-unity"
+ },
+ "sky-p2": {
+  "file": "sky-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 142.06,
+  "title": "Mile-High Infraskyway",
+  "author": "Spring Spring",
+  "page": "mile-high-infraskyway"
  },
  "desert": {
   "file": "desert.mp3",
-  "loopStart": 22.1053,
-  "loopEnd": 160.2632,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 144.6579,
   "title": "Riddle of the Sands (7/4)",
-  "author": "composed for this game"
+  "author": "composed for this game",
+  "page": ""
  },
  "desert-p2": {
   "file": "desert-p2.mp3",
-  "loopStart": 27.72,
-  "loopEnd": 165.4445,
-  "title": "Desert Settlement",
-  "author": "vitalezzz"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 124.7784,
+  "title": "King Crumble",
+  "author": "iamoneabe",
+  "page": "king-crumble"
  },
  "carnival": {
   "file": "carnival.mp3",
-  "loopStart": 4.1,
-  "loopEnd": 114.8356,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 117.2356,
   "title": "Ring Master",
-  "author": "Bobjt"
+  "author": "Bobjt",
+  "page": "ring-master"
+ },
+ "carnival-p2": {
+  "file": "carnival-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 60.9865,
+  "title": "8-bit Action Boss Battle (climax, 185 BPM)",
+  "author": "MintoDog",
+  "page": "8bit-action-boss-battle"
  },
  "arcade": {
   "file": "arcade.mp3",
-  "loopStart": 14.4578,
-  "loopEnd": 144.5783,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 136.6205,
   "title": "Corrupted Signal (5/4)",
-  "author": "composed for this game"
+  "author": "composed for this game",
+  "page": ""
  },
  "arcade-p2": {
   "file": "arcade-p2.mp3",
-  "loopStart": 10.7,
-  "loopEnd": 129.1875,
-  "title": "Singularity",
-  "author": "vitalezzz"
- },
- "robot": {
-  "file": "robot.mp3",
-  "loopStart": 7.3,
-  "loopEnd": 126.0051,
-  "title": "Return of the Omega Droid",
-  "author": "Umplix"
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 56.3259,
+  "title": "Level 2 (Retro Game Music Pack)",
+  "author": "Juhani Junkala (SubspaceAudio)",
+  "page": "5-chiptunes-action"
  },
  "library": {
   "file": "library.mp3",
-  "loopStart": 23.86,
-  "loopEnd": 159.5801,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 142.2201,
   "title": "Shadows Awaken Within",
-  "author": "vitalezzz"
+  "author": "vitalezzz",
+  "page": "shadows-awaken-within"
+ },
+ "library-p2": {
+  "file": "library-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 119.2536,
+  "title": "Sinister Abode",
+  "author": "Zane Little Music",
+  "page": "sinister-abode"
+ },
+ "robot": {
+  "file": "robot.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 123.0261,
+  "title": "Return of the Omega Droid",
+  "author": "Umplix",
+  "page": "return-of-the-omega-droid"
+ },
+ "robot-p2": {
+  "file": "robot-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 67.7822,
+  "title": "Epic Combat",
+  "author": "Chester01",
+  "page": "epic-combat"
+ },
+ "robot-p3": {
+  "file": "robot-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 105.0057,
+  "title": "Steel Commander",
+  "author": "vitalezzz",
+  "page": "steel-commander"
  },
  "volcano": {
   "file": "volcano.mp3",
-  "loopStart": 20.11,
-  "loopEnd": 153.6103,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 140.0003,
   "title": "Devoted Guard",
-  "author": "vitalezzz"
+  "author": "vitalezzz",
+  "page": "devoted-guard"
+ },
+ "volcano-p2": {
+  "file": "volcano-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 82.0866,
+  "title": "JRPG Epic Rock Battle Theme",
+  "author": "HydroGene",
+  "page": "jrpg-epic-rock-battle-theme-1"
+ },
+ "volcano-p3": {
+  "file": "volcano-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 83.1049,
+  "title": "Carnage (boss battle)",
+  "author": "glitchart (Centurion_of_war vs nene)",
+  "page": "carnage-boss-battle-centurion-of-war-vs-nene"
  },
  "space": {
   "file": "space.mp3",
-  "loopStart": 15.89,
-  "loopEnd": 142.5327,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 133.1427,
   "title": "Outworld",
-  "author": "vitalezzz"
+  "author": "vitalezzz",
+  "page": "outworld"
  },
  "space-p2": {
   "file": "space-p2.mp3",
-  "loopStart": 19.34,
-  "loopEnd": 191.5644,
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 125.2193,
+  "title": "Claimed by the Void",
+  "author": "glitchart (vitalezzz vs tricksntraps)",
+  "page": "claimed-by-the-void-new-factory-ai-fight-and-simulation-unknown-vitalezzz-vs-tricksntraps"
+ },
+ "space-p3": {
+  "file": "space-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 67.0993,
+  "title": "Trance Boss Battle",
+  "author": "MintoDog",
+  "page": "trance-boss-battle"
+ },
+ "space-p4": {
+  "file": "space-p4.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 129.712,
+  "title": "The Final Mega Boss",
+  "author": "Umplix",
+  "page": "the-final-mega-boss"
+ },
+ "space-p5": {
+  "file": "space-p5.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 178.7244,
   "title": "Pandemia",
-  "author": "nene"
+  "author": "nene",
+  "page": "pandemia"
  },
  "win": {
   "file": "win.mp3",
   "title": "Victory Fanfare",
-  "author": "ARoachIFoundOnMyPillow"
+  "author": "ARoachIFoundOnMyPillow",
+  "page": "victory-fanfare"
  },
  "lose": {
   "file": "lose.mp3",
   "title": "No Hope",
-  "author": "CleytonKauffman"
+  "author": "CleytonKauffman",
+  "page": "game-over-theme"
  }
 }

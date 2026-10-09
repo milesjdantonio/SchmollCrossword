@@ -586,7 +586,8 @@ const Bosses = (() => {
         return p;
     }
     let arenaEl = null, arenaRAF = 0;
-    function arena(world) {
+    // fight: which fight this is; the arena only calms down (no rage, no phase chaos) when a new fight starts
+    function arena(world, fight = world) {
         const b = info(world);
         if (!arenaEl) {
             arenaEl = U.el("div", { id: "boss-arena", class: "boss-arena", "aria-hidden": "true" });
@@ -594,15 +595,30 @@ const Bosses = (() => {
         }
         if (arenaEl.dataset.world !== world) {
             arenaEl.dataset.world = world;
+            cancelAnimationFrame(arenaRAF);
+            arenaRAF = 0;                                       // this world's own weather (started below)
             arenaEl.style.setProperty("--a1", b.arena[0]);
             arenaEl.style.setProperty("--a2", b.arena[1]);
             arenaEl.style.setProperty("--boss", b.color);
             arenaEl.innerHTML = `<div class="ba-sky"></div><div class="ba-rays"></div><div class="ba-giant">${svg(world)}</div>
                 ${horizon(world, "rgba(0,0,0,.22)", "rgba(0,0,0,.42)")}<canvas class="ba-fx"></canvas><div class="ba-tint"></div><div class="ba-vignette"></div>`;
         }
-        arenaEl.classList.remove("enraged", "phase2");
-        startParticles(b.fx);
+        if (arenaEl.dataset.fight !== String(fight)) {
+            arenaEl.dataset.fight = String(fight);
+            arenaEl.classList.remove("enraged", "phase2");
+            chaos(world, 0);
+        }
+        if (!arenaRAF) startParticles(b.fx);
         return arenaEl;
+    }
+    // Later phases go wild (chaos.js): level 1 = phase 2 ... level 4 = the Void's phase 5. 0 = calm again.
+    function chaos(world, level) {
+        if (!arenaEl) return;
+        arenaEl.dataset.chaos = level || "";
+        let cv = arenaEl.querySelector(".ba-chaos");
+        if (!level) { if (typeof Chaos !== "undefined") Chaos.stop(); if (cv) cv.remove(); return; }
+        if (!cv) { cv = U.el("canvas", { class: "ba-chaos" }); arenaEl.querySelector(".ba-fx").after(cv); }
+        if (typeof Chaos !== "undefined") Chaos.start(cv, world, level);
     }
     function startParticles(kind) {
         cancelAnimationFrame(arenaRAF);
@@ -612,7 +628,7 @@ const Bosses = (() => {
         const loop = now => {
             if (!arenaEl.isConnected || !document.documentElement.classList.contains("in-boss")) { arenaRAF = 0; return; }
             arenaRAF = requestAnimationFrame(loop);
-            const dt = Math.min(0.05, (now - last) / 1000);
+            const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));      // a frame can be stamped just before "last": never step back
             last = now;
             const dpr = Math.min(2, devicePixelRatio || 1), w = innerWidth, h = innerHeight;
             if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); parts = []; }
@@ -660,24 +676,23 @@ const Bosses = (() => {
     // ---------------------------------------------------------------------------------------------
     // Full-screen moments
     // ---------------------------------------------------------------------------------------------
-    // The intro: the boss fills the screen, its name slams in, VS, FIGHT!
-    async function intro(c, world) {
+    // The intro: the boss fills the screen, its name slams in, VS, FIGHT! The music is the boss song's own build-up
+    // (no sound effects, the user's design): FIGHT! lands on the beat where the song proper starts (until = Sound.buildDone)
+    async function intro(c, world, { until = null } = {}) {
         const b = info(world), still = U.motion() === "still";
         const el = U.el("div", { class: "bfx-intro", style: { "--boss": b.color, "--a1": b.arena[0], "--a2": b.arena[1] }, "aria-hidden": "true",
             html: `<div class="bi-bg"></div><div class="bi-band"></div><div class="bi-boss">${svg(world)}</div>
                 <div class="bi-text"><small>BOSS BATTLE</small><b>${U.esc(b.name)}</b><em>"${U.esc(b.taunt)}"</em>${b.stakes ? `<p class="bi-stakes">${U.esc(b.stakes)}</p>` : ""}</div><div class="bi-vs">VS</div><div class="bi-fight">FIGHT!</div>` });
         document.getElementById("overlay").appendChild(el);
         c.cleanup(() => el.remove());
-        Sound.play("whoosh");
         requestAnimationFrame(() => el.classList.add("in"));
         await c.wait(still ? 900 : 650);
-        Sound.play("boom");
         FX.shake(10, 400);
         el.classList.add("slam");
         await c.wait(b.stakes ? 2700 : 1500);                  // time to read why you're fighting
+        if (until) await Promise.race([until(), c.wait(12000)]);   // ...and the build-up runs into the song
         if (c.skipped) return;
         el.classList.add("fight");
-        Sound.play("start");
         FX.flash(b.color, 300, 0.35);
         await c.wait(700);
         el.classList.add("out");
@@ -695,22 +710,23 @@ const Bosses = (() => {
         setTimeout(() => el.remove(), 1600);
     }
 
-    // Phase 2: the boss powers up full screen (bigger, glowing, the arena turns), then the new puzzle is announced
-    async function phase(c, world, title, sub) {
-        const b = info(world);
+    // A new phase: the boss powers up full screen (bigger, glowing, the arena turns), then the new puzzle is announced.
+    // The phase's own song builds up underneath; the burst lands where the song proper starts (until = Sound.buildDone)
+    async function phase(c, world, title, sub, { phase: n = 2, phases = 2, until = null } = {}) {
+        const b = info(world), final = n === phases && phases > 2;
         const el = U.el("div", { class: "bfx-phase", style: { "--boss": b.color, "--a1": b.arena[0], "--a2": b.arena[1] }, "aria-hidden": "true",
             html: `<div class="bp2-bg"></div><div class="bp2-ring"></div><div class="bp2-boss">${svg(world)}</div>
-                <div class="bp2-text"><small>${U.esc(b.name.toUpperCase())} ISN'T DONE YET</small><b>PHASE 2</b><em>${U.esc(title)}</em><span>${U.esc(sub)}</span></div>` });
+                <div class="bp2-text"><small>${U.esc(b.name.toUpperCase())} ${final ? "UNLEASHES EVERYTHING" : "ISN'T DONE YET"}</small><b>${final ? "FINAL PHASE" : "PHASE " + n}</b><em>${U.esc(title)}</em><span>${U.esc(sub)}</span>${phases > 2 ? `<i class="bp2-pips">${Array.from({ length: phases }, (_, i) => `<u class="${i < n ? "on" : ""}"></u>`).join("")}</i>` : ""}</div>` });
+        el.classList.toggle("final", final);
         document.getElementById("overlay").appendChild(el);
         c.cleanup(() => el.remove());
         requestAnimationFrame(() => el.classList.add("in"));
-        Sound.play("whoosh");
         await c.wait(500);
         el.classList.add("charge");
         FX.shake(6, 900);
         await c.wait(900);
+        if (until) await Promise.race([until(), c.wait(12000)]);   // the charge holds until the song's build-up peaks
         el.classList.add("burst");
-        Sound.play("boom");
         FX.flash(b.color, 400, 0.55);
         FX.burst({ x: innerWidth / 2, y: innerHeight * 0.42, n: 80, colors: ["#fff", b.color, "#ffd23f"], shape: "star", speed: [250, 700], gravity: 200, life: [0.6, 1.3], size: [3, 8] });
         if (arenaEl) arenaEl.classList.add("phase2");
@@ -753,5 +769,5 @@ const Bosses = (() => {
         await c.wait(350);
     }
 
-    return { info, svg, inner, arena, enrage, intro, phase, cutin, ko, list: Object.keys(B) };
+    return { info, svg, inner, arena, chaos, enrage, intro, phase, cutin, ko, list: Object.keys(B) };
 })();

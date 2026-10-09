@@ -32,7 +32,7 @@ const Achievements = (() => {
         { id: "cm-combo", icon: "\u{1F525}", name: "Combo King", desc: "Reach a ×5 combo in a boss fight.", campaign: true },
         { id: "cm-bare", icon: "✊", name: "Bare Hands", desc: "Beat a boss without using any abilities or items.", campaign: true },
         { id: "cm-arsenal", icon: "\u{1F9F0}", name: "Arsenal", desc: "Use 3 different abilities in one boss fight, and win.", campaign: true },
-        { id: "cm-close", icon: "⏱️", name: "Photo Finish", desc: "Beat a boss with less than 10 seconds left.", campaign: true },
+        { id: "cm-close", icon: "⏱️", name: "Photo Finish", desc: "Win a boss race when the boss was 90% done or more.", campaign: true },
         { id: "cm-1up", icon: "\u{1F579}️", name: "Second Wind", desc: "Win a boss fight after your Extra Life saved you.", campaign: true },
         { id: "cm-expert", icon: "\u{1F480}", name: "Expert Slayer", desc: "Beat a boss on Expert.", campaign: true },
         { id: "cm-shop", icon: "\u{1F6CD}️", name: "Shopaholic", desc: "Buy 10 things in the shop.", campaign: true }
@@ -100,7 +100,7 @@ const Achievements = (() => {
             if (st.combo >= 5) unlock("cm-combo");
             if (st.used === 0) unlock("cm-bare");
             if (st.kinds >= 3) unlock("cm-arsenal");
-            if (st.left < 10) unlock("cm-close");
+            if (st.closest >= 0.9) unlock("cm-close");
             if (st.lifeUsed) unlock("cm-1up");
             if (st.difficulty === "expert") unlock("cm-expert");
         }

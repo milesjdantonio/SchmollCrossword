@@ -6,7 +6,7 @@ https://creativecommons.org/publicdomain/zero/1.0/
 CC0 needs no credit, but the authors are thanked here anyway. Each track's own page on OpenGameArt.org lists it as
 CC0 (checked one by one). For this game the songs were converted to MP3, given the same gentle mastering (a little
 more low end and air, a wider stereo image, a hall reverb, even loudness), and each song's file was cut so that it
-starts with its own intro and loops a 2:00-2:30 section seamlessly (loop points in music/songs.json).
+starts with a build-up into the song, then loops a section seamlessly (loop points in music/songs.json).
 
 Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
   Impact Sounds      https://kenney.nl/assets/impact-sounds
@@ -15,27 +15,41 @@ Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
   RPG Audio          https://kenney.nl/assets/rpg-audio
   Music Jingles      https://kenney.nl/assets/music-jingles   (jingle-*.mp3)
 
-Boss music (audio/music). All from https://opengameart.org/content/<page>
-  file            track                                   author                 page
-  paper.mp3       Unsolicited Trailer Music               Emma_MA                unsolicited-trailer-music
-  garden.mp3      Qazijamjam Orchestral Battle Theme      Emma_MA                qazijamjam-orchestral-battle-theme
-  squirrel.mp3    This One Is Tough                       Loyalty Freak Music    this-one-is-tough
-  candy.mp3       Toy Soldiers                            Zane Little Music      toy-soldiers
-  ocean.mp3       Video Game Pirate                       iamoneabe              video-game-pirate
-  snow.mp3        Long Winter                             Indieteur              long-winter
-  rain.mp3        Synthmetal Climax Theme                 Gradoa                 synthmetal-climax-theme
-  sky.mp3         The Call for Unity                      vitalezzz              the-call-for-unity
-  desert-p2.mp3   Desert Settlement                       vitalezzz              desert-settlement
-  carnival.mp3    Ring Master                             Bobjt                  ring-master
-  arcade-p2.mp3   Singularity                             vitalezzz              singularity-0
-  robot.mp3       Return of the Omega Droid               Umplix                 return-of-the-omega-droid
-  library.mp3     Shadows Awaken Within                   vitalezzz              shadows-awaken-within
-  volcano.mp3     Devoted Guard                           vitalezzz              devoted-guard
-  space.mp3       Outworld                                vitalezzz              outworld
-  space-p2.mp3    Pandemia                                nene                   pandemia
-  boss-phase.mp3  the opening of Dramatic Boss Encounter  cynicmusic             dramatic-boss-encounter
-  win.mp3         Victory Fanfare                         ARoachIFoundOnMyPillow victory-fanfare
-  lose.mp3        No Hope (from Game Over Theme)          CleytonKauffman        game-over-theme
+Boss music (audio/music). Each boss has a song per phase: <world>.mp3 is phase 1, <world>-p2.mp3 phase 2 and so on
+(the first five bosses have one phase, the last three 3, the Void 5). Each file starts with a 6.5 s build-up made
+from the song's own lead-in (played during the boss's intro), then the song loops seamlessly.
+All from https://opengameart.org/content/<page>
+  file            track                                         author                                page
+  paper.mp3       Unsolicited Trailer Music                     Emma_MA                               unsolicited-trailer-music
+  garden.mp3      Flowerbed Fields                              Zane Little Music                     flowerbed-fields-loop
+  squirrel.mp3    Catch Me If You Can                           poinl                                 catch-me-if-you-can
+  candy.mp3       Toy Soldiers                                  Zane Little Music                     toy-soldiers
+  ocean.mp3       Video Game Pirate                             iamoneabe                             video-game-pirate
+  snow.mp3        Black Diamond                                 Joth                                  black-diamond
+  snow-p2.mp3     Hard Boss Battle 2                            MintoDog                              hard-boss-battle-2
+  rain.mp3        Wednesday Night Funk Fusion                   Zane Little Music                     wednesday-night-funk-fusion
+  rain-p2.mp3     Done (rock and jazz)                          Pro Sensory                           done-rock-and-jazz
+  sky.mp3         The Call for Unity                            vitalezzz                             the-call-for-unity
+  sky-p2.mp3      Mile-High Infraskyway                         Spring Spring                         mile-high-infraskyway
+  desert-p2.mp3   King Crumble                                  iamoneabe                             king-crumble
+  carnival.mp3    Ring Master                                   Bobjt                                 ring-master
+  carnival-p2.mp3 8-bit Action Boss Battle (climax, 185 BPM)    MintoDog                              8bit-action-boss-battle
+  arcade-p2.mp3   Level 2 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
+  library.mp3     Shadows Awaken Within                         vitalezzz                             shadows-awaken-within
+  library-p2.mp3  Sinister Abode                                Zane Little Music                     sinister-abode
+  robot.mp3       Return of the Omega Droid                     Umplix                                return-of-the-omega-droid
+  robot-p2.mp3    Epic Combat                                   Chester01                             epic-combat
+  robot-p3.mp3    Steel Commander                               vitalezzz                             steel-commander
+  volcano.mp3     Devoted Guard                                 vitalezzz                             devoted-guard
+  volcano-p2.mp3  JRPG Epic Rock Battle Theme                   HydroGene                             jrpg-epic-rock-battle-theme-1
+  volcano-p3.mp3  Carnage (boss battle)                         glitchart (Centurion_of_war vs nene)  carnage-boss-battle-centurion-of-war-vs-nene
+  space.mp3       Outworld                                      vitalezzz                             outworld
+  space-p2.mp3    Claimed by the Void                           glitchart (vitalezzz vs tricksntraps) claimed-by-the-void-new-factory-ai-fight-and-simulation-unknown-vitalezzz-vs-tricksntraps
+  space-p3.mp3    Trance Boss Battle                            MintoDog                              trance-boss-battle
+  space-p4.mp3    The Final Mega Boss                           Umplix                                the-final-mega-boss
+  space-p5.mp3    Pandemia                                      nene                                  pandemia
+  win.mp3         Victory Fanfare                               ARoachIFoundOnMyPillow                victory-fanfare
+  lose.mp3        No Hope                                       CleytonKauffman                       game-over-theme
 
 Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with

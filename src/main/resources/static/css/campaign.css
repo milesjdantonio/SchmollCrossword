@@ -189,12 +189,6 @@
 .bp-bar { position: relative; height: 22px; margin-top: 6px; border-radius: 999px; background: var(--surface-2); border: 1.5px solid var(--line); overflow: hidden; }
 .bp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; transition: width .35s cubic-bezier(.3, 1.2, .5, 1); }
 .bp-bar span { position: relative; display: block; padding: 0 10px; font: 800 .78rem/19px var(--font-body); color: var(--ink); text-shadow: 0 0 3px var(--surface-solid), 0 0 3px var(--surface-solid); }
-.bp-hp { height: 26px; border: 2px solid #2b2233; }
-.bp-hp i { background: linear-gradient(180deg, #ff8a96, #e2283c); box-shadow: inset 0 3px 0 rgba(255, 255, 255, .35); }
-.bp-hp span { line-height: 22px; font-weight: 900; }
-.bp-hp.low i { animation: bp-blink .5s infinite alternate; }
-.bp-limit i { background: linear-gradient(90deg, #4fc36b, #9be36b); }
-.bp-limit.danger i { background: #ff5c6c; animation: bp-blink .6s infinite alternate; }
 @keyframes bp-blink { to { opacity: .55; } }
 .bp-race i { background: var(--boss); opacity: .7; }
 .bp-abilities { margin-top: 10px; }
@@ -246,12 +240,14 @@
 .ms-chip.good { background: #dff7e4; color: #155a2a; border-color: #6cd08a; }
 .ms-chip.combo { background: #fff1c4; color: #7a4a00; border-color: #ffb21e; }
 .board-wrap { position: relative; }
-.me-warn { position: absolute; left: 50%; top: -6px; z-index: 6; transform: translate(-50%, -100%); width: min(380px, 94%); padding: 6px 12px 10px; border-radius: 14px; background: #2b2233; color: #fff; text-align: center; overflow: hidden;
-    border: 2px solid #ff5c6c; box-shadow: 0 0 0 4px rgba(255, 92, 108, .3), 0 8px 24px rgba(0, 0, 0, .35); animation: me-warn-shake .35s ease-in-out infinite alternate; pointer-events: none; }
-.me-warn b { display: block; font: 900 1rem var(--font-body); color: #ffd23f; }
-.me-warn span { font: 700 .8rem var(--font-body); }
+/* the attack warning covers the timer row (your time is in the boss panel too), never the clue bar or the board */
+.me-warn { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; justify-content: center; padding: 3px 12px 6px; border-radius: 14px; background: #2b2233; color: #fff; text-align: center; overflow: hidden;
+    border: 2px solid #ff5c6c; box-shadow: 0 0 0 3px rgba(255, 92, 108, .3), 0 6px 18px rgba(0, 0, 0, .3); animation: me-warn-shake .35s ease-in-out infinite alternate; pointer-events: none; }
+.me-warn b { display: block; font: 900 .95rem/1.2 var(--font-body); color: #ffd23f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me-warn b em { font-style: normal; color: #fff; }
+.me-warn span { display: block; font: 700 .72rem/1.25 var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me-warn i { position: absolute; left: 0; bottom: 0; height: 4px; background: #ff5c6c; }
-@keyframes me-warn-shake { from { transform: translate(-51%, -100%) rotate(-.6deg); } to { transform: translate(-49%, -100%) rotate(.6deg); } }
+@keyframes me-warn-shake { from { transform: rotate(-.4deg); } to { transform: rotate(.4deg); } }
 .board-area.fx-blind .board-wrap, .clues.fx-blind { filter: blur(7px); transition: filter .3s; }
 #board.fx-smudge .ltr { color: transparent !important; text-shadow: 0 0 9px rgba(80, 80, 90, .6); }
 #board.fx-frozen { box-shadow: 0 0 0 5px #9fd8ff, 0 0 26px #9fd8ff; filter: saturate(.55) brightness(1.06); }
@@ -516,7 +512,7 @@
     animation: fx-static .12s steps(2) infinite; }
 @keyframes fx-static { 50% { background-position: 3px 5px, 7px 0; opacity: .7; } }
 .board-area.fx-lights .board-wrap::after { content: ""; position: absolute; inset: -8px; z-index: 5; pointer-events: none; border-radius: 12px;
-    background: radial-gradient(circle at var(--lx, 50%) var(--ly, 50%), transparent 0 46px, rgba(5, 4, 12, .96) 82px); }
+    background: radial-gradient(circle at var(--lx, 50%) var(--ly, 50%), transparent 0 var(--lr, 46px), rgba(5, 4, 12, .96) calc(var(--lr, 46px) + 36px)); }
 .board-area.fx-confetti .board-wrap { filter: saturate(1.3); }
 .board-area.fx-downpour .board-wrap::after { content: ""; position: absolute; inset: -6px; z-index: 5; pointer-events: none; border-radius: 12px;
     background: repeating-linear-gradient(104deg, transparent 0 14px, rgba(90, 140, 220, .5) 14px 16px); background-size: 40px 120px; animation: fx-rain .35s linear infinite; }
@@ -603,12 +599,12 @@
 .board-area.fx-inkblot .board-wrap::after { content: ""; position: absolute; left: 50%; top: 50%; width: 62%; height: 58%; z-index: 5; transform: translate(-50%, -50%) rotate(-12deg); pointer-events: none;
     background: radial-gradient(circle at 35% 40%, #1a1424 0 45%, transparent 46%), radial-gradient(circle at 65% 55%, #1a1424 0 40%, transparent 41%), radial-gradient(circle at 50% 30%, #1a1424 0 30%, transparent 31%), radial-gradient(circle at 30% 70%, #1a1424 0 22%, transparent 23%); }
 .board-area.fx-jitter #board { animation: fx-jitter .09s linear infinite; }
-@keyframes fx-jitter { 25% { transform: translate(5px, -4px) rotate(1deg); } 50% { transform: translate(-6px, 3px) rotate(-1.2deg); } 75% { transform: translate(4px, 5px); } }
-.board-area.fx-tidal #board { transform: translateX(46%) rotate(4deg); transition: transform .6s; }
+@keyframes fx-jitter { 25% { transform: translate(calc(5px * var(--jit, 1)), calc(-4px * var(--jit, 1))) rotate(calc(1deg * var(--jit, 1))); } 50% { transform: translate(calc(-6px * var(--jit, 1)), calc(3px * var(--jit, 1))) rotate(calc(-1.2deg * var(--jit, 1))); } 75% { transform: translate(calc(4px * var(--jit, 1)), calc(5px * var(--jit, 1))); } }
+.board-area.fx-tidal #board { transform: translateX(var(--tide, 46%)) rotate(4deg); transition: transform .6s; }
 .board-area.fx-tidal .board-wrap { overflow: hidden; }
 .board-area.fx-shrink #board { transform: scale(.5); transition: transform .5s; }
 .board-area.fx-upside #board { transform: rotate(180deg); transition: transform .6s; }
-.board-area.fx-halffog .board-wrap::after { content: ""; position: absolute; left: -6px; right: -6px; bottom: -6px; height: 52%; z-index: 5; pointer-events: none; border-radius: 0 0 12px 12px;
+.board-area.fx-halffog .board-wrap::after { content: ""; position: absolute; left: -6px; right: -6px; bottom: -6px; height: var(--flood, 52%); transition: height .6s ease; z-index: 5; pointer-events: none; border-radius: 0 0 12px 12px;
     background: linear-gradient(180deg, rgba(60, 120, 200, .85), #1f4f8f); box-shadow: 0 -6px 18px rgba(60, 120, 200, .6); animation: cm-bob 1.2s ease-in-out infinite alternate; }
 .board-area.fx-darkcreep .board-wrap::after { content: ""; position: absolute; inset: -8px; z-index: 5; pointer-events: none; border-radius: 12px; background: #05040c; opacity: var(--dark, 0); transition: opacity .3s; }
 .fx-numberless .clue-num, .board-area.fx-numberless #board .num { visibility: hidden; }
@@ -655,3 +651,164 @@
 @media (max-width: 760px) { .cm-moves-menu { flex-basis: auto; width: 100%; max-height: none; order: 3; } }
 .cm-detail.boss { width: min(980px, calc(100vw - 24px)); max-height: calc(100vh - 28px); }
 .cm-detail.boss .cm-detail-body { max-height: calc(100vh - 70px); overflow: auto; }
+
+/* ---- the race bar (boss fights are a race: the user's design, 2026-10-09) ----
+   The friend of the level on the left, the boss on the right; the knot is pushed right when you're ahead */
+.race-bar { --x: 50%; --me: #3fbf6b; --me2: #9be36b; position: relative; z-index: 3; display: flex; align-items: center; gap: 12px; max-width: 1180px; margin: 0 auto 14px; padding: 8px 14px;
+    border-radius: 22px; background: var(--surface-solid, #fff); border: 2px solid #2b2233; box-shadow: 0 6px 0 rgba(43, 34, 51, .18), 0 10px 26px rgba(0, 0, 0, .18); }
+.race-bar[hidden] { display: none; }
+.rb-side { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; min-width: 0; }
+.rb-face { width: 56px; height: 56px; flex: 0 0 auto; border-radius: 50%; background: radial-gradient(circle at 50% 40%, #fff, #e8f7ea); border: 2.5px solid var(--me); box-shadow: 0 0 0 3px rgba(63, 191, 107, .2); }
+.rb-boss-face { background: radial-gradient(circle at 50% 40%, #fff, #f6e9ee); border-color: var(--boss); box-shadow: 0 0 0 3px color-mix(in srgb, var(--boss) 25%, transparent); overflow: hidden; display: grid; place-items: center; }
+.rb-boss-face svg { width: 120%; height: 120%; margin-top: 8%; }
+.rb-who { display: flex; flex-direction: column; line-height: 1.05; }
+.rb-who small { font: 900 .62rem/1.1 var(--font-body); letter-spacing: .08em; color: var(--ink-soft, #6b6178); white-space: nowrap; }
+.rb-who b { font: 900 1.25rem/1.1 var(--font-body); color: var(--ink); font-variant-numeric: tabular-nums; }
+.rb-boss .rb-who { align-items: flex-end; }
+.rb-track { position: relative; flex: 1 1 auto; height: 30px; border-radius: 999px; background: #2b2233; border: 2.5px solid #2b2233; overflow: visible; }
+.rb-fill-me, .rb-fill-boss { position: absolute; top: 0; bottom: 0; transition: width .45s cubic-bezier(.3, 1.3, .5, 1), left .45s cubic-bezier(.3, 1.3, .5, 1); }
+.rb-fill-me { left: 0; width: var(--x); border-radius: 999px 0 0 999px;
+    background: repeating-linear-gradient(-55deg, rgba(255, 255, 255, .22) 0 10px, transparent 10px 20px), linear-gradient(180deg, var(--me2), var(--me)); background-size: 28px 100%, auto; animation: rb-push-right 1s linear infinite; }
+.rb-fill-boss { left: var(--x); right: 0; border-radius: 0 999px 999px 0;
+    background: repeating-linear-gradient(55deg, rgba(255, 255, 255, .2) 0 10px, transparent 10px 20px), linear-gradient(180deg, color-mix(in srgb, var(--boss) 70%, #fff), var(--boss)); background-size: 28px 100%, auto; animation: rb-push-left 1s linear infinite; }
+@keyframes rb-push-right { to { background-position: 28px 0, 0 0; } }
+@keyframes rb-push-left { to { background-position: -28px 0, 0 0; } }
+.rb-ticks { position: absolute; inset: 0; border-radius: 999px; pointer-events: none;
+    background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(255, 255, 255, .7) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)); }
+.rb-knot { position: absolute; top: 50%; left: var(--x); width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; z-index: 2;
+    background: radial-gradient(circle at 40% 35%, #fff, #ffe066 55%, #ffb21e); border: 3px solid #2b2233; box-shadow: 0 0 0 4px rgba(255, 224, 102, .35), 0 0 18px rgba(255, 210, 63, .8);
+    transition: left .45s cubic-bezier(.3, 1.3, .5, 1); }
+.rb-knot i::before { content: "⚔️"; font-style: normal; font-size: 20px; }
+.rb-knot.push { animation: rb-knot-push .45s ease-out; }
+@keyframes rb-knot-push { 30% { transform: translate(-50%, -50%) scale(1.35); box-shadow: 0 0 0 10px rgba(255, 224, 102, .4), 0 0 34px #fff; } }
+.rb-lead { position: absolute; left: 50%; top: calc(100% + 3px); transform: translateX(-50%); font: 900 .78rem/1.2 var(--font-body); color: var(--ink); white-space: nowrap;
+    padding: 1px 10px; border-radius: 999px; background: var(--surface-solid, #fff); border: 1.5px solid var(--line); }
+.race-bar.ahead .rb-lead { color: #1f8a46; border-color: var(--me); }
+.race-bar.behind .rb-lead { color: #c42536; border-color: #ff5c6c; }
+.rb-phase { position: absolute; left: 50%; bottom: calc(100% + 3px); transform: translateX(-50%); font: 900 .66rem/1.4 var(--font-body); letter-spacing: .1em; color: #fff;
+    padding: 0 10px; border-radius: 999px; background: var(--boss); white-space: nowrap; }
+.rb-phase:empty { display: none; }
+.race-bar { margin-top: 12px; margin-bottom: 26px; }
+.race-bar.danger { animation: rb-danger .7s ease-in-out infinite alternate; }
+@keyframes rb-danger { to { box-shadow: 0 6px 0 rgba(43, 34, 51, .18), 0 0 0 5px rgba(255, 92, 108, .55), 0 0 30px rgba(255, 92, 108, .6); } }
+.race-bar.enraged .rb-boss-face { animation: rb-rage .18s linear infinite alternate; }
+@keyframes rb-rage { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
+.race-bar.ahead .rb-me .rb-face { animation: rb-bob .6s ease-in-out infinite alternate; }
+@keyframes rb-bob { to { transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .race-bar *, .race-bar { animation: none !important; } }
+@media (max-width: 640px) {
+    .race-bar { gap: 6px; padding: 6px 8px; margin: 8px 0 24px; border-radius: 18px; }
+    .rb-face { width: 40px; height: 40px; }
+    .rb-who small { display: none; }
+    .rb-who b { font-size: 1rem; }
+    .rb-track { height: 24px; }
+    .rb-knot { width: 36px; height: 36px; }
+    .rb-knot i::before { font-size: 16px; }
+}
+/* Downpour: a letter running down and away */
+#board .cell.drip .ltr { animation: cell-drip .6s ease-in forwards; }
+@keyframes cell-drip { to { transform: translateY(40%) scaleY(1.4); opacity: 0; filter: blur(2px); } }
+
+/* ---- later boss phases: the arena goes wild (chaos.js draws the set pieces; this turns everything up) ---- */
+.ba-chaos { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.boss-arena[data-chaos="1"] .ba-rays { animation-duration: 14s; opacity: .26; }
+.boss-arena[data-chaos="2"] .ba-rays { animation-duration: 9s; opacity: .32; }
+.boss-arena[data-chaos="3"] .ba-rays, .boss-arena[data-chaos="4"] .ba-rays { animation-duration: 5s; opacity: .4; }
+.boss-arena[data-chaos] .ba-giant { animation-duration: 1.8s; }
+.boss-arena[data-chaos="2"] .ba-giant { opacity: .38; filter: saturate(1.5) hue-rotate(-18deg) drop-shadow(0 0 40px var(--boss)); }
+.boss-arena[data-chaos="3"] .ba-giant, .boss-arena[data-chaos="4"] .ba-giant { opacity: .45; filter: saturate(1.7) hue-rotate(-28deg) drop-shadow(0 0 60px var(--boss)); animation: ba-breathe .9s ease-in-out infinite alternate; }
+.boss-arena[data-chaos="2"] .ba-sky { filter: saturate(1.25) brightness(.92); }
+.boss-arena[data-chaos="3"] .ba-sky { filter: saturate(1.4) brightness(.84) hue-rotate(-10deg); }
+.boss-arena[data-chaos="4"] .ba-sky { filter: saturate(1.6) brightness(.75) hue-rotate(-20deg); animation: ba-sky-throb 2.4s ease-in-out infinite alternate; }
+@keyframes ba-sky-throb { to { filter: saturate(1.9) brightness(.9) hue-rotate(-34deg); } }
+.boss-arena[data-chaos="3"] .ba-horizon, .boss-arena[data-chaos="4"] .ba-horizon { animation: ba-quake .22s linear infinite alternate; }
+@keyframes ba-quake { from { transform: translate(-2px, 1px); } to { transform: translate(2px, -1px); } }
+/* the phase card: phase pips, and a final phase in its own colours */
+.bp2-pips { display: flex; gap: 8px; justify-content: center; margin-top: 10px; font-style: normal; }
+.bp2-pips u { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid #fff; background: rgba(255, 255, 255, .15); text-decoration: none; }
+.bp2-pips u.on { background: var(--boss); box-shadow: 0 0 12px var(--boss); }
+.bfx-phase.final .bp2-text b { color: #ffe066; text-shadow: 0 0 30px #ff3d00, 0 4px 0 #2b2233; }
+@media (prefers-reduced-motion: reduce) { .boss-arena[data-chaos] * { animation: none !important; } }
+
+/* the level sheet keeps its own world's look while the map scrolls through other worlds */
+.cm-detail[data-world] { font-family: var(--font-body); color: var(--ink); }
+
+/* squares the boss erased or changed: a clear mark until the letter changes again (the user, 2026-10-09) */
+.cell .hit-mark { position: absolute; inset: 2px; z-index: 4; pointer-events: none; border-radius: inherit; border: 2.5px dashed #e2283c; background: rgba(226, 40, 60, .08); animation: hit-mark-in .35s cubic-bezier(.2, 1.6, .4, 1), hit-mark-pulse 1.4s ease-in-out .35s infinite alternate; }
+.cell .hit-mark::after { position: absolute; top: -8px; right: -8px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+    font: 900 11px/1 system-ui, sans-serif; color: #fff; background: #e2283c; box-shadow: 0 0 0 2px #fff, 0 2px 4px rgba(0, 0, 0, .3); content: "\2715"; }
+.cell .hit-mark.changed { border-color: #ff8a00; background: rgba(255, 138, 0, .1); }
+.cell .hit-mark.changed::after { background: #ff8a00; content: "\21C4"; font-size: 12px; }
+.board[style*="--size: 9"] .cell .hit-mark::after, .board[style*="--size:9"] .cell .hit-mark::after { width: 14px; height: 14px; top: -6px; right: -6px; font-size: 9px; }
+@keyframes hit-mark-in { from { transform: scale(1.4); opacity: 0; } }
+@keyframes hit-mark-pulse { to { box-shadow: 0 0 10px rgba(226, 40, 60, .45); } }
+@media (prefers-reduced-motion: reduce) { .cell .hit-mark { animation: none; } }
+
+/* the boss blocking your abilities or items: shown on the buttons for as long as it lasts */
+.bp-ab, .bp-super, .cm-item { position: relative; }
+.ab-block { position: absolute; inset: -2px; z-index: 5; border-radius: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    pointer-events: none; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .6); animation: ab-block-in .3s cubic-bezier(.2, 1.6, .4, 1); }
+.ab-block b { font: 900 .7rem/1 var(--font-body); letter-spacing: .06em; }
+.ab-block small { font: 800 .72rem/1.1 var(--font-body); }
+.ab-block.seal { background:
+    repeating-linear-gradient(35deg, transparent 0 9px, rgba(63, 122, 44, .95) 9px 13px, transparent 13px 22px),
+    repeating-linear-gradient(-35deg, transparent 0 11px, rgba(111, 191, 74, .9) 11px 14px, transparent 14px 24px), rgba(30, 60, 20, .62);
+    box-shadow: inset 0 0 0 2px #3f7a2c; }
+.ab-block.ward { justify-content: flex-start; padding-top: 4px; background: linear-gradient(180deg, rgba(60, 110, 200, .85), rgba(60, 110, 200, .25) 55%, transparent); box-shadow: inset 0 0 0 2px #7fb2ff; }
+.ab-block.ward small { font-size: .58rem; }
+.ab-block.firewall { background: repeating-linear-gradient(90deg, rgba(255, 60, 80, .22) 0 1px, transparent 1px 10px), repeating-linear-gradient(0deg, rgba(255, 60, 80, .22) 0 1px, transparent 1px 10px), rgba(120, 10, 30, .62);
+    box-shadow: inset 0 0 0 2px #ff3b5c, 0 0 12px rgba(255, 60, 80, .5); }
+.cm-item .ab-block b { font-size: .55rem; } .cm-item .ab-block small { font-size: .6rem; }
+.bp-ab.blocked, .cm-item.blocked { filter: saturate(.6); }
+@keyframes ab-block-in { from { transform: scale(1.3); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ab-block { animation: none; } }
+.ab-block b, .ab-block small { padding: 1px 5px; border-radius: 5px; background: rgba(20, 30, 15, .82); }
+.ab-block.firewall b, .ab-block.firewall small { background: rgba(90, 10, 25, .85); }
+.ab-block.ward b, .ab-block.ward small { background: rgba(20, 40, 90, .82); }
+
+/* the boss's blocks on your buttons (the user, 2026-10-09): the Umbrella is a banner above your abilities (still
+   visible); Weed Wrap and Firewall cover the whole row (hidden until they wear off) */
+.ab-ward-banner { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 6px; padding: 5px 10px; border-radius: 999px; color: #fff;
+    background: linear-gradient(90deg, #2f6fbf, #4fa3e8); box-shadow: 0 0 0 2px #fff, 0 0 14px rgba(79, 163, 232, .6); animation: ab-block-in .3s cubic-bezier(.2, 1.6, .4, 1), ward-pulse 1.4s ease-in-out .3s infinite alternate; }
+.ab-ward-banner b { font: 900 .78rem var(--font-body); letter-spacing: .08em; }
+.ab-ward-banner span { font: 700 .75rem var(--font-body); opacity: .95; }
+.ab-ward-banner::before { content: ""; width: 18px; height: 12px; border-radius: 18px 18px 0 0; background: #fff; box-shadow: inset 0 -3px 0 #ff5c6c; }
+@keyframes ward-pulse { to { box-shadow: 0 0 0 2px #fff, 0 0 22px rgba(79, 163, 232, .9); } }
+.bp-ab-row, .cm-items { position: relative; }
+.ab-cover { position: absolute; inset: -4px; z-index: 6; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center;
+    color: #fff; animation: ab-block-in .3s cubic-bezier(.2, 1.6, .4, 1); pointer-events: auto; cursor: not-allowed; }
+.ab-cover b { font: 900 .95rem var(--font-body); letter-spacing: .08em; text-shadow: 0 2px 4px rgba(0, 0, 0, .5); }
+.ab-cover small { font: 800 .78rem var(--font-body); }
+.ab-cover.seal { background:
+    repeating-linear-gradient(35deg, transparent 0 9px, #3f7a2c 9px 14px, transparent 14px 22px),
+    repeating-linear-gradient(-35deg, transparent 0 11px, #6fbf4a 11px 15px, transparent 15px 24px), #1f3a16;
+    box-shadow: inset 0 0 0 3px #3f7a2c, 0 4px 12px rgba(0, 0, 0, .35); }
+.ab-cover.seal b, .ab-cover.seal small { padding: 1px 8px; border-radius: 6px; background: rgba(15, 30, 10, .85); }
+.ab-cover.firewall { background: repeating-linear-gradient(90deg, rgba(255, 90, 110, .35) 0 2px, transparent 2px 12px), repeating-linear-gradient(0deg, rgba(255, 90, 110, .35) 0 2px, transparent 2px 12px), #5a0a1c;
+    box-shadow: inset 0 0 0 3px #ff3b5c, 0 0 16px rgba(255, 60, 80, .55); }
+.ab-cover.firewall b, .ab-cover.firewall small { padding: 1px 8px; border-radius: 6px; background: rgba(60, 5, 18, .85); }
+/* Wilt: your board goes grey and the highlight of the word you're on disappears */
+#board.fx-wilt { filter: grayscale(1) contrast(.9); }
+#board.fx-wilt .cell.in-word, #board.fx-wilt .cell.selected { background: var(--cell, #fff) !important; box-shadow: none !important; }
+#board.fx-wilt .cell.selected::after { content: none; }
+
+/* ---- counterplay (the user, 2026-10-09) ---- */
+/* the target you click during a wind-up to turn the move back on the boss */
+.counter-target { position: absolute; z-index: 30; width: 74px; height: 74px; margin: -37px 0 0 -37px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    background: radial-gradient(circle, rgba(255, 255, 255, .95) 0 40%, color-mix(in srgb, var(--c, #ff5c6c) 45%, transparent) 62%, transparent 72%);
+    filter: drop-shadow(0 0 12px var(--c, #ff5c6c)); animation: ct-in .35s cubic-bezier(.2, 1.6, .4, 1), ct-pulse .7s ease-in-out .35s infinite alternate; }
+.counter-target svg { width: 64%; height: 64%; display: block; margin: 18% auto 0; pointer-events: none; }
+.counter-target .ct-label { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 2px); white-space: nowrap; pointer-events: none;
+    padding: 2px 9px; border-radius: 999px; background: #2b2233; color: #ffe066; font: 900 .72rem var(--font-body); box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+.counter-target .ct-ring { position: absolute; inset: -6px; border-radius: 50%; border: 3px dashed var(--c, #ff5c6c); animation: spin 2.4s linear infinite; pointer-events: none; }
+.counter-target.hit { animation: ct-hit .25s ease-out; }
+.counter-target:hover { filter: drop-shadow(0 0 18px #fff) brightness(1.1); }
+@keyframes ct-in { from { transform: scale(0) rotate(-90deg); } }
+@keyframes ct-pulse { to { transform: scale(1.1); } }
+@keyframes ct-hit { 40% { transform: scale(.78) rotate(8deg); } }
+/* squares in finished words resist: they stay visible and steady through some moves */
+#board.fx-smudge .cell.safe .ltr { color: var(--ink) !important; text-shadow: none; }
+.board-area.fx-darkcreep #board .cell.safe { box-shadow: inset 0 0 0 2px rgba(255, 224, 102, .7); }
+@media (prefers-reduced-motion: reduce) { .counter-target, .counter-target .ct-ring { animation: none; } }
+/* Flash Flood held back by a finished word: a dam line on top of the water */
+.board-area.fx-halffog.flood-dammed .board-wrap::after { border-top: 4px solid #8a5a2b; box-shadow: 0 -3px 0 #c9945a; }

@@ -32,8 +32,8 @@ public class Campaign {
         new Section("desert",   "challenge", 7, "expert",    9),
         new Section("carnival", "expert",    6, "expert",    7),
         new Section("arcade",   "expert",    7, "expert",    7),
-        new Section("robot",    "expert",    7, "expert",    9),
-        new Section("library",  "expert",    7, "expert",    9),
+        new Section("library",  "expert",    7, "expert",    9),      // the user swapped these two (2026-10-09):
+        new Section("robot",    "expert",    7, "expert",    9),      // the robot feels harder than the library
         new Section("volcano",  "expert",    9, "expert",    9),
         new Section("space",    "expert",    9, "expert",    9)
     );
@@ -67,17 +67,47 @@ public class Campaign {
     // second, bigger one. The early bosses (normal 5x5 puzzles) switch to a Challenge grid; the Challenge and
     // Expert bosses switch to a bigger Expert grid, up to 9x9.
     static String phase2Difficulty(Section section) {
-        return bigGrid(section.bossDifficulty()) ? "expert" : "challenge";
+        return phaseDifficulty(section, 2);
     }
     static int phase2Size(Section section) {
+        return phaseSize(section, 2);
+    }
+
+    // How many phases (puzzles) a boss fight has (the user's design, 2026-10-09): the first five bosses have just
+    // one, the last three have 3, the final boss (the Void) has 5, the rest have 2. Each new phase starts when you
+    // finish a board.
+    static final int SINGLE_PHASE_BOSSES = 5;
+    static int phases(Section section) {
+        int i = SECTIONS.indexOf(section), last = SECTIONS.size() - 1;
+        if (i == last) return 5;
+        if (i >= last - 2) return 3;
+        return i < SINGLE_PHASE_BOSSES ? 1 : 2;
+    }
+    // Phase 1 is the boss level itself; phase 2 is bigger; phases 3-5 are the biggest Expert grid (9x9)
+    static String phaseDifficulty(Section section, int phase) {
+        if (phase <= 1) return section.bossDifficulty();
+        return bigGrid(section.bossDifficulty()) ? "expert" : "challenge";
+    }
+    static int phaseSize(Section section, int phase) {
+        if (phase <= 1) return section.bossSize();
+        if (phase >= 3) return 9;
         if (!bigGrid(section.bossDifficulty())) return 6;
         return section.bossSize() >= 7 ? 9 : 7;
     }
 
+    // Rerolls (the user's rule, 2026-10-09): if you lose or give up, your next try is a NEW puzzle with new clues,
+    // so you can't win by remembering the answers. Try 0 is the level's first puzzle, try 1 the next one, and so on.
+    // Each one is saved like the first (so Claude is paid once per puzzle); after VARIANTS tries they come round again.
+    static final int VARIANTS = 20;
+
     // A fixed seed for each level, far away from the daily seeds (those look like 202610081):
-    // world 1 level 1 -> 7000000011, world 15 level 5 -> 7000000155 (6 = the boss's own board, 7 = boss phase 2)
+    // world 1 level 1 -> 7000000011, world 15 level 5 -> 7000000155 (6 = the boss's own board, 7-10 = boss phases 2-5)
     static long seed(Section section, int level) {
         return 7_000_000_000L + (SECTIONS.indexOf(section) + 1) * 10L + level;
+    }
+    // a reroll's seed: the same, 1000 further along for each try
+    static long seed(Section section, int level, int variant) {
+        return seed(section, level) + 1000L * variant;
     }
 
     // The map as JSON for the website:
@@ -102,7 +132,13 @@ public class Campaign {
                 if (level > 1) sb.append(",");
                 sb.append(Lesson.json(s.world(), level));                  // what each level teaches (Lesson.java)
             }
-            sb.append("],\"phase2\":[\"").append(phase2Difficulty(s)).append("\",").append(phase2Size(s)).append("]}");
+            sb.append("],\"phase2\":[\"").append(phase2Difficulty(s)).append("\",").append(phase2Size(s)).append("]");
+            sb.append(",\"phases\":[");                                  // every phase after the first: [difficulty, size]
+            for (int phase = 2; phase <= phases(s); phase++) {
+                if (phase > 2) sb.append(",");
+                sb.append("[\"").append(phaseDifficulty(s, phase)).append("\",").append(phaseSize(s, phase)).append("]");
+            }
+            sb.append("]}");
         }
         return sb.append("]").toString();
     }

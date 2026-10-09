@@ -103,8 +103,8 @@ public class Lesson {
         Map.entry("desert",   List.of("misdirection", "crossings", "long", "speed")),
         Map.entry("carnival", List.of("wordplay", "double", "theme", "clean")),
         Map.entry("arcade",   List.of("misdirection", "speech", "parts", "speed")),
-        Map.entry("robot",    List.of("long", "crossings", "wordplay", "clean")),
-        Map.entry("library",  List.of("theme", "misdirection", "double", "mixed")),
+        Map.entry("library",  List.of("long", "crossings", "wordplay", "clean")),       // world 12 (swapped with the robot)
+        Map.entry("robot",    List.of("theme", "misdirection", "double", "mixed")),     // world 13
         Map.entry("volcano",  List.of("long", "wordplay", "speed", "clean")),
         Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")));
 

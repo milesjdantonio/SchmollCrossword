@@ -109,7 +109,7 @@ class CampaignTest {
         String json = Campaign.mapJson();
         assertTrue(json.startsWith("[{\"world\":\"paper\",\"levels\":[\"easy\",\"easy\",\"easy\",\"easy\",\"easy\"],\"sizes\":[5,5,5,5,5],\"lessons\":["));
         assertTrue(json.contains("{\"world\":\"space\",\"levels\":[\"expert\",\"expert\",\"expert\",\"expert\",\"expert\"],\"sizes\":[9,9,9,9,9],\"lessons\":["));
-        assertTrue(json.endsWith("\"phase2\":[\"expert\",9]}]"));          // each level's lesson: see LessonTest
+        assertTrue(json.endsWith("\"phase2\":[\"expert\",9],\"phases\":[[\"expert\",9],[\"expert\",9],[\"expert\",9],[\"expert\",9]]}]"), "the Void: 5 phases");
     }
 
     @Test
@@ -120,6 +120,73 @@ class CampaignTest {
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 6, false)).getStatusCode().value());
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 3, true)).getStatusCode().value(), "only bosses have a boss board");
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 3, false, 2)).getStatusCode().value(), "only bosses have a phase 2");
-        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 5, false, 3)).getStatusCode().value(), "two phases");
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 5, false, 2)).getStatusCode().value(), "the Garden boss has one phase");
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("snow", 5, false, 3)).getStatusCode().value(), "two phases");
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("space", 5, false, 6)).getStatusCode().value(), "the Void has five");
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 3, false, 1, -1)).getStatusCode().value(), "no negative tries");
+    }
+
+    // The user's design (2026-10-09): the first five bosses have 1 phase, the last three 3, the final boss 5, the rest 2.
+    // Every phase is at least as big as the one before.
+    @Test
+    void lastBossesHaveMorePhases() {
+        int last = Campaign.SECTIONS.size() - 1;
+        for (int i = 0; i <= last; i++) {
+            Campaign.Section s = Campaign.SECTIONS.get(i);
+            assertEquals(i == last ? 5 : i >= last - 2 ? 3 : i < 5 ? 1 : 2, Campaign.phases(s), s.world());
+            for (int phase = 2; phase <= Campaign.phases(s); phase++) {
+                assertTrue(Campaign.phaseSize(s, phase) >= Campaign.phaseSize(s, phase - 1), s.world() + " phase " + phase);
+                assertTrue(Campaign.bigGrid(Campaign.phaseDifficulty(s, phase)));
+            }
+        }
+        assertEquals("space", Campaign.SECTIONS.get(last).world());
+        assertEquals("robot", Campaign.SECTIONS.get(last - 2).world(), "the user swapped the robot and the library");
+    }
+
+    // The boss's own board is made without clues, so it never calls Claude (the user: less expensive)
+    @Test
+    void bossBoardsHaveNoClues() {
+        String json = PuzzleStore.generateSmall(7_000_000_016L, "campaign", "easy", TestWords.easy(), Set.of(), "", "", false);
+        assertTrue(json.contains("\"answer\""), "it's a real board");
+        assertTrue(!json.matches("(?s).*\"clue\"\s*:\s*\"[^\"]+\".*"), "every clue is blank");
+        String big = PuzzleStore.generateBig(7_000_000_016L, "campaign", "expert", 7, TestWords.hard(), Set.of(), "", "", false);
+        assertTrue(!big.matches("(?s).*\"clue\"\s*:\s*\"[^\"]+\".*"));
+    }
+
+    // Daily Boss (the user, 2026-10-09): a different boss every day, all 15 in 15 days, never the same two days running
+    @Test
+    void dailyBossCyclesThroughEveryBoss() {
+        java.time.LocalDate day = java.time.LocalDate.of(2026, 10, 9);
+        Set<String> seen = new HashSet<>();
+        String last = null;
+        for (int i = 0; i < 15; i++) {
+            String w = PuzzleStore.dailyBossSection(day.plusDays(i)).world();
+            seen.add(w);
+            assertTrue(!w.equals(last), "not the same boss two days running");
+            last = w;
+        }
+        assertEquals(15, seen.size());
+        // the boss's own board for any boss is free (no clues, no Claude)
+        String board = PuzzleStore.bossPuzzle(7_000_000_099L, Campaign.SECTIONS.get(0), TestWords.easy(), false);
+        assertTrue(!board.matches("(?s).*\"clue\"\s*:\s*\"[^\"]+\".*"));
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("weekly", null, null, false, null)).getStatusCode().value());
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("unlimited", null, "banana", false, null)).getStatusCode().value());
+    }
+
+    // Losing or giving up rerolls the level (the user's rule): each try has its own seed and file
+    @Test
+    void rerollsHaveTheirOwnSeedsAndFiles(@TempDir Path folder) {
+        Campaign.Section garden = Campaign.SECTIONS.get(1);
+        Set<Long> seeds = new HashSet<>();
+        for (int v = 0; v < Campaign.VARIANTS; v++) {
+            for (Campaign.Section s : Campaign.SECTIONS) {
+                for (int level = 1; level <= Campaign.LEVELS + 5; level++) assertTrue(seeds.add(Campaign.seed(s, level, v)), s.world() + " " + level + " try " + v);
+            }
+        }
+        Path file = PuzzleStore.campaignFile(folder, garden, 3, false);
+        assertEquals(file, PuzzleStore.variantFile(file, 0));
+        assertEquals("garden-3-v2.json", PuzzleStore.variantFile(file, 2).getFileName().toString());
+        assertEquals("garden-5-p3-v1.json", PuzzleStore.variantFile(PuzzleStore.phaseFile(folder, garden, 3), 1).getFileName().toString());
+        assertEquals(List.of(file, PuzzleStore.variantFile(file, 1)), PuzzleStore.earlierVariants(file, 2));
     }
 }

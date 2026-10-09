@@ -210,6 +210,11 @@ public class PuzzleStore {
     static final int BIG_LESSON_TRIES = 5;
     static String generateBig(long seed, String mode, String difficulty, int size,
                               Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors, String focus) {
+        return generateBig(seed, mode, difficulty, size, wordsByLength, avoid, favors, focus, true);
+    }
+    // withClues = false: just the grid, no clues and NO Claude call (a boss's own board: nobody reads its clues)
+    static String generateBig(long seed, String mode, String difficulty, int size,
+                              Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors, String focus, boolean withClues) {
         boolean expert = difficulty.equals("expert");
         ChallengeGrid.Filled filled = null;
         List<String> answers = null;
@@ -223,7 +228,7 @@ public class PuzzleStore {
             int score = Lesson.favorScore(favors, list);
             if (score > bestScore) { filled = f; answers = list; bestScore = score; }
         }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, expert ? "hard" : "medium", focus);
+        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, expert ? "hard" : "medium", focus) : NO_CLUES;
         return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, difficulty).toJson();
     }
 
@@ -233,14 +238,20 @@ public class PuzzleStore {
     }
     static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid,
                                 String favors, String focus) {
+        return generateSmall(seed, mode, difficulty, wordsByLength, avoid, favors, focus, true);
+    }
+    static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid,
+                                String favors, String focus, boolean withClues) {
         char[][] grid = buildGrid(seed, wordsByLength, avoid, favors);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {
             answers.add(slot.getPattern(grid));
         }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty, focus);
+        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, difficulty, focus) : NO_CLUES;
         return Puzzle.create(SHAPE, grid, clues, mode, seed, difficulty).toJson();
     }
+    // an empty clue set: every entry gets a blank clue (the user, 2026-10-09: don't pay for the boss's clues)
+    static final ClueWriter.ClueSet NO_CLUES = new ClueWriter.ClueSet(List.of());
 
     // ---------------------------------------------------------------------------------------
     // Fewer repeats (added by Claude at the user's request): the solver likes some words far more than others
@@ -306,44 +317,104 @@ public class PuzzleStore {
     // A campaign level, generated once and saved, exactly like getDaily (same reasons: identical for everyone,
     // and Claude is only paid once per level). The caller checks that the world and level are real.
     // boss = the boss's own board in a boss fight (level 5 only): a second puzzle at the same difficulty, for the bot
+    // variant = a reroll (0 = the level's first puzzle): a new try after losing gets a new puzzle (Campaign.VARIANTS)
     static synchronized String getCampaign(Path folder, Campaign.Section section, int level, boolean boss,
                                            Map<Integer, List<String>> wordsByLength) throws IOException {
-        Path file = campaignFile(folder, section, level, boss);
+        return getCampaign(folder, section, level, boss, 0, wordsByLength);
+    }
+    static synchronized String getCampaign(Path folder, Campaign.Section section, int level, boolean boss, int variant,
+                                           Map<Integer, List<String>> wordsByLength) throws IOException {
+        Path file = variantFile(campaignFile(folder, section, level, boss), variant);
         if (Files.exists(file)) {
             return Files.readString(file);
         }
         String difficulty = Campaign.difficulty(section, level);
-        long seed = Campaign.seed(section, boss ? level + 1 : level);    // the boss's board: the next seed along
-        Set<String> avoid = recentCampaignAnswers(folder, section, level, boss);
+        long seed = Campaign.seed(section, boss ? level + 1 : level, variant);    // the boss's board: the next seed along
+        Set<String> avoid = new HashSet<>(recentCampaignAnswers(folder, section, level, boss));
+        avoid.addAll(answersIn(earlierVariants(campaignFile(folder, section, level, boss), variant)));   // a reroll is really new
         // every level is a lesson (Lesson.java): a grid that suits it, and clues that train its skill
         String favors = Lesson.favors(section.world(), level), focus = Lesson.clueFocus(section.world(), level);
         String json = Campaign.bigGrid(difficulty)
-                ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid, favors, focus)
-                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid, favors, focus);
+                ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid, favors, focus, !boss)
+                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid, favors, focus, !boss);     // the boss's own board: no clues
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
     }
 
-    // A boss's phase 2 puzzle (a bigger grid, see Campaign.phase2Difficulty), saved as puzzles/campaign/garden-5-p2.json.
-    // It stays away from the boss's first puzzle and the boards before it.
-    static synchronized String getBossPhase2(Path folder, Campaign.Section section, Map<Integer, List<String>> wordsByLength) throws IOException {
-        Path file = folder.resolve(section.world() + "-" + Campaign.LEVELS + "-p2.json");
+    // A boss's later phases (phase 2-5, bigger grids, see Campaign.phases), saved as puzzles/campaign/garden-5-p2.json.
+    // Each stays away from the boss's earlier puzzles in the same fight and the boards before them.
+    static synchronized String getBossPhase(Path folder, Campaign.Section section, int phase, int variant,
+                                            Map<Integer, List<String>> wordsByLength) throws IOException {
+        Path file = variantFile(phaseFile(folder, section, phase), variant);
         if (Files.exists(file)) {
             return Files.readString(file);
         }
         Set<String> avoid = new HashSet<>(recentCampaignAnswers(folder, section, Campaign.LEVELS, true));
-        avoid.addAll(answersIn(List.of(campaignFile(folder, section, Campaign.LEVELS, false), campaignFile(folder, section, Campaign.LEVELS, true))));
-        long seed = Campaign.seed(section, Campaign.LEVELS + 2);
-        String json = generateBig(seed, "campaign", Campaign.phase2Difficulty(section), Campaign.phase2Size(section), wordsByLength, avoid,
+        List<Path> before = new ArrayList<>(List.of(variantFile(campaignFile(folder, section, Campaign.LEVELS, false), variant),
+                variantFile(campaignFile(folder, section, Campaign.LEVELS, true), variant)));
+        for (int p = 2; p < phase; p++) before.add(variantFile(phaseFile(folder, section, p), variant));
+        before.addAll(earlierVariants(phaseFile(folder, section, phase), variant));
+        avoid.addAll(answersIn(before));
+        long seed = Campaign.seed(section, Campaign.LEVELS + phase, variant);
+        String json = generateBig(seed, "campaign", Campaign.phaseDifficulty(section, phase), Campaign.phaseSize(section, phase), wordsByLength, avoid,
                 "", Lesson.clueFocus(section.world(), Campaign.LEVELS));
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
     }
+    static String getBossPhase2(Path folder, Campaign.Section section, Map<Integer, List<String>> wordsByLength) throws IOException {
+        return getBossPhase(folder, section, 2, 0, wordsByLength);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Daily Boss and Unlimited Boss (the user, 2026-10-09: "options daily boss and unlimited boss, a random boss"):
+    // a boss fight outside the campaign, with the boss's campaign puzzle settings (one phase).
+    // ---------------------------------------------------------------------------------------
+    // Today's boss: 4 bosses along the map each day, so it's never the same two days running and every boss
+    // comes round once every 15 days
+    static Campaign.Section dailyBossSection(LocalDate date) {
+        int n = Campaign.SECTIONS.size();
+        return Campaign.SECTIONS.get((int) Math.floorMod(date.toEpochDay() * 4, (long) n));
+    }
+    // the daily boss's puzzles: yours (clues by Claude, once a day for everyone) and the boss's own (no clues, free)
+    static synchronized String getDailyBoss(Path folder, LocalDate date, boolean bossBoard, Map<Integer, List<String>> wordsByLength) throws IOException {
+        Path file = folder.resolve(date + "-boss" + (bossBoard ? "-board" : "") + ".json");
+        if (Files.exists(file)) {
+            return Files.readString(file);
+        }
+        Campaign.Section section = dailyBossSection(date);
+        long seed = seedForDate(date) * 10 + (bossBoard ? 6 : 5);       // the dailies use 1-4
+        String json = bossPuzzle(seed, section, wordsByLength, !bossBoard);
+        Files.createDirectories(folder);
+        Files.writeString(file, json);
+        return json;
+    }
+    // a boss puzzle at a section's boss settings (Unlimited Boss calls this with a random seed; not saved)
+    static String bossPuzzle(long seed, Campaign.Section section, Map<Integer, List<String>> wordsByLength, boolean withClues) {
+        String difficulty = section.bossDifficulty();
+        return Campaign.bigGrid(difficulty)
+                ? generateBig(seed, "campaign", difficulty, section.bossSize(), wordsByLength, new HashSet<>(), "", "", withClues)
+                : generateSmall(seed, "campaign", difficulty, wordsByLength, new HashSet<>(), "", "", withClues);
+    }
 
     static Path campaignFile(Path folder, Campaign.Section section, int level, boolean boss) {
         return folder.resolve(section.world() + "-" + level + (boss ? "-boss" : "") + ".json");
+    }
+    static Path phaseFile(Path folder, Campaign.Section section, int phase) {
+        return folder.resolve(section.world() + "-" + Campaign.LEVELS + "-p" + phase + ".json");
+    }
+    // a reroll's file: garden-3.json -> garden-3-v2.json (try 0 keeps the plain name)
+    static Path variantFile(Path file, int variant) {
+        if (variant == 0) return file;
+        String name = file.getFileName().toString();
+        return file.resolveSibling(name.substring(0, name.length() - ".json".length()) + "-v" + variant + ".json");
+    }
+    // the same puzzle's earlier tries (so a reroll doesn't repeat their answers)
+    static List<Path> earlierVariants(Path file, int variant) {
+        List<Path> list = new ArrayList<>();
+        for (int k = 0; k < variant; k++) list.add(variantFile(file, k));
+        return list;
     }
 
     // A campaign level stays away from the answers of the 12 boards before it on the map (bosses' boards included)

@@ -173,27 +173,58 @@ public class PuzzleController {
         return Campaign.mapJson();
     }
 
+    // phase=2..5: a boss's later puzzles (see Campaign.phases). v = which try this is (a reroll after losing, see Campaign.VARIANTS)
     @GetMapping(value = "/api/campaign", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String campaign(@RequestParam String world, @RequestParam int level,
-                           @RequestParam(defaultValue = "false") boolean boss) throws IOException {
-        return campaign(world, level, boss, 1);
-    }
-
-    // phase=2: a boss's second puzzle (see Campaign.phase2Difficulty)
-    @GetMapping(value = "/api/campaign", params = "phase", produces = MediaType.APPLICATION_JSON_VALUE)
-    public String campaign(@RequestParam String world, @RequestParam int level,
-                           @RequestParam(defaultValue = "false") boolean boss, @RequestParam int phase) throws IOException {
+    public String campaign(@RequestParam String world, @RequestParam int level, @RequestParam(defaultValue = "false") boolean boss,
+                           @RequestParam(defaultValue = "1") int phase, @RequestParam(defaultValue = "0") int v) throws IOException {
         Campaign.Section section = Campaign.section(world);
         if (section == null || level < 1 || level > Campaign.LEVELS || (boss && level != Campaign.LEVELS)
-                || phase < 1 || phase > 2 || (phase == 2 && (level != Campaign.LEVELS || boss))) {
+                || phase < 1 || phase > Campaign.phases(section) || (phase > 1 && (level != Campaign.LEVELS || boss)) || v < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no such campaign level: " + world + " " + level);
         }
-        if (phase == 2) {
-            return PuzzleStore.getBossPhase2(PuzzleStore.CAMPAIGN_FOLDER, section, wordsFor("challenge"));
+        int variant = v % Campaign.VARIANTS;
+        if (phase > 1) {
+            return PuzzleStore.getBossPhase(PuzzleStore.CAMPAIGN_FOLDER, section, phase, variant, wordsFor("challenge"));
         }
         String difficulty = Campaign.difficulty(section, level);
         // big grids use Hard's list (Challenge grids start with Medium's words, see PuzzleStore.generateBig)
-        return PuzzleStore.getCampaign(PuzzleStore.CAMPAIGN_FOLDER, section, level, boss, wordsFor(Campaign.bigGrid(difficulty) ? "challenge" : difficulty));
+        return PuzzleStore.getCampaign(PuzzleStore.CAMPAIGN_FOLDER, section, level, boss, variant, wordsFor(Campaign.bigGrid(difficulty) ? "challenge" : difficulty));
+    }
+    public String campaign(String world, int level, boolean boss) throws IOException {
+        return campaign(world, level, boss, 1, 0);
+    }
+    public String campaign(String world, int level, boolean boss, int phase) throws IOException {
+        return campaign(world, level, boss, phase, 0);
+    }
+
+    // Daily Boss / Unlimited Boss (written by Claude at the user's request, 2026-10-09).
+    // GET /api/boss/daily?date=2026-10-09 -> {"world":"garden"}: which boss is today's
+    @GetMapping(value = "/api/boss/daily", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String dailyBoss(@RequestParam(required = false) String date) {
+        return "{\"world\":\"" + PuzzleStore.dailyBossSection(dailyDate(date, LocalDate.now())).world() + "\"}";
+    }
+    // GET /api/boss?kind=daily&date=...      today's boss puzzle (the same for everyone, made once)
+    // GET /api/boss?kind=unlimited&world=sky a new puzzle against that boss (paid: counts against the Unlimited limit)
+    // &boss=true: the boss's own board (no clues, so it never costs anything)
+    @GetMapping(value = "/api/boss", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String bossFight(@RequestParam String kind, @RequestParam(required = false) String date, @RequestParam(required = false) String world,
+                            @RequestParam(defaultValue = "false") boolean boss, HttpServletRequest request) throws IOException {
+        if (kind.equals("daily")) {
+            LocalDate day = dailyDate(date, LocalDate.now());
+            Campaign.Section section = PuzzleStore.dailyBossSection(day);
+            return PuzzleStore.getDailyBoss(PuzzleStore.DAILY_FOLDER, day, boss, wordsFor(Campaign.bigGrid(section.bossDifficulty()) ? "challenge" : section.bossDifficulty()));
+        }
+        Campaign.Section section = world == null ? null : Campaign.section(world);
+        if (!kind.equals("unlimited") || section == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "kind must be daily or unlimited, with a real world for unlimited");
+        }
+        long seed = new Random().nextLong() & ((1L << 53) - 1);
+        Map<Integer, List<String>> words = wordsFor(Campaign.bigGrid(section.bossDifficulty()) ? "challenge" : section.bossDifficulty());
+        if (boss) return PuzzleStore.bossPuzzle(seed, section, words, false);        // free: no clues
+        if (!unlimitedLimiter.allow(request.getRemoteAddr(), System.currentTimeMillis())) {
+            throw tooManyPuzzles();
+        }
+        return PuzzleStore.bossPuzzle(seed, section, words, true);
     }
 
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"

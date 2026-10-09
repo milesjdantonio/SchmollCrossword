@@ -1196,3 +1196,27 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .hero-title, .greeting, #game-title, .game-titles .subtitle, .page-head h1, .page-head .subtitle, .hero .subtitle {
     text-shadow: 0 0 2px var(--bg), 0 0 6px var(--bg), 0 0 12px var(--bg), 0 0 20px var(--bg);
 }
+/* Daily Boss / Unlimited Boss: a boss race from the Daily and Unlimited pages */
+.difficulty .boss-mode-btn { margin-left: 6px; color: #fff; border-color: transparent; background: linear-gradient(135deg, #e2483c, #8a2bbf); box-shadow: 0 3px 0 rgba(43, 34, 51, .35), 0 0 14px rgba(226, 72, 60, .35); font-weight: 900; }
+.difficulty .boss-mode-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.difficulty .boss-mode-btn[hidden] { display: none; }
+
+/* Home: today's boss, under the Challenge in the Daily card */
+.boss-chip { grid-column: 1 / -1; position: relative; display: flex; align-items: center; gap: 14px; padding: 10px 14px; text-align: left; cursor: pointer; overflow: hidden;
+    border: 2px solid color-mix(in srgb, var(--boss, #e2483c) 70%, transparent); border-radius: var(--radius-sm); color: var(--ink); font: inherit;
+    background: linear-gradient(120deg, color-mix(in srgb, var(--boss, #e2483c) 20%, var(--surface-2)), color-mix(in srgb, #8a2bbf 12%, var(--surface-2)));
+    animation: card-in .5s cubic-bezier(.2, 1.3, .4, 1) .55s backwards; transition: transform .22s cubic-bezier(.2, 1.6, .4, 1), border-color .2s; }
+.boss-chip:hover { transform: translateY(-4px) rotate(-1deg); border-color: var(--boss, #e2483c); }
+.boss-chip[hidden] { display: none; }
+.boss-chip .bchip-art { width: 64px; height: 64px; flex: 0 0 auto; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .25)); animation: hb-bob 2.4s ease-in-out infinite alternate; }
+.boss-chip .bchip-art svg { width: 100%; height: 100%; display: block; }
+.boss-chip .bchip-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.boss-chip .chip-sub { font-size: .75rem; color: var(--muted); }
+.boss-chip.done { border-color: var(--good); }
+.boss-chip.done .chip-state { color: var(--good); }
+@keyframes hb-bob { to { transform: translateY(-4px) rotate(-2deg); } }
+.unlimited-card .hb-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .boss-chip .bchip-art { animation: none; } }
+.daily-chips .boss-chip, .daily-chips .boss-chip .bchip-text, .daily-chips .boss-chip .chip-name { color: var(--ink); }
+.daily-chips .boss-chip .chip-sub, .daily-chips .boss-chip .chip-state { color: var(--muted); }
+.daily-chips .boss-chip.done .chip-state { color: var(--good); }

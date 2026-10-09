@@ -187,7 +187,7 @@ const Powers = (() => {
             { proj: "🌼", path: "spiral", aura: ["🌼", "🟡", "✨"], motion: "swirl", color: "#ffd23f", on: "boss" }),
         A("garden", "vine", "Vine Snare", "🌿", "vines", "Vines grow over the boss's board.", "Vines cover 4 empty squares on the boss's board for 20s. It can't write any word through them.",
             { proj: "🌱", path: "line", aura: ["🌿", "🍃"], motion: "rise", color: "#3fbf6b", on: "boss" }),
-        A("garden", "sun", "Sunny Hour", "☀️", "sun", "Warm sunshine makes the day feel longer.", "For 30s, every word you finish adds 8s to your clock.",
+        A("garden", "sun", "Sunny Hour", "☀️", "sun", "Sunshine makes everything grow.", "For 30s, every word you finish grows a right letter somewhere else on your board.",
             { proj: null, aura: ["☀️", "✨", "🌟"], motion: "rise", color: "#ffb21e", on: "me" }),
         A("squirrel", "acorn", "Acorn Toss", "🌰", "knock", "Bonk! A hard acorn to the boss's board.", "Knocks 3 random letters off the boss's board.",
             { proj: "🌰", path: "arc", aura: ["🌰", "💫"], motion: "pop", color: "#a0652c", on: "boss" }),
@@ -197,7 +197,7 @@ const Powers = (() => {
             { proj: null, aura: ["🌰", "✨"], motion: "pop", color: "#c98a4b", on: "me" }),
         A("candy", "taffy", "Sticky Taffy", "🍬", "slow", "Gooey taffy all over the boss's pencil.", "The boss writes at a third of its speed for 10s.",
             { proj: "🍬", path: "arc", aura: ["🍬", "🩷"], motion: "drift", color: "#ff6fb5", on: "boss" }),
-        A("candy", "rush", "Sugar Rush", "🍭", "super", "A burst of sugar energy goes straight to your Super.", "Charges your Super meter by 60%.",
+        A("candy", "rush", "Sugar Rush", "🍭", "super", "Sugar-coated hints.", "The first letter of 3 of your unfinished words appears, locked in.",
             { proj: null, aura: ["🍭", "⚡", "✨"], motion: "spark", color: "#ff5fa2", on: "me" }),
         A("candy", "gumdrop", "Gumdrop Bounce", "🧁", "reflect", "A bouncy gumdrop that sends things straight back.", "The boss's next attack bounces back at it: the boss is frozen instead of you.",
             { proj: null, aura: ["🧁", "🟣"], motion: "orbit", color: "#b46cff", on: "me" }),
@@ -221,9 +221,9 @@ const Powers = (() => {
             { proj: null, aura: ["🌈", "🍀", "✨"], motion: "rise", color: "#ff7b9c", on: "me" }),
         A("sky", "gust", "Gust", "🌬️", "scatter", "A sharp gust across the boss's board.", "Blows one letter out of each word the boss has finished (up to 6).",
             { proj: "🌬️", path: "line", aura: ["💨", "🍃"], motion: "drift", color: "#bfe4ff", on: "boss" }),
-        A("sky", "cloud", "Silver Lining", "☁️", "silver", "Every cloud has a silver lining.", "For 40s, each attack that hits you gives you 20s of time and 40% Super.",
+        A("sky", "cloud", "Silver Lining", "☁️", "silver", "Every cloud has a silver lining.", "For 40s, each attack that hits you gives you a right letter.",
             { proj: null, aura: ["☁️", "🥈"], motion: "orbit", color: "#d9e2ef", on: "me" }),
-        A("sky", "tailwind", "Tailwind", "🪁", "time", "Ride the wind: the clock can wait.", "Adds 40s to your clock.",
+        A("sky", "tailwind", "Tailwind", "🪁", "time", "The wind at your back holds your letters in place.", "For 30s, every right letter you type locks in place: the boss's attacks can't erase it.",
             { proj: null, aura: ["🪁", "💨"], motion: "rise", color: "#76c7ff", on: "me" }),
         A("desert", "sandstorm", "Sandstorm", "🏜️", "sand", "Sand blows across the boss's page.", "For 12s, half of the letters the boss writes are blown away as soon as it writes them.",
             { proj: null, aura: ["🟫", "🟤", "💨"], motion: "drift", color: "#d9a35c", on: "boss" }),
@@ -241,11 +241,11 @@ const Powers = (() => {
             { proj: "👾", path: "line", aura: ["🟨", "🟦"], motion: "pop", color: "#ffd23f", on: "boss" }),
         A("arcade", "cheat", "Cheat Code", "🎮", "cheat", "Up, up, down, down, left, right...", "Flashes the answer to your selected word for 2.5 seconds. Remember it!",
             { proj: null, aura: ["🎮", "⭐"], motion: "spark", color: "#5ce1e6", on: "me" }),
-        A("arcade", "extralife", "Extra Life", "🕹️", "extralife", "1-UP! Saved for when you need it most.", "If you lose this fight, you come back once: +30s on your clock and the boss loses its last 2 words.",
+        A("arcade", "extralife", "Extra Life", "🕹️", "extralife", "1-UP! Saved for when you need it most.", "If the boss finishes first, you come back once: it loses its last 3 words and the race goes on.",
             { proj: null, aura: ["💚", "🕹️"], motion: "rise", color: "#4fdf6b", on: "me" }),
         A("robot", "autofill", "Auto-Fill", "🦾", "autofill", "A robot arm finishes the job.", "Fills in the last missing letter of every word that's one letter from done (up to 4).",
             { proj: null, aura: ["🔩", "⚙️"], motion: "spark", color: "#9aa7b8", on: "me" }),
-        A("robot", "overclock", "Overclock", "⚡", "overclock", "Push your circuits past their limit.", "For 15s, every right letter you type also knocks a letter off the boss's board (up to 8).",
+        A("robot", "overclock", "Overclock", "⚡", "overclock", "Push your circuits past their limit.", "For 15s, every right letter you type also knocks a letter off the boss's board (up to 5).",
             { proj: null, aura: ["⚡", "🔋"], motion: "spark", color: "#38e0ff", on: "me" }),
         A("robot", "firewall", "Firewall", "🧱", "firewall", "A wall of code the boss's attacks have to break through.", "For 30s the boss's attacks take twice as long to wind up, so they're easier to block.",
             { proj: null, aura: ["🧱", "🔥"], motion: "orbit", color: "#ff7a3d", on: "me" }),
@@ -259,7 +259,7 @@ const Powers = (() => {
             { proj: null, aura: ["🔥", "✨"], motion: "rise", color: "#ff5a1f", on: "me" }),
         A("volcano", "lava", "Lava Floor", "🌋", "lavafloor", "The floor is lava, and the boss is standing on it.", "For 15s, every word the boss finishes loses its first letter to the lava.",
             { proj: null, aura: ["🔥", "🟧"], motion: "rise", color: "#ff3d00", on: "boss" }),
-        A("volcano", "fireup", "Fire Up", "🧨", "fireup", "Light the fuse on your Super.", "For 25s, finished words charge your Super twice as fast.",
+        A("volcano", "fireup", "Fire Up", "🧨", "fireup", "Hot enough to burn your mistakes.", "For 20s, any wrong letter you type burns away at once, so you know straight away.",
             { proj: null, aura: ["🧨", "💥"], motion: "spark", color: "#ff9f1c", on: "me" }),
         A("space", "blackhole", "Black Hole", "🕳️", "blackhole", "A tiny black hole opens in the middle of the boss's board.", "Swallows every letter in the middle of the boss's board (the center 3×3).",
             { proj: "🕳️", path: "spiral", aura: ["✦", "·"], motion: "swirl", color: "#6b4dff", on: "boss" }),
@@ -282,7 +282,7 @@ const Powers = (() => {
         garden: [B("Thorn Tangle", "🌹", "thorns", 10, "thorns block 3 of your empty squares", { proj: "🌹", aura: ["🌵", "🥀"], motion: "rise" }),
             B("Petal Storm", "🌸", "petals", 8, "petals bury your clue list", { proj: "🌸", aura: ["🌸", "🌺"], motion: "fall" }),
             B("Aphid Swarm", "🐛", "minion", 16, "sends an aphid that eats your letters until you click it", { proj: "🐛", aura: ["🐛", "🍃"], motion: "drift" }),
-            B("Wilt", "🥀", "drain", 1, "drains your Super meter and ends your combo", { proj: "🥀", aura: ["🍂", "💧"], motion: "fall" }),
+            B("Wilt", "🥀", "drain", 8, "wilts your board grey: you can't see which word you're on, and your combo ends", { proj: "🥀", aura: ["🍂", "💧"], motion: "fall" }),
             B("Weed Wrap", "🌿", "seal", 12, "wraps your abilities in weeds: you can't use them", { proj: "🌿", aura: ["🌿", "🌱"], motion: "rise" })],
         squirrel: [B("Hoot Hoot", "🦉", "hoot", 8, "jumbles the words in your clues", { proj: "🦉", aura: ["❓", "🌀"], motion: "swirl" }),
             B("Acorn Drop", "🌰", "acorns", 2, "knocks your letters into the wrong squares", { proj: "🌰", aura: ["🌰", "💫"], motion: "fall" }),
@@ -305,7 +305,7 @@ const Powers = (() => {
             B("Numb Fingers", "🧤", "slowmo", 9, "cold hands: you can only type one letter at a time, slowly", { proj: "🧤", aura: ["❄️", "🥶"], motion: "drift" }),
             B("Ice Crack", "🧊", "shatter", 9, "your board cracks into sliding pieces", { proj: "🧊", aura: ["🧊", "✳️"], motion: "spark" })],
         rain: [B("Lightning", "⚡", "lightning", 1, "strikes one of your words, wiping it", { proj: "⚡", aura: ["⚡", "💥"], motion: "spark" }),
-            B("Downpour", "🌧️", "downpour", 8, "your clock runs twice as fast", { proj: "🌧️", aura: ["💧", "💧"], motion: "fall" }),
+            B("Downpour", "🌧️", "downpour", 8, "makes your letters run: each one you type washes away after 4s unless its word is finished", { proj: "🌧️", aura: ["💧", "💧"], motion: "fall" }),
             B("Flash Flood", "🌊", "halffog", 9, "floods the bottom half of your board", { proj: "🌊", aura: ["💧", "🌊"], motion: "rise" }),
             B("Thunder Roll", "🌩️", "quake", 8, "thunder shakes a letter out of your board every 2 seconds", { proj: "🌩️", aura: ["⚡", "💥"], motion: "spark" }),
             B("Umbrella", "☂️", "ward", 1, "opens an umbrella: your next ability bounces off", { proj: "☂️", aura: ["☂️", "💧"], motion: "pop" })],
@@ -318,7 +318,7 @@ const Powers = (() => {
             B("Sand Blast", "🏜️", "sandblast", 8, "sand in the keys: some key presses don't count", { proj: "🏜️", aura: ["🟫", "💨"], motion: "drift" }),
             B("Mirage", "🌅", "mirageclue", 10, "your clue bar shows the wrong clue", { proj: "🌅", aura: ["🪞", "✨"], motion: "pop" }),
             B("Dune Shift", "🏜️", "shift", 1, "shifts the letters of one of your words over by one", { proj: "🟫", aura: ["🟫", "➡️"], motion: "drift" }),
-            B("Scorpion Sting", "🦂", "curse", 15, "poison: finish a word in time, or lose 20 seconds", { proj: "🦂", aura: ["🦂", "☠️"], motion: "pop" })],
+            B("Scorpion Sting", "🦂", "curse", 15, "poison: finish a word in time, or it wipes the word you're on", { proj: "🦂", aura: ["🦂", "☠️"], motion: "pop" })],
         carnival: [B("Funhouse Mirror", "🪞", "mirror", 9, "flips your board like a mirror", { proj: "🪞", aura: ["🪞", "✨"], motion: "pop" }),
             B("Confetti Cannon", "🎉", "confetti", 9, "buries half your squares under piles of confetti", { proj: "🎉", aura: ["🎊", "🎉"], motion: "fall" }),
             B("Shell Game", "🥜", "clueswap", 10, "shuffles your clues so they're next to the wrong numbers", { proj: "🥜", aura: ["🔀", "❓"], motion: "swirl" }),
@@ -340,10 +340,10 @@ const Powers = (() => {
             B("Poltergeist", "🪑", "wordthief", 1, "throws your last finished word off the board", { proj: "🪑", aura: ["📚", "💨"], motion: "pop" }),
             B("Torn Pages", "📜", "oneword", 10, "tears your clues down to their first word", { proj: "📜", aura: ["📄", "✂️"], motion: "fall" })],
         volcano: [B("Eruption", "🌋", "eruption", 2, "lava bombs smash two spots on your board", { proj: "🪨", aura: ["🔥", "🪨"], motion: "fall" }),
-            B("Heatwave", "🥵", "heatwave", 15, "melts 15 seconds off your clock", { proj: "☀️", aura: ["🔥", "♨️"], motion: "rise" }),
+            B("Heatwave", "🥵", "heatwave", 15, "makes Check and Reveal too hot to touch", { proj: "☀️", aura: ["🔥", "♨️"], motion: "rise" }),
             B("Pressure Build", "🔴", "powerup", 1, "builds pressure: its next attack lasts twice as long", { proj: null, aura: ["🔴", "🔥"], motion: "orbit" }),
             B("Fresh Lava", "🔥", "heal", 4, "the boss writes 4 letters in a flash", { proj: null, aura: ["🔥", "✨"], motion: "rise" }),
-            B("Scorched Earth", "♨️", "toll", 12, "every word you finish costs you 5 seconds", { proj: "♨️", aura: ["🔥", "💨"], motion: "rise" })],
+            B("Scorched Earth", "♨️", "toll", 12, "every word you finish feeds it: it writes 2 letters", { proj: "♨️", aura: ["🔥", "💨"], motion: "rise" })],
         space: [B("Gravity Well", "🪐", "gravity", 8, "heavy keys: every letter takes two presses", { proj: "🪐", aura: ["🪐", "·"], motion: "swirl" }),
             B("Solar Flare", "☀️", "flare", 3, "a blinding flash: you can't see anything", { proj: "☀️", aura: ["✴️", "✨"], motion: "spark" }),
             B("Collapse", "💫", "collapse", 6, "pulls one letter out of each of your finished words", { proj: "💫", aura: ["✦", "💫"], motion: "swirl" }),
@@ -356,16 +356,16 @@ const Powers = (() => {
     // How hard each boss fights (the user's design: difficulty in the fights too, not just the puzzles).
     // k goes from 0 (world 1) to 1 (world 15); everything scales smoothly between the two ends.
     //   every     seconds between attacks              windup  seconds of warning before an attack lands
-    //   power     how long its effects last (x)        margin  your time limit = the boss's solve time x this
-    //   rageAt    HP % where it gets enraged           rageSpeed  how much faster it writes when enraged
+    //   power     how long its effects last (x)        rageSpeed  how much faster it writes when enraged
+    //   (how fast it solves is campaign.js's botTimeFor; it gets enraged when you lead the race by RAGE_LEAD)
     //   double    enraged, it chains two moves at once  first   seconds before its first attack
     // ---------------------------------------------------------------------------------------------
     const lerp = (a, b, k) => a + (b - a) * k;
     function threat(si, n = 15) {
         const k = Math.max(0, Math.min(1, si / Math.max(1, n - 1)));
         return {
-            k, every: lerp(34, 15, k), windup: lerp(4.2, 2.2, k), power: lerp(0.8, 1.35, k), margin: lerp(1.3, 1.02, k),
-            rageAt: Math.round(lerp(30, 50, k)), rageSpeed: lerp(1.1, 1.4, k), double: k >= 0.6, first: lerp(20, 8, k),
+            k, every: lerp(34, 15, k), windup: lerp(4.2, 2.2, k), power: lerp(0.8, 1.35, k),
+            rageSpeed: lerp(1.1, 1.4, k), double: k >= 0.6, first: lerp(20, 8, k),
             stars: 1 + Math.round(k * 4)          // 1 to 5 skulls on the level sheet
         };
     }
@@ -386,48 +386,88 @@ const Powers = (() => {
         setTimeout(() => el.classList.add("out"), still() ? 700 : 1050);
         setTimeout(() => el.remove(), 1500);
     }
-    // something flies from one point to another along a path; resolves when it lands
-    function fly(from, to, emoji, path = "arc", ms = 560) {
-        if (still() || !emoji) return Promise.resolve();
-        const el = U.el("div", { class: "pw-proj", text: emoji });
-        document.body.appendChild(el);
-        const frames = [], steps = 16;
-        for (let i = 0; i <= steps; i++) {
-            const k = i / steps;
-            let x = from.x + (to.x - from.x) * k, y = from.y + (to.y - from.y) * k, s = 0.6 + Math.sin(k * Math.PI) * 0.9, r = 0;
+    // ---- the physical look (the user, 2026-10-09: "more physical components rather than emojis") ----
+    // Every shot and swarm is drawn on the spells canvas: comets, embers, leaves, drops, flakes, sparks. The emoji a
+    // caller names only picks WHAT is drawn (fire = embers, leaves = leaves, water = drops...), never the emoji itself.
+    const KIT = () => (typeof Spells !== "undefined" && Spells.kit && Spells.kit.spray ? Spells.kit : null);
+    const LOOK = {
+        "🔥": ["ember", ["#ffcf3f", "#ff7a1f", "#ff3d00"]], "♨️": ["glow", ["rgba(255,160,90,.7)", "rgba(200,190,190,.6)"]], "🌋": ["ember", ["#ff6a00", "#ffcf3f"]],
+        "🍂": ["leaf", ["#e07a2e", "#c4561f", "#f2b53c"]], "🍁": ["leaf", ["#d9542a", "#a8452a"]], "🌱": ["leaf", ["#7be36b", "#3fbf6b"]], "🌿": ["leaf", ["#3f8f3a", "#6fbf4a"]],
+        "🌼": ["petal", ["#ffd23f", "#fff3a0"]], "🌸": ["petal", ["#ffc1d9", "#ff8fb8"]], "🌹": ["petal", ["#e2283c", "#a8152a"]], "🥀": ["petal", ["#8a4a4a", "#5a2a2a"]],
+        "💧": ["drop", ["#7fb2ff", "#c9e0ff"]], "🌊": ["drop", ["#4fa3e8", "#c9ecff"]], "💦": ["drop", ["#7fd0ff", "#ffffff"]], "🫧": ["bubble", ["#ffffff"]],
+        "❄️": ["flake", ["#ffffff", "#cfeeff"]], "🧊": ["crumb", ["#cfeeff", "#9fd8ff"]], "🧤": ["flake", ["#cfeeff", "#ffffff"]], "🌨️": ["flake", ["#ffffff"]],
+        "⚡": ["streak", ["#ffe066", "#ffffff"]], "💥": ["star", ["#ffcf3f", "#ff7a1f", "#ffffff"]], "✨": ["star", ["#fff8d0", "#ffd23f"]], "⭐": ["star", ["#ffd23f"]],
+        "💨": ["streak", ["rgba(255,255,255,.85)", "rgba(220,235,255,.8)"]], "🌀": ["ring", ["#7ae0ff", "#b48cff"]], "☁️": ["glow", ["rgba(255,255,255,.8)"]],
+        "👻": ["glow", ["rgba(191,243,228,.8)", "rgba(239,255,250,.8)"]], "🩷": ["heart", ["#ff6fb5", "#ffb3d6"]], "🧁": ["heart", ["#c08bff", "#ff9ccf"]],
+        "🟫": ["dot", ["#d9a35c", "#c48a45", "#ecc68e"]], "✂️": ["streak", ["#d0d6de", "#ffffff"]], "🐛": ["dot", ["#7be36b"]], "🍬": ["square", ["#ff5fa2", "#7ad7ff", "#ffd23f"]],
+        "🎉": ["square", ["#e2483c", "#ffd23f", "#4fa3e8", "#7dff6b"]], "▒": ["square", ["#c8c8c8", "#ffffff", "#888888"]], "🦂": ["drop", ["#9be36b", "#5fbf2a"]],
+        "☠️": ["glow", ["rgba(150,255,100,.6)"]], "🕳️": ["ring", ["#2b2233", "#5a4a7a"]], "☂️": ["drop", ["#c9e0ff"]], "☀️": ["star", ["#ffe066", "#fff8d0"]]
+    };
+    const lookOf = (emojis, color) => {
+        const looks = (emojis || []).map(e => LOOK[e]).filter(Boolean);
+        if (looks.length) return looks;
+        return [["star", [color || "#ffd23f", "#ffffff"]]];
+    };
+    // a drawn shot from one point to another along a path (a glowing comet in the power's colour); resolves when it lands
+    function fly(from, to, emoji, path = "arc", ms = 560, color) {
+        const K = KIT();
+        if (still() || !K) return Promise.resolve();
+        const [shape, cols] = lookOf([emoji], color)[0], c = color || cols[0], trail = [];
+        K.add({ life: ms / 1000, draw(ctx, k) {
+            let x = from.x + (to.x - from.x) * k, y = from.y + (to.y - from.y) * k;
             if (path === "arc") y -= Math.sin(k * Math.PI) * 140;
             if (path === "zig") y += Math.sin(k * Math.PI * 6) * 26 * (1 - k);
-            if (path === "spiral") { const a = k * Math.PI * 5, rr = 60 * (1 - k); x += Math.cos(a) * rr; y += Math.sin(a) * rr; r = k * 720; }
-            if (path === "drop") { x = to.x + (1 - k) * 40; y = to.y - (1 - k) * (to.y + 80); s = 1.3; r = k * 30; }
-            if (path === "rise") { x = from.x + (to.x - from.x) * k + Math.sin(k * 9) * 18; y -= Math.sin(k * Math.PI) * 60; }
-            if (path === "line") r = Math.sin(k * 20) * 12;
-            frames.push({ transform: `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(2)}) rotate(${r.toFixed(0)}deg)` });
-        }
-        return new Promise(resolve => {
-            el.animate(frames, { duration: ms, easing: path === "drop" ? "cubic-bezier(.5,0,1,.6)" : "ease-in-out" }).onfinish = () => { el.remove(); resolve(); };
-        });
+            if (path === "spiral") { const a = k * Math.PI * 5, rr = 60 * (1 - k); x += Math.cos(a) * rr; y += Math.sin(a) * rr; }
+            if (path === "rise") { x += Math.sin(k * 9) * 18; y -= Math.sin(k * Math.PI) * 60; }
+            trail.push([x, y]); if (trail.length > 16) trail.shift();
+            ctx.globalCompositeOperation = "lighter";
+            trail.forEach(([px, py], i) => { ctx.globalAlpha = (i / trail.length) * 0.6; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px, py, 2 + i * 0.6, 0, 7); ctx.fill(); });
+            ctx.globalAlpha = 1; ctx.fillStyle = "#fff"; ctx.shadowColor = c; ctx.shadowBlur = 22; ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill();
+            if (Math.random() < 0.5) K.spray({ x, y }, 1, { color: cols, shape, speed: [20, 80], size: [2, 4], g: 120, life: [0.3, 0.6] });
+        } });
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
-    // emojis that swarm over an element for a while
-    function aura(target, emojis, motion = "pop", n = 14, ms = 1600) {
-        if (still() || !target || !emojis || !emojis.length) return;
+    // a swarm of drawn particles over an element for a while (what they are comes from the emojis named)
+    //   motion: pop (burst out), fall (from above), rise (from below), drift (sideways), swirl (spiral in), spark, orbit
+    function aura(target, emojis, motion = "pop", n = 14, ms = 1600, color) {
+        const K = KIT();
+        if (still() || !K || !target) return;
         const r = target.getBoundingClientRect();
         if (!r.width) return;
-        const lite = U.motion() === "lite";
-        for (let i = 0; i < Math.round(n * (lite ? 0.5 : 1)); i++) {
-            const el = U.el("div", { class: "pw-aura m-" + motion, text: emojis[i % emojis.length] });
-            const x = r.left + Math.random() * r.width, y = r.top + Math.random() * r.height;
-            el.style.left = x + "px";
-            el.style.top = (motion === "fall" ? r.top - 20 : motion === "rise" ? r.bottom : y) + "px";
-            el.style.setProperty("--dx", (Math.random() * 2 - 1) * 60 + "px");
-            el.style.setProperty("--dy", (motion === "fall" ? r.height + 40 : motion === "rise" ? -(r.height + 40) : (Math.random() * 2 - 1) * 60) + "px");
-            el.style.setProperty("--cx", (r.left + r.width / 2 - x) + "px");
-            el.style.setProperty("--cy", (r.top + r.height / 2 - y) + "px");
-            el.style.setProperty("--s", (0.8 + Math.random() * 0.9).toFixed(2));
-            el.style.animationDuration = (ms * (0.6 + Math.random() * 0.6)).toFixed(0) + "ms";
-            el.style.animationDelay = (Math.random() * ms * 0.35).toFixed(0) + "ms";
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), ms * 1.6);
+        const looks = lookOf(emojis, color), life = ms / 1000, cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const count = Math.round(n * (U.motion() === "lite" ? 1 : 2));
+        if (motion === "orbit") {                            // energy circling something that's charging up
+            const cols = color ? [color, "#ffffff"] : looks[0][1], R = Math.max(r.width, r.height) * 0.55;
+            K.add({ life, draw(ctx, k, t) {
+                ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, k * 4) * (k > 0.85 ? (1 - k) / 0.15 : 1);
+                for (let i = 0; i < 6; i++) { const a = t * (3 + k * 6) + i * 1.047, rr = R * (1 - k * 0.35); ctx.fillStyle = cols[i % cols.length]; ctx.shadowColor = cols[0]; ctx.shadowBlur = 16; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.8, 5, 0, 7); ctx.fill(); }
+                ctx.strokeStyle = cols[0]; ctx.lineWidth = 2; ctx.globalAlpha *= 0.5; ctx.beginPath(); ctx.arc(cx, cy, R * (1 - k * 0.35), t * 4, t * 4 + 2); ctx.stroke();
+            } });
+            return;
         }
+        for (let i = 0; i < count; i++) {
+            const [shape, cols] = looks[i % looks.length];
+            const o = { color: cols, shape, life: [life * 0.5, life], size: shape === "glow" ? [8, 16] : [3, 7], delay: life * 0.3, spin: 5 };
+            let at = { x: r.left + Math.random() * r.width, y: r.top + Math.random() * r.height };
+            if (motion === "fall") { Object.assign(o, { angle: Math.PI / 2, spread: 0.4, speed: [30, 110], g: 160 }); at.y = r.top - 10; }
+            else if (motion === "rise") { Object.assign(o, { angle: -Math.PI / 2, spread: 0.5, speed: [40, 140], g: -60 }); at.y = r.bottom; }
+            else if (motion === "drift") Object.assign(o, { angle: 0, spread: 0.5, speed: [60, 160], g: 0, wob: [4, 60] });
+            else if (motion === "swirl") Object.assign(o, { angle: Math.atan2(cy - at.y, cx - at.x) + 1.2, spread: 0.3, speed: [100, 200], g: 0, drag: 1.5 });
+            else if (motion === "spark") Object.assign(o, { speed: [160, 400], g: 300, add: true });
+            else { Object.assign(o, { speed: [80, 260], g: 250 }); at = { x: cx + (Math.random() - 0.5) * r.width * 0.4, y: cy + (Math.random() - 0.5) * r.height * 0.4 }; }
+            K.spray(at, 1, o);
+        }
+    }
+    // the drawn charge-up before a cast: energy rushing in to a point in the power's colour, then a flash ring
+    function chargeUp(at, color, ms = 320) {
+        const K = KIT();
+        if (still() || !K) return Promise.resolve();
+        K.add({ life: ms / 1000, draw(ctx, k) {
+            ctx.globalCompositeOperation = "lighter";
+            for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + k * 2, rr = 120 * (1 - k); ctx.strokeStyle = color; ctx.globalAlpha = k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(at.x + Math.cos(a) * rr, at.y + Math.sin(a) * rr); ctx.lineTo(at.x + Math.cos(a) * (rr + 26), at.y + Math.sin(a) * (rr + 26)); ctx.stroke(); }
+            const g = ctx.createRadialGradient(at.x, at.y, 0, at.x, at.y, 40 * k + 1); g.addColorStop(0, "#fff"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(at.x, at.y, 40 * k + 1, 0, 7); ctx.fill();
+        } });
+        return new Promise(resolve => setTimeout(() => { K.ring(at, { color, r: 110, width: 7, life: 0.45 }); resolve(); }, ms));
     }
     // a glowing ring that sits on an element while an effect lasts (removed by the caller)
     function halo(target, cls, ms) {
@@ -438,35 +478,23 @@ const Powers = (() => {
         return el;
     }
 
-    // Using an ability: the banner, the sound, a shot to the target and a swarm when it lands
+    // Using an ability: the banner, the sound, and a drawn charge-up at your board; the ability's own scene
+    // (spells-abilities.js) then plays the rest: what's thrown, poured or cast, and where it lands
     //   fromEl: your board, bossEl: the boss's portrait, bossBoard: the boss's board
     async function cast(a, { fromEl, bossEl, bossBoard }) {
         const fx = a.fx, color = fx.color;
         banner({ icon: a.icon, name: a.name, text: a.desc, color, good: true });
         Sound.custom(a.sound);
-        if (fx.on === "me") smp(SMP[a.kind]);
-        const from = U.center(fromEl), to = U.center(bossEl || bossBoard || fromEl);
-        if (fx.on === "boss" || fx.on === "both") {
-            await fly(from, to, fx.proj, fx.path);
-            smp(SMP[a.kind]);
-            FX.ring && FX.ring({ x: to.x, y: to.y, color, r1: 160, width: 8 });
-            FX.burst({ x: to.x, y: to.y, n: 26, colors: ["#fff", color], shape: "star", speed: [120, 360], gravity: 220, life: [0.4, 0.9], size: [3, 7] });
-            aura(bossBoard || bossEl, fx.aura, fx.motion, 16, 1700);
-            if (fx.on === "both") aura(fromEl, fx.aura, fx.motion, 10, 1600);
-        } else {
-            FX.ring && FX.ring({ x: from.x, y: from.y, color, r1: 260, width: 10 });
-            FX.burst({ x: from.x, y: from.y, n: 34, colors: ["#fff", color, "#ffd23f"], shape: "star", speed: [140, 420], gravity: 120, life: [0.5, 1.1], size: [3, 7] });
-            aura(fromEl, fx.aura, fx.motion, 18, 1800);
-        }
+        smp(SMP[a.kind]);
+        await chargeUp(U.center(fromEl), color);
     }
-    // A boss move landing on you: its own shot from the boss to your board, a swarm and its sound
+    // A boss move landing on you: the boss charges it up (drawn), its sound plays, then the move's own scene
+    // (spells-moves.js) carries it from the boss to you
     async function strike(world, move, { fromEl, toEl }) {
-        const from = U.center(fromEl), to = U.center(toEl);
-        await fly(from, to, move.fx.proj, "arc", 480);
+        const B = typeof Bosses !== "undefined" ? Bosses.info(world) : null;
+        await chargeUp(U.center(fromEl), B ? B.color : "#ff5c6c", 280);
         Sound.custom(move.sound);
         smp(BSMP[move.kind]);
-        FX.ring && FX.ring({ x: to.x, y: to.y, color: "#ff5c6c", r1: 240, width: 9 });
-        aura(toEl, move.fx.aura, move.fx.motion, 18, 1700);
     }
     const chargeSound = world => Sound.custom(charge, WORLD_PITCH[world] || 0);
 
