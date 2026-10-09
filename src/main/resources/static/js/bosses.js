@@ -5,7 +5,7 @@
 //   Bosses.svg(world, cls)    an <svg> of the boss (each copy gets its own gradient ids)
 //   Bosses.inner(world)       the same without the <svg> wrapper, to place inside another SVG (the map)
 //   Bosses.arena(world)       the full-screen arena behind a boss fight: colours, a giant faded boss, scenery, particles
-//   Bosses.intro(c, world)    the full-screen "VS" intro (a cinematic: c comes from FX.cinematic)
+//   Bosses.intro(c, world)    the full-screen boss intro (a cinematic: c comes from FX.cinematic)
 //   Bosses.cutin(world, ...)  a quick full-screen cut-in when the boss attacks (doesn't pause anything)
 //   Bosses.ko(c, world)       the boss shatters (a cinematic)
 //
@@ -466,7 +466,7 @@ const Bosses = (() => {
     // =============================================================================================
     // The story (the user asked for lore: why are you fighting them?). The Lexicon, the great book that holds every
     // word, was torn apart, and each world's boss grabbed a piece of it. Win back every piece, world by world.
-    //   story: the level sheet's paragraph · stakes: one line on the VS screen
+    //   story: the level sheet's paragraph · stakes: one line on the intro screen
     const LORE = {
         paper: { story: "The Lexicon, the book that holds every word in the world, was torn to pieces in the night, and its pages scattered across fifteen worlds. In the Notebook, the Big Eraser grabbed the first page. It wants a perfectly blank world: no words, no doodles, no homework, nothing.", stakes: "Win back the first page of the Lexicon before every word is rubbed out." },
         garden: { story: "Queen Thistle planted her page of the Lexicon in the middle of the Garden, and now nothing grows there but thorns. The flowers are wilting and the bees have gone quiet. She says words are weeds.", stakes: "Free the Garden's page from the thorns and let the flowers talk again." },
@@ -676,13 +676,13 @@ const Bosses = (() => {
     // ---------------------------------------------------------------------------------------------
     // Full-screen moments
     // ---------------------------------------------------------------------------------------------
-    // The intro: the boss fills the screen, its name slams in, VS, FIGHT! The music is the boss song's own build-up
+    // The intro: the boss fills the screen, its name slams in, FIGHT! (no "VS": the user's request) The music is the boss song's own build-up
     // (no sound effects, the user's design): FIGHT! lands on the beat where the song proper starts (until = Sound.buildDone)
     async function intro(c, world, { until = null } = {}) {
         const b = info(world), still = U.motion() === "still";
         const el = U.el("div", { class: "bfx-intro", style: { "--boss": b.color, "--a1": b.arena[0], "--a2": b.arena[1] }, "aria-hidden": "true",
             html: `<div class="bi-bg"></div><div class="bi-band"></div><div class="bi-boss">${svg(world)}</div>
-                <div class="bi-text"><small>BOSS BATTLE</small><b>${U.esc(b.name)}</b><em>"${U.esc(b.taunt)}"</em>${b.stakes ? `<p class="bi-stakes">${U.esc(b.stakes)}</p>` : ""}</div><div class="bi-vs">VS</div><div class="bi-fight">FIGHT!</div>` });
+                <div class="bi-text"><small>BOSS BATTLE</small><b>${U.esc(b.name)}</b><em>"${U.esc(b.taunt)}"</em>${b.stakes ? `<p class="bi-stakes">${U.esc(b.stakes)}</p>` : ""}</div><div class="bi-fight">FIGHT!</div>` });
         document.getElementById("overlay").appendChild(el);
         c.cleanup(() => el.remove());
         requestAnimationFrame(() => el.classList.add("in"));

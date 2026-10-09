@@ -285,11 +285,9 @@
 .bi-text em { display: block; margin-top: 8px; font: 800 clamp(1rem, 2.2vw, 1.5rem) var(--font-body); font-style: italic; text-shadow: 0 2px 6px rgba(0, 0, 0, .6); opacity: 0; transition: opacity .4s .5s; }
 .bfx-intro.slam .bi-text { transform: none; }
 .bfx-intro.slam .bi-text em { opacity: 1; }
-.bi-vs { position: absolute; left: 50%; top: 22%; transform: translate(-50%, -50%) scale(0) rotate(-20deg); font: 900 clamp(4rem, 14vw, 10rem)/1 var(--font-body); color: #ffd23f; -webkit-text-stroke: 4px #2b2233; text-shadow: 0 8px 0 #2b2233; transition: transform .4s cubic-bezier(.2, 1.8, .4, 1); }
-.bfx-intro.slam .bi-vs { transform: translate(-50%, -50%) scale(1) rotate(-8deg); }
 .bi-fight { position: absolute; inset: 0; display: grid; place-items: center; font: 900 clamp(5rem, 18vw, 13rem)/1 var(--font-body); color: #fff; -webkit-text-stroke: 5px #2b2233; text-shadow: 0 10px 0 #2b2233; opacity: 0; transform: scale(2.5); }
 .bfx-intro.fight .bi-fight { opacity: 1; transform: scale(1); transition: all .3s cubic-bezier(.2, 1.6, .4, 1); }
-.bfx-intro.fight .bi-vs, .bfx-intro.fight .bi-text { opacity: 0; transition: opacity .2s; }
+.bfx-intro.fight .bi-text { opacity: 0; transition: opacity .2s; }
 .bfx-intro.out, .bfx-ko.out { opacity: 0; transition: opacity .3s; }
 .bfx-cutin { position: fixed; inset: 0; z-index: 3; overflow: hidden; }
 .bc-band { position: absolute; left: -10%; right: -10%; top: 50%; height: min(36vh, 300px); margin-top: calc(min(36vh, 300px) / -2); transform: rotate(-8deg) translateX(-110%);
