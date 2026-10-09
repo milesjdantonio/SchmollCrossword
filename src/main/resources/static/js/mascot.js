@@ -130,7 +130,7 @@ const Mascot = (() => {
     Bus.on("idle", () => react("idle", { mood: "idle" }));
     Bus.on("surrender", () => react("surrender", { mood: "sad" }));
     Bus.on("results", info => {
-        if (info.test) return say("Test win! Nothing was saved.", { mood: "wow" });
+        if (info.test && !info.campaign) return say("Test win! Nothing was saved.", { mood: "wow" });
         let line = lineFor("win");
         if (info.firstToday && info.streak > 1) line += ` That's a ${info.streak}-day streak!`;
         else if (info.mode === "daily" && info.left && info.left.length) line += ` Still to play today: ${info.left.join(", ")}.`;

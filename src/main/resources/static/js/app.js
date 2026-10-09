@@ -7,7 +7,7 @@
 const App = (() => {
     const $ = U.$;
     const root = document.documentElement;
-    const screens = { home: $("#home-view"), game: $("#game-view"), stats: $("#stats-view"), settings: $("#settings-view") };
+    const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view") };
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
     // ---------------------------------------------------------------------------------------------
@@ -75,8 +75,9 @@ const App = (() => {
     let firstShow = true;
     function showView() {
         const view = U.view();
-        const gameView = view === "daily" || view === "unlimited";
-        document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === view));
+        const gameView = view === "daily" || view === "unlimited" || view === "level";
+        if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
+        document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === (view === "level" ? "campaign" : view)));
         for (const [name, el] of Object.entries(screens)) {
             const on = name === view || (name === "game" && gameView);
             if (on && el.hidden) U.restart(el, "enter");
@@ -92,14 +93,16 @@ const App = (() => {
         if (view === "home") drawHome();
         else if (view === "stats") drawStats();
         else if (view === "settings") drawSettings();
-        else Game.show(view);
+        // a campaign level needs the map first (which world it is, its difficulty); after a reload it isn't loaded yet
+        else if (view === "level") Campaign.ready().then(() => { if (U.view() === "level") Game.show(view); }, () => Game.show(view));
+        else if (view !== "campaign") Game.show(view);
         scrollTo({ top: 0 });
     }
 
     // on a phone-sized game screen the mascot and its speech bubble would cover the board
     function mascotInTheWay() {
         const v = U.view();
-        return (v === "daily" || v === "unlimited") && innerWidth < 900 && (U.touch() || innerWidth < 780);
+        return (v === "daily" || v === "unlimited" || v === "level") && innerWidth < 900 && (U.touch() || innerWidth < 780);
     }
     addEventListener("resize", U.debounce(() => { if (!root.classList.contains("intro-on")) Mascot.away = mascotInTheWay(); }, 200));
 
@@ -146,6 +149,7 @@ const App = (() => {
         const ach = Achievements.load(), got = Object.keys(ach.unlocked);
         $("#home-ach").textContent = got.length ? `${got.length}/${Achievements.LIST.length} achievements · ` + Achievements.LIST.filter(a => ach.unlocked[a.id]).slice(-5).map(a => a.icon).join(" ") : `0/${Achievements.LIST.length} achievements. Solve a puzzle to start!`;
         worldCards($("#home-worlds"), { compact: true });
+        Campaign.drawHomeCard();
     }
     function drawCountdown() {
         if (screens.home.hidden) return;

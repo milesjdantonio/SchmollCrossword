@@ -5,11 +5,16 @@ import java.nio.file.Files; // read/write a whole file in one line
 import java.nio.file.Path;  // a file or folder location
 import java.time.LocalDate; // a calendar date with no time, e.g. 2026-10-07
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
  * ===== Step 17: Save generated puzzles =====
@@ -110,7 +115,7 @@ public class PuzzleStore {
         }
 
         // First request for this date + difficulty: generate once (one API call), save, return
-        String json = generateDaily(date, difficulty, wordsByLength);
+        String json = generateDaily(date, difficulty, wordsByLength, recentDailyAnswers(folder, date, difficulty));
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
@@ -124,19 +129,45 @@ public class PuzzleStore {
     // "synchronized" (Step 26): the solver shares App's cache, counters and Trie, which aren't safe for two
     // requests to change at the same moment. Filling a grid takes well under a second, so taking turns is fine.
     static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength) {
+        return buildGrid(seed, wordsByLength, Set.of());
+    }
+
+    // The same, staying away from the words in `avoid` (answers of recent puzzles, see "Fewer repeats" below).
+    // Simply banning them doesn't work: the dense 5x5 shape often has no fill without a few "glue" words like
+    // REST, and the search for one can take minutes. So it fills up to GRID_TRIES grids (seed, seed+1, ...; each
+    // takes a few milliseconds) and keeps the one with the fewest avoided answers.
+    static final int GRID_TRIES = 30;
+    static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
         int size = SHAPE.length;
-        char[][] grid = new char[size][size];
-        for (char[] row : grid) {
-            Arrays.fill(row, '.');
+        char[][] best = null;
+        int bestRepeats = Integer.MAX_VALUE;
+        for (int attempt = 0; attempt < (avoid.isEmpty() ? 1 : GRID_TRIES) && bestRepeats > 0; attempt++) {
+            char[][] grid = new char[size][size];
+            for (char[] row : grid) {
+                Arrays.fill(row, '.');
+            }
+            App.solve(new ArrayList<>(Slot.findAllSlots(SHAPE)), grid, wordsByLength, new HashSet<>(), new Random(seed + attempt));
+            int repeats = 0;
+            for (Slot slot : Slot.findAllSlots(SHAPE)) {
+                String answer = slot.getPattern(grid);
+                if (avoid.contains(answer) || App.sharesRoot(answer, avoid)) repeats++;
+            }
+            if (repeats < bestRepeats) {
+                best = grid;
+                bestRepeats = repeats;
+            }
         }
-        App.solve(new ArrayList<>(Slot.findAllSlots(SHAPE)), grid, wordsByLength, new HashSet<>(), new Random(seed));
-        return grid;
+        return best;
     }
 
     // Challenge mode: a 7x7 grid with random symmetric black squares (see ChallengeGrid). "synchronized" for the
     // same reason as buildGrid: the solver shares App's caches.
     static synchronized ChallengeGrid.Filled buildChallenge(long seed, Map<Integer, List<String>> mediumWords, Map<Integer, List<String>> hardWords) {
         return ChallengeGrid.fill(seed, mediumWords, hardWords);
+    }
+    static synchronized ChallengeGrid.Filled buildChallenge(long seed, int size, Map<Integer, List<String>> first,
+                                                            Map<Integer, List<String>> second, Set<String> avoid) {
+        return ChallengeGrid.fill(seed, size, first, second, avoid);
     }
 
     // Medium's word list, loaded once: challenges use medium words first (see ChallengeGrid.fill)
@@ -154,38 +185,159 @@ public class PuzzleStore {
 
     // A challenge puzzle as JSON. Its clues are written at the medium level: the bigger grid and its longer,
     // less common words are the challenge. COSTS MONEY (one API call).
-    static String generateChallenge(long seed, String mode, Map<Integer, List<String>> wordsByLength) {
-        ChallengeGrid.Filled filled = buildChallenge(seed, mediumWords(), wordsByLength);   // wordsByLength = Hard's list
+    static String generateChallenge(long seed, String mode, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        return generateBig(seed, mode, "challenge", ChallengeGrid.sizeFor(seed), wordsByLength, avoid);
+    }
+
+    // A Challenge-style grid of a chosen size as JSON. "challenge": medium words first and medium clues.
+    // "expert" (the later campaign worlds): Hard's words and hard clues. wordsByLength = Hard's list.
+    // COSTS MONEY (one API call).
+    static String generateBig(long seed, String mode, String difficulty, int size,
+                              Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        boolean expert = difficulty.equals("expert");
+        ChallengeGrid.Filled filled = buildChallenge(seed, size, expert ? wordsByLength : mediumWords(), wordsByLength, avoid);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(filled.blackSquares())) {
             answers.add(slot.getPattern(filled.grid()));
         }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, "medium");
-        return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, "challenge").toJson();
+        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, expert ? "hard" : "medium");
+        return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, difficulty).toJson();
     }
 
-    // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
-    static String generateDaily(LocalDate date, String difficulty, Map<Integer, List<String>> wordsByLength) {
-        long seed = dailySeed(date, difficulty);
-        if (difficulty.equals("challenge")) return generateChallenge(seed, "daily", wordsByLength);
-        char[][] grid = buildGrid(seed, wordsByLength);
+    // A normal 5x5 puzzle as JSON. COSTS MONEY (one API call).
+    static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        char[][] grid = buildGrid(seed, wordsByLength, avoid);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {
             answers.add(slot.getPattern(grid));
         }
         ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
-        return Puzzle.create(SHAPE, grid, clues, "daily", seed, difficulty).toJson();
+        return Puzzle.create(SHAPE, grid, clues, mode, seed, difficulty).toJson();
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Fewer repeats (added by Claude at the user's request): the solver likes some words far more than others
+    // (REST was in 1 of every 3 easy grids, ERROR in 1 of 4), so a new puzzle stays away from the answers of
+    // recent puzzles: the last few days' dailies, the campaign levels just before it, the last Unlimited puzzles.
+    // ---------------------------------------------------------------------------------------
+    private static final Pattern ANSWER = Pattern.compile("\"answer\"\\s*:\\s*\"([A-Z]+)\"");
+
+    // Every answer in a puzzle's JSON
+    static Set<String> answersIn(String json) {
+        Set<String> answers = new HashSet<>();
+        Matcher m = ANSWER.matcher(json);
+        while (m.find()) answers.add(m.group(1));
+        return answers;
+    }
+    // Every answer in these saved puzzle files (files that don't exist are skipped)
+    static Set<String> answersIn(List<Path> files) throws IOException {
+        Set<String> answers = new HashSet<>();
+        for (Path file : files) {
+            if (Files.exists(file)) answers.addAll(answersIn(Files.readString(file)));
+        }
+        return answers;
+    }
+
+    static final String[] DAILY_KINDS = {"easy", "medium", "hard", "challenge"};
+    static final int DAYS_BACK = 3;
+
+    // A daily stays away from the other dailies of its day and of the 3 days before
+    static Set<String> recentDailyAnswers(Path folder, LocalDate date, String difficulty) throws IOException {
+        List<Path> files = new ArrayList<>();
+        for (int back = 0; back <= DAYS_BACK; back++) {
+            for (String kind : DAILY_KINDS) {
+                if (back == 0 && kind.equals(difficulty)) continue;
+                files.add(dailyFile(folder, date.minusDays(back), kind));
+            }
+        }
+        return answersIn(files);
+    }
+
+    // Unlimited: the answers of the last few puzzles made (kept in memory; a restart forgets them)
+    static final int UNLIMITED_MEMORY = 12;
+    private static final Deque<Set<String>> recentUnlimited = new ArrayDeque<>();
+    private static synchronized Set<String> recentUnlimitedAnswers() {
+        Set<String> all = new HashSet<>();
+        for (Set<String> answers : recentUnlimited) all.addAll(answers);
+        return all;
+    }
+    private static synchronized void rememberUnlimited(String json) {
+        recentUnlimited.addLast(answersIn(json));
+        while (recentUnlimited.size() > UNLIMITED_MEMORY) recentUnlimited.removeFirst();
+    }
+
+    // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
+    static String generateDaily(LocalDate date, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
+        long seed = dailySeed(date, difficulty);
+        if (difficulty.equals("challenge")) return generateChallenge(seed, "daily", wordsByLength, avoid);
+        return generateSmall(seed, "daily", difficulty, wordsByLength, avoid);
+    }
+
+    // Campaign mode: where the levels are saved (puzzles/campaign/garden-3.json)
+    static final Path CAMPAIGN_FOLDER = Path.of(System.getenv().getOrDefault("PUZZLE_DIR", "puzzles"), "campaign");
+
+    // A campaign level, generated once and saved, exactly like getDaily (same reasons: identical for everyone,
+    // and Claude is only paid once per level). The caller checks that the world and level are real.
+    // boss = the boss's own board in a boss fight (level 5 only): a second puzzle at the same difficulty, for the bot
+    static synchronized String getCampaign(Path folder, Campaign.Section section, int level, boolean boss,
+                                           Map<Integer, List<String>> wordsByLength) throws IOException {
+        Path file = campaignFile(folder, section, level, boss);
+        if (Files.exists(file)) {
+            return Files.readString(file);
+        }
+        String difficulty = Campaign.difficulty(section, level);
+        long seed = Campaign.seed(section, boss ? level + 1 : level);    // the boss's board: the next seed along
+        Set<String> avoid = recentCampaignAnswers(folder, section, level, boss);
+        String json = Campaign.bigGrid(difficulty)
+                ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid)
+                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid);
+        Files.createDirectories(folder);
+        Files.writeString(file, json);
+        return json;
+    }
+
+    // A boss's phase 2 puzzle (a bigger grid, see Campaign.phase2Difficulty), saved as puzzles/campaign/garden-5-p2.json.
+    // It stays away from the boss's first puzzle and the boards before it.
+    static synchronized String getBossPhase2(Path folder, Campaign.Section section, Map<Integer, List<String>> wordsByLength) throws IOException {
+        Path file = folder.resolve(section.world() + "-" + Campaign.LEVELS + "-p2.json");
+        if (Files.exists(file)) {
+            return Files.readString(file);
+        }
+        Set<String> avoid = new HashSet<>(recentCampaignAnswers(folder, section, Campaign.LEVELS, true));
+        avoid.addAll(answersIn(List.of(campaignFile(folder, section, Campaign.LEVELS, false), campaignFile(folder, section, Campaign.LEVELS, true))));
+        long seed = Campaign.seed(section, Campaign.LEVELS + 2);
+        String json = generateBig(seed, "campaign", Campaign.phase2Difficulty(section), Campaign.phase2Size(section), wordsByLength, avoid);
+        Files.createDirectories(folder);
+        Files.writeString(file, json);
+        return json;
+    }
+
+    static Path campaignFile(Path folder, Campaign.Section section, int level, boolean boss) {
+        return folder.resolve(section.world() + "-" + level + (boss ? "-boss" : "") + ".json");
+    }
+
+    // A campaign level stays away from the answers of the 12 boards before it on the map (bosses' boards included)
+    static final int CAMPAIGN_BACK = 12;
+    static Set<String> recentCampaignAnswers(Path folder, Campaign.Section section, int level, boolean boss) throws IOException {
+        List<Path> all = new ArrayList<>();
+        int here = 0;
+        for (Campaign.Section s : Campaign.SECTIONS) {
+            for (int l = 1; l <= Campaign.LEVELS; l++) {
+                if (s == section && l == level) here = all.size() + (boss ? 1 : 0);
+                all.add(campaignFile(folder, s, l, false));
+                if (l == Campaign.LEVELS) all.add(campaignFile(folder, s, l, true));
+            }
+        }
+        return answersIn(all.subList(Math.max(0, here - CAMPAIGN_BACK), here));
     }
 
     // Makes a brand-new unlimited puzzle as JSON (not saved: every unlimited puzzle is new). COSTS MONEY (one API call).
     static String generateUnlimited(long seed, String difficulty, Map<Integer, List<String>> wordsByLength) {
-        if (difficulty.equals("challenge")) return generateChallenge(seed, "unlimited", wordsByLength);
-        char[][] grid = buildGrid(seed, wordsByLength);
-        List<String> answers = new ArrayList<>();
-        for (Slot slot : Slot.findAllSlots(SHAPE)) {
-            answers.add(slot.getPattern(grid));
-        }
-        ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
-        return Puzzle.create(SHAPE, grid, clues, "unlimited", seed, difficulty).toJson();
+        Set<String> avoid = recentUnlimitedAnswers();
+        String json = difficulty.equals("challenge")
+                ? generateChallenge(seed, "unlimited", wordsByLength, avoid)
+                : generateSmall(seed, "unlimited", difficulty, wordsByLength, avoid);
+        rememberUnlimited(json);
+        return json;
     }
 }

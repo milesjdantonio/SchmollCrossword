@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 /*
  * ===== Challenge mode: bigger grids =====   (written by Claude at the user's request, 2026-10-08)
@@ -170,15 +171,22 @@ public class ChallengeGrid {
     // Fill a challenge grid for this seed: medium words first, Hard's list only if a pattern needs it.
     // Only call it while holding PuzzleStore's lock (the solver shares App's caches), see PuzzleStore.buildChallenge.
     static Filled fill(long seed, Map<Integer, List<String>> mediumWords, Map<Integer, List<String>> hardWords) {
-        int n = sizeFor(seed);
+        return fill(seed, sizeFor(seed), mediumWords, hardWords, Set.of());
+    }
+
+    // The same with a chosen board size n (campaign levels pick theirs) and words to stay away from (`avoid`:
+    // answers of recent puzzles, so the same words don't keep coming back). Tries `first`'s words, then `second`'s.
+    // If a few patterns in a row can't be filled without the avoided words, it stops avoiding them.
+    static Filled fill(long seed, int n, Map<Integer, List<String>> first, Map<Integer, List<String>> second, Set<String> avoid) {
         for (int attempt = 0; ; attempt++) {
             boolean[][] black = shape(seed * 31 + attempt, n);
-            for (Map<Integer, List<String>> words : List.of(mediumWords, hardWords)) {
+            for (Map<Integer, List<String>> words : List.of(first, second)) {
                 char[][] grid = new char[n][n];
                 for (char[] row : grid) Arrays.fill(row, '.');
                 App.solveBudget = BUDGET;
                 try {
-                    if (App.solve(new ArrayList<>(Slot.findAllSlots(black)), grid, words, new HashSet<>(), new Random(seed + attempt))) {
+                    Set<String> used = new HashSet<>(attempt < 6 ? avoid : Set.of());
+                    if (App.solve(new ArrayList<>(Slot.findAllSlots(black)), grid, words, used, new Random(seed + attempt))) {
                         return new Filled(black, grid);
                     }
                 } finally {

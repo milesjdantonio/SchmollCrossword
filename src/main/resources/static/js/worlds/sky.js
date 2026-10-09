@@ -227,7 +227,7 @@
         }
         c.cleanup(() => balloons.forEach(bl => bl.remove()));
         Sound.play("whoosh");
-        for (let i = 0; i < 4; i++) setTimeout(() => Sound.play("pop"), 300 + i * 260);
+        for (let i = 0; i < 4; i++) c.later(() => Sound.play("pop"), 300 + i * 260);
         await c.wait(1300);
         if (c.skipped) return;
         // 2. three little planes fly a loop-the-loop around the board, leaving cloud trails
@@ -255,7 +255,7 @@
         }), 45);
         c.cleanup(() => { clearInterval(trail); planes.forEach(pl => pl.remove()); });
         Sound.play("whoosh");
-        setTimeout(() => Sound.play("loop"), 700);
+        c.later(() => Sound.play("loop"), 700);
         await c.wait(2400);
         if (c.skipped) return;
         // 3. confetti drifts down from the clouds

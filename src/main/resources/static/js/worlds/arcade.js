@@ -307,7 +307,7 @@
     // Title card: STAGE x-y ... READY? ... GO!
     // ---------------------------------------------------------------------------------------------
     async function titleCard(c, info) {
-        const stage = info.mode === "daily" ? `STAGE ${new Date().getDate()}-${["easy", "medium", "hard"].indexOf(info.difficulty) + 1}` : "BONUS STAGE";
+        const stage = info.stage ? info.stage : info.mode === "daily" ? `STAGE ${new Date().getDate()}-${["easy", "medium", "hard"].indexOf(info.difficulty) + 1}` : "BONUS STAGE";
         const card = U.el("div", { class: "tc tc-arcade", "aria-hidden": "true", html:
             `<div class="tca-band"><div class="tca-stage">${stage}</div><div class="tca-title">${U.esc(info.title)}</div><div class="tca-ready">READY?</div></div>` });
         document.getElementById("overlay").appendChild(card);

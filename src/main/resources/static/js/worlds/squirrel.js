@@ -607,7 +607,7 @@
         c.cleanup(() => { alive = false; });
         // the squirrel does a backflip on top of the board, then dashes away
         hero.animate([{ transform: "none" }, { transform: "translateY(-90px) rotate(-180deg)", offset: 0.5 }, { transform: "rotate(-360deg)" }], { duration: 750, delay: 600, easing: "ease-in-out" });
-        setTimeout(() => Sound.play("chitter"), 700);
+        c.later(() => Sound.play("chitter"), 700);
         await c.wait(1900);
         if (c.skipped) return;
         hero.animate([{ transform: "none" }, { transform: `translateX(${cx < W / 2 ? W : -W}px)` }], { duration: 650, easing: "cubic-bezier(.5,0,.8,.5)", fill: "forwards" });

@@ -314,7 +314,9 @@ const FX = (() => {
             const c = {
                 skipped: false,
                 wait: ms => new Promise(r => { if (c.skipped) return r(); const id = setTimeout(r, ms); timers.push([id, r]); }),
-                cleanup: fn => cleanups.push(fn)
+                cleanup: fn => cleanups.push(fn),
+                // like setTimeout, but nothing happens if the cinematic was skipped (so no stray sounds after a skip)
+                later: (fn, ms) => { const id = setTimeout(() => { if (!c.skipped) fn(); }, ms); timers.push([id, () => {}]); }
             };
             const skip = () => {
                 if (finished || c.skipped) return;

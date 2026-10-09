@@ -63,9 +63,9 @@ class FindMatchesSpeedTest {
     void changingAReturnedListDoesntDamageTheCache() {
         List<String> veryFirst = App.findMatches("C.T.", words);   // the call that fills the cache
         veryFirst.clear();                                           // pretend a caller messed with the list it got back
-        assertEquals(5, App.findMatches("C.T.", words).size());
+        assertEquals(6, App.findMatches("C.T.", words).size());
         App.findMatches("C.T.", words).clear();                      // and a list handed out FROM the cache
-        assertEquals(5, App.findMatches("C.T.", words).size());
+        assertEquals(6, App.findMatches("C.T.", words).size());
     }
 
     // Step 26: the website uses two word lists, so answers cached from one must not leak into the other

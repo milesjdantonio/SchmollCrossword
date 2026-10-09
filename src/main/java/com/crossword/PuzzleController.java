@@ -165,6 +165,37 @@ public class PuzzleController {
                 + ",\"nextInSeconds\":" + unlimitedLimiter.secondsUntilNext(person, now) + "}";
     }
 
+    // Campaign mode (written by Claude): GET /api/campaign/map lists the worlds in order with each level's difficulty;
+    // GET /api/campaign?world=garden&level=3 gives that level's puzzle (made once, then read from its file).
+    // A boss fight (level 5) is a race against a bot with its own puzzle: &boss=true gives the bot's puzzle.
+    @GetMapping(value = "/api/campaign/map", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String campaignMap() {
+        return Campaign.mapJson();
+    }
+
+    @GetMapping(value = "/api/campaign", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String campaign(@RequestParam String world, @RequestParam int level,
+                           @RequestParam(defaultValue = "false") boolean boss) throws IOException {
+        return campaign(world, level, boss, 1);
+    }
+
+    // phase=2: a boss's second puzzle (see Campaign.phase2Difficulty)
+    @GetMapping(value = "/api/campaign", params = "phase", produces = MediaType.APPLICATION_JSON_VALUE)
+    public String campaign(@RequestParam String world, @RequestParam int level,
+                           @RequestParam(defaultValue = "false") boolean boss, @RequestParam int phase) throws IOException {
+        Campaign.Section section = Campaign.section(world);
+        if (section == null || level < 1 || level > Campaign.LEVELS || (boss && level != Campaign.LEVELS)
+                || phase < 1 || phase > 2 || (phase == 2 && (level != Campaign.LEVELS || boss))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no such campaign level: " + world + " " + level);
+        }
+        if (phase == 2) {
+            return PuzzleStore.getBossPhase2(PuzzleStore.CAMPAIGN_FOLDER, section, wordsFor("challenge"));
+        }
+        String difficulty = Campaign.difficulty(section, level);
+        // big grids use Hard's list (Challenge grids start with Medium's words, see PuzzleStore.generateBig)
+        return PuzzleStore.getCampaign(PuzzleStore.CAMPAIGN_FOLDER, section, level, boss, wordsFor(Campaign.bigGrid(difficulty) ? "challenge" : difficulty));
+    }
+
     // Already done for you: the error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"
     static ResponseStatusException badDifficulty(String difficulty) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST,

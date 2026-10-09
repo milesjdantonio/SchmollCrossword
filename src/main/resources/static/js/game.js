@@ -36,11 +36,12 @@ const Game = (() => {
     const lastPuzzle = {};   // slot -> the last puzzle loaded, so coming back to it doesn't fetch a new one
     const savedGames = {};   // slot -> a copy of that slot's game
     let loadCounter = 0;     // ignore a slow answer if the player has already asked for something else
-    let lastInput = performance.now(), idleSaid = false;
+    let lastInput = performance.now(), idleSaid = false, clockStoppedUntil = 0;
 
     // Each daily difficulty is its own puzzle, so its own "slot"; Unlimited has one slot
-    const slotFor = (mode, difficulty) => (mode === "daily" ? "daily-" + difficulty : "unlimited");
-    const slotOf = puzzle => slotFor(puzzle.mode, puzzle.difficulty);
+    // Campaign levels (#level) each have their own slot too: "campaign-garden-3"
+    const slotFor = (mode, difficulty) => (mode === "level" ? Campaign.slotName() : mode === "daily" ? "daily-" + difficulty : "unlimited");
+    const slotOf = puzzle => (puzzle.mode === "campaign" ? `campaign-${puzzle.world}-${puzzle.level}` : slotFor(puzzle.mode, puzzle.difficulty));
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
     // ---------------------------------------------------------------------------------------------
@@ -86,6 +87,12 @@ const Game = (() => {
             savedGames[slot] = saved.state;
             if (slot === "unlimited" && saved.difficulty) difficultyFor.unlimited = saved.difficulty;
         }
+        // campaign levels are fixed puzzles: keep them (and their games), except boss fights, which always start over
+        for (const [slot, saved] of Object.entries(all)) {
+            if (!slot.startsWith("campaign-") || !saved || !saved.puzzle || !saved.state) continue;
+            lastPuzzle[slot] = saved.puzzle;
+            if (!slot.endsWith("-5")) savedGames[slot] = saved.state;
+        }
     }
     function snapshot() {
         return JSON.parse(JSON.stringify({
@@ -112,6 +119,7 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     setInterval(() => {
         if (!game.puzzle || game.solved || document.hidden || puzzleEl.hidden || gameViewEl.hidden || FX.playing) return;
+        if (performance.now() < clockStoppedUntil) return;          // a campaign Time Stop item
         game.seconds++;
         drawTimer();
         if (game.seconds % 5 === 0) saveProgress();
@@ -129,7 +137,8 @@ const Game = (() => {
         const el = $("#unlimited-left");
         try {
             const r = await (await fetch("/api/unlimited/left")).json();
-            if (r.left > 0) el.textContent = `${r.left} of ${r.limit} left today`;
+            if (r.limit >= 1000) el.textContent = "";            // no real limit (switched off for testing)
+            else if (r.left > 0) el.textContent = `${r.left} of ${r.limit} left today`;
             else {
                 const m = Math.ceil(r.nextInSeconds / 60), h = Math.floor(m / 60);
                 el.textContent = `0 of ${r.limit} left · next in ${h ? h + "h " : ""}${m % 60}m`;
@@ -150,7 +159,7 @@ const Game = (() => {
         statusEl.hidden = false;
         puzzleEl.hidden = true;
         try {
-            let url = "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
+            let url = mode === "level" ? Campaign.apiUrl() : "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
             if (mode === "unlimited" && difficulty === "hard" && Settings.get("hardWords")) url += "&hardWords=true";
             if (mode === "daily") { const d = dayKey(new Date()); url += `&date=${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`; }   // the player's own date (time zones)
             const response = await fetch(url);
@@ -158,9 +167,10 @@ const Game = (() => {
             if (!response.ok) throw new Error("the server answered " + response.status);
             const puzzle = await response.json();
             if (myLoad !== loadCounter) return;
+            if (mode === "level") Object.assign(puzzle, { world: Campaign.playing.world, level: Campaign.playing.level });   // which level it is
             lastPuzzle[slotOf(puzzle)] = puzzle;
             if (mode === "unlimited") drawUnlimitedLeft();
-            if (U.view() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty)) return;   // they moved on
+            if (U.view() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty) || (mode === "level" && slotOf(puzzle) !== Campaign.slotName())) return;   // they moved on
             startGame(puzzle);
             statusEl.hidden = true;
             puzzleEl.hidden = false;
@@ -174,6 +184,7 @@ const Game = (() => {
 
     let pendingCard = false;
     function startGame(puzzle) {
+        clockStoppedUntil = 0;
         if (game.puzzle && slotOf(game.puzzle) !== slotOf(puzzle)) savedGames[slotOf(game.puzzle)] = snapshot();
         const sameGrid = game.puzzle && game.puzzle.seed === puzzle.seed && game.puzzle.mode === puzzle.mode && fingerprint(game.puzzle) === fingerprint(puzzle);
         const saved = savedGames[slotOf(puzzle)];
@@ -212,6 +223,7 @@ const Game = (() => {
     }
 
     function cardInfo(puzzle) {
+        if (puzzle.mode === "campaign") return Campaign.cardInfo(puzzle) || {};
         const d = new Date();
         return {
             mode: puzzle.mode, difficulty: puzzle.difficulty,
@@ -228,6 +240,7 @@ const Game = (() => {
         pendingCard = false;
         const w = Worlds.current;
         if (!w || !w.titleCard || U.motion() === "still") return;
+        if (Campaign.isBossLevel(game.puzzle)) return;                            // bosses have their own full-screen intro
         titlePlaying = true;
         FX.cinematic(c => w.titleCard(c, cardInfo(game.puzzle))).then(() => { titlePlaying = false; });
     }
@@ -370,6 +383,7 @@ const Game = (() => {
         const p = game.puzzle, all = scores();
         const record = p && p.mode === "daily" ? all[scoreKey(p)] : null;
         const streaks = calculateStreaks(all), parts = [];
+        if (p && p.mode === "campaign") { pointsTodayEl.textContent = Campaign.bestLine(p); return; }
         if (record) parts.push(record.surrendered ? `Today's ${p.difficulty}: revealed (0 pts)` : `Today's ${p.difficulty}: ${record.points} pts`);
         if (streaks.current > 0) parts.push(`\u{1F525} ${streaks.current}-day streak`);
         pointsTodayEl.textContent = parts.join(" · ");
@@ -411,10 +425,11 @@ const Game = (() => {
 
     function checkForWin() {
         if (game.solved || !isSolved()) return false;
+        if (game.puzzle.mode === "campaign" && Campaign.nextPhase(game)) return false;     // a boss's phase 2 starts instead
         game.solved = true;
         const p = game.puzzle;
         const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks, test: game.testWin };
-        if (game.testWin) {
+        if (game.testWin && p.mode !== "campaign") {
             info.title = "Test win";
             info.note = "The test button filled this in, so nothing was saved.";
         } else if (p.mode === "daily") {
@@ -426,6 +441,9 @@ const Game = (() => {
             info.streak = calculateStreaks(scores()).current;
             info.left = dailiesLeft(p.seed);
             if (!info.counted) info.note = "This daily was already completed, so no extra points.";
+        } else if (p.mode === "campaign") {
+            Object.assign(info, Campaign.onWin(game, p));
+            if (game.testWin) info.note = "Test win: it still counts for the campaign (beta), so you can try the map.";
         } else {
             info.note = "Unlimited puzzles don't earn points, just glory.";
         }
@@ -448,6 +466,7 @@ const Game = (() => {
     async function celebrate(info) {
         const w = Worlds.current;
         Mascot.hush();
+        if (info.campaign && info.campaign.boss) await FX.cinematic(c => Campaign.bossFinale(c, game));
         if (w && w.celebrate) await FX.cinematic(c => w.celebrate(c, { boardEl, game, info }));
         game.celebrating = false;
         render();
@@ -476,8 +495,8 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
-            U.el("h2", { id: "res-title", class: "res-title", text: info.test ? "Test win!" : U.pick(["Solved!", "Brilliant!", "Nailed it!", "Well done!"]) }),
+            U.el("small", { class: "res-kicker", text: info.campaign ? `WORLD ${info.campaign.si + 1} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}` : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
+            U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss defeated!" : "Level cleared!") : info.test ? "Test win!" : U.pick(["Solved!", "Brilliant!", "Nailed it!", "Well done!"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         const tally = U.el("div", { class: "res-tally" });
         card.appendChild(tally);
@@ -489,12 +508,13 @@ const Game = (() => {
             rows.forEach(([label, value, sign], i) => {
                 const v = U.el("b", { text: sign + "0" });
                 tally.appendChild(U.el("div", { class: "res-row", style: { "--i": i } }, U.el("span", { text: label }), v));
-                setTimeout(() => { FX.countUp(v, value, { dur: 500, fmt: x => sign + Math.round(x) }); Sound.play("coin"); }, 350 + i * 260);
+                setTimeout(() => { if (!card.isConnected) return; FX.countUp(v, value, { dur: 500, fmt: x => sign + Math.round(x) }); Sound.play("coin"); }, 350 + i * 260);
             });
             const total = U.el("b", { text: "0" });
             tally.appendChild(U.el("div", { class: "res-row total", style: { "--i": rows.length } }, U.el("span", { text: "Total" }), total));
-            setTimeout(() => { FX.countUp(total, b.total, { dur: 900 }); Sound.play("sparkle"); }, 350 + rows.length * 260);
+            setTimeout(() => { if (!card.isConnected) return; FX.countUp(total, b.total, { dur: 900 }); Sound.play("sparkle"); }, 350 + rows.length * 260);
         }
+        if (info.campaign) campaignResults(card, info.campaign);
         if (info.note) card.appendChild(U.el("p", { class: "res-note", text: info.note }));
         if (p.mode === "daily" && !info.test) {
             const s = calculateStreaks(scores());
@@ -513,13 +533,17 @@ const Game = (() => {
         }
         const actions = U.el("div", { class: "res-actions" });
         card.appendChild(actions);
-        if (p.mode === "daily" && info.left && info.left.length) {
+        if (info.campaign) {
+            const n = info.campaign.next;
+            if (n) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: n.level === 1 ? `On to ${Worlds.byId[n.world].name} ▶` : `Level ${n.level} ▶`, onclick: () => { closeResults(); Campaign.next(n); } }));
+            actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Map", onclick: () => { closeResults(); location.hash = "#campaign"; } }));
+        } else if (p.mode === "daily" && info.left && info.left.length) {
             const next = info.left[0];
             actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: `Play ${cap(next)} ▶`, onclick: () => { closeResults(); switchDifficulty("daily", next); } }));
         } else if (p.mode === "unlimited") {
             actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New puzzle ▶", onclick: () => { closeResults(); loadPuzzle("unlimited", difficultyFor.unlimited); } }));
         }
-        if (!info.test) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
+        if (!info.test && !info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
         actions.appendChild(U.el("button", { type: "button", class: "btn ghost", text: "See the board", onclick: closeResults }));
         modal.addEventListener("pointerdown", e => { if (e.target === modal) closeResults(); });
         overlay.appendChild(modal);
@@ -528,6 +552,26 @@ const Game = (() => {
         if (first) setTimeout(() => first.focus({ preventScroll: true }), 300);
         Bus.emit("results", info);
     }
+    // the campaign part of the results card: stars that pop in one by one, what earned them, coins
+    function campaignResults(card, c) {
+        const row = U.el("div", { class: "res-stars", "aria-label": `${c.stars} of 3 stars` });
+        for (let i = 0; i < 3; i++) {
+            const star = U.el("span", { class: "res-star", text: "★" });
+            row.appendChild(star);
+            if (i < c.stars) setTimeout(() => { if (!star.isConnected) return; star.classList.add("on"); Sound.play("coin"); }, 450 + i * 330);
+        }
+        card.appendChild(row);
+        card.appendChild(U.el("ul", { class: "res-earned" }, ...c.earned.map(([text, ok]) => U.el("li", { class: ok ? "ok" : "", text: (ok ? "★ " : "☆ ") + text }))));
+        card.appendChild(U.el("p", { class: "res-coins", text: `+${c.coins} coins · 🪙 ${c.totalCoins}` }));
+        if (c.newAbility) {
+            card.appendChild(U.el("div", { class: "res-ability" }, U.el("span", { class: "ra-icon", text: c.newAbility.icon }),
+                U.el("span", {}, U.el("small", { text: "NEW ABILITY UNLOCKED" }), U.el("b", { text: `${c.newAbility.name} · ${c.freeUses} free uses` }))));
+            setTimeout(() => { if (card.isConnected) Sound.play("sparkle"); }, 1400);
+        }
+        if (c.newWorld) card.appendChild(U.el("p", { class: "res-unlock", text: `New world unlocked: ${c.newWorld.icon} ${c.newWorld.name}!` }));
+        if (c.finished) card.appendChild(U.el("p", { class: "res-unlock", text: "You beat the whole campaign! 🏆" }));
+    }
+
     function closeResults() {
         const m = overlay.querySelector(".results");
         if (!m) return;
@@ -605,7 +649,7 @@ const Game = (() => {
     function surrender() {
         game.solved = true;
         game.surrendered = true;
-        let text = "Better luck next time.";
+        let text = game.puzzle.mode === "campaign" ? "Level not cleared. Play it again from the map." : "Better luck next time.";
         if (game.puzzle.mode === "daily") {
             const counted = saveDailyScore(game.puzzle, 0, true);
             text = counted ? "0 points, and it doesn't count toward your streak." : "This daily was already completed earlier.";
@@ -910,8 +954,9 @@ const Game = (() => {
     // Showing the game screen (called by app.js for #daily and #unlimited)
     // ---------------------------------------------------------------------------------------------
     function show(view) {
-        $("#game-title").textContent = view === "daily" ? "Daily puzzle" : "Unlimited";
-        $("#game-subtitle").textContent = view === "daily"
+        const level = view === "level" ? Campaign.titles() : null;
+        $("#game-title").textContent = level ? level.title : view === "daily" ? "Daily puzzle" : "Unlimited";
+        $("#game-subtitle").textContent = level ? level.sub : view === "daily"
             ? new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
             : "A brand-new puzzle every time · no points";
         $("#new-puzzle").hidden = view !== "unlimited";
@@ -961,9 +1006,122 @@ const Game = (() => {
     });
     document.documentElement.classList.toggle("no-timer", !Settings.get("showTimer"));
 
+    // Campaign: start a level over (it was finished or given up, or it's a boss fight)
+    function restartSlot(slot) {
+        const saved = game.puzzle && slotOf(game.puzzle) === slot ? snapshot() : savedGames[slot];
+        if (saved && !saved.solved && !saved.surrendered && !slot.endsWith("-5")) return;     // keep a level in progress
+        delete savedGames[slot];
+        if (game.puzzle && slotOf(game.puzzle) === slot) game.puzzle = null;
+    }
+    // Campaign boss fights: the boss won (or the clock ran out)
+    function endLoss({ title, text }) {
+        if (!game.puzzle || game.solved) return;
+        game.solved = true;
+        game.surrendered = true;
+        game.result = { kind: "surrender", title, text };
+        render();
+    }
+    // Boss fight abilities: fill in n right letters (a "hint"), or the boss wipes n of yours (never locked ones)
+    function giveLetters(n) {
+        if (!game.puzzle || game.solved) return;
+        const open = scopeCells("puzzle").filter(([r, c]) => game.letters[r][c] !== game.puzzle.solution[r][c]);
+        for (const [r, c] of open.sort(() => Math.random() - 0.5).slice(0, n)) {
+            game.letters[r][c] = game.puzzle.solution[r][c];
+            game.wrong[r][c] = false;
+            game.locked[r][c] = true;
+            U.restart(game.cells[r][c], "flip");
+        }
+        render();
+        checkForWin();
+    }
+    function eraseLetters(n) {
+        if (!game.puzzle || game.solved) return;
+        const filled = scopeCells("puzzle").filter(([r, c]) => game.letters[r][c] && !isLocked(r, c));
+        for (const [r, c] of filled.sort(() => Math.random() - 0.5).slice(0, n)) {
+            game.letters[r][c] = "";
+            game.wrong[r][c] = false;
+            U.restart(game.cells[r][c], "shake");
+        }
+        render();
+    }
+
+    // Campaign shop items. A free reveal fills squares in like Reveal but doesn't count as using it (no penalty,
+    // the "no Reveal" star stays); the letters lock like revealed ones.
+    function revealFree(scope) {
+        if (!game.puzzle || game.solved) return 0;
+        let n = 0;
+        for (const [row, col] of scopeCells(scope)) {
+            if (game.letters[row][col] === game.puzzle.solution[row][col]) continue;
+            game.letters[row][col] = game.puzzle.solution[row][col];
+            game.wrong[row][col] = false;
+            game.locked[row][col] = true;
+            game.cells[row][col].style.setProperty("--d", (n++ * 40) + "ms");
+            U.restart(game.cells[row][col], "flip");
+        }
+        checkForWin();
+        render();
+        return n;
+    }
+    // wipe every wrong letter (not locked ones); returns how many
+    function clearWrong() {
+        if (!game.puzzle || game.solved) return 0;
+        let n = 0;
+        for (const [row, col] of scopeCells("puzzle")) {
+            const letter = game.letters[row][col];
+            if (!letter || isLocked(row, col) || letter === game.puzzle.solution[row][col]) continue;
+            game.letters[row][col] = "";
+            game.wrong[row][col] = false;
+            U.restart(game.cells[row][col], "shake");
+            n++;
+        }
+        render();
+        return n;
+    }
+    // lock every right letter (so a boss can't erase it); returns how many
+    function lockRight() {
+        if (!game.puzzle || game.solved) return 0;
+        let n = 0;
+        for (const [row, col] of scopeCells("puzzle")) {
+            if (isLocked(row, col) || game.letters[row][col] !== game.puzzle.solution[row][col]) continue;
+            game.locked[row][col] = true;
+            U.restart(game.cells[row][col], "lock-in");
+            n++;
+        }
+        render();
+        return n;
+    }
+    // Campaign boss phases: swap in the boss's next puzzle, keeping the clock (and the Check/Reveal counts) going
+    function startPhase(puzzle) {
+        Worlds.board("reset");
+        game.puzzle = puzzle;
+        const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
+        Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, testWin: false, celebrating: false, result: null });
+        indexEntries(puzzle);
+        drawBoard(puzzle);
+        drawClues(puzzle);
+        const first = puzzle.across[0];
+        Object.assign(game, { row: first.row, col: first.col, direction: "across" });
+        doneWords = null;
+        Worlds.board("attach", boardEl, game);
+        drawTimer();
+        render();
+        lastInput = performance.now();
+        Bus.emit("puzzle", { fresh: false, puzzle, phase: true });
+    }
+    // stop the clock for a while
+    function stopClock(seconds) { clockStoppedUntil = Math.max(clockStoppedUntil, performance.now()) + seconds * 1000; }
+    const clockStopped = () => Math.max(0, (clockStoppedUntil - performance.now()) / 1000);
+    // how many squares are right, of how many
+    function progress() {
+        if (!game.puzzle) return { right: 0, total: 1 };
+        const cells = scopeCells("puzzle");
+        return { right: cells.filter(([r, c]) => game.letters[r][c] === game.puzzle.solution[r][c]).length, total: cells.length };
+    }
+
     restoreProgress();
 
     return {
+        restartSlot, endLoss, giveLetters, eraseLetters, startPhase, revealFree, clearWrong, lockRight, stopClock, clockStopped, progress,
         openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),

@@ -50,8 +50,9 @@ class PuzzleControllerTest {
     // Design pass: harder difficulties use bigger word lists
     @Test
     void difficultyPicksTheWordList() {
-        assertTrue(controller.wordsFor("hard").get(5).contains("ALIBI"), "less common words are Hard");
-        assertFalse(controller.wordsFor("medium").get(5).contains("ALIBI"));
+        assertTrue(controller.wordsFor("hard").get(5).contains("ABHOR"), "less common words are Hard");
+        assertFalse(controller.wordsFor("medium").get(5).contains("ABHOR"));
+        assertTrue(controller.wordsFor("medium").get(5).contains("ALIBI"), "common words are Medium (the review, 2026-10-08)");
         assertFalse(controller.wordsFor("hard").get(5).contains("OVOID"), "extremely hard words need the setting");
         assertTrue(controller.wordsFor("hard", true).get(5).contains("OVOID"));
         assertFalse(controller.wordsFor("medium", true).get(5).contains("OVOID"), "the setting only changes Hard");

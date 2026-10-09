@@ -104,8 +104,8 @@ const U = (() => {
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const touch = () => matchMedia("(pointer: coarse)").matches;
 
-    // The screen from the part of the URL after "#": "", "daily", "unlimited", "stats", "settings"
-    const VIEWS = ["daily", "unlimited", "stats", "settings"];
+    // The screen from the part of the URL after "#": "", "daily", "unlimited", "campaign" (the map), "level" (a campaign level), "stats", "settings"
+    const VIEWS = ["daily", "unlimited", "campaign", "level", "stats", "settings"];
     function view() {
         const v = location.hash.replace("#", "");
         return VIEWS.includes(v) ? v : "home";

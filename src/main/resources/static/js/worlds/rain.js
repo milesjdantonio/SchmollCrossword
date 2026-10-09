@@ -252,7 +252,7 @@
         FX.follow(c, boardEl, umb);
         c.cleanup(() => umb.remove());
         Sound.play("whoosh");
-        setTimeout(() => Sound.play("pop"), 250);
+        c.later(() => Sound.play("pop"), 250);
         pour();
         await c.wait(700);
         if (c.skipped) return;

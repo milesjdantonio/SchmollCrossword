@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Bungee&family=Caveat:wght@600;700&family=Comfortaa:wght@500;700&family=Courier+Prime:wght@400;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=IM+Fell+English+SC&family=Josefin+Sans:wght@600;700&family=Lilita+One&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Pacifico&family=Patrick+Hand&family=Patua+One&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Russo+One&family=Rye&family=Share+Tech+Mono&family=Shrikhand&family=Sniglet:wght@400;800&family=VT323&display=swap">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/worlds.css">
+    <link rel="stylesheet" href="css/campaign.css">
     <script>
         // Apply the saved world and mode before the page is drawn, so nothing flashes
         try {
@@ -35,6 +36,7 @@
             </a>
             <nav class="modes" aria-label="Screens">
                 <a href="#" data-view="home"><span class="nav-ic" aria-hidden="true">&#8962;</span>Home</a>
+                <a href="#campaign" data-view="campaign"><span class="nav-ic" aria-hidden="true">&#9873;</span>Campaign</a>
                 <a href="#daily" data-view="daily"><span class="nav-ic" aria-hidden="true">&#9728;</span>Daily</a>
                 <a href="#unlimited" data-view="unlimited"><span class="nav-ic" aria-hidden="true">&#8734;</span>Unlimited</a>
                 <a href="#stats" data-view="stats"><span class="nav-ic" aria-hidden="true">&#9638;</span>Stats</a>
@@ -68,6 +70,11 @@
                     </div>
                 </div>
                 <div class="home-grid">
+                    <article class="card campaign-card">
+                        <header class="card-head"><h2>Campaign</h2><span class="kicker">15 worlds &middot; 75 levels &middot; bosses</span></header>
+                        <p class="card-blurb">Travel the map world by world, easy to hard. Five levels each, and a boss to race at the end. Earn stars and coins for abilities.</p>
+                        <div class="home-campaign" id="home-campaign"></div>
+                    </article>
                     <article class="card daily-card">
                         <header class="card-head"><h2>Daily</h2><span class="kicker">same for everyone</span></header>
                         <p class="card-blurb">Three puzzles a day, one per difficulty, plus a bigger Challenge. Each earns points; any one keeps your streak.</p>
@@ -161,6 +168,24 @@
                         <div class="key-row"></div><div class="key-row"></div><div class="key-row"></div>
                     </div>
                 </div>
+            </section>
+
+            <!-- ======================== CAMPAIGN (the map: its own page that scrolls down through every world) ======================== -->
+            <section id="campaign-view" class="screen cm-page" hidden>
+                <header class="cmv-bar">
+                    <a class="btn cmv-exit" href="#" aria-label="Exit the campaign">&larr; Exit</a>
+                    <div class="cmv-where">
+                        <small id="cm-kicker"></small>
+                        <b id="cm-name">Campaign</b>
+                        <span id="cm-tag"></span>
+                    </div>
+                    <span class="cmv-stat" id="cm-total"></span>
+                    <span class="cmv-stat coins" id="cm-coins"></span>
+                    <button type="button" class="btn primary cmv-shop" id="cm-shop">&#128722; Shop</button>
+                </header>
+                <div class="cm-map" id="cm-map"><p class="status"><span class="spinner" aria-hidden="true"></span>Loading the map&hellip;</p></div>
+                <nav class="cm-rail" id="cm-rail" aria-label="Worlds"></nav>
+                <div class="cm-detail" id="cm-detail" hidden></div>
             </section>
 
             <!-- ======================== STATS ======================== -->
@@ -305,6 +330,8 @@
     <script src="js/mascot.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/bosses.js"></script>
+    <script src="js/campaign.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

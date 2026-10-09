@@ -689,16 +689,16 @@
         const part = sel => holder.querySelector(sel);
         const ease = "cubic-bezier(.3,1.4,.5,1)";
         part(".snm-b").animate([{ transform: "translateX(260px) rotate(320deg)" }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.2,.9,.3,1)", fill: "backwards" });
-        setTimeout(() => Sound.play("plop"), 600);
+        c.later(() => Sound.play("plop"), 600);
         part(".snm-m").animate([{ transform: "translateY(-320px)" }, { transform: "none" }], { duration: 480, delay: 600, easing: ease, fill: "backwards" });
-        setTimeout(() => Sound.play("plop"), 1000);
+        c.later(() => Sound.play("plop"), 1000);
         part(".snm-scarf").animate([{ opacity: 0, transform: "scaleX(0)" }, { opacity: 1, transform: "none" }], { duration: 300, delay: 1050, fill: "backwards" });
         part(".snm-h").animate([{ transform: "translateY(-380px)" }, { transform: "none" }], { duration: 480, delay: 950, easing: ease, fill: "backwards" });
-        setTimeout(() => Sound.play("plop"), 1350);
+        c.later(() => Sound.play("plop"), 1350);
         part(".snm-face").animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 1400, fill: "backwards" });
         part(".snm-nose").animate([{ transform: "scaleX(0)" }, { transform: "none" }], { duration: 300, delay: 1500, easing: ease, fill: "backwards" });
         part(".snm-hat").animate([{ transform: "translateY(-260px) rotate(-40deg)" }, { transform: "none" }], { duration: 600, delay: 1500, easing: ease, fill: "backwards" });
-        setTimeout(() => Sound.play("pop"), 1950);
+        c.later(() => Sound.play("pop"), 1950);
         part(".snm-arm.l").animate([{ transform: "scale(0)" }, { transform: "none" }], { duration: 300, delay: 1800, easing: ease, fill: "backwards" });
         part(".snm-arm.r").animate([{ transform: "scale(0)" }, { transform: "none" }, { transform: "rotate(-18deg)" }, { transform: "none" }, { transform: "rotate(-18deg)" }, { transform: "none" }],
             { duration: 1300, delay: 1800, easing: "ease-in-out", fill: "backwards" });

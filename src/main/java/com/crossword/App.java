@@ -475,6 +475,18 @@ public class App {
     // Long.MAX_VALUE = no limit (the normal 5x5 puzzles never need one).
     static long solveBudget = Long.MAX_VALUE;
 
+    // Added by Claude at the user's request: RAVEN and RAVENS shouldn't both be in one puzzle. True if `word` is
+    // another word in `used` plus (or minus) an ending like S, ES, ED or ING: RAVEN/RAVENS, CARE/CARED, REST/RESTING.
+    static final String[] ENDINGS = {"S", "ES", "D", "ED", "R", "ER", "ING", "LY"};
+    static boolean sharesRoot(String word, Set<String> used) {
+        for (String end : ENDINGS) {
+            if (used.contains(word + end)) return true;
+            if (word.length() > end.length() + 2 && word.endsWith(end)
+                    && used.contains(word.substring(0, word.length() - end.length()))) return true;
+        }
+        return false;
+    }
+
     static boolean solve(List<Slot> remaining, char[][] filledGrid, Map<Integer, List<String>> wordsByLength, Set<String> usedWords, Random random) {
         if (remaining.isEmpty()) {
             return true;
@@ -492,7 +504,7 @@ public class App {
         Collections.shuffle(candidates, random);
         
         for (String word : candidates) {
-            if (!usedWords.contains(word)) {
+            if (!usedWords.contains(word) && !sharesRoot(word, usedWords)) {
                 List<int[]> placed = slot.placeWord(filledGrid, word);
                 usedWords.add(word);
 

@@ -301,7 +301,7 @@
         c.cleanup(() => books.forEach(bk => bk.remove()));
         FX.follow(c, boardEl, ...books);
         Sound.play("flutter");
-        setTimeout(() => Sound.play("flutter"), 700);
+        c.later(() => Sound.play("flutter"), 700);
         await c.wait(2000);
         if (c.skipped) return;
         // 3. they swoop to the middle and burst into pages
