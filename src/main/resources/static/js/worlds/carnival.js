@@ -368,7 +368,7 @@
     };
 
     Worlds.register({
-        id: "carnival", name: "Big Top Carnival", icon: "\u{1F3AA}", tagline: "A circus tent & Ferris wheel (all lit up at night)",
+        id: "carnival", name: "Big Top Carnival", icon: "\u{1F3AA}", tagline: "Step Right Up to the Big Top.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "curtain",
         mascot: { name: "KERNEL", draw: drawKernel },

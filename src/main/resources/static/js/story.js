@@ -81,8 +81,14 @@ const Story = (() => {
     // =============================================================================================
     // The opening
     // =============================================================================================
+    // the story's own music (Once Upon a Time by TAD, CC0) under every cutscene; it fades out when the scene ends
+    function storyMusic(c) {
+        Sound.music("story", { v: 0.36, fade: 0.8 });
+        c.cleanup(() => { if (Sound.musicPlaying === "story") Sound.stopMusic(1.4); });
+    }
     async function intro(c, pages) {
         const el = stage("lx-intro"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true });
+        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
         // 1. the Lexicon
         scene.innerHTML = `<div class="lx-hero">${bookHtml(pages, { open: false })}</div>`;
@@ -153,6 +159,7 @@ const Story = (() => {
         const i = pages.findIndex(p => p.world === world);
         if (i < 0) return;
         const p = pages[i], el = stage("lx-pagewin"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { color: p.color });
+        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
         const before = pages.map((q, j) => (j === i ? { ...q, won: false } : q));
         scene.innerHTML = `<div class="lx-boss-gone">${Bosses.svg(world)}</div><div class="lx-hero">${bookHtml(before)}</div>`;
@@ -185,6 +192,7 @@ const Story = (() => {
     // =============================================================================================
     async function finale(c, pages) {
         const el = stage("lx-finale"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true, color: "#ffe9a8" });
+        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
         scene.innerHTML = `<div class="lx-hero">${bookHtml(pages)}</div>`;
         const book = scene.querySelector(".lx-book");

@@ -866,7 +866,7 @@
     };
 
     Worlds.register({
-        id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "A blazing sun by day, a black hole & nebulae by night",
+        id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "A Blazing Sun. A Black Hole.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "warp",
         mascot: { name: "NOVA", draw: drawNova },

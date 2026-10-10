@@ -353,8 +353,8 @@
             puzzleSeed = seedOf(game.puzzle);
             layer = el("svg", { class: "garden", viewBox: `0 0 ${size} ${size}`, preserveAspectRatio: "none", "aria-hidden": "true" });
             frameLayer = el("g", {}, layer);         // (the board doesn't clip its corners, so this ivy can spill out)
-            vineLayer = el("g", {}, layer);
-            flowerLayer = el("g", {}, layer);
+            vineLayer = el("g", { class: "g-vines" }, layer);
+            flowerLayer = el("g", { class: "g-flowers" }, layer);
             boardEl.appendChild(layer);
             vineEls = new Map();
             flowerEls = new Map();
@@ -983,7 +983,7 @@
     }
 
     Worlds.register({
-        id: "garden", name: "Garden", icon: "\u{1F33B}", tagline: "Vines, blooms & fireflies (a night garden in dark mode)",
+        id: "garden", name: "Garden", icon: "\u{1F33B}", tagline: "Blooms by Day. Fireflies by Night.",
         modes: ["light", "dark"],
         scene, sounds, titleCard, transition: "leaves",
         celebrate: celebrateCine,

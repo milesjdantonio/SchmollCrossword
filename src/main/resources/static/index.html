@@ -14,15 +14,7 @@
     <link rel="stylesheet" href="css/worlds.css">
     <link rel="stylesheet" href="css/campaign.css">
     <link rel="stylesheet" href="css/story.css">
-    <script>
-        // Apply the saved world and mode before the page is drawn, so nothing flashes
-        try {
-            const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};
-            const world = { classic: "classic", paper: "paper", space: "space", garden: "garden", arcade: "arcade", snow: "snow", squirrel: "squirrel", ocean: "ocean", candy: "candy", library: "library", volcano: "volcano", sky: "sky", desert: "desert", robot: "robot", carnival: "carnival", rain: "rain" }[s.design] || "classic";
-            document.documentElement.dataset.world = world;
-            document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";   // every world has both modes
-        } catch (err) { /* storage blocked: the Notebook world, light */ }
-    </script>
+    <script src="js/boot.js"></script>
 </head>
 <body>
     <!-- the world's animated background (worlds.js) -->
@@ -66,43 +58,40 @@
                     <div class="hero-logo" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i><i class="b"></i><i>O</i></div>
                     <div>
                         <p class="greeting" id="greeting"></p>
-                        <h1 class="hero-title">Today's puzzles</h1>
+                        <h1 class="hero-title">Today's Puzzles</h1>
                         <p class="today-date" id="today-date"></p>
                     </div>
                 </div>
                 <div class="home-grid">
                     <article class="card campaign-card">
-                        <header class="card-head"><h2>Campaign</h2><span class="kicker">15 worlds &middot; 75 levels &middot; bosses</span></header>
-                        <p class="card-blurb">Travel the map world by world, easy to hard. Five levels each, and a boss to race at the end. Earn stars and coins for abilities.</p>
+                        <header class="card-head"><h2>Campaign</h2></header>
                         <div class="home-campaign" id="home-campaign"></div>
                     </article>
                     <article class="card daily-card">
-                        <header class="card-head"><h2>Daily</h2><span class="kicker">same for everyone</span></header>
-                        <p class="card-blurb">Three puzzles a day, one per difficulty, plus a bigger Challenge. Each earns points; any one keeps your streak.</p>
+                        <header class="card-head"><h2>Daily</h2></header>
                         <div class="daily-chips">
                             <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-sub">a bigger grid each day &middot; longer words &middot; up to 500 pts</span><span class="chip-state">Play</span></a>
-                            <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub">a boss race, the same for everyone</span><span class="chip-state">Fight ▶</span></span></button>
+                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-state">Play</span></a>
+                            <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub"></span><span class="chip-state">Fight</span></span></button>
                         </div>
                         <p class="card-status" id="daily-status"></p>
                         <p class="countdown" id="countdown"></p>
                     </article>
                     <article class="card unlimited-card">
-                        <header class="card-head"><h2>Unlimited</h2><span class="kicker">just for fun</span></header>
-                        <p class="card-blurb">A brand-new puzzle whenever you want (up to 10 a day). Harder difficulties use harder words. No points, all glory.</p>
-                        <div class="hb-btns"><a class="btn primary big" href="#unlimited">Play Unlimited &#9654;</a></div>
+                        <header class="card-head"><h2>Unlimited</h2></header>
+                        <div class="hb-btns"><a class="btn primary big" href="#unlimited">Play Unlimited</a></div>
                     </article>
                     <article class="card streak-card">
-                        <header class="card-head"><h2>Your streak</h2><a class="kicker link" href="#stats">all stats &#9656;</a></header>
+                        <header class="card-head"><h2>Your Streak</h2><a class="kicker link" href="#stats">All Stats &rsaquo;</a></header>
                         <div class="streak-line" id="home-streak"></div>
                         <div class="week" id="home-week" aria-label="This week"></div>
                         <p class="home-ach" id="home-ach"></p>
                     </article>
-                    <article class="card worlds-card">
-                        <header class="card-head"><h2>Worlds</h2><span class="kicker">pick a look</span></header>
-                        <div class="world-strip" id="home-worlds"></div>
+                    <article class="card leader-card">
+                        <header class="card-head"><h2>Leaderboard</h2><a class="kicker link" href="#stats">See All &rsaquo;</a></header>
+                        <div id="home-leaderboard"></div>
                     </article>
                 </div>
             </section>
@@ -111,17 +100,17 @@
             <section id="game-view" class="screen" hidden>
                 <div class="game-head">
                     <div class="game-titles">
-                        <h1 id="game-title">Daily puzzle</h1>
+                        <h1 id="game-title">Daily Puzzle</h1>
                         <p class="subtitle" id="game-subtitle"></p>
                     </div>
                     <nav class="difficulty" aria-label="Difficulty">
                         <button type="button" data-difficulty="easy">Easy</button>
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
-                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="Challenge: a bigger grid (6&times;6 to 9&times;9) with longer words, worth more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
-                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race one of the campaign's bosses: today's boss on Daily, a random one on Unlimited">&#9876; Daily Boss</button>
+                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="A bigger grid, 6&times;6 to 9&times;9, with longer words and more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
+                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race a campaign boss: today's boss on Daily, a random one on Unlimited">Daily Boss</button>
                         <span class="unlimited-left" id="unlimited-left" hidden></span>
-                        <button type="button" class="new-puzzle" id="new-puzzle" hidden>&#8635; New puzzle</button>
+                        <button type="button" class="new-puzzle" id="new-puzzle" hidden>New Puzzle</button>
                     </nav>
                 </div>
 
@@ -158,10 +147,7 @@
                                 <button type="button" data-action="reveal" data-scope="word">Word</button>
                                 <button type="button" data-action="reveal" data-scope="puzzle">Puzzle</button>
                             </div>
-                            <!-- TEMPORARY test button (to be removed): fills in the answers and plays the win, nothing saved -->
-                            <button type="button" class="test-win" id="test-win">Win (test) &middot; press again to replay</button>
-                            <button type="button" class="test-win" id="test-skip-phase" hidden>Skip phase (test) &middot; boss fights only</button>
-                            <button type="button" class="report-btn" id="report-btn">&#9873; Report a problem with this puzzle</button>
+                            <button type="button" class="report-btn" id="report-btn">Report a Problem</button>
                         </div>
                     </div>
                     <section class="clues">
@@ -185,9 +171,9 @@
                     </div>
                     <span class="cmv-stat" id="cm-total"></span>
                     <span class="cmv-stat coins" id="cm-coins"></span>
-                    <button type="button" class="btn cmv-shop" id="cm-book" title="The Lexicon: the pages you've won back">&#128214; Book</button>
-                    <button type="button" class="btn cmv-shop" id="cm-skills">&#128216; Skills</button>
-                    <button type="button" class="btn primary cmv-shop" id="cm-shop">&#128722; Shop</button>
+                    <button type="button" class="btn cmv-shop" id="cm-book" title="The Lexicon: the pages you've won back">Book</button>
+                    <button type="button" class="btn cmv-shop" id="cm-skills">Skills</button>
+                    <button type="button" class="btn primary cmv-shop" id="cm-shop">Shop</button>
                 </header>
                 <div class="cm-map" id="cm-map"><p class="status"><span class="spinner" aria-hidden="true"></span>Loading the map&hellip;</p></div>
                 <nav class="cm-rail" id="cm-rail" aria-label="Worlds"></nav>
@@ -196,16 +182,17 @@
 
             <!-- ======================== STATS ======================== -->
             <section id="stats-view" class="screen" hidden>
-                <div class="page-head"><h1>Your stats</h1><p class="subtitle">Daily puzzles &middot; saved in this browser</p></div>
+                <div class="page-head"><h1>Your Stats</h1></div>
+                <article class="card leaderboard-card" id="stats-leaderboard"></article>
                 <div class="stats-top"><div class="stats-streak" id="stats-streak"></div></div>
                 <div class="stat-tiles" id="stat-tiles"></div>
                 <div class="stats-grid">
                     <article class="card">
-                        <header class="card-head"><h2 id="heatmap-title">Last 18 weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i> 0&ndash;3 solved</span></header>
+                        <header class="card-head"><h2 id="heatmap-title">Last 18 Weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i> 0&ndash;3 Solved</span></header>
                         <div class="heatmap" id="heatmap"></div>
                     </article>
                     <article class="card">
-                        <header class="card-head"><h2>Times</h2><span class="kicker"><i class="key-best"></i> best &nbsp;<i class="key-avg"></i> average</span></header>
+                        <header class="card-head"><h2>Times</h2><span class="kicker"><i class="key-best"></i> Best &nbsp;<i class="key-avg"></i> Average</span></header>
                         <div class="times-chart" id="times-chart"></div>
                     </article>
                 </div>
@@ -219,17 +206,16 @@
                         <thead><tr><th>Date</th><th>Difficulty</th><th class="num">Time</th><th class="num">Points</th></tr></thead>
                         <tbody id="history-rows"></tbody>
                     </table>
-                    <p class="empty-note" id="no-history" hidden>No dailies solved yet. Today's are waiting on the Daily tab!</p>
+                    <p class="empty-note" id="no-history" hidden>No dailies solved yet. Today's puzzles are ready when you are.</p>
                 </article>
             </section>
 
             <!-- ======================== SETTINGS ======================== -->
             <section id="settings-view" class="screen" hidden>
-                <div class="page-head"><h1>Settings</h1><p class="subtitle">Saved in this browser</p></div>
-                <form class="settings" id="settings-form" onsubmit="return false">
+                <div class="page-head"><h1>Settings</h1></div>
+                <form class="settings" id="settings-form">
                     <fieldset class="card wide">
                         <legend>World</legend>
-                        <p class="hint">The whole look: background, board, sounds, mascot and win animations. Hover a world to see it move.</p>
                         <div class="world-cards" id="world-cards"></div>
                     </fieldset>
                     <fieldset class="card">
@@ -238,52 +224,48 @@
                             <label class="opt"><input type="radio" name="theme" value="light"><span>&#9728; Light</span></label>
                             <label class="opt"><input type="radio" name="theme" value="dark"><span>&#9790; Dark</span></label>
                         </div>
-                        <p class="hint">Every world has a day and a night look: Notebook turns into a blueprint, Deep Space trades its sun for a black hole, the reef glows in the dark. <span id="mode-note">This world is always dark.</span></p>
+                        <p class="hint" id="mode-note">This world is always dark.</p>
                     </fieldset>
                     <fieldset class="card">
                         <legend>Sound</legend>
                         <div class="options col">
-                            <label class="switch"><input type="checkbox" name="sound"><span class="track"></span>Sound effects</label>
-                            <label class="switch"><input type="checkbox" name="bossMusic"><span class="track"></span>Boss fight music</label>
+                            <label class="switch"><input type="checkbox" name="sound"><span class="track"></span>Sound Effects</label>
+                            <label class="switch"><input type="checkbox" name="bossMusic"><span class="track"></span>Boss Music</label>
                             <label class="range">Volume <input type="range" name="volume" min="0" max="100" step="5"></label>
-                            <label class="range">Boss music volume <input type="range" name="musicVolume" min="0" max="100" step="5"><output id="music-vol-out">100%</output></label>
+                            <label class="range">Boss Music Volume <input type="range" name="musicVolume" min="0" max="100" step="5"><output id="music-vol-out">100%</output></label>
                         </div>
-                        <p class="hint">Most sounds are made in code, live, in your browser, and each world has its own. Boss fights add recorded sounds and music from free public-domain (CC0) libraries.</p>
                     </fieldset>
                     <fieldset class="card">
                         <legend>Effects</legend>
                         <div class="options">
-                            <label class="opt"><input type="radio" name="effects" value="full"><span>&#10024; Full</span></label>
-                            <label class="opt"><input type="radio" name="effects" value="lite"><span>&#9889; Lite</span></label>
+                            <label class="opt"><input type="radio" name="effects" value="full"><span>Full</span></label>
+                            <label class="opt"><input type="radio" name="effects" value="lite"><span>Lite</span></label>
                         </div>
-                        <p class="hint">Lite uses fewer particles and a calmer background, for older devices. (Your device's "reduce motion" setting turns animations off.)</p>
                         <div class="options col">
-                            <label class="switch"><input type="checkbox" name="intro"><span class="track"></span>Play the intro when I open the site</label>
-                            <label class="switch"><input type="checkbox" name="showTimer"><span class="track"></span>Show the timer while playing</label>
+                            <label class="switch"><input type="checkbox" name="intro"><span class="track"></span>Play Intro on Open</label>
+                            <label class="switch"><input type="checkbox" name="showTimer"><span class="track"></span>Show Timer</label>
                         </div>
-                        <button type="button" class="btn small" id="replay-intro">&#9654; Replay the intro</button>
+                        <button type="button" class="btn small" id="replay-intro">Replay Intro</button>
                     </fieldset>
                     <fieldset class="card">
-                        <legend>Default difficulty</legend>
+                        <legend>Default Difficulty</legend>
                         <div class="options">
                             <label class="opt"><input type="radio" name="difficulty" value="easy"><span>Easy</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="medium"><span>Medium</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="hard"><span>Hard</span></label>
                         </div>
-                        <p class="hint">Easy uses the most common words; Hard adds rarer ones.</p>
                         <div class="options col">
-                            <label class="switch"><input type="checkbox" name="hardWords"><span class="track"></span>Allow extremely hard words in Unlimited Hard</label>
+                            <label class="switch"><input type="checkbox" name="hardWords"><span class="track"></span>Allow Very Hard Words in Unlimited</label>
                         </div>
-                        <p class="hint">Like OVOID or ADZE. The daily never uses them, so it's the same for everyone.</p>
                     </fieldset>
                     <fieldset class="card">
                         <legend>Reset</legend>
-                        <button type="button" class="btn danger" id="reset-data">Clear my progress, scores, achievements &amp; settings</button>
-                        <p class="hint">Can't be undone.</p>
+                        <button type="button" class="btn danger" id="reset-data">Erase All Data</button>
+                        <p class="hint">This can't be undone.</p>
                     </fieldset>
                     <fieldset class="card about" id="about">
-                        <legend>About &amp; credits</legend>
-                        <p><b>Schmoll Crossword</b> is free, with no ads. A tiny crossword, three fresh ones every day, plus a bigger Challenge.</p>
+                        <legend>About</legend>
+                        <p><b>Schmoll Crossword</b> is free, with no ads. Three new mini crosswords every day, plus a bigger Challenge.</p>
                         <dl class="credits">
                             <dt>Code</dt>
                             <dd>&copy; Miles D'Antonio. MIT License: anyone may reuse it as long as the copyright notice stays.
@@ -300,11 +282,11 @@
                             <dt>Fonts</dt>
                             <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Sniglet, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico and Josefin Sans,
                                 from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a>, under the SIL Open Font License.</dd>
-                            <dt>Sounds &amp; music</dt>
+                            <dt>Sounds &amp; Music</dt>
                             <dd>Boss fight sounds by <a href="https://kenney.nl/" target="_blank" rel="noopener">Kenney</a>; each boss's music by artists on
-                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Loyalty Freak Music, Zane Little Music, Bobjt, Dizzy Crow, glitchart and more), plus two songs composed for the game with the GeneralUser GS SoundFont. All public domain (CC0); see audio/CREDITS.txt.</dd>
-                            <dt>Art &amp; sound</dt>
-                            <dd>Every scene, animation and sound is drawn or made in code for this game. No image or sound files.</dd>
+                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Loyalty Freak Music, Zane Little Music, Bobjt, Dizzy Crow, glitchart and more), plus two pieces composed for the game with the GeneralUser GS SoundFont. All public domain (CC0); see audio/CREDITS.txt.</dd>
+                            <dt>Art &amp; Sound</dt>
+                            <dd>Every scene and animation is drawn in code for this game, and most sounds are made live in code.</dd>
                         </dl>
                     </fieldset>
                 </form>
@@ -338,8 +320,10 @@
     <script src="js/worlds/robot.js"></script>
     <script src="js/worlds/carnival.js"></script>
     <script src="js/worlds/rain.js"></script>
+    <script src="js/companions.js"></script>
     <script src="js/mascot.js"></script>
     <script src="js/achievements.js"></script>
+    <script src="js/leaderboard.js"></script>
     <script src="js/game.js"></script>
     <script src="js/chaos.js"></script>
     <script src="js/bosses.js"></script>

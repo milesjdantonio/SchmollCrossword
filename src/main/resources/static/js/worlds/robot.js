@@ -378,7 +378,7 @@
     };
 
     Worlds.register({
-        id: "robot", name: "Robot Factory", icon: "\u{1F916}", tagline: "Gears & conveyor belts (sparks on the night shift)",
+        id: "robot", name: "Robot Factory", icon: "\u{1F916}", tagline: "Gears, Belts and Sparks.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "shutter",
         mascot: { name: "BOLT", draw: drawBolt },

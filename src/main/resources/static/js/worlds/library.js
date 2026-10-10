@@ -421,7 +421,7 @@
     };
 
     Worlds.register({
-        id: "library", name: "Haunted Library", icon: "\u{1F4DA}", tagline: "Stained glass & sunbeams (floating candles at midnight)",
+        id: "library", name: "Haunted Library", icon: "\u{1F4DA}", tagline: "Quiet Shelves. Restless Ghosts.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "pages",
         mascot: { name: "BOO", draw: drawBoo },

@@ -772,7 +772,7 @@
     };
 
     Worlds.register({
-        id: "squirrel", name: "Acorn Woods", icon: "🐿️", tagline: "Autumn leaves, busy squirrels & acorns galore",
+        id: "squirrel", name: "Acorn Woods", icon: "🐿️", tagline: "Autumn Leaves and Busy Squirrels.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "autumn",
         mascot: { name: "HAZEL", draw: drawHazel },

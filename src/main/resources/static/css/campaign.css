@@ -79,7 +79,11 @@
 .cm-dot.on { border-color: var(--c); box-shadow: 0 0 0 3px var(--c); transform: scale(1.15); }
 .cm-dot.locked { background: var(--surface-2); opacity: .6; }
 @media (max-width: 960px) { .cm-rail { right: 4px; gap: 2px; } .cm-dot { width: 24px; height: 24px; font-size: 11px; } }
-@media (max-height: 640px) { .cm-rail { display: none; } }
+/* the rail never hides (it used to vanish under 640px of height): its 15 dots shrink to fit the window, and it scrolls as a last resort */
+.cm-rail { max-height: calc(100vh - 96px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+.cm-rail::-webkit-scrollbar { display: none; }
+.cm-rail .cm-dot { --dot: clamp(16px, calc((100vh - 150px) / 15 - 4px), 30px); width: var(--dot); height: var(--dot); flex: 0 0 auto; font-size: calc(var(--dot) * .47); }
+@media (max-height: 560px) { .cm-rail { gap: 2px; padding: 4px; } }
 
 /* the level sheet, from the bottom of the screen */
 .cm-detail { position: fixed; left: 50%; bottom: 14px; z-index: 45; width: min(720px, calc(100vw - 24px)); display: flex; gap: 16px; padding: 16px 18px; background: var(--surface-solid);
@@ -152,7 +156,11 @@
     .puzzle.boss-mode .clues { flex-direction: row; margin-top: 0; }
 }
 @media (max-width: 780px) {
-    .puzzle.boss-mode { grid-template-columns: 1fr; grid-template-areas: "boss" "board" "clues" "kb"; justify-items: center; }
+    /* on a phone your board comes first (the boss panel, with your abilities, right under it) */
+    .puzzle.boss-mode { grid-template-columns: 1fr; grid-template-areas: "board" "boss" "clues" "kb"; justify-items: center; }
+    .boss-panel { margin-top: 4px; }
+    .bp-stage { height: 124px; }
+    .bp-portrait { width: 120px; height: 120px; margin-left: -60px; }
     .puzzle.boss-mode .clues { flex-direction: column; width: min(440px, 92vw); }
     .boss-panel { width: min(440px, 92vw); }
 }
@@ -193,7 +201,7 @@
 .bp-race i { background: var(--boss); opacity: .7; }
 .bp-abilities { margin-top: 10px; }
 .bp-abilities small { display: block; font-weight: 900; letter-spacing: .12em; font-size: .68rem; color: var(--muted); margin-bottom: 4px; }
-.bp-ab-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.bp-ab-row { display: grid; grid-template-columns: repeat(3, minmax(0, 132px)); justify-content: center; gap: 8px; }   /* the 3 abilities, centred */
 .bp-ab, .bp-super { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 12px; border: 2px solid var(--accent); background: var(--surface-solid); color: var(--ink); font-family: var(--font-body); cursor: pointer; transition: transform .12s; overflow: hidden; }
 .bp-ab:hover:not(:disabled), .bp-super:hover:not(:disabled) { transform: translateY(-2px); background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid)); }
 .bp-ab:disabled { border-color: var(--line); background: var(--surface-2); color: var(--muted); cursor: default; }
@@ -829,3 +837,9 @@
 .bp-vol-mute { width: 30px; height: 30px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-solid, #fff); font-size: 15px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
 .bp-vol-mute:hover { transform: scale(1.08); }
 .bp-volume.off input { opacity: .45; }
+@media (max-width: 960px) { .cm-rail .cm-dot { --dot: clamp(16px, calc((100vh - 150px) / 15 - 4px), 24px); } }
+/* boss fights have no Check or Reveal (the user, 2026-10-09): it's a race, you solve it yourself */
+.in-boss #helpers .helper-row { display: none; }
+/* the Daily Boss keeps Check and Reveal, and has no items (only Give Up) */
+.in-boss.special-boss #helpers .helper-row { display: flex; }
+.cm-items.only-giveup { justify-content: flex-end; }

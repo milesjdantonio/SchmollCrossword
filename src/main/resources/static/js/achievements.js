@@ -5,7 +5,7 @@ const Achievements = (() => {
     const LIST = [
         { id: "first", icon: "\u{1F389}", name: "First Solve", desc: "Solve your first puzzle." },
         { id: "hard", icon: "\u{1F48E}", name: "Hardcore", desc: "Solve a Hard puzzle." },
-        { id: "hat", icon: "\u{1F3A9}", name: "Hat Trick", desc: "Solve all three dailies in one day." },
+        { id: "hat", icon: "\u{1F3A9}", name: "Hat Trick", desc: "Solve Easy, Medium and Hard on the same day." },
         { id: "speed60", icon: "⚡", name: "Lightning", desc: "Solve a puzzle in under a minute." },
         { id: "speed30", icon: "\u{1F680}", name: "Ludicrous Speed", desc: "Solve a puzzle in under 30 seconds." },
         { id: "clean", icon: "\u{1F9FC}", name: "No Peeking", desc: "Solve a Hard puzzle without Check or Reveal." },
@@ -20,6 +20,17 @@ const Achievements = (() => {
         { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a normal daily." },
         { id: "challenger", icon: "\u{1F3D4}️", name: "Challenger", desc: "Solve a Challenge puzzle." },
         { id: "summit", icon: "\u{1F9D7}", name: "Summit", desc: "Solve a daily Challenge without Check or Reveal." },
+        // 18 more, to make 50 (the user, 2026-10-09)
+        { id: "easy1", icon: "\u{1F331}", name: "Warm-Up", desc: "Solve an Easy puzzle." },
+        { id: "medium1", icon: "\u{1F3AF}", name: "Middle Ground", desc: "Solve a Medium puzzle." },
+        { id: "speed20", icon: "\u{1F3CE}️", name: "Blink and You'll Miss It", desc: "Solve a puzzle in under 20 seconds." },
+        { id: "solves25", icon: "\u{1F4DA}", name: "Regular", desc: "Solve 25 puzzles." },
+        { id: "solves100", icon: "\u{1F9E0}", name: "Crossword Fan", desc: "Solve 100 puzzles." },
+        { id: "unlimited50", icon: "\u{1F3C3}", name: "Marathon", desc: "Solve 50 Unlimited puzzles." },
+        { id: "hard10", icon: "\u{1FAA8}", name: "Hard Worker", desc: "Solve 10 Hard puzzles." },
+        { id: "streak14", icon: "\u{1F4C5}", name: "Two Weeks Strong", desc: "Reach a 14-day streak." },
+        { id: "grand", icon: "\u{1F3DF}️", name: "Grand Slam", desc: "Solve all five dailies in one day, the boss included." },
+        { id: "points1000", icon: "\u{1F4B0}", name: "Big Scorer", desc: "Earn 1,000 daily points in total." },
         // the campaign (the user asked for campaign achievements, 2026-10-08)
         { id: "cm-first", icon: "\u{1F97E}", name: "First Steps", desc: "Clear your first campaign level.", campaign: true },
         { id: "cm-boss", icon: "⚔️", name: "Boss Buster", desc: "Beat your first boss.", campaign: true },
@@ -35,7 +46,15 @@ const Achievements = (() => {
         { id: "cm-close", icon: "⏱️", name: "Photo Finish", desc: "Win a boss race when the boss was 90% done or more.", campaign: true },
         { id: "cm-1up", icon: "\u{1F579}️", name: "Second Wind", desc: "Win a boss fight after your Extra Life saved you.", campaign: true },
         { id: "cm-expert", icon: "\u{1F480}", name: "Expert Slayer", desc: "Beat a boss on Expert.", campaign: true },
-        { id: "cm-shop", icon: "\u{1F6CD}️", name: "Shopaholic", desc: "Buy 10 things in the shop.", campaign: true }
+        { id: "cm-shop", icon: "\u{1F6CD}️", name: "Shopaholic", desc: "Buy 10 things in the shop.", campaign: true },
+        { id: "cm-world", icon: "\u{1F3C1}", name: "World Champion", desc: "Clear all five levels of a world.", campaign: true },
+        { id: "cm-counter", icon: "\u{1F504}", name: "Turnabout", desc: "Counter 3 boss attacks in one fight.", campaign: true },
+        { id: "cm-dailyboss", icon: "\u{1F4C6}", name: "Boss of the Day", desc: "Beat the Daily Boss.", campaign: true },
+        { id: "cm-flawless", icon: "✨", name: "Flawless Race", desc: "Beat a boss with 3 stars.", campaign: true },
+        { id: "cm-phase", icon: "\u{1F300}", name: "Phase Breaker", desc: "Beat a boss with 3 or more phases.", campaign: true },
+        { id: "cm-void", icon: "\u{1F30C}", name: "Into the Void", desc: "Beat the Void, the final boss.", campaign: true },
+        { id: "cm-coins", icon: "\u{1FA99}", name: "Treasure Hoard", desc: "Have 1,000 coins at once.", campaign: true },
+        { id: "cm-75", icon: "\u{1F3C5}", name: "Completionist", desc: "Clear all 75 campaign levels.", campaign: true }
     ];
     const blank = () => ({ unlocked: {}, counts: {}, worlds: {} });
     const load = () => ({ ...blank(), ...U.store.get("achievements", {}) });
@@ -55,6 +74,13 @@ const Achievements = (() => {
         if (info.difficulty === "challenge") unlock("challenger");
         if (info.seconds < 60) unlock("speed60");
         if (info.seconds < 30) unlock("speed30");
+        if (info.seconds < 20) unlock("speed20");
+        if (info.difficulty === "easy") unlock("easy1");
+        if (info.difficulty === "medium") unlock("medium1");
+        data.counts.solves = (data.counts.solves || 0) + 1;
+        if (data.counts.solves >= 25) unlock("solves25");
+        if (data.counts.solves >= 100) unlock("solves100");
+        if (info.difficulty === "hard") { data.counts.hard = (data.counts.hard || 0) + 1; if (data.counts.hard >= 10) unlock("hard10"); }
         if (info.difficulty === "hard" && !info.checked && !info.revealed) unlock("clean");
         const hour = new Date().getHours();
         if (hour < 5) unlock("night");
@@ -63,15 +89,20 @@ const Achievements = (() => {
         if (info.mode === "unlimited") {
             data.counts.unlimited = (data.counts.unlimited || 0) + 1;
             if (data.counts.unlimited >= 10) unlock("unlimited10");
+            if (data.counts.unlimited >= 50) unlock("unlimited50");
         }
         data.worlds[worldId] = true;
         if (Worlds.list.every(w => w.plain || data.worlds[w.id])) unlock("worlds");
-        if (info.mode === "daily" && info.counted) {
-            if (info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
-            if (info.left && !info.left.some(d => d !== "challenge")) unlock("hat");          // the three normal dailies
-            if (info.difficulty === "challenge" && !info.checked && !info.revealed) unlock("summit");
+        if ((info.mode === "daily" || info.daily) && info.counted) {
+            if (info.mode === "daily" && info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
+            if (info.left && !info.left.some(d => ["easy", "medium", "hard"].includes(d))) unlock("hat");   // the three normal dailies
+            if (info.mode === "daily" && info.difficulty === "challenge" && !info.checked && !info.revealed) unlock("summit");
             if (info.streak >= 3) unlock("streak3");
             if (info.streak >= 7) unlock("streak7");
+            if (info.streak >= 14) unlock("streak14");
+            if (info.left && !info.left.length) unlock("grand");                                   // all five, the boss too
+            data.counts.points = (data.counts.points || 0) + (info.points || 0);
+            if (data.counts.points >= 1000) unlock("points1000");
             if (info.streak >= 30) unlock("streak30");
         }
         U.store.set("achievements", data);
@@ -94,6 +125,10 @@ const Achievements = (() => {
         if (st.stars >= 50) unlock("cm-stars");
         if (st.perfectWorld) unlock("cm-perfect");
         if (st.bought >= 10) unlock("cm-shop");
+        if (st.worldDone) unlock("cm-world");
+        if (st.allLevels && st.levels >= st.allLevels) unlock("cm-75");
+        if (st.totalCoins >= 1000) unlock("cm-coins");
+        if (st.special === "daily") unlock("cm-dailyboss");
         if (st.boss && st.hits != null) {
             if (st.hits === 0) unlock("cm-untouched");
             if (st.blocks >= 3) unlock("cm-wall");
@@ -103,6 +138,10 @@ const Achievements = (() => {
             if (st.closest >= 0.9) unlock("cm-close");
             if (st.lifeUsed) unlock("cm-1up");
             if (st.difficulty === "expert") unlock("cm-expert");
+            if (st.counters >= 3) unlock("cm-counter");
+            if (st.bossStars === 3) unlock("cm-flawless");
+            if (st.phases >= 3 && st.phaseReached === st.phases) unlock("cm-phase");
+            if (st.world === "space" && !st.special) unlock("cm-void");
         }
         if (got.length) U.store.set("achievements", data);
         return got;

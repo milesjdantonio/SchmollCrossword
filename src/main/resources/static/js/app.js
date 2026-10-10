@@ -45,7 +45,7 @@ const App = (() => {
             if (w.plain) continue;                    // Classic isn't a card: it's the plain bar underneath
             const card = U.el("button", { type: "button", class: "world-card" + (w.id === Settings.get("design") ? " on" : "") + (compact ? " compact" : ""), "data-wid": w.id, "aria-label": "Switch to the " + w.name + " world" },
                 U.el("canvas", { class: "wc-preview", "aria-hidden": "true" }),
-                U.el("span", { class: "wc-label" }, U.el("b", {}, U.el("i", { text: w.icon }), " " + w.name), compact ? null : U.el("small", { text: w.tagline })));
+                U.el("span", { class: "wc-label" }, U.el("b", {}, U.el("i", { text: w.icon }), " " + w.name), null));
             container.appendChild(card);
             card.addEventListener("click", () => switchWorld(w.id));
         }
@@ -54,7 +54,7 @@ const App = (() => {
         if (plain) {
             const on = plain.id === Settings.get("design");
             const bar = U.el("button", { type: "button", class: "world-classic-bar" + (on ? " on" : ""), "data-wid": plain.id, "aria-label": "Switch to the plain Classic page" },
-                U.el("b", { text: plain.name }), U.el("small", { text: on ? "On: a plain page with no extras" : "A plain page with no extras" }));
+                U.el("b", { text: plain.name }));
             bar.addEventListener("click", () => switchWorld(plain.id));
             container.appendChild(bar);
         }
@@ -111,7 +111,7 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     function greeting() {
         const h = new Date().getHours();
-        return h < 5 ? "Up late?" : h < 12 ? "Good morning!" : h < 17 ? "Good afternoon!" : h < 22 ? "Good evening!" : "Night owl mode.";
+        return h < 5 ? "Up Late?" : h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : h < 22 ? "Good Evening" : "Night Owl Mode";
     }
     function drawHome() {
         $("#greeting").textContent = greeting();
@@ -124,12 +124,13 @@ const App = (() => {
             chip.classList.toggle("done", !!record && !record.surrendered);
             chip.classList.toggle("given-up", !!record && !!record.surrendered);
             chip.style.setProperty("--i", i);
-            if (!record) state.textContent = "Play ▶";
+            if (!record) state.textContent = "Play";
             else if (record.surrendered) state.textContent = "Revealed";
             else { state.textContent = `✓ ${record.points} pts · ${U.fmtTime(record.seconds || 0)}`; solved++; }
         });
-        const total = document.querySelectorAll(".daily-chip").length;
-        $("#daily-status").textContent = solved === total ? "All of today's dailies done! \u{1F3C6}" : solved ? `${solved} of ${total} done today.` : "Today's puzzles are ready.";
+        if (all[today + "-boss"] && !all[today + "-boss"].surrendered) solved++;          // the Daily Boss is the 5th daily
+        const total = document.querySelectorAll(".daily-chip").length + 1;
+        $("#daily-status").textContent = solved === total ? "All Done for Today" : solved ? `${solved} of ${total} Done Today` : "";
         drawCountdown();
         const streaks = calculateStreaks(all);
         const holder = $("#home-streak");
@@ -141,22 +142,22 @@ const App = (() => {
         const now = new Date(), monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
         for (let i = 0; i < 7; i++) {
             const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i), key = dayKey(d);
-            const n = ["easy", "medium", "hard", "challenge"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
+            const n = ["easy", "medium", "hard", "challenge", "boss"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
             week.appendChild(U.el("div", { class: "wk-day" + (key === today ? " today" : "") + (d > now ? " future" : ""), "data-n": Math.min(3, n), title: d.toDateString() + (n ? ` · ${n} solved` : "") },
                 U.el("span", { text: d.toLocaleDateString(undefined, { weekday: "narrow" }) }),
                 U.el("i", { text: n ? "✓" : "" })));
         }
         const ach = Achievements.load(), got = Object.keys(ach.unlocked);
-        $("#home-ach").textContent = got.length ? `${got.length}/${Achievements.LIST.length} achievements · ` + Achievements.LIST.filter(a => ach.unlocked[a.id]).slice(-5).map(a => a.icon).join(" ") : `0/${Achievements.LIST.length} achievements. Solve a puzzle to start!`;
-        worldCards($("#home-worlds"), { compact: true });
+        $("#home-ach").textContent = got.length ? `${got.length} of ${Achievements.LIST.length} Achievements  ` + Achievements.LIST.filter(a => ach.unlocked[a.id]).slice(-5).map(a => a.icon).join(" ") : `0 of ${Achievements.LIST.length} Achievements`;
         Campaign.drawHomeCard();
+        Leaderboard.drawHome($("#home-leaderboard"));
     }
     function drawCountdown() {
         if (screens.home.hidden) return;
         const now = new Date(), midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
         const total = Math.max(0, Math.floor((midnight - now) / 1000));
         const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
-        $("#countdown").innerHTML = `New dailies in <b>${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s</b>`;
+        $("#countdown").innerHTML = `New Puzzles in <b>${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s</b>`;
         if (total === 0) drawHome();
     }
     setInterval(drawCountdown, 1000);
@@ -170,6 +171,7 @@ const App = (() => {
     const dayOf = key => key.slice(0, 8);
     const keyDate = key => new Date(Number(key.slice(0, 4)), Number(key.slice(4, 6)) - 1, Number(key.slice(6, 8)));
     function drawStats() {
+        Leaderboard.drawFull($("#stats-leaderboard"));
         const all = Game.scores(), keys = Object.keys(all).sort().reverse();
         const solved = keys.filter(k => !all[k].surrendered);
         const times = solved.map(k => all[k].seconds).filter(s => typeof s === "number");
@@ -177,13 +179,13 @@ const App = (() => {
         const points = solved.reduce((sum, k) => sum + (all[k].points || 0), 0);
         const ach = Achievements.load();
         const tiles = [
-            [points, "total points", v => Math.round(v)],
-            [solved.length, solved.length === 1 ? "daily solved" : "dailies solved", v => Math.round(v)],
-            [streaks.current, "current streak", v => Math.round(v)],
-            [streaks.best, "best streak", v => Math.round(v)],
-            [times.length ? Math.min(...times) : null, "best time", v => U.fmtTime(Math.round(v))],
-            [times.length ? times.reduce((a, b) => a + b, 0) / times.length : null, "average time", v => U.fmtTime(Math.round(v))],
-            [Object.keys(ach.unlocked).length, "achievements", v => Math.round(v) + "/" + Achievements.LIST.length]
+            [points, "Total Points", v => Math.round(v)],
+            [solved.length, solved.length === 1 ? "Daily Solved" : "Dailies Solved", v => Math.round(v)],
+            [streaks.current, "Current Streak", v => Math.round(v)],
+            [streaks.best, "Best Streak", v => Math.round(v)],
+            [times.length ? Math.min(...times) : null, "Best Time", v => U.fmtTime(Math.round(v))],
+            [times.length ? times.reduce((a, b) => a + b, 0) / times.length : null, "Average Time", v => U.fmtTime(Math.round(v))],
+            [Object.keys(ach.unlocked).length, "Achievements", v => Math.round(v) + "/" + Achievements.LIST.length]
         ];
         const tilesEl = $("#stat-tiles");
         tilesEl.innerHTML = "";
@@ -220,7 +222,7 @@ const App = (() => {
         el.innerHTML = "";
         const now = new Date(), WEEKS = U.clamp(Math.floor((el.clientWidth || 400) / 24), 10, 26);
         el.style.setProperty("--weeks", WEEKS);
-        $("#heatmap-title").textContent = `Last ${WEEKS} weeks`;
+        $("#heatmap-title").textContent = `Last ${WEEKS} Weeks`;
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - (WEEKS - 1) * 7);
         let lastMonth = -1;
         for (let w = 0; w < WEEKS; w++) {
@@ -253,7 +255,7 @@ const App = (() => {
                 U.el("div", { class: "tc-bars" },
                     U.el("i", { class: "tc-avg", style: { "--w": (r.avg / max * 100).toFixed(1) + "%" }, title: "Average" }),
                     U.el("i", { class: "tc-best", style: { "--w": (r.best / max * 100).toFixed(1) + "%" }, title: "Best" })),
-                U.el("span", { class: "tc-val", text: r.n ? `best ${U.fmtTime(r.best)} · avg ${U.fmtTime(Math.round(r.avg))}` : "no solves yet" })));
+                U.el("span", { class: "tc-val", text: r.n ? `Best ${U.fmtTime(r.best)} · Average ${U.fmtTime(Math.round(r.avg))}` : "No Solves Yet" })));
         }
     }
 
@@ -280,6 +282,7 @@ const App = (() => {
         $("#mode-note").hidden = !locked;
         $("#mode-note").textContent = `${w.name} is always ${w.modes[0]}.`;
     }
+    form.addEventListener("submit", e => e.preventDefault());      // (was an inline onsubmit: the CSP forbids those)
     form.addEventListener("change", e => {
         const input = e.target;
         if (!input.name) return;
@@ -301,9 +304,9 @@ const App = (() => {
         if (Game.state.puzzle) Game.openReport();
         else location.hash = "#daily";
     });
-    $("#replay-intro").addEventListener("click", () => { sessionStorage.removeItem("schmoll.introSeen"); intro(true); });
+    $("#replay-intro").addEventListener("click", () => intro(true));
     $("#reset-data").addEventListener("click", async () => {
-        if (!(await U.ask({ title: "Clear all your data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Clear it", no: "Cancel" }))) return;
+        if (!(await U.ask({ title: "Erase All Data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Erase", no: "Cancel" }))) return;
         try { for (const k of Object.keys(localStorage)) if (k.startsWith("schmoll.")) localStorage.removeItem(k); } catch (err) { /* nothing saved */ }
         location.hash = "";
         location.reload();
@@ -352,19 +355,20 @@ const App = (() => {
     }, true);
 
     // ---------------------------------------------------------------------------------------------
-    // The start-up intro.
-    //   1. PRESS START, over the live world scene: letter tiles float up past you, rays turn slowly, the six
-    //      world icons bob, and a ticker scrolls along the bottom.
+    // The start-up intro. It plays the very first time someone opens the game, in every world, Classic included; after
+    // that only when the "Play Intro on Open" setting is on (off by default; the user, 2026-10-09). "Reduce motion"
+    // skips it, and Settings can replay it.
+    //   1. PRESS START, over the live world scene: letter tiles float up past you, rays turn slowly, the 15 bosses
+    //      parade along the bottom, and a ticker scrolls under them (no world emoji: the user's request).
     //   2. A shockwave, a crossword grid draws itself across the screen, and the logo builds itself out of tiles
     //      (each one landing with a puff), then a shine sweeps across it.
-    //   3. "1 ACROSS" types out the tagline, the worlds orbit the logo and burst, and the current world adds its
-    //      own flourish before its screen transition takes you in.
+    //   3. The logo holds a moment, and the current world adds its own flourish before its screen transition
+    //      takes you in.
     // ---------------------------------------------------------------------------------------------
     const LOGO = [];
     [..."SCHMOLL"].forEach((ch, i) => LOGO.push({ ch, r: 0, c: i }));
     [..."ROSSWORD"].forEach((ch, i) => LOGO.push({ ch, r: i + 1, c: 1 }));      // CROSSWORD goes down from SCHMOLL's C
-    const TAGLINE = "A tiny crossword. Three fresh ones every day.";
-    const TICKER = ["Three fresh puzzles every day", "Six worlds to explore", "Streaks, stats & achievements", "Unlimited puzzles on demand", "Every sound is made in code", "Free, no ads"];
+    const TICKER = ["Three New Puzzles Every Day", "15 Worlds to Explore", "15 Bosses to Race", "A Brand New Puzzle Every Time", "Streaks, Stats and Achievements", "Free. No Ads."];
 
     // floating tiles for the start screen: far ones small and blurry, near ones big and sharp
     function floatingTiles(n) {
@@ -392,11 +396,10 @@ const App = (() => {
 
     async function intro(force = false) {
         const box = $("#intro");
-        let seen = false;
-        try { seen = sessionStorage.getItem("schmoll.introSeen") === "1"; } catch (err) { /* blocked */ }
-        const plain = Worlds.current && Worlds.current.plain;          // the Classic page skips the intro
-        if (!force && (!Settings.get("intro") || seen || plain || U.motion() === "still")) { box.hidden = true; return false; }
-        try { sessionStorage.setItem("schmoll.introSeen", "1"); } catch (err) { /* blocked */ }
+        // the very first visit always gets the intro; after that only with the "Play Intro on Open" setting (off by default)
+        const firstVisit = !U.store.get("introSeen", false);
+        if (!force && ((!firstVisit && !Settings.get("intro")) || U.motion() === "still")) { box.hidden = true; return false; }
+        U.store.set("introSeen", true);
         root.classList.add("intro-on");
         box.hidden = false;
         box.classList.remove("go");
@@ -407,9 +410,9 @@ const App = (() => {
             <div class="intro-press">
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <button type="button" class="intro-start">PRESS START</button>
-                <div class="intro-worlds" aria-hidden="true">${Worlds.list.filter(w => !w.plain).map((w, i) => `<span class="iw" style="--i:${i}">${w.icon}</span>`).join("")}</div>
-                <small>click anywhere or press any key · sound on \u{1F50A}</small>
+                <small>Click Anywhere to Start. Sound On.</small>
             </div>
+            <div class="intro-bosses" aria-hidden="true">${typeof Bosses !== "undefined" ? Bosses.list.map((w, i) => `<span class="ib" style="--i:${i}">${Bosses.svg(w)}</span>`).join("") : ""}</div>
             <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;
         Mascot.away = true;
         await new Promise(resolve => {
@@ -429,13 +432,13 @@ const App = (() => {
         // the logo builds itself over a self-drawing grid
         box.querySelector(".intro-press").remove();
         box.querySelector(".intro-ticker").remove();
+        const parade = box.querySelector(".intro-bosses");
+        if (parade) { parade.classList.add("leave"); setTimeout(() => parade.remove(), 600); }
         box.insertAdjacentHTML("beforeend", sketchGrid() + `
             <div class="intro-stage">
-                <div class="intro-logo" aria-label="Schmoll Crossword"><div class="intro-orbit" aria-hidden="true">${Worlds.list.filter(w => !w.plain).map((w, i, all) => `<span class="io" style="--i:${i};--n:${all.length}"><b>${w.icon}</b></span>`).join("")}</div></div>
-                <p class="intro-tag"><span class="it-clue">1 ACROSS</span><span class="it-type"></span><i class="it-caret"></i></p>
-                <small class="intro-skip">click to continue</small>
+                <div class="intro-logo" aria-label="Schmoll Crossword"></div>
             </div>`);
-        const logo = box.querySelector(".intro-logo"), stage = box.querySelector(".intro-stage"), orbit = box.querySelector(".intro-orbit");
+        const logo = box.querySelector(".intro-logo"), stage = box.querySelector(".intro-stage");
         let skipped = false;
         const skip = () => { skipped = true; };
         box.addEventListener("pointerdown", skip);
@@ -461,26 +464,7 @@ const App = (() => {
         if (!skipped) {
             stage.classList.add("landed");
             Sound.play("title");
-            // "1 ACROSS": the tagline types itself out
-            const typeEl = stage.querySelector(".it-type");
-            for (let i = 0; i < TAGLINE.length && !skipped; i++) {
-                typeEl.textContent = TAGLINE.slice(0, i + 1);
-                if (TAGLINE[i] !== " " && i % 2 === 0) Sound.play("type");
-                await U.wait(32);
-            }
-            typeEl.textContent = TAGLINE;
-            // the worlds orbit the logo, then burst one by one
-            orbit.classList.add("on");
-            await pause(1300);
-            if (!skipped) {
-                orbit.querySelectorAll(".io b").forEach((icon, i) => setTimeout(() => {
-                    const p = U.center(icon);
-                    FX.burst({ x: p.x, y: p.y, n: 14, colors, shape: "star", speed: [80, 260], gravity: 100, drag: 1.6, life: [0.5, 0.9], size: [2.5, 5] });
-                    Sound.play("pop");
-                    icon.classList.add("gone");
-                }, i * 90));
-                await pause(Worlds.list.length * 90 + 150);
-            }
+            await pause(1100);                          // just the logo (the user: no line of text under it)
             if (!skipped) {
                 const w = Worlds.current;
                 if (w.introFlourish) { try { w.introFlourish(logo); } catch (err) { console.error(err); } }

@@ -399,7 +399,7 @@
     };
 
     Worlds.register({
-        id: "rain", name: "Rainy City", icon: "\u{1F327}️", tagline: "Umbrellas & rooftops (city lights in the rain at night)",
+        id: "rain", name: "Rainy City", icon: "\u{1F327}️", tagline: "City Lights in the Rain.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "downpour",
         mascot: { name: "PUDDLES", draw: drawPuddles },

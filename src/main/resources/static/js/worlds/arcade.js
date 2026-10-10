@@ -402,7 +402,7 @@
     };
 
     Worlds.register({
-        id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave nights or pastel vaporwave days, combos & pixel fireworks",
+        id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave Nights. Pixel Fireworks.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "pixels",
         mascot: { name: "BIT", draw: drawBit },

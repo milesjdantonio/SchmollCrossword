@@ -7,6 +7,9 @@
 //          - 5 for every square CHECKED (Check square = 1 square, Check word = its length, Check puzzle = all squares)
 //          - 10 for every square REVEALED (only squares that were empty or wrong count)
 //   Revealing the whole puzzle is a surrender: 0 points, and it doesn't count toward the streak.
+//   The Daily Boss (the 5th daily, a race, so no clock): base 250 + 50 for each star (how close the boss got),
+//   with the same Check and Reveal penalties: 300 to 400 points. Every lost attempt before the win costs 40 more
+//   (the user, 2026-10-09: "if you lose it saves data but you lose more points").
 //   Streaks are shown on screen only: they never add points.
 
 const SCORING = {
@@ -15,7 +18,10 @@ const SCORING = {
     challengeSpeedBonusStart: 200,   // Challenge mode: the bigger grid gets a bigger speed bonus
     speedBonusLossPerMinute: 10,
     checkPenaltyPerSquare: 5,     // per square looked at by Check
-    revealPenaltyPerSquare: 10    // per square filled in by Reveal
+    revealPenaltyPerSquare: 10,   // per square filled in by Reveal
+    bossBase: 250,                // the Daily Boss: beating it
+    bossPerStar: 50,              // ...and each star (1 to 3)
+    bossPerLostTry: 40            // ...minus this for every attempt lost before the win
 };
 
 // Points for one solved daily puzzle (never below 0)
@@ -41,9 +47,17 @@ function scoreBreakdown(difficulty, seconds, squaresChecked = 0, squaresRevealed
     return { base, speed, check, reveal, total: Math.max(0, base + speed - check - reveal) };
 }
 
+// The Daily Boss's score: stars instead of a speed bonus (it's a race against the boss, not the clock)
+function bossScoreBreakdown(stars, squaresChecked = 0, squaresRevealed = 0, lostTries = 0) {
+    const base = SCORING.bossBase, starBonus = SCORING.bossPerStar * stars;
+    const check = squaresChecked * SCORING.checkPenaltyPerSquare, reveal = squaresRevealed * SCORING.revealPenaltyPerSquare;
+    const tries = lostTries * SCORING.bossPerLostTry;
+    return { boss: true, stars, lostTries, base, speed: starBonus, check, reveal, tries, total: Math.max(0, base + starBonus - check - reveal - tries) };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Streaks (display only). Saved dailies are keyed by day + difficulty, e.g. "20261007-easy".
-// Solving ANY of the day's dailies (the three normal ones or the Challenge) keeps the streak alive.
+// Solving ANY of the day's dailies (the three normal ones, the Challenge or the Daily Boss) keeps the streak alive.
 // ---------------------------------------------------------------------------------------------
 
 // The day a daily's seed belongs to: 202610071 (easy daily, design pass) -> "20261007"; old seeds 20261007 too

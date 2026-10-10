@@ -355,7 +355,7 @@
     };
 
     Worlds.register({
-        id: "desert", name: "Desert Caravan", icon: "\u{1F3DC}️", tagline: "Golden dunes & a camel caravan (a campfire under the moon)",
+        id: "desert", name: "Desert Caravan", icon: "\u{1F3DC}️", tagline: "Golden Dunes. Endless Sky.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "sandstorm",
         mascot: { name: "SANDY", draw: drawSandy },

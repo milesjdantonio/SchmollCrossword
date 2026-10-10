@@ -430,7 +430,7 @@
     };
 
     Worlds.register({
-        id: "paper", name: "Notebook", icon: "✏️", tagline: "Pencil, paper & doodles (blueprint at night)",
+        id: "paper", name: "Notebook", icon: "✏️", tagline: "Pencil, Paper and Doodles.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "page",
         mascot: { name: "PIP", draw: drawPip },

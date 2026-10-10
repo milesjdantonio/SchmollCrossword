@@ -9,7 +9,9 @@ bosses have 1, the middle ones 2, Mega Unit X and Magma Wyrm 3, and the Void 5.
 - **phase N - preview (build-up, the whole loop, then past the seam).mp3**: the build-up, the whole loop, then 20 more
   seconds after the loop jumps back. Listen around the end: that's the seam, and you shouldn't be able to hear it.
 
-`win music.mp3` and `lose music.mp3` play when you beat a boss or lose to one.
+`win music.mp3` and `lose music.mp3` play when you beat a boss or lose to one. The losing music is now a short jingle composed for the game (about 5 seconds; you asked for it shorter and different). `story music` is the story cutscenes' music: Once Upon a Time by TAD (CC0), a composer-made loop.
+
+**Loops re-checked (2026-10-09, you said some didn't loop nicely):** every song's seam was scored again, and the eight weakest got new loop points: King Sourgum, the Kraken, the Ringmaster, both Phantom Librarian songs, Mega Unit X and the Void's phases 2 and 5 (seams 0.60-0.76 before, 0.87-0.98 now). A few loops got shorter where that was the only clean seam (the Librarian's are 45 s and 34 s).
 
 This folder is just for listening (it's not in git). The game's own files are in `src/main/resources/static/audio/music`.
 
@@ -51,10 +53,10 @@ it IS the music right before the downbeat, it merges into the song exactly.
 | 6 | The Yeti (Snow Day) | Black Diamond (Joth) | Hard Boss Battle 2 (MintoDog) |  |
 | 7 | Thunderhead (Rainy City) | Wednesday Night Funk Fusion (Zane Little Music), jazzy at your request | Jazz n' brass loop (Emma_MA), more intense jazz at your request |  |
 | 8 | Sir Squall (Sky Kingdom) | The Call for Unity (vitalezzz) | Mile-High Infraskyway (Spring Spring) |  |
-| 9 | The Sphinx (Desert Caravan) | Riddle of the Sands (7/4) (composed for this game) | King Crumble (iamoneabe) |  |
+| 9 | The Sphinx (Desert Caravan) | King Crumble (iamoneabe) | Riddle of the Sands (7/4) (composed for this game) |  |
 | 10 | The Ringmaster (Big Top Carnival) | Ring Master (Bobjt) | 8-bit Action Boss Battle (climax, 185 BPM) (MintoDog) |  |
-| 11 | Glitch (Neon Arcade) | Corrupted Signal (5/4) (composed for this game) | Level 2 (Retro Game Music Pack) (Juhani Junkala (SubspaceAudio)) |  |
-| 12 | The Phantom Librarian (Haunted Library) | Shadows Awaken Within (vitalezzz) | Sinister Abode (Zane Little Music) |  |
+| 11 | Glitch (Neon Arcade) | Level 1 (Retro Game Music Pack) (Juhani Junkala (SubspaceAudio)), a video-game feel at your request | Level 2 (Retro Game Music Pack) (Juhani Junkala (SubspaceAudio)) |  |
+| 12 | The Phantom Librarian (Haunted Library) | Sinister Abode (Zane Little Music) | Shadows Awaken Within (vitalezzz) |  |
 | 13 | Mega Unit X (Robot Factory) | Return of the Omega Droid (Umplix) | Epic Combat (Chester01) | Steel Commander (vitalezzz) |
 | 14 | Magma Wyrm (Volcano Island) | Devoted Guard (vitalezzz) | JRPG Epic Rock Battle Theme (HydroGene) | Carnage (boss battle) (glitchart (Centurion_of_war vs nene)) |
 | 15 | The Void (Deep Space) | Outworld (vitalezzz) | Claimed by the Void (glitchart (vitalezzz vs tricksntraps)) | Trance Boss Battle (MintoDog) → The Final Mega Boss (Umplix) → Pandemia (nene) |
@@ -64,5 +66,5 @@ asked for new songs for the Yeti, the Garden, Acorn Woods and the Sphinx's phase
 final phase; the Void's phases 2-4 moved up one.) A few
 phase songs have shorter loops (about 40-80 seconds) because the most intense tracks are short battle loops.
 
-The two composed songs were written as MIDI and played with real sampled instruments (the free GeneralUser GS
-SoundFont, through FluidSynth). Every other song is CC0 (public domain); see `static/audio/CREDITS.txt`.
+The composed song (the Sphinx's 7/4) was written as MIDI and played with real sampled instruments (the free GeneralUser GS
+SoundFont, through FluidSynth). (Glitch's composed 5/4 song was replaced at your request.) Every other song is CC0 (public domain); see `static/audio/CREDITS.txt`.

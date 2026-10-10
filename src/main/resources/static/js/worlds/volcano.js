@@ -386,7 +386,7 @@
     };
 
     Worlds.register({
-        id: "volcano", name: "Volcano Island", icon: "\u{1F30B}", tagline: "Palm trees & a smoking volcano (an eruption at night)",
+        id: "volcano", name: "Volcano Island", icon: "\u{1F30B}", tagline: "Palm Trees and a Rumbling Volcano.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "lava",
         mascot: { name: "EMBER", draw: drawEmber },

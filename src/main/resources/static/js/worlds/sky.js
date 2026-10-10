@@ -370,7 +370,7 @@
     };
 
     Worlds.register({
-        id: "sky", name: "Sky Kingdom", icon: "☁️", tagline: "Floating islands & balloons (sky lanterns at night)",
+        id: "sky", name: "Sky Kingdom", icon: "☁️", tagline: "Islands in the Clouds.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "clouds",
         mascot: { name: "PIP", draw: drawPip },

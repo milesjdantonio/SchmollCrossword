@@ -472,7 +472,7 @@
     };
 
     Worlds.register({
-        id: "candy", name: "Candy Hills", icon: "\u{1F36D}", tagline: "Gumdrop hills & lollipop trees (candy lanterns at night)",
+        id: "candy", name: "Candy Hills", icon: "\u{1F36D}", tagline: "Gumdrop Hills and Lollipop Trees.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "frosting",
         mascot: { name: "GUMMY", draw: drawGummy },

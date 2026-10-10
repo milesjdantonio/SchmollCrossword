@@ -45,7 +45,7 @@
     }
 
     Worlds.register({
-        id: "classic", name: "Classic", icon: "▦", tagline: "A plain, quiet page. No extras.",
+        id: "classic", name: "Classic", icon: "▦", tagline: "Just the Puzzle.",
         modes: ["light", "dark"],
         scene, titleCard, celebrate, sounds: {}, transition: "fade", plain: true
     });

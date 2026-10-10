@@ -31,12 +31,13 @@ All from https://opengameart.org/content/<page>
   rain-p2.mp3     Jazz n' brass loop                            Emma_MA                               jazz-n-brass-loop
   sky.mp3         The Call for Unity                            vitalezzz                             the-call-for-unity
   sky-p2.mp3      Mile-High Infraskyway                         Spring Spring                         mile-high-infraskyway
-  desert-p2.mp3   King Crumble                                  iamoneabe                             king-crumble
+  desert.mp3      King Crumble                                  iamoneabe                             king-crumble
   carnival.mp3    Ring Master                                   Bobjt                                 ring-master
   carnival-p2.mp3 8-bit Action Boss Battle (climax, 185 BPM)    MintoDog                              8bit-action-boss-battle
+  arcade.mp3      Level 1 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
   arcade-p2.mp3   Level 2 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
-  library.mp3     Shadows Awaken Within                         vitalezzz                             shadows-awaken-within
-  library-p2.mp3  Sinister Abode                                Zane Little Music                     sinister-abode
+  library.mp3     Sinister Abode                                Zane Little Music                     sinister-abode
+  library-p2.mp3  Shadows Awaken Within                         vitalezzz                             shadows-awaken-within
   robot.mp3       Return of the Omega Droid                     Umplix                                return-of-the-omega-droid
   robot-p2.mp3    Epic Combat                                   Chester01                             epic-combat
   robot-p3.mp3    Steel Commander                               vitalezzz                             steel-commander
@@ -49,10 +50,10 @@ All from https://opengameart.org/content/<page>
   space-p4.mp3    The Final Mega Boss                           Umplix                                the-final-mega-boss
   space-p5.mp3    Pandemia                                      nene                                  pandemia
   win.mp3         Victory Fanfare                               ARoachIFoundOnMyPillow                victory-fanfare
-  lose.mp3        No Hope                                       CleytonKauffman                       game-over-theme
+  story.mp3       Once Upon a Time                              TAD                                   once-upon-a-time-loop
 
 Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
 FluidSynth):
-  desert.mp3      Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani
-  arcade.mp3      Corrupted Signal, in 5/4 (3+2), E minor: square and saw leads, synth bass, drums, stutters
+  desert-p2.mp3   Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani
+  lose.mp3        Defeat: horn and strings in C minor, harp and a fading timpani roll (about 5 seconds)

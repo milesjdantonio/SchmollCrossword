@@ -204,7 +204,7 @@ const Settings = (() => {
         bossMusic: true,        // music in campaign boss fights (CC0 tracks in audio/music)
         volume: 0.8,
         musicVolume: 1,         // boss music, on top of the main volume (Settings, and the slider in every boss fight)
-        intro: true,            // play the start-up intro once per visit
+        intro: false,           // play the start-up intro on every visit (it always plays the very first time)
         effects: "full"         // "full" or "lite"
     };
     let values = load();

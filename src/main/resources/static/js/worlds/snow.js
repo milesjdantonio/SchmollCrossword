@@ -864,7 +864,7 @@
     };
 
     Worlds.register({
-        id: "snow", name: "Snow Day", icon: "❄️", tagline: "Snowfall, pine forests & a cozy cabin (northern lights at night)",
+        id: "snow", name: "Snow Day", icon: "❄️", tagline: "Fresh Snow and Northern Lights.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "blizzard",
         mascot: { name: "PEBBLE", draw: drawPebble },

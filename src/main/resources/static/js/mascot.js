@@ -74,7 +74,14 @@ const Mascot = (() => {
 
     // ---- talking ----
     let typeTimer = 0;
-    function say(line, { mood = "happy", quiet = false, hold = 7000 } = {}) {
+    // a list of lines plays one after another (a companion's hello, then its tip...)
+    function say(line, { mood = "happy", quiet = false, hold = 7000, then = null } = {}) {
+        if (Array.isArray(line)) {
+            const lines = line.filter(Boolean);
+            if (!lines.length) return;
+            const rest = lines.slice(1);
+            return say(lines[0], { mood, quiet, hold: rest.length ? 3800 : hold, then: rest.length ? () => say(rest, { mood, quiet, hold }) : null });
+        }
         if (!line) return;
         lastSaid = line;
         clearInterval(typeTimer);
@@ -92,7 +99,7 @@ const Mascot = (() => {
             if (n >= line.length) {
                 clearInterval(typeTimer);
                 typing = 0;
-                hideTimer = setTimeout(() => bubble.classList.add("hide"), hold);
+                hideTimer = setTimeout(() => { if (then) then(); else bubble.classList.add("hide"); }, hold);
             }
         }, 24);
         wake();
@@ -109,6 +116,9 @@ const Mascot = (() => {
     face.addEventListener("click", () => {
         st.hop = 1;
         Sound.play("mascot");
+        // in the campaign your companion tells you its story, one click at a time (companions.js)
+        const story = typeof Companions !== "undefined" ? Companions.click() : null;
+        if (story) return say(story, { mood: "happy", quiet: true, hold: 10000 });
         say(SHARED.tips[tipIdx++ % SHARED.tips.length], { mood: "happy", quiet: true });
     });
     bubble.addEventListener("click", () => bubble.classList.add("hide"));

@@ -30,7 +30,7 @@
   "file": "candy.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 127.1717,
+  "loopEnd": 91.6144,
   "title": "Toy Soldiers",
   "author": "Zane Little Music",
   "page": "toy-soldiers"
@@ -39,7 +39,7 @@
   "file": "ocean.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 138.3715,
+  "loopEnd": 72.3365,
   "title": "Video Game Pirate",
   "author": "iamoneabe",
   "page": "video-game-pirate"
@@ -102,25 +102,25 @@
   "file": "desert.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 144.6579,
-  "title": "Riddle of the Sands (7/4)",
-  "author": "composed for this game",
-  "page": ""
- },
- "desert-p2": {
-  "file": "desert-p2.mp3",
-  "hit": 6.5,
-  "loopStart": 6.5,
   "loopEnd": 124.7784,
   "title": "King Crumble",
   "author": "iamoneabe",
   "page": "king-crumble"
  },
+ "desert-p2": {
+  "file": "desert-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 144.6579,
+  "title": "Riddle of the Sands (7/4)",
+  "author": "composed for this game",
+  "page": ""
+ },
  "carnival": {
   "file": "carnival.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 117.2356,
+  "loopEnd": 87.3644,
   "title": "Ring Master",
   "author": "Bobjt",
   "page": "ring-master"
@@ -138,10 +138,10 @@
   "file": "arcade.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 136.6205,
-  "title": "Corrupted Signal (5/4)",
-  "author": "composed for this game",
-  "page": ""
+  "loopEnd": 56.6857,
+  "title": "Level 1 (Retro Game Music Pack)",
+  "author": "Juhani Junkala (SubspaceAudio)",
+  "page": "5-chiptunes-action"
  },
  "arcade-p2": {
   "file": "arcade-p2.mp3",
@@ -156,25 +156,25 @@
   "file": "library.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 142.2201,
-  "title": "Shadows Awaken Within",
-  "author": "vitalezzz",
-  "page": "shadows-awaken-within"
+  "loopEnd": 51.4823,
+  "title": "Sinister Abode",
+  "author": "Zane Little Music",
+  "page": "sinister-abode"
  },
  "library-p2": {
   "file": "library-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 119.2536,
-  "title": "Sinister Abode",
-  "author": "Zane Little Music",
-  "page": "sinister-abode"
+  "loopEnd": 40.2669,
+  "title": "Shadows Awaken Within",
+  "author": "vitalezzz",
+  "page": "shadows-awaken-within"
  },
  "robot": {
   "file": "robot.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 123.0261,
+  "loopEnd": 63.0061,
   "title": "Return of the Omega Droid",
   "author": "Umplix",
   "page": "return-of-the-omega-droid"
@@ -237,7 +237,7 @@
   "file": "space-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 125.2193,
+  "loopEnd": 64.1383,
   "title": "Claimed by the Void",
   "author": "glitchart (vitalezzz vs tricksntraps)",
   "page": "claimed-by-the-void-new-factory-ai-fight-and-simulation-unknown-vitalezzz-vs-tricksntraps"
@@ -264,7 +264,7 @@
   "file": "space-p5.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 178.7244,
+  "loopEnd": 148.4929,
   "title": "Pandemia",
   "author": "nene",
   "page": "pandemia"
@@ -277,8 +277,17 @@
  },
  "lose": {
   "file": "lose.mp3",
-  "title": "No Hope",
-  "author": "CleytonKauffman",
-  "page": "game-over-theme"
+  "title": "Defeat (composed for this game)",
+  "author": "composed for this game",
+  "page": ""
+ },
+ "story": {
+  "file": "story.mp3",
+  "hit": 0,
+  "loopStart": 57.6522,
+  "loopEnd": 115.3045,
+  "title": "Once Upon a Time",
+  "author": "TAD",
+  "page": "once-upon-a-time-loop"
  }
 }

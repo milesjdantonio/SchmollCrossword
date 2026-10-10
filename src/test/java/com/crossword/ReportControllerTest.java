@@ -38,6 +38,16 @@ class ReportControllerTest {
     }
 
     @Test
+    void campaignLevelsCanBeReportedToo() throws Exception {
+        Path file = folder.resolve("reports.jsonl");
+        ReportController controller = new ReportController(file, "secret");
+        controller.save(new ReportController.Report(7L, "campaign", "expert", null, "Odd clue <script>alert(1)</script>", "space"), "1.2.3.4", 0);
+        // saved as plain JSON text: it's data, never run (and /api/reports answers as text/plain)
+        assertEquals("Odd clue <script>alert(1)</script>", new ObjectMapper().readTree(Files.readAllLines(file).get(0)).get("message").asText());
+        assertThrows(ResponseStatusException.class, () -> controller.save(new ReportController.Report(7L, "admin", "easy", null, "x", null), "1.2.3.4", 0));
+    }
+
+    @Test
     void badReportsAreRejected() {
         ReportController controller = new ReportController(folder.resolve("r.jsonl"), null);
         assertThrows(ResponseStatusException.class, () -> controller.save(new ReportController.Report(1L, "daily", "easy", null, "  ", null), "a", 0));

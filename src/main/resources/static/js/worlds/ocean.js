@@ -547,7 +547,7 @@
     };
 
     Worlds.register({
-        id: "ocean", name: "Coral Reef", icon: "\u{1F420}", tagline: "A sunlit reef by day, glowing deep-sea creatures by night",
+        id: "ocean", name: "Coral Reef", icon: "\u{1F420}", tagline: "A Sunlit Reef That Glows at Night.",
         modes: ["light", "dark"],
         scene, board, celebrate, titleCard, sounds, transition: "tide",
         mascot: { name: "OTTO", draw: drawOtto },
