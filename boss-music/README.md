@@ -9,9 +9,9 @@ bosses have 1, the middle ones 2, Mega Unit X and Magma Wyrm 3, and the Void 5.
 - **phase N - preview (build-up, the whole loop, then past the seam).mp3**: the build-up, the whole loop, then 20 more
   seconds after the loop jumps back. Listen around the end: that's the seam, and you shouldn't be able to hear it.
 
-`win music.mp3` and `lose music.mp3` play when you beat a boss or lose to one. The losing music is now a short jingle composed for the game (about 5 seconds; you asked for it shorter and different). `story music` is the story cutscenes' music: Once Upon a Time by TAD (CC0), a composer-made loop.
+`win music.mp3` and `lose music.mp3` play when you beat a boss or lose to one. The losing music is now a short jingle composed for the game (about 5 seconds; you asked for it shorter and different). The winning music is a fanfare composed for the game too (2026-10-10, you asked for a new one): brass in C, the bright twin of the losing jingle. `story music`, `story-page music` and `story-finale music` are the story cutscenes' music, composed for the game and scored to the animation (you asked for the music to follow it): in the intro the Lexicon and its rising words are C major, the Void arrives on a low diminished chord with a timpani roll at 6.4 s, everything hits at once on C minor when it tears the book (7.9 s), strings rush down as the pages scatter, an A minor adventure plays under the fifteen worlds (10.2 s), and the title card lands on a full C major (14.4 s). They replace Once Upon a Time by TAD.
 
-**Loops re-checked (2026-10-09, you said some didn't loop nicely):** every song's seam was scored again, and the eight weakest got new loop points: King Sourgum, the Kraken, the Ringmaster, both Phantom Librarian songs, Mega Unit X and the Void's phases 2 and 5 (seams 0.60-0.76 before, 0.87-0.98 now). A few loops got shorter where that was the only clean seam (the Librarian's are 45 s and 34 s).
+**Loops re-checked (2026-10-09, you said some didn't loop nicely):** every song's seam was scored again, and the eight weakest got new loop points: King Sourgum, the Kraken, the Ringmaster, both Phantom Librarian songs, Mega Unit X and the Void's phases 2 and 5 (seams 0.60-0.76 before, 0.87-0.98 now). A few loops got shorter where that was the only clean seam (the Librarian's are 45 s and 34 s). Mega Unit X's long loop came back on 2026-10-10 (you missed its build-up to the rapid part): 1:55 from 9.3 s, with the whole build-up, seam 0.60.
 
 This folder is just for listening (it's not in git). The game's own files are in `src/main/resources/static/audio/music`.
 
@@ -51,7 +51,7 @@ it IS the music right before the downbeat, it merges into the song exactly.
 | 4 | King Sourgum (Candy Hills) | Toy Soldiers (Zane Little Music) | one phase |  |
 | 5 | The Kraken (Coral Reef) | Video Game Pirate (iamoneabe) | one phase |  |
 | 6 | The Yeti (Snow Day) | Black Diamond (Joth) | Hard Boss Battle 2 (MintoDog) |  |
-| 7 | Thunderhead (Rainy City) | Wednesday Night Funk Fusion (Zane Little Music), jazzy at your request | Jazz n' brass loop (Emma_MA), more intense jazz at your request |  |
+| 7 | Thunderhead (Rainy City) | Wednesday Night Funk Fusion (Zane Little Music), jazzy at your request | Jazz n' brass loop (Emma_MA), more intense jazz at your request, now with a big-band shout chorus composed for it (you asked for a chorus): chorus then verse, 32 bars |  |
 | 8 | Sir Squall (Sky Kingdom) | The Call for Unity (vitalezzz) | Mile-High Infraskyway (Spring Spring) |  |
 | 9 | The Sphinx (Desert Caravan) | King Crumble (iamoneabe) | Riddle of the Sands (7/4) (composed for this game) |  |
 | 10 | The Ringmaster (Big Top Carnival) | Ring Master (Bobjt) | 8-bit Action Boss Battle (climax, 185 BPM) (MintoDog) |  |

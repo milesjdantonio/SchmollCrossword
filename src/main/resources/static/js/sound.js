@@ -66,9 +66,23 @@ const Sound = (() => {
     const ready = () => ctx && ctx.state === "running";
 
     // ---- building blocks ----
-    function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0 }) {
+    // Boss-fight sounds (powers.js and the spells files mark theirs boss: true) play at a level set for each move or
+    // ability, from how loud each one measured, so none is louder than the boss music (the user, 2026-10-10: "it
+    // shouldn't be any louder than the music"). bossLevel(x, ms): for the next ms, marked sounds play at x (the
+    // quietest one wins when two overlap). Everything else is left alone.
+    const levels = [];
+    function bossLevel(x, ms) { levels.push({ x, until: performance.now() + ms }); }
+    function bossGain() {
+        const now = performance.now();
+        for (let i = levels.length - 1; i >= 0; i--) if (levels[i].until < now) levels.splice(i, 1);
+        let g = 1;
+        for (const l of levels) g = Math.min(g, l.x);
+        return g;
+    }
+    function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0, boss = false }) {
         if (!ctx) return;
         v *= quiet;                                        // small, frequent sounds play softer (see play)
+        if (boss) v *= bossGain();
         if (f > 1800) v *= 0.5;                            // very high notes sound piercing: turn them down
         const start = ctx.currentTime + t;
         const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -102,9 +116,10 @@ const Sound = (() => {
         osc.start(start);
         osc.stop(start + d + 0.05);
     }
-    function noise({ t = 0, d = 0.2, v = 0.2, type = "bandpass", f = 1000, f2, q = 1, a = 0.005, echo = 0 }) {
+    function noise({ t = 0, d = 0.2, v = 0.2, type = "bandpass", f = 1000, f2, q = 1, a = 0.005, echo = 0, boss = false }) {
         if (!ctx) return;
         v *= quiet;
+        if (boss) v *= bossGain();
         // No crash or clap sounds (the owner asked, 2026-10-08): short bursts of noise (claps, clicks, hi-hats,
         // crackles) and hissy high-pass noise (cymbal crashes) are skipped everywhere. Soft whooshes, wind and
         // low rumbles still play.
@@ -201,7 +216,8 @@ const Sound = (() => {
     }
     // start loading a song now, so it can play the moment it's needed (a boss's next phase)
     function preloadMusic(name) { if (!init() || !name) return; const path = `audio/music/${name}.mp3`; keepSong(path); load(path); }
-    function sample(name, { v = 0.5, rate = 1, t = 0 } = {}) {
+    function sample(name, { v = 0.5, rate = 1, t = 0, boss = false } = {}) {
+        if (boss) v *= bossGain();
         if (!Settings.get("sound") || !init() || !ready()) return;
         const path = `audio/sfx/${name}.mp3`, buf = buffers[path];
         if (!buf) { load(path); return; }
@@ -280,5 +296,5 @@ const Sound = (() => {
     }
 
     const hasSong = async name => !!(await songList())[name];
-    return { play, custom, sample, preload, preloadMusic, music, stopMusic, hasSong, buildDone, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    return { play, custom, sample, bossLevel, preload, preloadMusic, music, stopMusic, hasSong, buildDone, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

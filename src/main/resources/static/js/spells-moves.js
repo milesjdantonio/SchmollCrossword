@@ -15,7 +15,7 @@
     const boardMid = () => mid(myBoard());
     const els = sel => cellsOf(sel).map(mid);
     const clues = () => $(".clues") || myBoard();
-    const tone = o => Sound.tone(o);
+    const tone = o => Sound.tone({ ...o, boss: true });           // (at the move's or ability's level: Sound.bossLevel)
     const fade = (k, from = 0.8) => (k > from ? (1 - k) / (1 - from) : 1);
     // a straight shot from a to b with a glowing head and a trail (beams, jets, darts)
     function shot(a, b, { color = "#fff", size = 8, life = 0.45, trail = 18 } = {}) {
@@ -944,7 +944,7 @@
         add({ life: 2, draw(ctx, k, t) {
             const r = Math.max(b.width, b.height) * 0.6 * (0.3 + ease(Math.min(1, k * 1.5)) * 0.7), a = Math.sin(k * Math.PI);
             ctx.globalAlpha = a; ctx.strokeStyle = "#0a0614"; ctx.lineWidth = 26; ctx.beginPath(); ctx.arc(o.x, o.y, r, 0, TAU); ctx.stroke();
-            ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = "rgba(255,190,120,.7)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x, o.y, r + 14, t * 2, t * 2 + 4.5); ctx.stroke(); ctx.beginPath(); ctx.arc(o.x, o.y, r - 14, -t * 2, -t * 2 + 3.5); ctx.stroke();
+            ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = "rgba(255,190,120,.7)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x, o.y, r + 14, t * 2, t * 2 + 4.5); ctx.stroke(); ctx.beginPath(); ctx.arc(o.x, o.y, Math.max(0, r - 14), -t * 2, -t * 2 + 3.5); ctx.stroke();
         } });
         const vowels = cellsOf("#board .cell").filter(el => /[AEIOU]/.test((el.querySelector(".ltr") || {}).textContent || "")).map(mid);
         vowels.forEach((p, i) => setTimeout(() => { const ang = Math.atan2(p.y - o.y, p.x - o.x); burst([{ x: p.x, y: p.y, vx: Math.cos(ang) * 300, vy: Math.sin(ang) * 300, life: 0.6, size: 14, color: "rgba(255,255,255,.8)", shape: "text", text: "•", vr: 0 }]); spray(p, 4, { color: "#c6b8ff", shape: "streak", speed: [100, 200], size: [1.5, 2.5], g: 0, life: [0.3, 0.5], add: true }); }, K.still() ? 0 : 500 + i * 40));

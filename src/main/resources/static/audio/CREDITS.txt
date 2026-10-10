@@ -28,7 +28,7 @@ All from https://opengameart.org/content/<page>
   snow.mp3        Black Diamond                                 Joth                                  black-diamond
   snow-p2.mp3     Hard Boss Battle 2                            MintoDog                              hard-boss-battle-2
   rain.mp3        Wednesday Night Funk Fusion                   Zane Little Music                     wednesday-night-funk-fusion
-  rain-p2.mp3     Jazz n' brass loop                            Emma_MA                               jazz-n-brass-loop
+  rain-p2.mp3     Jazz n' brass loop (its chorus: see below)    Emma_MA                               jazz-n-brass-loop
   sky.mp3         The Call for Unity                            vitalezzz                             the-call-for-unity
   sky-p2.mp3      Mile-High Infraskyway                         Spring Spring                         mile-high-infraskyway
   desert.mp3      King Crumble                                  iamoneabe                             king-crumble
@@ -49,11 +49,16 @@ All from https://opengameart.org/content/<page>
   space-p3.mp3    Trance Boss Battle                            MintoDog                              trance-boss-battle
   space-p4.mp3    The Final Mega Boss                           Umplix                                the-final-mega-boss
   space-p5.mp3    Pandemia                                      nene                                  pandemia
-  win.mp3         Victory Fanfare                               ARoachIFoundOnMyPillow                victory-fanfare
-  story.mp3       Once Upon a Time                              TAD                                   once-upon-a-time-loop
 
 Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
 FluidSynth):
   desert-p2.mp3   Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani
   lose.mp3        Defeat: horn and strings in C minor, harp and a fading timpani roll (about 5 seconds)
+  win.mp3         Victory: a brass fanfare in C, strings, choir, harp and timpani (about 7 seconds)
+  story.mp3       The Lost Lexicon: the story's intro, scored to its scenes (celesta, harp, strings, choir, brass;
+                  C major, the Void's tear in C minor) (19.8 seconds)
+  story-page.mp3  A Page Comes Home: a page won back (6.4 seconds)
+  story-finale.mp3 The Lexicon Is Whole: the ending (14.4 seconds)
+  rain-p2.mp3     the chorus: a big-band shout chorus (trumpet, alto and tenor sax, trombones, brass section) on top of
+                  Emma_MA's Jazz n' brass loop (CC0), using only the notes the loop plays in each half bar

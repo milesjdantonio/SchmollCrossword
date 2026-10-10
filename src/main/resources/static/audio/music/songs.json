@@ -75,8 +75,8 @@
   "file": "rain-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 33.9401,
-  "title": "Jazz n' brass loop",
+  "loopEnd": 61.3802,
+  "title": "Jazz n' brass loop, with a shout chorus composed for this game",
   "author": "Emma_MA",
   "page": "jazz-n-brass-loop"
  },
@@ -174,7 +174,7 @@
   "file": "robot.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 63.0061,
+  "loopEnd": 121.3881,
   "title": "Return of the Omega Droid",
   "author": "Umplix",
   "page": "return-of-the-omega-droid"
@@ -271,9 +271,9 @@
  },
  "win": {
   "file": "win.mp3",
-  "title": "Victory Fanfare",
-  "author": "ARoachIFoundOnMyPillow",
-  "page": "victory-fanfare"
+  "title": "Victory (composed for this game)",
+  "author": "composed for this game",
+  "page": ""
  },
  "lose": {
   "file": "lose.mp3",
@@ -283,11 +283,20 @@
  },
  "story": {
   "file": "story.mp3",
-  "hit": 0,
-  "loopStart": 57.6522,
-  "loopEnd": 115.3045,
-  "title": "Once Upon a Time",
-  "author": "TAD",
-  "page": "once-upon-a-time-loop"
+  "title": "The Lost Lexicon (composed for this game)",
+  "author": "composed for this game",
+  "page": ""
+ },
+ "story-page": {
+  "file": "story-page.mp3",
+  "title": "A Page Comes Home (composed for this game)",
+  "author": "composed for this game",
+  "page": ""
+ },
+ "story-finale": {
+  "file": "story-finale.mp3",
+  "title": "The Lexicon Is Whole (composed for this game)",
+  "author": "composed for this game",
+  "page": ""
  }
 }

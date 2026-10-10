@@ -590,7 +590,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? (info.campaign.special === "daily" ? "DAILY BOSS" : "UNLIMITED BOSS") : `WORLD ${info.campaign.si + 1} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
+            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `WORLD ${info.campaign.si + 1} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : info.test ? "Test Win" : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         const tally = U.el("div", { class: "res-tally" });
@@ -1039,7 +1039,7 @@ const Game = (() => {
             : "";
         $("#new-puzzle").hidden = view !== "unlimited";
         $("#boss-mode").hidden = view !== "daily" && view !== "unlimited";
-        $("#boss-mode").textContent = view === "unlimited" ? "Boss" : "Daily Boss";       // the user: just "Boss" on Unlimited
+        $("#boss-mode").textContent = "Boss";                // the user: just "Boss", on Daily and on Unlimited
         $("#unlimited-left").hidden = view !== "unlimited";
         if (view === "unlimited") drawUnlimitedLeft();
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));

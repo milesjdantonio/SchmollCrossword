@@ -441,7 +441,7 @@ const Campaign = (() => {
         body.appendChild(U.el("p", { class: "cm-rules", text: boss
             ? "A race: solve your puzzle before the boss solves its own. Every right word pushes the race bar your way; chain words for combos. When it winds up an attack, finish a word to block it."
             : `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Reveal · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
-        if (boss) body.appendChild(loadoutBox(map[si].world));
+        if (boss) body.appendChild(loadoutBox(map[si].world, () => drawDetail()));
         const prize = abilityPrize(si, l);
         if (prize) body.appendChild(U.el("p", { class: "cm-prize" + (rec ? " got" : ""), text: rec ? `Ability unlocked here: ${prize.icon} ${prize.name}` : `Clear it to unlock an ability: ${prize.icon} ${prize.name}` }));
         if (rec) body.appendChild(U.el("p", { class: "cm-best", text: `Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)} · ${U.fmtTime(rec.seconds || 0)}` }));
@@ -449,7 +449,8 @@ const Campaign = (() => {
         const btn = U.el("button", { type: "button", class: "btn primary big", text: !open ? "🔒 Locked" : rec ? "Play Again" : boss ? "Fight" : "Play" });
         btn.disabled = !open;
         btn.addEventListener("click", () => play(s.world, l));
-        body.appendChild(U.el("div", { class: "cm-actions" }, btn, U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(boss ? "abilities" : "items") })));
+        body.appendChild(U.el("div", { class: "cm-actions" }, btn, U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(boss ? "abilities" : "items") }),
+            boss ? U.el("button", { type: "button", class: "btn ghost", text: "How It Works", onclick: () => HowTo.open("boss") }) : null));
         box.hidden = false;
         sheetOpen = true;
         requestAnimationFrame(() => box.classList.add("in"));
@@ -597,7 +598,7 @@ const Campaign = (() => {
     function titles() {
         const c = current(), w = c && Worlds.byId[c.world];
         if (!w) return { title: "Campaign", sub: "" };
-        if (c.special) return { title: `${c.special === "daily" ? "Daily Boss" : "Boss"}: ${bossOf(c.world).name}`, sub: w.name };
+        if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // just "Boss" on Daily and Unlimited (the user)
         if (c.level === 5) return { title: "Boss: " + bossOf(c.world).name, sub: `World ${c.si + 1} · ${w.name}` };
         return { title: `${w.name} · Level ${c.level}`, sub: `World ${c.si + 1} of ${map ? map.length : 15}` + (c.difficulty ? ` · ${label(c.difficulty, c.size)}` : "") };
     }
@@ -607,7 +608,7 @@ const Campaign = (() => {
         const boss = c.level === 5;
         return {
             mode: "campaign", difficulty: puzzle.difficulty, stage: `WORLD ${c.si + 1}-${c.level}`,
-            kicker: c.special ? (c.special === "daily" ? "DAILY BOSS" : "UNLIMITED BOSS") : boss ? `WORLD ${c.si + 1} · BOSS BATTLE` : `WORLD ${c.si + 1} · LEVEL ${c.level}`,
+            kicker: c.special ? "BOSS" : boss ? `WORLD ${c.si + 1} · BOSS BATTLE` : `WORLD ${c.si + 1} · LEVEL ${c.level}`,
             title: boss ? bossOf(c.world).name : w.name,
             sub: boss ? bossOf(c.world).taunt : (lessonOf(c.si, c.level) ? `Lesson: ${lessonOf(c.si, c.level).name} · ★ ${starGoal(lessonOf(c.si, c.level), puzzle.difficulty, puzzle.size)[0]}` : label(puzzle.difficulty, puzzle.size)),
             stardate: `SECTOR ${c.si + 1}.${c.level}`
@@ -785,18 +786,28 @@ const Campaign = (() => {
         }
         save();
     }
-    // A boss fight runs on its own world's 3 abilities, keys 1-3 (the user's rule, 2026-10-09). Locked ones still
-    // show, so you can see what you'll get (and how).
-    // (in a level: that level's world; on the map: the world in view)
+    // Which abilities a boss fight brings, on keys 1-3:
+    //   - campaign bosses: any 3 you've unlocked, from any world (the user, 2026-10-10: "be able to equip whatever
+    //     ability you have unlocked"), picked on the boss's sheet or in the shop (data.loadout). Empty slots fill
+    //     with this world's unlocked ones first, then the newest you've unlocked.
+    //   - the Boss on Daily and Unlimited: its own world's three, all unlocked, 3 uses each every attempt (fight.uses;
+    //     the campaign's uses aren't touched)
+    // (shopWorld: in a level, that level's world; on the map, the world in view)
     const shopWorld = () => (U.view() === "level" && data.playing ? data.playing.world : map && map[data.section || 0] ? map[data.section || 0].world : data.playing ? data.playing.world : "paper");
-    const loadout = (world = shopWorld()) => ABILITIES.filter(a => a.world === world).map(a => a.id);
+    const worldAbilities = world => ABILITIES.filter(a => a.world === world).map(a => a.id);
+    const ownUses = () => !!(U.view() === "level" && special() && fight && fight.uses);      // a Daily or Unlimited fight
+    function loadout(world = shopWorld()) {
+        if (U.view() === "level" && special()) return worldAbilities(data.playing.world);
+        const list = [...new Set((data.loadout || []).filter(id => abilityById[id] && unlockedAbility(abilityById[id])))].slice(0, 3);
+        for (const a of [...ABILITIES.filter(x => x.world === world && unlockedAbility(x)), ...unlockedAbilities().reverse()]) if (list.length < 3 && !list.includes(a.id)) list.push(a.id);
+        return list;
+    }
+    function equip(list) { data.loadout = list.filter(Boolean).slice(0, 3); save(); }
     const readyAbilities = (world) => loadout(world).filter(id => abilityOpen(abilityById[id]));
-    // The Daily and Unlimited Boss (the user's rule): all three of its world's abilities are unlocked, with 3 uses
-    // each, refilled every attempt (each fight has its own). The campaign's uses aren't touched.
     const DAILY_USES = 3, DAILY_TRY_COST = 40, UNLIMITED_TRY_COINS = 5;
-    const abilityOpen = a => (fight && fight.uses ? a.world === fight.world : unlockedAbility(a));
-    const usesOf = id => (fight && fight.uses ? fight.uses[id] || 0 : data.owned[id] || 0);
-    function spendUse(id) { if (fight && fight.uses) fight.uses[id] = Math.max(0, (fight.uses[id] || 0) - 1); else { data.owned[id] = Math.max(0, (data.owned[id] || 0) - 1); save(); } }
+    const abilityOpen = a => (ownUses() ? a.world === fight.world : unlockedAbility(a));
+    const usesOf = id => (ownUses() ? fight.uses[id] || 0 : data.owned[id] || 0);
+    function spendUse(id) { if (ownUses()) fight.uses[id] = Math.max(0, (fight.uses[id] || 0) - 1); else { data.owned[id] = Math.max(0, (data.owned[id] || 0) - 1); save(); } }
     // Attempts: every finished fight (a loss, giving up, Reveal puzzle, or a win) counts. The Daily Boss saves them
     // per day and each earlier one costs points when you win (see score.js; your best of the day is kept). The
     // Unlimited Boss counts them per boss (a Rematch keeps it) and each earlier one pays 5 fewer coins.
@@ -843,18 +854,17 @@ const Campaign = (() => {
                 give(); save(); Sound.play("coin"); draw();
                 Achievements.announce(Achievements.campaign({ bought: data.bought, spent: data.spent }));
             };
-            // this world's 3 abilities (what its boss fight uses), always at the top: easy to buy more uses
-            const eqBar = U.el("div", { class: "shop-equipped" }, U.el("small", { text: `${(Worlds.byId[shopWorld()] || {}).name || ""} ABILITIES (KEYS 1-3)`.toUpperCase().trim() }));
+            // your 3 equipped abilities, always at the top: easy to buy more uses, click one to swap it
+            const eqBar = U.el("div", { class: "shop-equipped" }, U.el("small", { text: "EQUIPPED · KEYS 1-3" }));
             const eqRow = U.el("div", { class: "se-row" });
             for (let i = 0; i < 3; i++) {
                 const a = abilityById[eq[i]];
-                if (!a) continue;
-                const open = unlockedAbility(a);
-                eqRow.appendChild(U.el("div", { class: "se-slot" + (open ? "" : " empty"), style: { "--c": a.fx.color } },
-                    U.el("span", { class: "se-icon", text: open ? a.icon : "🔒" }),
-                    U.el("div", { class: "se-text" }, U.el("b", { text: a.name }), U.el("small", { text: open ? `×${data.owned[a.id] || 0} uses · key ${i + 1}` : `Unlock: ${unlockText(a)}` })),
-                    open ? U.el("button", { type: "button", class: "btn small primary", text: `+1 · 🪙 ${a.price}`, disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
-                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }) : null));
+                if (!a) { eqRow.appendChild(U.el("div", { class: "se-slot empty" }, U.el("span", { class: "se-icon", text: "+" }), U.el("div", { class: "se-text" }, U.el("b", { text: "Empty" }), U.el("small", { text: `Key ${i + 1} · unlock more by clearing levels` })))); continue; }
+                eqRow.appendChild(U.el("div", { class: "se-slot", style: { "--c": a.fx.color } },
+                    U.el("button", { type: "button", class: "se-swap", title: `Swap the ability on key ${i + 1}`, onclick: () => pickAbility(i, draw) }, U.el("span", { class: "se-icon", text: a.icon }),
+                        U.el("div", { class: "se-text" }, U.el("b", { text: a.name }), U.el("small", { text: `×${data.owned[a.id] || 0} uses · key ${i + 1}` }))),
+                    U.el("button", { type: "button", class: "btn small primary", text: `+1 · 🪙 ${a.price}`, disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
+                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) })));
             }
             eqBar.appendChild(eqRow);
             card.appendChild(eqBar);
@@ -870,7 +880,7 @@ const Campaign = (() => {
                         U.el("button", { type: "button", class: "btn small primary", text: `Buy · 🪙 ${it.price}`, disabled: data.coins < it.price, onclick: buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }) }))));
                 scroll.appendChild(grid);
             } else {
-                scroll.appendChild(U.el("p", { class: "shop-note", text: "Each boss fight uses its own world's three abilities. Unlock them by clearing Level 1, Level 3 and the boss." + (TEST_UNLOCK_ALL ? " Testing: everything is unlocked for now." : "") }));
+                scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Boss on Daily and Unlimited always brings its own world's three." + (TEST_UNLOCK_ALL ? " Testing: everything is unlocked for now." : "") }));
                 // (what you bring is shown in the equipped bar at the top of the shop)
                 for (const world of WORLD_ORDER) {
                     const w = Worlds.byId[world];
@@ -884,7 +894,11 @@ const Campaign = (() => {
                             U.el("b", { text: a.name }), U.el("p", { text: a.flavor }), U.el("p", { class: "sic-effect", text: a.desc }),
                             U.el("small", { class: "sic-unlock", text: (earnedAbility(a) ? "✓ Unlocked: " : "🔓 Unlock: ") + unlockText(a) + (!earnedAbility(a) && TEST_UNLOCK_ALL ? " (open for testing)" : "") }),
                             open ? U.el("div", { class: "sic-foot" }, U.el("span", { class: "shop-owned", text: `×${data.owned[a.id] || 0}` }),
-                                U.el("button", { type: "button", class: "btn small primary", text: `Buy · 🪙 ${a.price}`, disabled: data.coins < a.price, onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) })) : null));
+                                U.el("button", { type: "button", class: "btn small", text: `Buy · 🪙 ${a.price}`, disabled: data.coins < a.price, onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }),
+                                U.el("button", { type: "button", class: "btn small" + (on ? " primary" : ""), text: on ? "Equipped" : "Equip", title: on ? `Unequip ${a.name}` : `Equip ${a.name}`, onclick: () => {
+                                    let l = loadout().filter(id => id !== a.id);           // equipping a 4th drops the one on key 1
+                                    if (!on) { l.push(a.id); if (l.length > 3) l = l.slice(-3); }
+                                    equip(l); Sound.play("select"); draw(); } })) : null));
                     }
                     scroll.appendChild(grid);
                 }
@@ -904,18 +918,62 @@ const Campaign = (() => {
         Sound.play("select");
     }
 
-    // ---- the boss sheet: the 3 abilities this world's boss fight runs on ----
-    function loadoutBox(world) {
-        const box = U.el("div", { class: "cm-loadout" }, U.el("small", { text: "THIS FIGHT'S ABILITIES (KEYS 1-3)" }));
+    // ---- the boss sheet: your 3 abilities, click a slot to pick what goes in it ----
+    function loadoutBox(world, redraw) {
+        const eq = loadout(world);
+        const box = U.el("div", { class: "cm-loadout" }, U.el("small", { text: "YOUR ABILITIES · KEYS 1-3" }));
         const row = U.el("div", { class: "lo-row" });
-        loadout(world).forEach((id, i) => {
-            const a = abilityById[id], open = unlockedAbility(a);
-            row.appendChild(U.el("div", { class: "lo-slot" + (open ? "" : " empty"), style: { "--c": a.fx.color }, title: open ? `${a.name}: ${a.desc}` : `Unlock: ${unlockText(a)}` },
-                U.el("span", { class: "lo-icon", text: open ? a.icon : "🔒" }), U.el("b", { text: a.name }),
-                U.el("small", { text: open ? `×${data.owned[a.id] || 0} · key ${i + 1}` : unlockText(a) })));
-        });
+        for (let i = 0; i < 3; i++) {
+            const a = abilityById[eq[i]];
+            row.appendChild(U.el("button", { type: "button", class: "lo-slot" + (a ? "" : " empty"), style: a ? { "--c": a.fx.color } : {}, title: a ? `${a.name}: ${a.desc}` : "Pick an ability",
+                onclick: () => pickAbility(i, redraw, world) },
+                U.el("span", { class: "lo-icon", text: a ? a.icon : "+" }), U.el("b", { text: a ? a.name : "Empty" }),
+                U.el("small", { text: a ? `×${data.owned[a.id] || 0} · key ${i + 1}` : `key ${i + 1}` })));
+        }
         box.appendChild(row);
         return box;
+    }
+    // Pick the ability for key slot+1, from every unlocked ability in every world
+    function pickAbility(slot, redraw, world = shopWorld()) {
+        const modal = U.el("div", { class: "results shop-page pick-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "pick-title" });
+        const card = U.el("div", { class: "shop-card" });
+        const close = () => { modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const eq = loadout(world);
+        const scroll = U.el("div", { class: "shop-scroll" }, U.el("p", { class: "shop-note", text: `Choose the ability for key ${slot + 1}. Any ability you've unlocked works in any campaign boss fight.` }));
+        let any = false;
+        for (const w of WORLD_ORDER) {
+            const list = ABILITIES.filter(a => a.world === w && unlockedAbility(a));
+            if (!list.length || !Worlds.byId[w]) continue;
+            any = true;
+            scroll.appendChild(U.el("h3", { class: "shop-world", style: { "--c": biome(w).node } }, U.el("span", { text: `${Worlds.byId[w].icon} ${Worlds.byId[w].name}` })));
+            const grid = U.el("div", { class: "shop-grid" });
+            for (const a of list) {
+                const at = eq.indexOf(a.id);
+                grid.appendChild(U.el("button", { type: "button", class: "shop-item-card ability pick" + (at === slot ? " on" : ""), style: { "--c": a.fx.color },
+                    onclick: () => {
+                        const l = eq.slice(0, 3);
+                        while (l.length < 3) l.push(null);
+                        const was = l.indexOf(a.id);
+                        if (was >= 0) l[was] = l[slot];                 // already on another key: the two swap
+                        l[slot] = a.id;
+                        equip(l);
+                        Sound.play("select"); close(); if (redraw) redraw(); drawAbilityBar();
+                    } },
+                    U.el("span", { class: "sic-icon", text: a.icon }), U.el("b", { text: a.name }), U.el("p", { class: "sic-effect", text: a.desc }),
+                    U.el("small", { class: "sic-unlock", text: `×${data.owned[a.id] || 0} uses` + (at >= 0 ? ` · on key ${at + 1}` : "") })));
+            }
+            scroll.appendChild(grid);
+        }
+        if (!any) scroll.appendChild(U.el("p", { class: "shop-note", text: "No abilities yet. Clear a world's Level 1 to unlock its first one." }));
+        card.append(U.el("div", { class: "shop-head" },
+            U.el("div", { class: "shop-title" }, U.el("small", { text: "EQUIP" }), U.el("h2", { id: "pick-title", text: `Key ${slot + 1}` })),
+            U.el("button", { type: "button", class: "btn ghost small", text: "Close", onclick: close })), scroll);
+        modal.appendChild(card);
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
+        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+        document.getElementById("overlay").appendChild(modal);
+        requestAnimationFrame(() => modal.classList.add("in"));
+        Sound.play("select");
     }
 
     // ---- the item bar under the board, in campaign levels ----
@@ -1026,9 +1084,9 @@ const Campaign = (() => {
     // timers on the boss (seconds left), and what the status line calls them
     const BOSS_TIMERS = { freeze: "❄️ Frozen", slow: "🍬 Sticky", blind: "🥧 Can't see", stutter: "🤧 Sneezing", hypno: "🤹 Hypnotized", crash: "🍡 Sugar crash",
         bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer",
-        haste: "🛩️ Hasted" };
+        haste: "🛩️ Hasted", snowed: "🌨️ Snowed in" };
     // timers on your side (good ones)
-    const MY_BUFFS = { sun: "🌱 Words grow letters", tailwind: "🪁 Letters held", lucky: "🌈 Combo locked", fireup: "🔥 Wrong letters burn", hot: "🔥 Words stun", overclock: "⚡ Overclock",
+    const MY_BUFFS = { blizzard: "🌨️ Blizzard: keep typing right", sun: "🌱 Words grow letters", tailwind: "🪁 Letters held", lucky: "🌈 Combo locked", fireup: "🔥 Wrong letters burn", hot: "🔥 Words stun", overclock: "⚡ Overclock",
         armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed" };
     // what each boss move does to you, for the status chips
     const ME_TEXT = { crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
@@ -1072,7 +1130,7 @@ const Campaign = (() => {
         if (leadEl.textContent !== text) { leadEl.textContent = text; raceEl.setAttribute("aria-label", `Race: you ${Math.round(me * 100)}%, the boss ${Math.round(boss * 100)}%. ${text}`); }
         raceEl.classList.toggle("ahead", k >= 3);
         raceEl.classList.toggle("behind", k <= -3);
-        raceEl.classList.toggle("danger", boss >= 0.8 && k < 10);
+        raceEl.classList.toggle("danger", !!f.close);
         raceEl.classList.toggle("enraged", f.enraged);
         const ph = f.phases > 1 ? (f.phase === f.phases && f.phases > 2 ? `FINAL PHASE · ${f.phase}/${f.phases}` : `PHASE ${f.phase}/${f.phases}`) : "";
         const phEl = raceEl.querySelector(".rb-phase");
@@ -1116,8 +1174,9 @@ const Campaign = (() => {
     }, true);
     const meStatus = U.el("div", { class: "me-status", "aria-live": "polite" });
     document.querySelector(".hud-row").after(meStatus);
-    const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "assertive" });
+    const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "polite" });
     raceEl.querySelector(".rb-track").appendChild(warnEl);           // right under the race bar's "who's ahead" label (the user's spot)
+    document.body.appendChild(U.el("div", { class: "close-edge", "aria-hidden": "true" }));   // red edges when the boss is almost done (.boss-close)
     const flareEl = U.el("div", { class: "fx-flare-screen", "aria-hidden": "true" });
     document.body.appendChild(flareEl);
     const isBossLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && data.playing.level === 5);
@@ -1165,7 +1224,7 @@ const Campaign = (() => {
                 if (fight) fight.intro = false;
                 speak(bossOf(fight.world).taunt);
             }
-            else if (fight && fightOn()) Sound.music(fight.world, { fade: 1.2, fromLoop: true });
+            else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
         } catch (err) {
             waiting(false, "Couldn't load the boss's puzzle: " + err.message);
             const l = panel.querySelector(".bp-loading");
@@ -1212,9 +1271,10 @@ const Campaign = (() => {
         if (!waitEl.hidden) waiting(false);
         meStatus.innerHTML = "";
         document.querySelectorAll(".bh-combo").forEach(el => el.remove());
-        warnEl.hidden = true;
+        clearWarn();
         document.getElementById("puzzle").classList.remove("boss-mode");
-        root.classList.remove("in-boss", "boss-enraged", "special-boss");
+        root.classList.remove("in-boss", "boss-enraged", "special-boss", "boss-close");
+        note = null;
         Bosses.enrage(false);
         clearMe();
     }
@@ -1303,7 +1363,9 @@ const Campaign = (() => {
         const row = panel.querySelector(".bp-ab-row");
         if (!row || !fight) return;
         row.innerHTML = "";
-        loadout(fight.world).forEach((id, i) => {
+        const ids = loadout(fight.world);
+        if (!ids.length) row.appendChild(U.el("p", { class: "bp-ab-none", text: "No abilities yet. Clear a world's Level 1 to unlock its first one." }));
+        ids.forEach((id, i) => {
             const a = abilityById[id], open = abilityOpen(a), n = open ? usesOf(id) : 0;
             const btn = U.el("button", { type: "button", class: "bp-ab" + (open ? "" : " locked"), disabled: n <= 0, title: open ? `${a.name}: ${a.desc} (key ${i + 1})` : `${a.name}. Unlock: ${unlockText(a)}`, style: { "--c": a.fx.color } },
                 U.el("span", { class: "bp-ab-icon", text: open ? a.icon : "🔒" }), U.el("b", { text: a.name }), U.el("small", { text: open ? `×${n} · key ${i + 1}` : "locked" }));
@@ -1340,6 +1402,57 @@ const Campaign = (() => {
         drawVolume();
     }
     Settings.on(key => { if (key === "musicVolume" || key === "bossMusic" || key === "sound") drawVolume(); });
+    // The warning box under the race bar: an attack winding up comes first, then what just happened (notice), then
+    // the boss being almost done (85%, the user's request)
+    let warnKey = "";
+    function drawWarn() {
+        const f = fight, wu = panel.querySelector(".bp-windup");
+        if (!f || !wu) return;
+        const now = performance.now(), noteOn = note && now - note.at < note.ms;
+        const mode = f.pending ? "incoming" : noteOn ? note.tone : f.close && !f.over ? "close" : null;
+        if (!f.pending && !wu.hidden) wu.hidden = true;
+        if (!mode) { if (!warnEl.hidden) warnEl.hidden = true; warnKey = ""; return; }
+        if (!warnEl.firstChild) warnEl.innerHTML = `<b><span class="mw-name"></span> <em></em></b><span class="mw-how"></span><i></i>`;   // built once, then only its parts change
+        let name, time = "", how, k;
+        if (f.pending) {
+            const mv = f.pending, it = INTERCEPT[mv.kind];
+            k = f.windup / f.windupMax;
+            if (wu.hidden) wu.hidden = false;
+            setVar(wu.querySelector("i"), "width", (k * 100).toFixed(1) + "%");
+            setText(wu.querySelector("span"), `${mv.icon} ${mv.name}`);
+            name = `⚠ ${mv.icon} ${mv.name} Incoming`;
+            time = f.windup.toFixed(1) + "s";
+            how = it && interceptEl ? `Click the ${LOOK_NAME[it.look]}${it.hits > 1 ? ` ${it.hits}×` : ""} to turn it on the boss, or finish a word to block it` : `Finish a word to block it${COUNTER[mv.kind] ? " · if it lands: " + COUNTER[mv.kind] : ""}`;
+            if (warnEl.title !== mv.desc) warnEl.title = mv.desc;
+        } else if (noteOn) {
+            name = `${note.icon} ${note.title}`;
+            how = note.sub;
+            k = 1 - (now - note.at) / note.ms;
+            if (warnEl.title) warnEl.title = "";
+        } else {
+            const p = Math.round(bossPct() * 100);
+            name = `⚠ ${bossOf(f.world).name} Is ${p}% Done`;
+            how = "Almost there. Finish words fast, and use an ability now.";
+            k = bossPct();
+            if (warnEl.title) warnEl.title = "";
+        }
+        // a new message pops in again (its animation restarts); the same one only updates its numbers
+        const key = mode + "|" + (f.pending ? f.pending.kind : noteOn ? note.at : "");
+        if (key !== warnKey) { warnKey = key; warnEl.dataset.tone = mode; warnEl.hidden = true; void warnEl.offsetWidth; }
+        if (warnEl.hidden) warnEl.hidden = false;
+        setText(warnEl.querySelector(".mw-name"), name);
+        setText(warnEl.querySelector("em"), time);
+        setText(warnEl.querySelector(".mw-how"), how);
+        setVar(warnEl.querySelector("i"), "width", (Math.max(0, k) * 100).toFixed(1) + "%");
+    }
+    function clearWarn() {
+        note = null;
+        warnKey = "";
+        warnEl.hidden = true;
+        root.classList.remove("boss-close");
+        if (fight) fight.close = false;
+    }
+
     function drawFight() {
         if (!fight || panel.hidden) return;
         const f = fight, g = Game.state;
@@ -1368,23 +1481,7 @@ const Campaign = (() => {
         panel.classList.toggle("frozen", f.boss.freeze > 0);
         panel.classList.toggle("enraged", f.enraged);
         drawBlocks();
-        // the wind-up warning, on the boss and over your board
-        const wu = panel.querySelector(".bp-windup");
-        if (f.pending) {
-            const mv = f.pending, k = f.windup / f.windupMax;
-            if (wu.hidden) wu.hidden = false;
-            setVar(wu.querySelector("i"), "width", (k * 100).toFixed(1) + "%");
-            setText(wu.querySelector("span"), `${mv.icon} ${mv.name}`);
-            if (warnEl.hidden) warnEl.hidden = false;
-            const it = INTERCEPT[mv.kind];
-            const how = it && interceptEl ? `Counter: click the ${LOOK_NAME[it.look]}${it.hits > 1 ? ` ${it.hits}×` : ""} to turn it on the boss! Or finish a word to block it` : `Finish a word to block it${COUNTER[mv.kind] ? " · if it lands: " + COUNTER[mv.kind] : ""}`;
-            if (!warnEl.firstChild) warnEl.innerHTML = `<b><span class="mw-name"></span> <em></em></b><span class="mw-how"></span><i></i>`;   // built once, then only its parts change
-            setText(warnEl.querySelector(".mw-name"), `⚠ ${mv.icon} ${mv.name} Incoming`);
-            setText(warnEl.querySelector("em"), f.windup.toFixed(1) + "s");
-            setText(warnEl.querySelector(".mw-how"), how);
-            setVar(warnEl.querySelector("i"), "width", (k * 100).toFixed(1) + "%");
-            if (warnEl.title !== mv.desc) warnEl.title = mv.desc;
-        } else { if (!wu.hidden) wu.hidden = true; if (!warnEl.hidden) warnEl.hidden = true; }
+        drawWarn();
         if (!f.pending && interceptEl) removeIntercept();
         if (f.cells) {
             const vines = f.boss.vines ? f.boss.vines.cells : null, cur = f.word;
@@ -1440,6 +1537,14 @@ const Campaign = (() => {
         clearTimeout(speechTimer);
         speechTimer = setTimeout(() => { el.hidden = true; }, ms);
     }
+    // What just happened in the fight (the user, 2026-10-10: the full-screen text "covers the entire screen and it's
+    // annoying"): it's said in the warning box under the race bar for a few seconds. A wind-up there comes first.
+    //   tone: "good" (you blocked or countered), "bad" (it hit you), "mine" (your ability), "rage", "info"
+    let note = null;
+    function notice(icon, title, sub = "", tone = "info", ms = 2800) {
+        note = { icon, title, sub, tone, at: performance.now(), ms };
+        drawWarn();
+    }
     // a little "Defused!" (or "+2 letters") that floats up from the middle of the race bar
     function floatText(text, good = true) {
         const knot = raceEl.querySelector(".rb-knot"), at = !raceEl.hidden && knot ? U.center(knot) : U.center(boardArea());
@@ -1451,7 +1556,7 @@ const Campaign = (() => {
     // ---- the boss writes: one letter at a time, word by word, at a steady (slightly wobbly) pace ----
     function bossSpeed(f) {
         const b = f.boss;
-        if (b.freeze > 0 || b.blind > 0 || b.bubble > 0 || b.dig > 0) return 0;
+        if (b.freeze > 0 || b.blind > 0 || b.bubble > 0 || b.dig > 0 || b.snowed > 0) return 0;
         if (b.crash > 0) return b.crash > 12 ? 2 : 0;                       // Sugar Crash: 3s at double speed, then nothing
         if (b.stutter > 0 && b.stutter % 3 > 1.9) return 0;                   // Pollen Puff: a sneeze every 3 seconds
         if (b.hypno > 0 && performance.now() - lastKeyAt < 1000) return 0;   // Juggling Act: it watches you type
@@ -1609,7 +1714,7 @@ const Campaign = (() => {
             f.pending = null;
             f.windup = 0;
             f.blocks++;
-            Bosses.cutin(f.world, "BLOCKED!", `${mv.name} was stopped`, { good: true });
+            notice("🛡️", "Blocked", `${mv.name} was stopped.`, "good");
             Sound.sample("jingle-block", { v: 0.45 });
             speak(U.pick(["What?! Blocked?", "Grr... lucky!", "Not fair!"]));
         }
@@ -1676,15 +1781,29 @@ const Campaign = (() => {
         setTimeout(() => el.remove(), 1200);
     }
     // who's ahead in the race; far behind, the boss gets angry (not while it's calmed)
+    // the boss is almost done (the user: a warning at 85%): red edges, the warning box, an alarm; off again below 80%
+    const CLOSE_AT = 0.85, CLOSE_OFF = 0.8;
     function updateHp() {
         const f = fight;
         if (!f || !f.puzzle) return;
         f.lead = myPct() - bossPct();
+        const bp = bossPct(), close = !f.over && !Game.state.solved && !f.switching && bp >= (f.close ? CLOSE_OFF : CLOSE_AT);
+        if (close !== !!f.close) {
+            f.close = close;
+            root.classList.toggle("boss-close", close);
+            if (close) {
+                Sound.custom(() => { for (const t of [0, 0.24]) Sound.tone({ f: 988, f2: 740, type: "triangle", t, d: 0.2, v: 0.045 }); });
+                FX.shake(5, 300);
+                speak(U.pick(["Almost done...", "Nearly there!", "Too slow!"]), 2200);
+                Mascot.say(U.pick(["It's almost done! Hurry!", "Quick, it's nearly finished!"]), { mood: "wow", hold: 2600 });
+                drawWarn();
+            }
+        }
         if (!f.enraged && !(f.buff.calm > 0) && f.lead >= RAGE_LEAD && !Game.state.solved && !f.switching) {
             f.enraged = true;
             root.classList.add("boss-enraged");
             Bosses.enrage(true);
-            Bosses.cutin(f.world, "ENRAGED!", f.th.double ? "Faster, angrier, and it chains its attacks now" : "It's faster and angrier now");
+            notice("😡", `${bossOf(f.world).name} Is Enraged`, f.th.double ? "It's faster and angrier, and it chains its attacks now." : "It's faster and angrier now.", "rage", 3400);
             Sound.play("boom");
             FX.shake(10, 500);
             speak("ENOUGH! Now I'm angry!", 3000);
@@ -1711,6 +1830,7 @@ const Campaign = (() => {
             case "extralife": return f.extraLife ? "You already have an extra life." : null;
             case "haunt": return f.boss.haunt ? "The boss's next page is already haunted." : null;
             case "calm": return f.buff.calm > 0 ? "The boss is already calm." : null;
+            case "delay": return f.buff.blizzard > 0 ? "The blizzard is already blowing." : null;
             case "check": return Game.wrongCells().length ? null : "No wrong letters on your board.";
             case "autofill": return autoFillCells().length ? null : "No word is just one letter from done.";
             case "cheat": { const e = currentMyEntry(); return e && Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]) ? null : "Your selected word is already right."; }
@@ -1729,21 +1849,22 @@ const Campaign = (() => {
     async function useAbility(id) {
         const a = abilityById[id];
         if (!a || !fightOn() || !fight.puzzle || fight.intro || usesOf(id) <= 0) return;
-        if (a.world !== fight.world || !abilityOpen(a)) return;              // only this world's abilities, once unlocked
+        if (!loadout(fight.world).includes(id) || !abilityOpen(a)) return;    // only what this fight brings, once unlocked
         const why = fight.me.seal > 0 ? "Your abilities are wrapped in weeds for a few seconds." : cantUse(a);
-        if (why) { FX.toast({ icon: a.icon, kicker: "NOT NOW", title: a.name, text: why, ms: 2200 }); Sound.play("wrong"); return; }
+        if (why) { notice(a.icon, `Not Now: ${a.name}`, why, "info", 2400); Sound.play("wrong"); return; }
         spendUse(id);
         save();
         const f = fight;
         f.used++;
         f.kinds.add(a.kind);
         drawAbilityBar();
+        notice(a.icon, a.name, a.desc, "mine", 2600);
         const castP = Powers.cast(a, { fromEl: boardArea(), bossEl: portraitEl(), bossBoard: bossBoardEl() });
         if (a.fx.on !== "me") await castP;                       // effects on the boss happen when the shot lands
         if (fight !== f || f.over) return;
         if (f.boss.ward && a.fx.on !== "me") {                   // Umbrella: this one bounces off
             f.boss.ward = 0;
-            Bosses.cutin(f.world, "BLOCKED!", `${a.name} bounced off its umbrella`);
+            notice("☂️", "Bounced Off", `${a.name} hit its umbrella.`, "bad");
             speak("Ha! Nice try.", 1800);
             drawFight();
             return;
@@ -1785,7 +1906,7 @@ const Campaign = (() => {
             case "bubble": max("bubble", 15); break;
             case "undo": { let n = 0; while (f.log.length && n < 4) { const [r, c] = f.log.pop(); if (real(r, c)) { wipe([[r, c]], true); n++; } } break; }
             case "freeze": max("freeze", 6); break;
-            case "delay": f.nextMove += 30; break;
+            case "delay": f.buff.blizzard = 15; f.blizGiven = 0; break;          // Blizzard (it used to push the next attack back)
             case "armor": f.buff.armor = 40; break;
             case "wash": {                                      // the unfinished words' letters, up to 6 (newest first)
                 const inDone = new Set(f.done.flatMap(e => Game.cellsOf(e).map(([r, c]) => r + "," + c)));
@@ -1795,7 +1916,7 @@ const Campaign = (() => {
                 break;
             }
             case "counter":
-                if (f.pending) { Bosses.cutin(f.world, "COUNTERED!", `${f.pending.name} was cancelled`, { good: true }); f.pending = null; f.windup = 0; max("freeze", 4); }
+                if (f.pending) { notice("✋", "Countered", `${f.pending.name} was cancelled.`, "good"); f.pending = null; f.windup = 0; max("freeze", 4); }
                 else max("freeze", 2);
                 break;
             case "lucky": f.buff.lucky = 30; f.combo += 2; f.bestCombo = Math.max(f.bestCombo, f.combo); f.lastWordAt = performance.now(); comboPop(f.combo); break;
@@ -2044,7 +2165,7 @@ const Campaign = (() => {
         f.windup = 0;
         f.counters = (f.counters || 0) + 1;
         const text = it.back();
-        Bosses.cutin(f.world, "COUNTERED!", text, { good: true });
+        notice("🎯", "Countered", text, "good", 3000);
         Sound.sample("jingle-block", { v: 0.5 });
         FX.burst({ x: p.x, y: p.y, n: 40, colors: ["#fff", "#ffd23f", bossOf(f.world).color], shape: "star", speed: [150, 420], gravity: 200, life: [0.5, 1], size: [3, 7] });
         if (f.cells) Powers.aura(bossBoardEl(), ["💥", "✨"], "pop", 8, 900);
@@ -2183,7 +2304,7 @@ const Campaign = (() => {
         const chain = () => { if (f.th.double && f.enraged && !f.pendingChained && !f.over) setTimeout(() => { if (fight === f && fightOn() && !f.pending) windUp(true); }, 900); };
         if (f.me.shield) {
             f.me.shield = 0;
-            Bosses.cutin(f.world, "SHIELDED!", `${mv.name} bounced off your Paper Wall`, { good: true });
+            notice("📄", "Shielded", `${mv.name} bounced off your Paper Wall.`, "good");
             Sound.play("right");
             drawFight();
             chain();
@@ -2192,7 +2313,7 @@ const Campaign = (() => {
         if (f.me.reflect) {
             f.me.reflect = 0;
             f.boss.freeze = Math.max(f.boss.freeze || 0, Math.max(4, mv.d * f.th.power));
-            Bosses.cutin(f.world, "BOUNCED BACK!", `${mv.name} hit the boss instead: frozen`, { good: true });
+            notice("🪞", "Bounced Back", `${mv.name} hit the boss instead. It's frozen.`, "good");
             Sound.custom(Powers.ABILITIES.find(a => a.kind === "reflect").sound);
             Powers.aura(portrait, ["🧁", mv.icon], "pop", 10, 1200);
             speak("Wha-? It came BACK?!", 2000);
@@ -2201,11 +2322,11 @@ const Campaign = (() => {
             return;
         }
         f.hits++;
-        Bosses.cutin(f.world, mv.name + "!", "It " + mv.desc);
+        const selfMove = ["ambush", "ward", "haste", "powerup", "heal", "snapfinish"].includes(mv.kind);     // moves that power the boss up
+        notice(mv.icon, selfMove ? `${b.name} Used ${mv.name}` : `${mv.name} Hit You`, COUNTER[mv.kind] && !selfMove ? `Tip: ${COUNTER[mv.kind][0].toUpperCase()}${COUNTER[mv.kind].slice(1)}.` : `It ${mv.desc}.`, "bad", 3800);
         FX.shake(9, 420);
         FX.flash(b.color, 380, 0.22);
-        const selfMove = ["ambush", "ward", "haste", "powerup", "heal", "snapfinish"].includes(mv.kind);     // moves that power the boss up
-        await U.wait(U.motion() === "still" ? 0 : 750);         // let the cut-in clear, so the strike itself can be seen
+        await U.wait(U.motion() === "still" ? 0 : 250);
         if (fight !== f || f.over || !fightOn()) return;
         await Powers.strike(f.world, mv, { fromEl: portrait || panel, toEl: selfMove ? (portrait || panel) : boardArea() });
         if (fight !== f || f.over || !fightOn()) return;
@@ -2597,6 +2718,7 @@ const Campaign = (() => {
         if (!waitEl.hidden && /^[a-zA-Z]$|^Backspace$/.test(e.key) && U.view() === "level") { e.preventDefault(); e.stopPropagation(); return; }
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.target.closest && e.target.closest("input, select, textarea")) return;
+        if (document.querySelector("#overlay .results")) return;
         if (/^[1-3]$/.test(e.key)) { const id = loadout(fight && fight.world)[+e.key - 1]; if (id && abilityOpen(abilityById[id])) { e.preventDefault(); useAbility(id); } return; }
         const f = fight;
         if (/^[a-zA-Z]$/.test(e.key)) {
@@ -2649,6 +2771,11 @@ const Campaign = (() => {
             Game.setLetters([[row, col, ""]]);
         }, 260);
         if (f.me.downpour > 0 && letter !== "") f.drips.push({ r: row, c: col, t: 4 });          // Downpour: this letter starts running
+        if (f.buff.blizzard > 0 && letter) {                                  // Blizzard: right letters in a row pile snow on the boss
+            if (letter === g.puzzle.solution[row][col]) {
+                if ((f.blizGiven || 0) < 8) { f.boss.snowed = (f.boss.snowed || 0) + 0.5; f.blizGiven = (f.blizGiven || 0) + 0.5; }
+            } else if (!Game.isLocked(row, col)) { f.buff.blizzard = 0; f.boss.snowed = 0; floatText("A wrong letter melted the snow ❄️", false); }
+        }
         if (f.buff.overclock > 0 && (f.ocN || 0) < 5 && letter === g.puzzle.solution[row][col]) {
             const target = U.pick(bossFilled());
             if (target) {
@@ -2679,7 +2806,7 @@ const Campaign = (() => {
     setInterval(() => {
         const now = performance.now(), dt = Math.min(0.5, (now - lastTick) / 1000);
         lastTick = now;
-        if (Sound.musicPlaying && !["win", "lose", "story"].includes(Sound.musicPlaying) && !fightOn() && !(fight && fight.switching)) Sound.stopMusic(1.5);
+        if (Sound.musicPlaying && !["win", "lose"].includes(Sound.musicPlaying) && !Sound.musicPlaying.startsWith("story") && !fightOn() && !(fight && fight.switching)) Sound.stopMusic(1.5);
         if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results") || root.classList.contains("intro-on")) return;
         const f = fight, g = Game.state, tickBefore = g.letters.map(r => [...r]);
         botStep(dt);
@@ -2781,7 +2908,7 @@ const Campaign = (() => {
             for (let i = 0; i < 3; i++) { const last = f.done[f.done.length - 1]; if (last) wipe(Game.cellsOf(last), true); }
             f.word = null;
             refreshDone();
-            Powers.banner({ icon: "🕹️", name: "EXTRA LIFE!", text: "The boss lost its last 3 words: the race goes on", color: "#4fdf6b", kicker: "1-UP" });
+            notice("🕹️", "Extra Life", "The boss lost its last 3 words. The race goes on.", "good", 3400);
             Sound.custom(Powers.ABILITIES.find(a => a.kind === "extralife").sound);
             speak("WHAT? You're still here?!", 2400);
             drawFight();
@@ -2790,7 +2917,7 @@ const Campaign = (() => {
         f.over = true;
         f.pending = null;
         clearMe();
-        warnEl.hidden = true;
+        clearWarn();
         countAttempt();
         const b = bossOf(f.world);
         const text = { boss: ["The boss finished its puzzle first.", `${b.name} Got There First`, "The boss solved its whole board before you. Block its attacks by finishing words, and save an ability for when it's close."],
@@ -2802,7 +2929,7 @@ const Campaign = (() => {
         const sp = special(), tries = triesNow();
         const tryNote = sp === "daily" ? `Attempt ${tries} used. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.`
             : sp === "unlimited" ? `Attempt ${tries} used. A Rematch keeps this boss and puzzle; each attempt takes ${UNLIMITED_TRY_COINS} coins off a win.` : null;
-        loseCard({ world: f.world, level: 5, kicker: sp ? `${sp === "daily" ? "DAILY BOSS" : "UNLIMITED BOSS"} · ATTEMPT ${tries}` : why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
+        loseCard({ world: f.world, level: 5, kicker: sp ? `BOSS · ATTEMPT ${tries}` : why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
         speak(why === "surrender" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
         drawFight();
     }
@@ -2860,7 +2987,7 @@ const Campaign = (() => {
         f.pending = null;
         f.windup = 0;
         clearMe();
-        warnEl.hidden = true;
+        clearWarn();
         const portrait = portraitEl();
         // each phase has its own, more intense song (audio/CREDITS.txt); its build-up plays during the power-up
         Sound.music(f.world + "-p" + k, { v: 0.4, fade: 0.5 });
@@ -2910,7 +3037,7 @@ const Campaign = (() => {
         fight.over = true;
         fight.pending = null;
         clearMe();
-        warnEl.hidden = true;
+        clearWarn();
         drawFight();
         panel.classList.add("ko");
         Sound.music("win", { loop: false, v: 0.45, fade: 0.6 });          // victory music
@@ -2965,7 +3092,7 @@ const Campaign = (() => {
             case "win": {
                 const cm = info && info.campaign;
                 if (!cm) return null;
-                if (cm.boss && cm.special) return cm.special === "daily" ? U.pick(["Today's boss is down! Nice racing.", "That's the Daily Boss beaten. See you tomorrow!"]) : U.pick(["Boss beaten! Want another?", "Down it goes! Pick a new one?"]);
+                if (cm.boss && cm.special) return cm.special === "daily" ? U.pick(["Today's boss is down! Nice racing.", "That's today's boss beaten. See you tomorrow!"]) : U.pick(["Boss beaten! Want another?", "Down it goes! Pick a new one?"]);
                 if (cm.boss) {
                     const own = typeof Companions !== "undefined" ? Companions.boss(c.world, "win") : null;
                     return [own, cm.finished ? "The Lexicon is whole again! Every word is back. You did it!" : `You won back the ${Worlds.byId[c.world].name} page! ${cm.newWorld ? `On to ${cm.newWorld.name}.` : ""}`];
@@ -3019,6 +3146,7 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     $("#cm-shop").addEventListener("click", () => openShop("items"));
     $("#cm-skills").addEventListener("click", () => openSkills());
+    $("#cm-howto").addEventListener("click", () => HowTo.open("normal"));
     $("#cm-book").addEventListener("click", () => { Sound.play("select"); Story.openBook(storyPages(), { onReplay: () => FX.cinematic(c => Story.intro(c, storyPages())) }); });
     // The story (story.js): the Lexicon's pages, one per world, won back by beating its boss
     function storyPages() {
@@ -3079,6 +3207,7 @@ const Campaign = (() => {
         isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         testMove: mv => { if (fightOn()) { fight.pending = mv; attack(); } },          // for automated tests
         testWindUp: mv => { if (fightOn()) windUp(false, mv); },
+        testEquip: ids => { equip(ids); drawAbilityBar(); },
         get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();

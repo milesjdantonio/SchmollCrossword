@@ -82,19 +82,26 @@ const Story = (() => {
     // The opening
     // =============================================================================================
     // the story's own music (Once Upon a Time by TAD, CC0) under every cutscene; it fades out when the scene ends
-    function storyMusic(c) {
-        Sound.music("story", { v: 0.36, fade: 0.8 });
-        c.cleanup(() => { if (Sound.musicPlaying === "story") Sound.stopMusic(1.4); });
+    // Each cutscene's music is scored to it (the user, 2026-10-10: "make the story music follow the story animation"):
+    // story (the intro), story-page and story-finale, composed for the game so every change lands on a scene (the
+    // Void tearing the book, the pages scattering, the title...). The scenes wait for it to start, up to 1.5 s.
+    // With the music off, the book's own little chimes play instead.
+    const scored = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
+    async function storyMusic(c, name) {
+        c.cleanup(() => { if (Sound.musicPlaying === name) Sound.stopMusic(1.4); });
+        if (!scored()) return;
+        await Promise.race([Sound.music(name, { loop: false, v: 0.38, fade: 0.6 }), c.wait(1500)]);
     }
+    const sfx = fn => { if (!scored()) fn(); };          // a sound the score already plays
     async function intro(c, pages) {
         const el = stage("lx-intro"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true });
-        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
+        await storyMusic(c, "story");
         // 1. the Lexicon
         scene.innerHTML = `<div class="lx-hero">${bookHtml(pages, { open: false })}</div>`;
         const book = scene.querySelector(".lx-book");
         say(el, "Long ago, every word in every world was kept in one book: the Lexicon.");
-        chime([60, 64, 67, 72], 0.18, "sine", 0.06);
+        sfx(() => chime([60, 64, 67, 72], 0.18, "sine", 0.06));
         await c.wait(3200);
         // 2. it opens and the words rise out of it
         book.classList.add("open");
@@ -102,7 +109,7 @@ const Story = (() => {
         const rise = U.el("div", { class: "lx-words" });
         scene.appendChild(rise);
         "PAGEWORDLEXICONSTORYCLUE".split("").forEach((ch, i) => { const s = U.el("span", { text: ch, style: { left: (20 + Math.random() * 60) + "%", animationDelay: (i * 90) + "ms" } }); rise.appendChild(s); });
-        chime([67, 71, 74, 79], 0.14, "triangle", 0.05);
+        sfx(() => chime([67, 71, 74, 79], 0.14, "triangle", 0.05));
         await c.wait(3200);
         if (c.skipped) return;
         // 3. the Void tears it apart
@@ -110,7 +117,7 @@ const Story = (() => {
         scene.appendChild(voidEl);
         requestAnimationFrame(() => voidEl.classList.add("in"));
         say(el, "Then the Void came, and tore the Lexicon apart.");
-        Sound.tone({ f: 70, f2: 35, d: 1.6, v: 0.25 });
+        sfx(() => Sound.tone({ f: 70, f2: 35, d: 1.6, v: 0.25 }));
         await c.wait(1500);
         FX.shake(14, 700);
         FX.flash("#e8dcff", 300, 0.5);
@@ -127,7 +134,7 @@ const Story = (() => {
                 { transform: `translate(${center.x + Math.cos(a) * d}px, ${center.y + Math.sin(a) * d}px) rotate(${720 * (Math.random() < 0.5 ? -1 : 1)}deg) scale(1.1)`, opacity: 0.9 }],
                 { duration: 1700 + Math.random() * 500, delay: i * 40, easing: "cubic-bezier(.2,.6,.4,1)", fill: "forwards" });
         });
-        Sound.tone({ f: 900, f2: 200, d: 0.8, v: 0.05, type: "sawtooth" });
+        sfx(() => Sound.tone({ f: 900, f2: 200, d: 0.8, v: 0.05, type: "sawtooth" }));
         await c.wait(2300);
         if (c.skipped) return;
         // 4. fifteen pages, fifteen worlds, fifteen bosses
@@ -137,7 +144,7 @@ const Story = (() => {
         const grid = U.el("div", { class: "lx-worlds", html: pages.map((p, i) => `<div class="lx-world" style="--c:${p.color};--i:${i}"><div class="lx-world-boss">${Bosses.svg(p.world)}</div><div class="lx-mini-leaf held"></div><small>${U.esc(p.name)}</small></div>`).join("") });
         scene.appendChild(grid);
         say(el, "Fifteen pages fell into fifteen worlds, and in every one, a boss took its page and won't give it back.");
-        chime([57, 60, 64, 57, 60, 65], 0.1, "triangle", 0.04);
+        sfx(() => chime([57, 60, 64, 57, 60, 65], 0.1, "triangle", 0.04));
         await c.wait(4200);
         if (c.skipped) return;
         // 5. your quest
@@ -146,7 +153,7 @@ const Story = (() => {
         scene.appendChild(title);
         requestAnimationFrame(() => title.classList.add("in"));
         el.querySelector(".lx-caption").classList.remove("in");
-        chime([60, 67, 72, 76, 79, 84], 0.12, "sine", 0.07);
+        sfx(() => chime([60, 67, 72, 76, 79, 84], 0.12, "sine", 0.07));
         await c.wait(3800);
         el.classList.add("out");
         await c.wait(500);
@@ -159,8 +166,8 @@ const Story = (() => {
         const i = pages.findIndex(p => p.world === world);
         if (i < 0) return;
         const p = pages[i], el = stage("lx-pagewin"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { color: p.color });
-        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
+        await storyMusic(c, "story-page");
         const before = pages.map((q, j) => (j === i ? { ...q, won: false } : q));
         scene.innerHTML = `<div class="lx-boss-gone">${Bosses.svg(world)}</div><div class="lx-hero">${bookHtml(before)}</div>`;
         const right = scene.querySelector(".lx-right-inner"), slot = scene.querySelector(`.lx-slot[data-i="${i}"]`);
@@ -169,7 +176,7 @@ const Story = (() => {
         // the page itself, flying from the boss into the right-hand page
         right.innerHTML = leafHtml(p, i, pages.length);
         const leaf = right.querySelector(".lx-leaf"), bossBox = scene.querySelector(".lx-boss-gone").getBoundingClientRect(), dest = right.getBoundingClientRect();
-        Sound.tone({ f: 300, f2: 900, d: 0.5, v: 0.05, type: "sine" });
+        sfx(() => Sound.tone({ f: 300, f2: 900, d: 0.5, v: 0.05, type: "sine" }));
         await flyLeaf(leaf, { x: bossBox.left + bossBox.width / 2, y: bossBox.top + bossBox.height / 2 }, { x: dest.left + dest.width / 2, y: dest.top + dest.height / 2 }, 1300);
         leaf.classList.add("glow");
         // ...and its slot lights up, the count goes up
@@ -180,7 +187,7 @@ const Story = (() => {
         scene.querySelector(".lx-count").innerHTML = `<b>${won}</b> of ${pages.length} pages`;
         const sr = slot.getBoundingClientRect();
         FX.burst({ x: sr.left + sr.width / 2, y: sr.top + sr.height / 2, n: 30, colors: ["#fff", "#ffd98a", p.color], shape: "star", speed: [80, 260], gravity: 120, life: [0.5, 1], size: [2, 5] });
-        chime([72, 76, 79, 84], 0.1, "triangle", 0.07);
+        sfx(() => chime([72, 76, 79, 84], 0.1, "triangle", 0.07));
         say(el, won >= pages.length ? "The last page is back where it belongs." : `The ${p.name} page is back in the Lexicon. ${pages.length - won} still missing.`);
         await c.wait(3000);
         el.classList.add("out");
@@ -192,8 +199,8 @@ const Story = (() => {
     // =============================================================================================
     async function finale(c, pages) {
         const el = stage("lx-finale"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true, color: "#ffe9a8" });
-        storyMusic(c);
         c.cleanup(() => { stop(); el.remove(); });
+        await storyMusic(c, "story-finale");
         scene.innerHTML = `<div class="lx-hero">${bookHtml(pages)}</div>`;
         const book = scene.querySelector(".lx-book");
         say(el, "Fifteen pages. Every one of them won back.");
@@ -201,7 +208,7 @@ const Story = (() => {
         book.classList.remove("open");
         book.classList.add("whole");
         say(el, "The Lexicon is whole again.");
-        chime([60, 64, 67, 72, 76, 79], 0.15, "sine", 0.07);
+        sfx(() => chime([60, 64, 67, 72, 76, 79], 0.15, "sine", 0.07));
         await c.wait(1800);
         if (c.skipped) return;
         FX.flash("#fff6d8", 500, 0.7);
@@ -219,7 +226,7 @@ const Story = (() => {
         scene.appendChild(end);
         requestAnimationFrame(() => end.classList.add("in"));
         el.querySelector(".lx-caption").classList.remove("in");
-        chime([67, 72, 76, 79, 84, 88], 0.16, "sine", 0.07);
+        sfx(() => chime([67, 72, 76, 79, 84, 88], 0.16, "sine", 0.07));
         for (let k = 0; k < 4; k++) setTimeout(() => FX.burst({ x: innerWidth * (0.2 + Math.random() * 0.6), y: innerHeight * (0.2 + Math.random() * 0.3), n: 50, colors: ["#ffe066", "#ff5c6c", "#7ad7ff", "#fff"], shape: "star", speed: [150, 450], gravity: 200, life: [0.8, 1.4], size: [2, 5] }), still() ? 0 : 600 + k * 500);
         await c.wait(5000);
         el.classList.add("out");

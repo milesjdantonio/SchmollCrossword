@@ -277,7 +277,6 @@
 .toast.bad .toast-body small { color: #d0283a; }
 
 /* ---- full-screen moments (js/bosses.js) ---- */
-#overlay > .bfx-cutin { pointer-events: none; }
 .bfx-intro, .bfx-ko { position: fixed; inset: 0; z-index: 2; overflow: hidden; display: grid; place-items: center; }
 .bi-bg, .bk-bg { position: absolute; inset: 0; background: radial-gradient(ellipse at 60% 40%, var(--a1), var(--a2)); opacity: 0; transition: opacity .35s; }
 .bi-bg::after, .bk-bg::after { content: ""; position: absolute; left: 60%; top: 45%; width: 260vmax; height: 260vmax; transform: translate(-50%, -50%); background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .14) 0deg 6deg, transparent 6deg 16deg); animation: ba-turn 18s linear infinite; }
@@ -297,24 +296,6 @@
 .bfx-intro.fight .bi-fight { opacity: 1; transform: scale(1); transition: all .3s cubic-bezier(.2, 1.6, .4, 1); }
 .bfx-intro.fight .bi-text { opacity: 0; transition: opacity .2s; }
 .bfx-intro.out, .bfx-ko.out { opacity: 0; transition: opacity .3s; }
-.bfx-cutin { position: fixed; inset: 0; z-index: 3; overflow: hidden; }
-.bc-band { position: absolute; left: -10%; right: -10%; top: 50%; height: min(36vh, 300px); margin-top: calc(min(36vh, 300px) / -2); transform: rotate(-8deg) translateX(-110%);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--boss) 70%, #000), var(--boss) 40%, color-mix(in srgb, var(--boss) 80%, #fff)); box-shadow: 0 0 0 8px #2b2233; transition: transform .28s cubic-bezier(.2, .9, .3, 1); }
-.bc-band::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .14) 0 4px, transparent 4px 40px); animation: bc-speed .25s linear infinite; }
-@keyframes bc-speed { to { background-position: 40px 0; } }
-.bfx-cutin.in .bc-band { transform: rotate(-8deg) translateX(0); }
-.bfx-cutin.out .bc-band { transform: rotate(-8deg) translateX(110%); transition-duration: .3s; }
-.bc-boss { position: absolute; right: 8vw; top: 50%; width: min(42vh, 360px); transform: translate(60vw, -50%) scale(.8); transition: transform .35s .05s cubic-bezier(.2, 1.3, .4, 1); filter: drop-shadow(0 10px 20px rgba(0, 0, 0, .5)); }
-.bc-boss .boss-art { width: 100%; height: auto; display: block; }
-.bfx-cutin.in .bc-boss { transform: translate(0, -50%) scale(1.05); }
-.bfx-cutin.out .bc-boss { transform: translate(-130vw, -50%) scale(1.2); transition: transform .35s ease-in; }
-.bfx-cutin.good .bc-boss { filter: grayscale(.4) brightness(1.1) drop-shadow(0 0 20px #fff); }
-.bfx-cutin.good.in .bc-boss { animation: bp-hit .5s .2s; }
-.bc-text { position: absolute; left: 7vw; top: 50%; transform: translate(-80vw, -50%) rotate(-8deg); transition: transform .3s .08s cubic-bezier(.2, 1.4, .4, 1); color: #fff; max-width: 55vw; }
-.bc-text b { display: block; font: 900 clamp(2.2rem, 7vw, 5rem)/1 var(--font-head, var(--font-body)); -webkit-text-stroke: 3px #2b2233; text-shadow: 0 6px 0 #2b2233; }
-.bc-text small { display: block; margin-top: 4px; font: 900 clamp(.9rem, 2vw, 1.3rem) var(--font-body); text-shadow: 0 2px 4px rgba(0, 0, 0, .7); }
-.bfx-cutin.in .bc-text { transform: translate(0, -50%) rotate(-8deg); }
-.bfx-cutin.out .bc-text { transform: translate(-90vw, -50%) rotate(-8deg); transition: transform .3s ease-in; }
 .bk-boss, .bk-shards { position: absolute; left: 50%; top: 45%; width: min(70vh, 80vw); aspect-ratio: 1; transform: translate(-50%, -50%) scale(.6); }
 .bk-boss { transition: transform .5s cubic-bezier(.2, 1.4, .4, 1); }
 .bfx-ko.in .bk-boss { transform: translate(-50%, -50%) scale(1); animation: bk-shake .12s .6s 8; }
@@ -423,28 +404,8 @@
 .bp-phase { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--boss); color: #fff; font-size: .66rem; letter-spacing: .1em; vertical-align: 2px; }
 
 /* ===================================================================================================
-   Powers (powers.js): the cast banner, shots, swarms, and every ability's and boss move's own look
+   Powers (powers.js): shots, swarms, and every ability's and boss move's own look
    =================================================================================================== */
-.pw-banner { position: fixed; left: 50%; top: 40%; z-index: 9500; display: flex; align-items: center; gap: 18px; transform: translate(-50%, -50%) scale(.4); opacity: 0; pointer-events: none;
-    transition: transform .35s cubic-bezier(.2, 1.6, .4, 1), opacity .2s; }
-.pw-banner.in { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-.pw-banner.out { transform: translate(-50%, -50%) scale(1.25); opacity: 0; transition: transform .4s ease-in, opacity .4s; }
-.pw-rays { position: absolute; left: 60px; top: 50%; width: 520px; height: 520px; margin: -260px 0 0 -260px; border-radius: 50%; z-index: -1;
-    background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--c) 55%, transparent) 0deg 9deg, transparent 9deg 24deg);
-    -webkit-mask: radial-gradient(circle, #000 20%, transparent 65%); mask: radial-gradient(circle, #000 20%, transparent 65%); animation: pw-spin 3s linear infinite; }
-@keyframes pw-spin { to { transform: rotate(360deg); } }
-.pw-ring { position: absolute; left: 60px; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 6px solid var(--c); box-shadow: 0 0 30px var(--c); animation: pw-ring .9s ease-out forwards; }
-@keyframes pw-ring { from { transform: scale(.3); opacity: 1; } to { transform: scale(3); opacity: 0; } }
-.pw-icon { width: 120px; height: 120px; display: grid; place-items: center; font-size: 76px; border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, #fff, color-mix(in srgb, var(--c) 70%, #fff) 60%, var(--c)); border: 5px solid #2b2233; box-shadow: 0 0 0 6px var(--c), 0 0 50px var(--c), 0 10px 30px rgba(0, 0, 0, .4);
-    animation: pw-icon .9s cubic-bezier(.2, 1.6, .4, 1); }
-@keyframes pw-icon { 0% { transform: scale(.2) rotate(-90deg); } 60% { transform: scale(1.15) rotate(8deg); } 100% { transform: none; } }
-.pw-text { max-width: 340px; padding: 10px 18px 12px; border-radius: 18px; background: #2b2233; color: #fff; border: 3px solid var(--c); box-shadow: 0 10px 30px rgba(0, 0, 0, .4); font-family: var(--font-body); }
-.pw-text small { display: block; font: 900 .7rem var(--font-body); letter-spacing: .2em; color: var(--c); }
-.pw-text b { display: block; font: 900 1.7rem/1.1 var(--font-body); text-shadow: 0 3px 0 rgba(0, 0, 0, .4); }
-.pw-text span { display: block; margin-top: 3px; font: 700 .86rem/1.3 var(--font-body); opacity: .92; }
-.pw-banner.bad .pw-icon { border-color: #fff; }
-@media (max-width: 640px) { .pw-banner { flex-direction: column; top: 34%; } .pw-rays, .pw-ring { left: 50%; top: 60px; } .pw-text { text-align: center; } }
 
 .pw-proj { position: fixed; left: -24px; top: -24px; z-index: 9400; width: 48px; height: 48px; display: grid; place-items: center; font-size: 40px; pointer-events: none; filter: drop-shadow(0 0 10px #fff) drop-shadow(0 4px 6px rgba(0, 0, 0, .35)); }
 .pw-aura { position: fixed; z-index: 9300; pointer-events: none; font-size: calc(22px * var(--s, 1)); line-height: 1; margin: -11px 0 0 -11px; animation: pw-pop 1.4s ease-out both; }
@@ -843,3 +804,54 @@
 /* the Daily Boss keeps Check and Reveal, and has no items (only Give Up) */
 .in-boss.special-boss #helpers .helper-row { display: flex; }
 .cm-items.only-giveup { justify-content: flex-end; }
+
+/* ---- How to Play (howto.js): the shop's card and tabs, with short topics in a grid ---- */
+.howto-card { width: min(920px, 100vw); }
+.ht-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.ht-item { padding: 13px 15px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: color-mix(in srgb, var(--accent) 4%, var(--surface-solid)); }
+.ht-item h3 { margin: 0 0 5px; font: 800 1rem/1.2 var(--font-body); color: var(--ink); }
+.ht-item p { margin: 0; font-size: .88rem; line-height: 1.5; color: color-mix(in srgb, var(--ink) 82%, var(--muted)); }
+#howto-btn .dot { stroke-width: 2.6; }
+
+/* ---- the warning box's other messages (campaign.js drawWarn): what just happened, and the boss almost done ---- */
+.rb-track .me-warn[data-tone="good"], .rb-track .me-warn[data-tone="mine"], .rb-track .me-warn[data-tone="info"] { animation: me-warn-pop .25s cubic-bezier(.2, 1.5, .4, 1); }
+.me-warn[data-tone="good"] { background: #163a26; border-color: #3fbf6b; box-shadow: 0 0 0 3px rgba(63, 191, 107, .3), 0 6px 18px rgba(0, 0, 0, .3); }
+.me-warn[data-tone="good"] b { color: #9be36b; }
+.me-warn[data-tone="good"] i { background: #3fbf6b; }
+.me-warn[data-tone="mine"] { background: #1d2a44; border-color: #4fa3e8; box-shadow: 0 0 0 3px rgba(79, 163, 232, .3), 0 6px 18px rgba(0, 0, 0, .3); }
+.me-warn[data-tone="mine"] b { color: #9fd0ff; }
+.me-warn[data-tone="mine"] i { background: #4fa3e8; }
+.me-warn[data-tone="info"] { border-color: #8a8494; box-shadow: 0 6px 18px rgba(0, 0, 0, .3); }
+.me-warn[data-tone="info"] b { color: #fff; }
+.me-warn[data-tone="info"] i { background: #8a8494; }
+.me-warn[data-tone="bad"] b { color: #ff8a8a; }
+.me-warn[data-tone="rage"] { background: #3a1020; border-color: #ff3b3b; }
+.me-warn[data-tone="rage"] b { color: #ff6b6b; }
+.me-warn[data-tone="close"] { background: #5a0f1c; border-color: #ff5c6c; animation: me-warn-pop .25s cubic-bezier(.2, 1.5, .4, 1), close-box 0.9s ease-in-out .25s infinite alternate; }
+.me-warn[data-tone="close"] b { color: #fff; }
+@keyframes close-box { to { box-shadow: 0 0 0 5px rgba(255, 92, 108, .6), 0 0 28px rgba(255, 60, 80, .7); } }
+/* the boss is almost done: the screen's edges glow red and pulse like a heartbeat (pointer-events none: clicks go through) */
+.close-edge { position: fixed; inset: 0; z-index: 700; pointer-events: none; opacity: 0; transition: opacity .4s;
+    box-shadow: inset 0 0 90px 24px rgba(255, 30, 60, .55), inset 0 0 0 4px rgba(255, 60, 80, .6); }
+.boss-close .close-edge { opacity: 1; animation: close-beat 1.05s ease-in-out infinite; }
+@keyframes close-beat { 0%, 100% { opacity: .55; } 12% { opacity: 1; } 24% { opacity: .7; } 36% { opacity: .95; } }
+.boss-close .rb-boss-face { animation: close-face .45s ease-in-out infinite alternate; }
+@keyframes close-face { to { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(255, 60, 80, .7), 0 0 18px rgba(255, 60, 80, .7); } }
+.boss-close .bp-race i { background: linear-gradient(90deg, #ff8a3d, #ff3b4f) !important; }
+@media (prefers-reduced-motion: reduce) { .boss-close .close-edge, .boss-close .rb-boss-face, .me-warn[data-tone="close"] { animation: none; } .boss-close .close-edge { opacity: .8; } }
+/* empty loadout slots and the shop's swap buttons */
+.se-swap { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.se-swap:hover .se-icon { transform: scale(1.08); }
+.bp-ab-none { grid-column: 1 / -1; margin: 4px 0; font-size: .82rem; color: var(--muted); text-align: center; }
+/* the campaign header on phones: Exit and the world on top, the buttons on a second row (How to Play shrinks to ?) */
+.cmv-shop { white-space: nowrap; flex-shrink: 0; }
+#cm-howto .ht-q { display: none; }
+@media (max-width: 640px) {
+    .cmv-bar { flex-wrap: wrap; row-gap: 6px; }
+    .cmv-where { flex: 1 1 60%; }
+    .cmv-bar .btn { padding-left: 11px; padding-right: 11px; }
+    #cm-howto { width: 42px; padding-left: 0; padding-right: 0; }
+    #cm-howto .ht-lbl { display: none; }
+    #cm-howto .ht-q { display: inline; font-weight: 900; }
+    .cmv-bar .cmv-stat.coins { margin-left: auto; }
+}

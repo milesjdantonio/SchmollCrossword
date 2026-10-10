@@ -49,7 +49,7 @@ const Achievements = (() => {
         { id: "cm-shop", icon: "\u{1F6CD}️", name: "Shopaholic", desc: "Buy 10 things in the shop.", campaign: true },
         { id: "cm-world", icon: "\u{1F3C1}", name: "World Champion", desc: "Clear all five levels of a world.", campaign: true },
         { id: "cm-counter", icon: "\u{1F504}", name: "Turnabout", desc: "Counter 3 boss attacks in one fight.", campaign: true },
-        { id: "cm-dailyboss", icon: "\u{1F4C6}", name: "Boss of the Day", desc: "Beat the Daily Boss.", campaign: true },
+        { id: "cm-dailyboss", icon: "\u{1F4C6}", name: "Boss of the Day", desc: "Beat today's boss on Daily.", campaign: true },
         { id: "cm-flawless", icon: "✨", name: "Flawless Race", desc: "Beat a boss with 3 stars.", campaign: true },
         { id: "cm-phase", icon: "\u{1F300}", name: "Phase Breaker", desc: "Beat a boss with 3 or more phases.", campaign: true },
         { id: "cm-void", icon: "\u{1F30C}", name: "Into the Void", desc: "Beat the Void, the final boss.", campaign: true },

@@ -12,8 +12,8 @@
 
 const Powers = (() => {
     // ---- sound helpers (all synthesized, see sound.js; noise shorter than 0.25 s is skipped there) ----
-    const T = (f, f2, type = "sine", t = 0, d = 0.2, v = 0.12, x = {}) => Sound.tone({ f, f2, type, t, d, v, ...x });
-    const N = (f, f2, t = 0, d = 0.4, v = 0.15, x = {}) => Sound.noise({ f, f2, t, d, v, ...x });
+    const T = (f, f2, type = "sine", t = 0, d = 0.2, v = 0.12, x = {}) => Sound.tone({ f, f2, type, t, d, v, ...x, boss: true });
+    const N = (f, f2, t = 0, d = 0.4, v = 0.15, x = {}) => Sound.noise({ f, f2, t, d, v, ...x, boss: true });
     const M = n => Sound.midi(n);
     const arp = (notes, step, type, d, v, x = {}) => notes.forEach((n, i) => T(M(n), null, type, i * step, d, v, x));
 
@@ -162,10 +162,26 @@ const Powers = (() => {
         bomb: ["latch"], taunt: ["bell", 1.2], comboban: ["glitch"], echo: ["retro2", 0.8], mask: ["noise"], unlock: ["click"], itemlock: ["field2", 0.8],
         numberless: ["noise", 1.3], fakeclue: ["creak2", 0.8], wordthief: ["punch"], oneword: ["page"], powerup: ["thruster", 0.6], heal: ["thruster4", 1.2],
         toll: ["bell", 0.7], snapfinish: ["warp", 1.4], vowels: ["engine", 0.5] };
-    const smp = ([name, rate = 1] = [], v = 0.55) => name && Sound.sample(name, { v, rate });
+    const smp = ([name, rate = 1] = [], v = 0.55) => name && Sound.sample(name, { v, rate, boss: true });
     // every recorded sound a fight can use, so they're loaded before they're needed
     const ALL_SAMPLES = [...new Set([...Object.values(SMP), ...Object.values(BSMP)].map(x => x[0]).concat(["hit", "bell", "ko", "jingle-block", "jingle-win", "coin"]))];
 
+    // How loud each boss move and ability may play (the user, 2026-10-10: "some boss ability audios are wayyyy too
+    // loud, it shouldn't be any louder than the music"). Every one was measured in the browser (its sound, recording
+    // and scene together, K-weighted momentary loudness), and the ones louder than the music were turned down to just
+    // under it: a move to its own world's quietest song, an ability to the typical song. 1 when not listed.
+    const MOVE_LEVEL = {
+        ambush: 0.5, avalanche: 0.45, bomb: 0.83, confetti: 0.74, curse: 0.67, darkcreep: 0.51, echo: 0.52,
+        eruption: 0.97, fakecheck: 0.48, flare: 0.75, gravity: 0.47, ink: 0.87, itemlock: 0.43, lightning: 0.75,
+        lights: 0.58, mask: 0.46, mirror: 0.56, nobackspace: 0.91, numberless: 0.37, quake: 0.47, riddle: 0.41,
+        shrink: 0.49, snapfinish: 0.25, static: 0.44, upside: 0.42, vowels: 0.3, ward: 0.44, wordthief: 0.69
+    };
+    const ABILITY_LEVEL = {
+        "arcade-cheat": 0.56, "arcade-chomp": 0.99, "arcade-extralife": 0.57, "candy-rush": 0.94,
+        "carnival-cotton": 0.82, "carnival-pie": 0.77, "desert-mirage": 0.57, "garden-sun": 0.71,
+        "paper-rub": 0.93, "paper-wall": 0.49, "rain-thunder": 0.53, "robot-firewall": 0.5, "sky-tailwind": 0.48,
+        "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53
+    };
     // a boss winding up: a rising alarm, pitched to the boss's world
     const charge = (pitch = 0) => { for (let i = 0; i < 3; i++) T(M(57 + pitch + i * 4), M(60 + pitch + i * 4), "sawtooth", i * 0.18, 0.15, 0.04, { filt: { f: 1600 } }); T(M(45 + pitch), M(57 + pitch), "triangle", 0, 0.6, 0.08); };
 
@@ -205,21 +221,21 @@ const Powers = (() => {
             { proj: null, aura: ["💧", "🫧"], motion: "rise", color: "#3fb8e0", on: "me" }),
         A("ocean", "bubble", "Bubble Trap", "🫧", "bubble", "Trap the boss in a big floating bubble.", "The boss can't write until you finish your next word (up to 15s).",
             { proj: "🫧", path: "rise", aura: ["🫧", "○"], motion: "rise", color: "#8fe3ff", on: "boss" }),
-        A("ocean", "tide", "Tide Pull", "🌊", "undo", "The tide pulls back everything that washed in last.", "Takes back the last 6 letters the boss wrote, newest first.",
+        A("ocean", "tide", "Tide Pull", "🌊", "undo", "The tide pulls back everything that washed in last.", "Takes back the last 4 letters the boss wrote, newest first.",
             { proj: "🌊", path: "line", aura: ["🌊", "💦"], motion: "drift", color: "#2a8fd6", on: "boss" }),
         A("snow", "snowball", "Snowball", "⛄", "freeze", "A snowball, right in the face.", "Freezes the boss solid for 6s.",
             { proj: "⚪", path: "arc", aura: ["❄️", "✳️"], motion: "pop", color: "#9fd8ff", on: "boss" }),
-        A("snow", "blizzard", "Blizzard", "🌨️", "delay", "A storm so thick the boss can't get ready.", "Pushes the boss's next attack 30s further away.",
+        A("snow", "blizzard", "Blizzard", "🌨️", "delay", "A storm that grows with every right letter you write.", "For 15s, every right letter you type in a row piles snow on the boss's pencil: half a second frozen each, up to 8s. One wrong letter melts it all.",
             { proj: null, aura: ["🌨️", "❄️"], motion: "fall", color: "#cfe9ff", on: "boss" }),
         A("snow", "armor", "Frost Armor", "🧊", "armor", "A thin coat of ice over your whole board.", "For 40s the boss's attacks last half as long, and erasing attacks take fewer letters.",
             { proj: null, aura: ["🧊", "❄️"], motion: "orbit", color: "#7cc7ff", on: "me" }),
-        A("rain", "puddle", "Puddle Splash", "💦", "wash", "Soak the boss's paper.", "Washes away every letter in the boss's unfinished words. Finished words stay.",
+        A("rain", "puddle", "Puddle Splash", "💦", "wash", "Soak the boss's paper.", "Washes away up to 6 letters from the boss's unfinished words, newest first. Finished words stay.",
             { proj: "💦", path: "drop", aura: ["💦", "💧"], motion: "fall", color: "#4d8fd6", on: "boss" }),
         A("rain", "thunder", "Thunderclap", "⚡", "counter", "A crack of thunder at exactly the right moment.", "Cancels an attack that's winding up and stuns the boss for 4s (2s if nothing was coming).",
             { proj: "⚡", path: "drop", aura: ["⚡", "💥"], motion: "spark", color: "#ffe066", on: "boss" }),
         A("rain", "rainbow", "Lucky Rainbow", "🌈", "lucky", "Something lucky waits at the end of the rainbow.", "Your combo jumps up by 2 and can't run out for 30s.",
             { proj: null, aura: ["🌈", "🍀", "✨"], motion: "rise", color: "#ff7b9c", on: "me" }),
-        A("sky", "gust", "Gust", "🌬️", "scatter", "A sharp gust across the boss's board.", "Blows one letter out of each word the boss has finished (up to 6).",
+        A("sky", "gust", "Gust", "🌬️", "scatter", "A sharp gust across the boss's board.", "Blows one letter out of each of the last 4 words the boss finished.",
             { proj: "🌬️", path: "line", aura: ["💨", "🍃"], motion: "drift", color: "#bfe4ff", on: "boss" }),
         A("sky", "cloud", "Silver Lining", "☁️", "silver", "Every cloud has a silver lining.", "For 40s, each attack that hits you gives you a right letter.",
             { proj: null, aura: ["☁️", "🥈"], motion: "orbit", color: "#d9e2ef", on: "me" }),
@@ -233,11 +249,11 @@ const Powers = (() => {
             { proj: null, aura: ["🪞", "✨"], motion: "pop", color: "#ffcf7a", on: "me" }),
         A("carnival", "pie", "Pie in the Face", "🥧", "blind", "Splat! A cream pie, right in the face.", "The boss can't see for 8s and loses the word it was writing.",
             { proj: "🥧", path: "arc", aura: ["⚪", "🤍"], motion: "pop", color: "#fff3d6", on: "boss" }),
-        A("carnival", "juggle", "Juggling Act", "🤹", "hypno", "The boss can't take its eyes off your juggling.", "For 20s the boss stops writing whenever you type.",
+        A("carnival", "juggle", "Juggling Act", "🤹", "hypno", "The boss can't take its eyes off your juggling.", "For 12s the boss stops writing whenever you type.",
             { proj: null, aura: ["🔴", "🔵", "🟡"], motion: "orbit", color: "#ff4d6d", on: "boss" }),
         A("carnival", "cotton", "Sugar Crash", "🍡", "crash", "Give the boss a giant cotton candy, and wait.", "The boss goes twice as fast for 3s, then crashes and can't write for 12s.",
             { proj: "🍡", path: "arc", aura: ["🍡", "💤"], motion: "rise", color: "#ff9ed2", on: "boss" }),
-        A("arcade", "chomp", "Chomper", "👾", "chomp", "Release a hungry little pixel monster.", "It chomps along the boss's board in a zigzag, eating up to 8 letters.",
+        A("arcade", "chomp", "Chomper", "👾", "chomp", "Release a hungry little pixel monster.", "It chomps along the boss's board in a zigzag, eating up to 5 letters.",
             { proj: "👾", path: "line", aura: ["🟨", "🟦"], motion: "pop", color: "#ffd23f", on: "boss" }),
         A("arcade", "cheat", "Cheat Code", "🎮", "cheat", "Up, up, down, down, left, right...", "Flashes the answer to your selected word for 2.5 seconds. Remember it!",
             { proj: null, aura: ["🎮", "⭐"], motion: "spark", color: "#5ce1e6", on: "me" }),
@@ -261,9 +277,9 @@ const Powers = (() => {
             { proj: null, aura: ["🔥", "🟧"], motion: "rise", color: "#ff3d00", on: "boss" }),
         A("volcano", "fireup", "Fire Up", "🧨", "fireup", "Hot enough to burn your mistakes.", "For 20s, any wrong letter you type burns away at once, so you know straight away.",
             { proj: null, aura: ["🧨", "💥"], motion: "spark", color: "#ff9f1c", on: "me" }),
-        A("space", "blackhole", "Black Hole", "🕳️", "blackhole", "A tiny black hole opens in the middle of the boss's board.", "Swallows every letter in the middle of the boss's board (the center 3×3).",
+        A("space", "blackhole", "Black Hole", "🕳️", "blackhole", "A tiny black hole opens in the middle of the boss's board.", "Swallows the 5 letters nearest the middle of the boss's board.",
             { proj: "🕳️", path: "spiral", aura: ["✦", "·"], motion: "swirl", color: "#6b4dff", on: "boss" }),
-        A("space", "reverse", "Time Reversal", "⏪", "reverse", "Turn the boss's clock backwards.", "For 10s the boss un-writes instead: it erases one of its own letters every second.",
+        A("space", "reverse", "Time Reversal", "⏪", "reverse", "Turn the boss's clock backwards.", "For 6s the boss un-writes instead: it erases one of its own letters every second.",
             { proj: null, aura: ["⏪", "🌀"], motion: "swirl", color: "#58d6ff", on: "boss" }),
         A("space", "wormhole", "Wormhole", "🌀", "wormhole", "Open a wormhole right under the boss's pencil.", "Everything the boss writes in the next 10s falls into the wormhole when it closes.",
             { proj: "🌀", path: "spiral", aura: ["🌀", "✨"], motion: "swirl", color: "#c06bff", on: "boss" })
@@ -376,16 +392,6 @@ const Powers = (() => {
     const layer = () => document.getElementById("overlay") || document.body;
     const still = () => U.motion() === "still";
 
-    // the big "cast" moment in the middle of the screen: the icon slams in with a ring, the name and what it does
-    function banner({ icon, name, text, color, good = true, kicker }) {
-        const el = U.el("div", { class: "pw-banner" + (good ? " good" : " bad"), style: { "--c": color || "#ffd23f" }, "aria-hidden": "true" },
-            U.el("div", { class: "pw-rays" }), U.el("div", { class: "pw-ring" }), U.el("div", { class: "pw-icon", text: icon }),
-            U.el("div", { class: "pw-text" }, U.el("small", { text: kicker || (good ? "ABILITY" : "INCOMING") }), U.el("b", { text: name }), text ? U.el("span", { text }) : null));
-        layer().appendChild(el);
-        requestAnimationFrame(() => el.classList.add("in"));
-        setTimeout(() => el.classList.add("out"), still() ? 700 : 1050);
-        setTimeout(() => el.remove(), 1500);
-    }
     // ---- the physical look (the user, 2026-10-09: "more physical components rather than emojis") ----
     // Every shot and swarm is drawn on the spells canvas: comets, embers, leaves, drops, flakes, sparks. The emoji a
     // caller names only picks WHAT is drawn (fire = embers, leaves = leaves, water = drops...), never the emoji itself.
@@ -483,7 +489,7 @@ const Powers = (() => {
     //   fromEl: your board, bossEl: the boss's portrait, bossBoard: the boss's board
     async function cast(a, { fromEl, bossEl, bossBoard }) {
         const fx = a.fx, color = fx.color;
-        banner({ icon: a.icon, name: a.name, text: a.desc, color, good: true });
+        Sound.bossLevel(ABILITY_LEVEL[a.id] ?? 1, 4500);       // its sound, recording and scene, no louder than the music
         Sound.custom(a.sound);
         smp(SMP[a.kind]);
         await chargeUp(U.center(fromEl), color);
@@ -493,10 +499,11 @@ const Powers = (() => {
     async function strike(world, move, { fromEl, toEl }) {
         const B = typeof Bosses !== "undefined" ? Bosses.info(world) : null;
         await chargeUp(U.center(fromEl), B ? B.color : "#ff5c6c", 280);
+        Sound.bossLevel(MOVE_LEVEL[move.kind] ?? 1, 4500);     // its sound, recording and scene, no louder than the music
         Sound.custom(move.sound);
         smp(BSMP[move.kind]);
     }
     const chargeSound = world => Sound.custom(charge, WORLD_PITCH[world] || 0);
 
-    return { ABILITIES, MOVES, threat, cast, strike, banner, aura, halo, fly, chargeSound, ALL_SAMPLES };
+    return { ABILITIES, MOVES, threat, cast, strike, aura, halo, fly, chargeSound, ALL_SAMPLES };
 })();

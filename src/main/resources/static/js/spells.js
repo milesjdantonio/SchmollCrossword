@@ -440,7 +440,7 @@ const Spells = (() => {
                 const p = pts[i];
                 if (!still()) await ball.animate([{ transform: `translate(${prev.x - 20}px, ${prev.y - 20}px)` }, { transform: `translate(${(prev.x + p.x) / 2 - 20}px, ${Math.min(prev.y, p.y) - 90}px) rotate(180deg)` }, { transform: `translate(${p.x - 20}px, ${p.y - 20}px) rotate(360deg)` }], { duration: 300, easing: "ease-in" }).finished.catch(() => null);
                 FX.burst({ x: p.x, y: p.y, n: 10, colors: ["#fff", "#ffd23f", "#a0652c"], shape: "star", speed: [80, 220], gravity: 300, life: [0.3, 0.6], size: [2, 5] });
-                Sound.tone({ f: 300 + i * 60, f2: 150, d: 0.12, v: 0.2 });
+                Sound.tone({ f: 300 + i * 60, f2: 150, d: 0.12, v: 0.2, boss: true });
                 if (ghosts[i]) leave([ghosts[i]], "pop");
                 prev = p;
             }

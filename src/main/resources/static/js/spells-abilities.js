@@ -96,7 +96,7 @@
         });
     }
     const flash = (color, ms = 220, o = 0.4) => FX.flash(color, ms, o);
-    const tone = (o) => Sound.tone(o);
+    const tone = (o) => Sound.tone({ ...o, boss: true });         // (at the ability's level: Sound.bossLevel)
 
     // ---- drawn props ----
     function drawEraser(ctx, x, y, ang) {

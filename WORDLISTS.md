@@ -228,7 +228,7 @@ with links is in `static/audio/CREDITS.txt`.
 |---|---|---|
 | [Kenney: Impact, Interface, Sci-fi Sounds, RPG Audio, Music Jingles](https://kenney.nl/assets/category:Audio) | ~75 short boss-fight sound effects | CC0 |
 | 31 songs from [OpenGameArt](https://opengameart.org/) (full list in `static/audio/CREDITS.txt`) | a song for every boss phase (1 phase for the first five bosses, 2 for the middle ones, 3 for the last three, 5 for the Void), each measured more intense than the phase before, each starting with a build-up made from its own lead-in, then a seamless loop; plus win music and the story cutscenes' music | CC0, checked on each track's own page (the scan's `cc0only` flag, re-checked per song on 2026-10-09) |
-| [GeneralUser GS](https://schristiancollins.com/generaluser.php) SoundFont by S. Christian Collins (via [FluidSynth](https://www.fluidsynth.org/)) | the instruments for the music composed for the game (the Sphinx's phase 2 in 7/4, and the losing jingle) | free for any music made with it; only the rendered MP3s are in the repo |
+| [GeneralUser GS](https://schristiancollins.com/generaluser.php) SoundFont by S. Christian Collins (via [FluidSynth](https://www.fluidsynth.org/)) | the instruments for the music composed for the game (the Sphinx's phase 2 in 7/4, the win and losing jingles, the three story cues, and the shout chorus on Thunderhead's phase 2) | free for any music made with it; only the rendered MP3s are in the repo |
 
 How the music was chosen without ears (Claude can't hear; the full reasoning is in `boss-music/README.md`): a script searched OpenGameArt by theme (chiptune, ocean,
 winter, desert, circus, spooky, lava, robot...), kept only pages whose own license is CC0, and `listen.py` (scratch

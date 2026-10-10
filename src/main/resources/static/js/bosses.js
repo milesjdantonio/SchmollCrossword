@@ -6,7 +6,6 @@
 //   Bosses.inner(world)       the same without the <svg> wrapper, to place inside another SVG (the map)
 //   Bosses.arena(world)       the full-screen arena behind a boss fight: colours, a giant faded boss, scenery, particles
 //   Bosses.intro(c, world)    the full-screen boss intro (a cinematic: c comes from FX.cinematic)
-//   Bosses.cutin(world, ...)  a quick full-screen cut-in when the boss attacks (doesn't pause anything)
 //   Bosses.ko(c, world)       the boss shatters (a cinematic)
 //
 // Animated parts use classes: bz-float (bobbing), bz-eyes (blinking), bz-sway (swaying limbs), bz-bit (floating
@@ -699,17 +698,6 @@ const Bosses = (() => {
         await c.wait(320);
     }
 
-    // An attack cut-in: a slanted band across the whole screen with the boss lunging and its move's name
-    function cutin(world, title, sub, { good = false } = {}) {
-        const b = info(world);
-        const el = U.el("div", { class: "bfx-cutin" + (good ? " good" : ""), style: { "--boss": good ? "#3fbf6b" : b.color }, "aria-hidden": "true",
-            html: `<div class="bc-band"></div><div class="bc-boss">${svg(world)}</div><div class="bc-text"><b>${U.esc(title)}</b>${sub ? `<small>${U.esc(sub)}</small>` : ""}</div>` });
-        document.getElementById("overlay").appendChild(el);
-        requestAnimationFrame(() => el.classList.add("in"));
-        setTimeout(() => el.classList.add("out"), U.motion() === "still" ? 900 : 1150);
-        setTimeout(() => el.remove(), 1600);
-    }
-
     // A new phase: the boss powers up full screen (bigger, glowing, the arena turns), then the new puzzle is announced.
     // The phase's own song builds up underneath; the burst lands where the song proper starts (until = Sound.buildDone)
     async function phase(c, world, title, sub, { phase: n = 2, phases = 2, until = null } = {}) {
@@ -769,5 +757,5 @@ const Bosses = (() => {
         await c.wait(350);
     }
 
-    return { info, svg, inner, arena, chaos, enrage, intro, phase, cutin, ko, list: Object.keys(B) };
+    return { info, svg, inner, arena, chaos, enrage, intro, phase, ko, list: Object.keys(B) };
 })();

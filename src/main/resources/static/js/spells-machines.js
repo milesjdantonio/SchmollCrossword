@@ -10,7 +10,7 @@
     const still = () => K.still();
     const ms = t => (still() ? 0 : t);
     const clamp01 = k => Math.max(0, Math.min(1, k));
-    const tone = o => Sound.tone(o);
+    const tone = o => Sound.tone({ ...o, boss: true });           // (at the move's or ability's level: Sound.bossLevel)
     const INK = "#2b2233";
     const fade = (k, from = 0.85) => (k > from ? (1 - k) / (1 - from) : 1);
     // a timeline: ph(t, a, b) = how far through [a, b] seconds we are (0..1)
@@ -25,7 +25,7 @@
         ctx.fillStyle = "#c48a4a"; ctx.beginPath(); ctx.arc(0, 0, r * 0.72, 0, TAU); ctx.fill(); ctx.stroke();
         ctx.strokeStyle = "#5b3a1a"; ctx.lineWidth = 3; for (let i = 0; i < 6; i++) { ctx.rotate(TAU / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(r * 0.72, 0); ctx.stroke(); }
         ctx.fillStyle = "#4a4f5a"; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r * 0.2, 0, TAU); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = "#4a4f5a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, r - 1.5, 0, TAU); ctx.stroke();       // the iron tyre
+        ctx.strokeStyle = "#4a4f5a"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, Math.max(0, r - 1.5), 0, TAU); ctx.stroke();       // the iron tyre
         ctx.restore();
     }
     // a cannon: carriage on two wheels, iron barrel pivoting at (px, py) and pointing along ang

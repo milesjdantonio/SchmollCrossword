@@ -36,6 +36,7 @@
                 <a href="#settings" data-view="settings"><span class="nav-ic" aria-hidden="true">&#9881;</span>Settings</a>
             </nav>
             <div class="tools">
+                <button type="button" class="tool" id="howto-btn" title="How to Play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path class="dot" d="M12 17.2v.1"/></svg><span class="sr">How to Play</span></button>
                 <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
                 <button type="button" class="tool" id="sound-toggle" title="Sound effects"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound effects</span></button>
             </div>
@@ -108,7 +109,7 @@
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
                         <button type="button" class="challenge-btn" data-difficulty="challenge" title="A bigger grid, 6&times;6 to 9&times;9, with longer words and more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
-                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race a campaign boss: today's boss on Daily, a random one on Unlimited">Daily Boss</button>
+                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race a campaign boss: today's boss on Daily, a random one on Unlimited">Boss</button>
                         <span class="unlimited-left" id="unlimited-left" hidden></span>
                         <button type="button" class="new-puzzle" id="new-puzzle" hidden>New Puzzle</button>
                     </nav>
@@ -171,6 +172,7 @@
                     </div>
                     <span class="cmv-stat" id="cm-total"></span>
                     <span class="cmv-stat coins" id="cm-coins"></span>
+                    <button type="button" class="btn cmv-shop" id="cm-howto" aria-label="How to Play"><span class="ht-lbl">How to Play</span><span class="ht-q" aria-hidden="true">?</span></button>
                     <button type="button" class="btn cmv-shop" id="cm-book" title="The Lexicon: the pages you've won back">Book</button>
                     <button type="button" class="btn cmv-shop" id="cm-skills">Skills</button>
                     <button type="button" class="btn primary cmv-shop" id="cm-shop">Shop</button>
@@ -284,7 +286,7 @@
                                 from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a>, under the SIL Open Font License.</dd>
                             <dt>Sounds &amp; Music</dt>
                             <dd>Boss fight sounds by <a href="https://kenney.nl/" target="_blank" rel="noopener">Kenney</a>; each boss's music by artists on
-                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Loyalty Freak Music, Zane Little Music, Bobjt, Dizzy Crow, glitchart and more), plus two pieces composed for the game with the GeneralUser GS SoundFont. All public domain (CC0); see audio/CREDITS.txt.</dd>
+                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Loyalty Freak Music, Zane Little Music, Bobjt, Dizzy Crow, glitchart and more), plus music composed for the game with the GeneralUser GS SoundFont (the story, the win and losing music, the Sphinx's second song and Thunderhead's chorus). All public domain (CC0); see audio/CREDITS.txt.</dd>
                             <dt>Art &amp; Sound</dt>
                             <dd>Every scene and animation is drawn in code for this game, and most sounds are made live in code.</dd>
                         </dl>
@@ -334,6 +336,7 @@
     <script src="js/spells-machines.js"></script>
     <script src="js/story.js"></script>
     <script src="js/campaign.js"></script>
+    <script src="js/howto.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
