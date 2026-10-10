@@ -2,7 +2,7 @@
 // name and a last-name initial ("Miles D."), ranked by each player's total points for the day.
 //
 //   Leaderboard.after(record, box)   on the results screen: post this daily (asks for a name the first time)
-//   Leaderboard.drawHome(el)         the Home card: today's top 5 and your place
+//   Leaderboard.drawHome(el, count)  the Home card: today's top 50 in two columns, your place, and the player count
 //   Leaderboard.drawFull(el)         the Stats page: today's top 50
 //
 // The server (LeaderboardController.java) checks the name, works out the points itself and keeps one entry per daily.
@@ -77,18 +77,24 @@ const Leaderboard = (() => {
         return form;
     }
 
-    // the board as a list (names as text only)
-    function list(board, max) {
-        const ol = U.el("ol", { class: "lb-list" });
+    // the board as a list (names as text only); columns: 2 lays a long list out in two columns, top to bottom
+    function list(board, max, { columns = 1 } = {}) {
         const rows = (board.top || []).slice(0, max);
+        const two = columns === 2 && rows.length > 6;
+        const ol = U.el("ol", { class: "lb-list" + (two ? " two" : ""), style: two ? { "--rows": String(Math.ceil(rows.length / 2)) } : null });
         for (const r of rows) ol.appendChild(U.el("li", { class: "lb-row" + (board.you && board.you.rank === r.rank ? " me" : "") },
             U.el("span", { class: "lb-rank", text: String(r.rank) }), U.el("span", { class: "lb-name", text: r.name }),
             U.el("span", { class: "lb-dailies", text: (r.dailies || []).map(d => ({ easy: "E", medium: "M", hard: "H", challenge: "★", boss: "⚔" })[d] || "").join(" ") }),
             U.el("b", { class: "lb-points", text: r.points + " pts" })));
-        if (board.you && !rows.some(r => r.rank === board.you.rank)) ol.appendChild(U.el("li", { class: "lb-row me far" },
-            U.el("span", { class: "lb-rank", text: String(board.you.rank) }), U.el("span", { class: "lb-name", text: board.you.name }),
-            U.el("span", { class: "lb-dailies", text: "" }), U.el("b", { class: "lb-points", text: board.you.points + " pts" })));
         if (!rows.length) ol.appendChild(U.el("li", { class: "lb-empty", text: "No scores yet today. Be the first." }));
+        // your place when it's below the list: its own row underneath (in two columns it runs under both)
+        if (board.you && !rows.some(r => r.rank === board.you.rank)) {
+            const far = U.el("li", { class: "lb-row me far" },
+                U.el("span", { class: "lb-rank", text: String(board.you.rank) }), U.el("span", { class: "lb-name", text: board.you.name }),
+                U.el("span", { class: "lb-dailies", text: "" }), U.el("b", { class: "lb-points", text: board.you.points + " pts" }));
+            if (!two) ol.appendChild(far);
+            else return U.el("div", { class: "lb-wrap" }, ol, U.el("ol", { class: "lb-list lb-you", start: String(board.you.rank) }, far));
+        }
         return ol;
     }
     async function fetchBoard() {
@@ -115,14 +121,16 @@ const Leaderboard = (() => {
         }
     }
 
-    async function drawHome(el) {
+    // Home: today's top 50 across the bottom of the page (the user, 2026-10-10: "this leaderboard can show top 50")
+    async function drawHome(el, count) {
         if (!el) return;
         try {
             const board = await fetchBoard();
             el.innerHTML = "";
-            el.appendChild(list(board, 5));
-            if (!me().first) el.appendChild(U.el("p", { class: "lb-hint", text: "Solve a daily to join." }));
-        } catch (err) { el.textContent = "The leaderboard is offline right now."; }
+            el.appendChild(list(board, 50, { columns: 2 }));
+            if (count) count.textContent = board.players ? `${board.players} ${board.players === 1 ? "Player" : "Players"} Today` : "";
+            if (!me().first) el.appendChild(U.el("p", { class: "lb-hint" }, "Solve a daily to join, or ", U.el("a", { class: "lb-link", href: "#stats", text: "pick your name" }), "."));
+        } catch (err) { el.textContent = "The leaderboard is offline right now."; if (count) count.textContent = ""; }
     }
     async function drawFull(el) {
         if (!el) return;

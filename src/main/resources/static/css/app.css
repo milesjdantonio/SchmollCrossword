@@ -101,10 +101,12 @@ body {
 .logo-mark i.b, .hero-logo i.b, .intro-mini i.b { background: var(--block); }
 .logo:hover .logo-mark { transform: rotate(8deg) scale(1.1); }
 .logo-text { font: 700 calc(1.75rem * var(--head-scale)) var(--font-head); letter-spacing: .01em; white-space: nowrap; }
-.modes {
+/* the screens and the three quick buttons (How to Play, world, sound) share one pill, the buttons right after
+   Settings (the user, 2026-10-10); on narrower screens the pill is just the screens and the buttons sit by the logo */
+.bar-group, .modes {
     display: flex;
+    align-items: center;
     gap: 3px;
-    margin-left: auto;
     padding: 5px;
     background: var(--surface);
     border: 1.5px solid var(--line);
@@ -112,6 +114,8 @@ body {
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
 }
+.bar-group { margin-left: auto; gap: 4px; }
+.bar-group .modes { padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
 .modes a {
     display: flex;
     align-items: center;
@@ -125,8 +129,8 @@ body {
 }
 .modes a:hover { background: var(--hover); transform: translateY(-1px); }
 .modes a.active { background: var(--accent); color: var(--accent-ink); }
-.nav-ic { opacity: .85; }
 .tools { display: flex; gap: 6px; }
+.bar-group .tools { gap: 2px; margin-left: 2px; padding-left: 6px; border-left: 1.5px solid var(--line); }
 .tool {
     display: grid;
     place-items: center;
@@ -143,7 +147,10 @@ body {
     backdrop-filter: blur(10px);
     transition: transform .25s cubic-bezier(.2, 1.6, .4, 1), opacity .2s;
 }
-.tool:hover { transform: translateY(-2px) rotate(-8deg); }
+.tool:hover { transform: translateY(-2px); }
+.bar-group .tool { width: 36px; height: 36px; border: 0; background: none; box-shadow: none; backdrop-filter: none; transition: background .2s, transform .2s, opacity .2s; }
+.bar-group .tool:hover { background: var(--hover); transform: translateY(-1px); }
+.tool[aria-expanded="true"] { background: var(--hover); }
 .tool svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tool .fill { fill: currentColor; }
 .tool .x { display: none; }
@@ -172,6 +179,35 @@ body {
 .pop-mode button { padding: 4px 12px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: 800 .82rem var(--font-body); cursor: pointer; }
 .pop-mode button.active { background: var(--accent); color: var(--accent-ink); }
 .world-pop-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 10px; }
+/* the sound menu: every sound option (built by app.js, the same as Settings > Sound) */
+.sound-pop {
+    position: absolute;
+    top: 66px;
+    right: 16px;
+    z-index: 60;
+    width: min(340px, calc(100vw - 32px));
+    padding: 14px 16px 16px;
+    background: var(--surface-solid);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35);
+    animation: pop-in .3s cubic-bezier(.2, 1.4, .4, 1);
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.sound-controls { display: flex; flex-direction: column; gap: 14px; }
+#settings-view .sound-controls { margin-top: 12px; }
+.snd-group { display: flex; flex-direction: column; gap: 10px; transition: opacity .2s; }
+.snd-group + .snd-group { padding-top: 12px; border-top: 1.5px solid var(--line); }
+.snd-head { margin: 0; color: var(--muted); font: 800 .78rem var(--font-body); letter-spacing: .02em; }
+.snd-master { font-size: 1.05rem; }
+/* a slider: its name and value on one line, the slider under them */
+.snd-row.range { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
+.snd-row.range input { grid-column: 1 / -1; width: 100%; margin: 0; }
+.snd-row output { min-width: 0; color: var(--muted); font-size: .88rem; }
+.sound-pop { overflow-x: hidden; }
+.snd-group.dim, .snd-row.dim { opacity: .5; }
 
 main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .screen.enter { animation: screen-in .5s cubic-bezier(.2, .9, .3, 1); }
@@ -253,7 +289,20 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .home-grid > .card:nth-child(3) { animation-delay: .14s; }
 .home-grid > .card:nth-child(4) { animation-delay: .21s; }
 @keyframes card-in { from { opacity: 0; transform: translateY(26px) scale(.96); } }
-.daily-card { grid-row: span 3; }      /* Unlimited, your streak and the leaderboard stack beside it, all one width */
+.daily-card { grid-row: span 2; }      /* Unlimited and your streak stack beside it; the streak card reaches down to its bottom */
+/* the streak card is as tall as the rest of Daily, so its pieces spread out down it (the user, 2026-10-10) */
+.streak-card { display: flex; flex-direction: column; }
+.streak-card .streak-line { margin-top: auto; }
+.streak-card .home-ach { margin-bottom: auto; }
+.streak-card .week { gap: 10px; margin: 22px 0 10px; }
+.streak-card .wk-day i { width: 38px; height: 38px; }
+/* the leaderboard runs under both, from Daily's edge to the streak's, with today's top 50 in two columns */
+.home-grid > .leader-card { grid-column: 1 / -1; }
+.leader-card .lb-list.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--rows), auto); grid-auto-flow: column; gap: 4px 18px; }
+@media (max-width: 720px) { .leader-card .lb-list.two { display: flex; } }
+.leader-card .lb-list:not(.two), .leader-card .lb-you { max-width: 640px; margin-left: auto; margin-right: auto; }
+.leader-card .lb-wrap .lb-you { max-width: none; }
+.leader-card .lb-hint { text-align: center; }
 .daily-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0 10px; }
 .daily-chip {
     position: relative;
@@ -1149,8 +1198,14 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 /* ---------------------------------------------------------------------------------------------
    Smaller screens
    --------------------------------------------------------------------------------------------- */
+/* between a laptop and a tablet, the logo is just "Schmoll" so the bar still fits in one row */
+@media (max-width: 1100px) { .logo-text span { display: none; } }
 @media (max-width: 980px) {
-    .modes a .nav-ic { display: none; }
+    .bar-group { display: contents; }
+    .bar-group .modes { order: 3; width: 100%; justify-content: space-between; margin-left: 0; padding: 5px; background: var(--surface); border: 1.5px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(10px); }
+    .bar-group .tools { margin-left: auto; padding-left: 0; border-left: 0; gap: 6px; }
+    .bar-group .tool { border: 1.5px solid var(--line); background: var(--surface); box-shadow: var(--shadow); backdrop-filter: blur(10px); }
+    .world-pop, .sound-pop { top: 116px; }
     .home-grid { grid-template-columns: 1fr; }
     .world-strip { grid-template-columns: repeat(2, 1fr); }
     .stats-grid, .settings { grid-template-columns: 1fr; }
@@ -1160,20 +1215,18 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     .clues { width: min(440px, 92vw); max-width: none; margin-top: 0; flex-direction: column; gap: 14px; }
     .top-bar { padding: 10px 12px 6px; }
     .logo-text span { display: none; }
-    .modes { order: 3; width: 100%; justify-content: space-between; margin-left: 0; }
     .modes a { padding: 6px 10px; font-size: .9rem; }
-    .tools { margin-left: auto; }
-    .tool { width: 36px; height: 36px; font-size: 16px; }
+    .tool, .bar-group .tool { width: 36px; height: 36px; font-size: 16px; }
     .hero { gap: 16px; margin: 8px 0 16px; }
     .hero-logo { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(3, 34px); }
     .hero-logo i { font-size: 21px; }
     .game-head { margin: 4px 0 12px; }
-    .world-pop { top: 108px; }
+    .world-pop, .sound-pop { top: 104px; }
     .world-pop-cards { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
     main { padding: 4px 12px 40px; }
-    .modes { gap: 0; padding: 3px; max-width: 100%; }
+    .modes, .bar-group .modes { gap: 0; padding: 3px; max-width: 100%; }
     .modes a { padding: 6px 7px; font-size: .8rem; letter-spacing: -.01em; }   /* all six fit on a phone */
     .daily-chips { grid-template-columns: 1fr; }
     .difficulty button { padding: 6px 11px; }

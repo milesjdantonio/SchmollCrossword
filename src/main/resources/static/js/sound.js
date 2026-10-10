@@ -30,7 +30,7 @@ const Sound = (() => {
         soften.frequency.value = 6500;
         master.connect(soften).connect(comp).connect(ctx.destination);
         fxBus = ctx.createGain();
-        fxBus.gain.value = Settings.get("sound") ? 0.6 : 0;
+        fxBus.gain.value = fxLevel();
         fxBus.connect(master);
         // an echo (a delay that feeds back into itself) for spacey, dreamy sounds
         echoIn = ctx.createGain();
@@ -57,10 +57,12 @@ const Sound = (() => {
         if (!ctx) return;
         if (document.hidden) ctx.suspend(); else ctx.resume();
     });
+    // the sound effects' own volume (Settings > Sound, and the sound button's menu), under the main volume
+    function fxLevel() { return Settings.get("sound") ? 0.6 * Math.max(0, Math.min(1, Settings.get("fxVolume") ?? 1)) : 0; }
     Settings.on((key, value) => {
         if (!ctx) return;
         if (key === "volume") master.gain.setTargetAtTime(value, ctx.currentTime, 0.05);
-        if (key === "sound") fxBus.gain.setTargetAtTime(value ? 0.6 : 0, ctx.currentTime, 0.05);
+        if (key === "sound" || key === "fxVolume") fxBus.gain.setTargetAtTime(fxLevel(), ctx.currentTime, 0.05);
     });
 
     const ready = () => ctx && ctx.state === "running";
@@ -69,7 +71,8 @@ const Sound = (() => {
     // Boss-fight sounds (powers.js and the spells files mark theirs boss: true) play at a level set for each move or
     // ability, from how loud each one measured, so none is louder than the boss music (the user, 2026-10-10: "it
     // shouldn't be any louder than the music"). bossLevel(x, ms): for the next ms, marked sounds play at x (the
-    // quietest one wins when two overlap). Everything else is left alone.
+    // quietest one wins when two overlap). Everything else is left alone. On top of that, the player's own Boss Fight
+    // Effects volume (bossFxVolume, in the sound menu) scales all of them.
     const levels = [];
     function bossLevel(x, ms) { levels.push({ x, until: performance.now() + ms }); }
     function bossGain() {
@@ -77,7 +80,7 @@ const Sound = (() => {
         for (let i = levels.length - 1; i >= 0; i--) if (levels[i].until < now) levels.splice(i, 1);
         let g = 1;
         for (const l of levels) g = Math.min(g, l.x);
-        return g;
+        return g * Math.max(0, Math.min(1, Settings.get("bossFxVolume") ?? 1));
     }
     function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0, boss = false }) {
         if (!ctx) return;
@@ -175,9 +178,12 @@ const Sound = (() => {
     // play("word") -> the current world's "word" sound if it has one, otherwise the shared one
     // The sounds that happen all the time (clicks, moving, typing) are kept quiet, so they never feel in your face
     const SOFT = { select: 0.35, nav: 0.45, move: 0.35, type: 0.55, erase: 0.5, flip: 0.4, tile: 0.6, toggle: 0.5, blip: 0.4 };
+    // two groups the player can turn off on their own (the sound menu): typing on the board, and clicks in the menus
+    const TYPING = { type: 1, erase: 1, move: 1 }, CLICKS = { select: 1, nav: 1, toggle: 1, blip: 1 };
     let quiet = 1;
     function play(name, ...args) {
         if (!Settings.get("sound") || !init() || !ready()) return;
+        if ((TYPING[name] && Settings.get("typingSounds") === false) || (CLICKS[name] && Settings.get("clickSounds") === false)) return;
         const now = performance.now();
         const gap = name === "type" || name === "tile" ? 28 : 45;   // no machine-gun repeats
         if (now - (gates[name] || 0) < gap) return;

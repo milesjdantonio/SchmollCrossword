@@ -442,7 +442,7 @@ svg.garden .g-flowers { opacity: .55; transition: opacity .8s ease; }
     animation: crt 7s steps(1) infinite;
 }
 @keyframes crt { 0%, 100% { opacity: 1; } 47% { opacity: .85; } 48% { opacity: 1; } 80% { opacity: .92; } }
-[data-world="arcade"] .btn, [data-world="arcade"] .tool, [data-world="arcade"] .modes, [data-world="arcade"] .difficulty, [data-world="arcade"] .timer-wrap,
+[data-world="arcade"] .btn, [data-world="arcade"] .tool, [data-world="arcade"] .modes, [data-world="arcade"] .bar-group, [data-world="arcade"] .difficulty, [data-world="arcade"] .timer-wrap,
 [data-world="arcade"] .helper-row button, [data-world="arcade"] .opt span, [data-world="arcade"] .streak-badge, [data-world="arcade"] .result-banner,
 [data-world="arcade"] .res-card, [data-world="arcade"] .m-bubble, [data-world="arcade"] .toast, [data-world="arcade"] .modes a, [data-world="arcade"] .difficulty button,
 [data-world="arcade"] .clue-bar, [data-world="arcade"] .cb-num, [data-world="arcade"] .wk-day i, [data-world="arcade"] .switch .track, [data-world="arcade"] .switch .track::after { border-radius: 0; }

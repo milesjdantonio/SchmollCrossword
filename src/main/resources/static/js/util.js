@@ -200,10 +200,14 @@ const Settings = (() => {
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)
-        sound: true,            // sound effects (made in code, see sound.js)
-        bossMusic: true,        // music in campaign boss fights (CC0 tracks in audio/music)
+        sound: true,            // all sound on or off (sound effects are made in code, see sound.js)
+        bossMusic: true,        // music in boss fights, the story, winning and losing (tracks in audio/music)
         volume: 0.8,
         musicVolume: 1,         // boss music, on top of the main volume (Settings, and the slider in every boss fight)
+        fxVolume: 1,            // sound effects, on top of the main volume
+        bossFxVolume: 1,        // boss moves and abilities, on top of the effects volume
+        typingSounds: true,     // typing, erasing and moving on the board
+        clickSounds: true,      // buttons, menus and switches
         intro: false,           // play the start-up intro on every visit (it always plays the very first time)
         effects: "full"         // "full" or "lite"
     };

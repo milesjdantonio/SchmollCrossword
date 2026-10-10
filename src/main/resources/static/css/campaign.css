@@ -803,14 +803,11 @@
 .in-boss #helpers .helper-row { display: none; }
 /* the Daily Boss keeps Check and Reveal, and has no items (only Give Up) */
 .in-boss.special-boss #helpers .helper-row { display: flex; }
-.cm-items.only-giveup { justify-content: flex-end; }
+/* ...and the bar with only Give Up in it centres it (the user, 2026-10-10) */
+.cm-items.only-giveup { justify-content: center; }
+.cm-items.only-giveup .cm-item.giveup { margin-left: 0; }
 
-/* ---- How to Play (howto.js): the shop's card and tabs, with short topics in a grid ---- */
-.howto-card { width: min(920px, 100vw); }
-.ht-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
-.ht-item { padding: 13px 15px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: color-mix(in srgb, var(--accent) 4%, var(--surface-solid)); }
-.ht-item h3 { margin: 0 0 5px; font: 800 1rem/1.2 var(--font-body); color: var(--ink); }
-.ht-item p { margin: 0; font-size: .88rem; line-height: 1.5; color: color-mix(in srgb, var(--ink) 82%, var(--muted)); }
+/* ---- How to Play: the ? buttons (the player itself is in howto.css) ---- */
 #howto-btn .dot { stroke-width: 2.6; }
 
 /* ---- the warning box's other messages (campaign.js drawWarn): what just happened, and the boss almost done ---- */

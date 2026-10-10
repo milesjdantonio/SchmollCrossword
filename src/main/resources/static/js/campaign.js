@@ -552,8 +552,8 @@ const Campaign = (() => {
         else world = U.pick(map.map(s => s.world).filter(w => !data.playing || data.playing.world !== w || map.length < 2));
         if (!world || !map.some(s => s.world === world)) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Find Today's Boss", text: "Try again in a moment.", ms: 3000 }); return; }
         if (data.playing && !data.playing.special) data.lastPlaying = data.playing;          // where the campaign map lands next time
-        const tries = again ? data.playing.tries || 0 : 0;
-        data.playing = { world, level: 5, special: kind, date: kind === "daily" ? dayStr() : null, sid: Date.now(), ...(kind === "unlimited" ? { tries } : {}) };
+        const tries = again ? data.playing.tries || 0 : 0, carry = again ? data.playing.carry : null;
+        data.playing = { world, level: 5, special: kind, date: kind === "daily" ? dayStr() : null, sid: Date.now(), ...(kind === "unlimited" ? { tries } : {}), ...(carry ? { carry } : {}) };
         save();
         fight = null;
         prefetchBoss(world);
@@ -703,7 +703,7 @@ const Campaign = (() => {
         if (c.special === "daily") data.specials[dailyKey] = Math.max(stars, data.specials[dailyKey] || 0);
         data.specials.wins = (data.specials.wins || 0) + 1;
         const priorTries = triesNow();                  // the attempts before this one (Daily: points; Unlimited: coins)
-        countAttempt();
+        countAttempt(true);
         const fullCoins = c.special === "daily" ? (firstToday ? 60 : 10) + stars * 5 : 15 + stars * 5;
         const coins = c.special === "unlimited" ? Math.max(5, fullCoins - priorTries * UNLIMITED_TRY_COINS) : fullCoins;
         data.coins = (data.coins || 0) + coins;
@@ -814,14 +814,51 @@ const Campaign = (() => {
     const triesKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-tries";
     const dailyTries = () => ((data.specials || {})[triesKey()]) || 0;
     const triesNow = () => (special() === "daily" ? dailyTries() : special() === "unlimited" ? data.playing.tries || 0 : 0);
-    function countAttempt() {
+    function countAttempt(won = false) {
         if (!fight || fight.attemptCounted || !special()) return;
         fight.attemptCounted = true;
         if (special() === "daily") {
             data.specials = data.specials || {};
             data.specials[triesKey()] = dailyTries() + 1;
         } else data.playing.tries = (data.playing.tries || 0) + 1;
+        saveCarry(won);
         save();
+    }
+    // The words you got right carry over to your next attempt, filled in and locked (the user, 2026-10-10: "save the
+    // words you had correct for the next attempt (and they're locked)"). Only words you finished right yourself count
+    // (fight.credited: Reveal Puzzle's letters never do), saved with the puzzle's seed: per day on Daily, per boss on
+    // Unlimited (a Rematch keeps them; a New Boss starts clean). A win clears them, so a Daily rematch starts empty.
+    const carryKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-carry";
+    function getCarry() {
+        if (special() === "daily") return (data.specials || {})[carryKey()] || null;
+        return special() === "unlimited" ? data.playing.carry || null : null;
+    }
+    function setCarry(v) {
+        if (special() === "daily") { data.specials = data.specials || {}; if (v) data.specials[carryKey()] = v; else delete data.specials[carryKey()]; }
+        else if (special() === "unlimited") { if (v) data.playing.carry = v; else delete data.playing.carry; }
+    }
+    function saveCarry(won) {
+        const p = Game.state.puzzle;
+        if (won || !p) { setCarry(null); return; }
+        const pre = p.seed + ":", words = [...(fight.credited || [])].filter(id => id.startsWith(pre)).map(id => id.slice(pre.length));
+        setCarry(words.length ? { seed: p.seed, words } : null);
+    }
+    // a fresh attempt: fill the carried words in (never the whole board: that would win before the race starts)
+    function applyCarry() {
+        const carry = getCarry(), p = Game.state.puzzle;
+        if (!carry || !p || String(carry.seed) !== String(p.seed) || Game.state.solved) return 0;
+        const all = [...p.across, ...p.down], id = e => e.direction + e.number;
+        const keep = all.filter(e => carry.words.includes(id(e)));
+        const open = new Set(all.flatMap(e => Game.cellsOf(e).map(([r, c]) => r + "," + c)));
+        const cellsOf = list => [...new Map(list.flatMap(e => Game.cellsOf(e)).map(([r, c]) => [r + "," + c, [r, c]])).values()];
+        while (keep.length && cellsOf(keep).length >= open.size) keep.pop();
+        if (!keep.length) return 0;
+        const cells = cellsOf(keep), filled = new Set(cells.map(([r, c]) => r + "," + c));
+        // every word those letters finish counts as already done (no combo or block for words you didn't type now)
+        fight.credited = new Set(all.filter(e => Game.cellsOf(e).every(([r, c]) => filled.has(r + "," + c))).map(e => p.seed + ":" + id(e)));
+        Game.fillCells(cells);
+        fight.headStart = myPct();          // a real head start: the boss doesn't rage or rush to catch up over it
+        return keep.length;
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1198,6 +1235,7 @@ const Campaign = (() => {
             combo: 0, bestCombo: 0, lastWordAt: -1e9, pending: null, windup: 0, windupMax: 1, enraged: false, intro: false, phase: 1, phases: special() ? 1 : 1 + laterPhases(c && map ? map[c.si] : null).length, next: {}, switching: false,
             log: [], myLog: [], hits: 0, blocks: 0, itemsUsed: 0, kinds: new Set(), extraLife: false, lifeUsed: false, thorns: null, snow: null,
             uses: special() ? Object.fromEntries(ABILITIES.filter(a => a.world === data.playing.world).map(a => [a.id, DAILY_USES])) : null };
+        const kept = special() && fresh !== false ? applyCarry() : 0;
         drawPanel(true);
         try {
             if (!bossFetch || bossFetch.world !== data.playing.world || bossFetch.v !== (special() ? "sp" + data.playing.sid : tryOf(data.playing.world, 5))) prefetchBoss(data.playing.world);
@@ -1223,6 +1261,7 @@ const Campaign = (() => {
                 await FX.cinematic(cc => Bosses.intro(cc, fight.world, { until: () => Sound.buildDone() }));
                 if (fight) fight.intro = false;
                 speak(bossOf(fight.world).taunt);
+                if (kept && fight && fight.key === key) notice("🔒", kept === 1 ? "1 Word Kept" : `${kept} Words Kept`, "Your right words from last time are filled in and locked.", "good", 4200);
             }
             else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
         } catch (err) {
@@ -1786,7 +1825,7 @@ const Campaign = (() => {
     function updateHp() {
         const f = fight;
         if (!f || !f.puzzle) return;
-        f.lead = myPct() - bossPct();
+        f.lead = myPct() - bossPct() - (f.headStart || 0);          // (words carried over from your last attempt don't count)
         const bp = bossPct(), close = !f.over && !Game.state.solved && !f.switching && bp >= (f.close ? CLOSE_OFF : CLOSE_AT);
         if (close !== !!f.close) {
             f.close = close;
@@ -2927,8 +2966,8 @@ const Campaign = (() => {
         Sound.music("lose", { loop: false, v: 0.42, fade: 1 });           // game-over music
         FX.shake(10, 420);
         const sp = special(), tries = triesNow();
-        const tryNote = sp === "daily" ? `Attempt ${tries} used. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.`
-            : sp === "unlimited" ? `Attempt ${tries} used. A Rematch keeps this boss and puzzle; each attempt takes ${UNLIMITED_TRY_COINS} coins off a win.` : null;
+        const tryNote = sp === "daily" ? `Attempt ${tries} used. Your right words stay locked in for the next one. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.`
+            : sp === "unlimited" ? `Attempt ${tries} used. A Rematch keeps this boss, its puzzle and your right words; each attempt takes ${UNLIMITED_TRY_COINS} coins off a win.` : null;
         loseCard({ world: f.world, level: 5, kicker: sp ? `BOSS · ATTEMPT ${tries}` : why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
         speak(why === "surrender" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
         drawFight();

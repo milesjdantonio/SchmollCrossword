@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/worlds.css">
     <link rel="stylesheet" href="css/campaign.css">
     <link rel="stylesheet" href="css/story.css">
+    <link rel="stylesheet" href="css/howto.css">
     <script src="js/boot.js"></script>
 </head>
 <body>
@@ -27,28 +28,35 @@
                 <span class="logo-mark" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></span>
                 <span class="logo-text">Schmoll<span> Crossword</span></span>
             </a>
-            <nav class="modes" aria-label="Screens">
-                <a href="#" data-view="home"><span class="nav-ic" aria-hidden="true">&#8962;</span>Home</a>
-                <a href="#campaign" data-view="campaign"><span class="nav-ic" aria-hidden="true">&#9873;</span>Campaign</a>
-                <a href="#daily" data-view="daily"><span class="nav-ic" aria-hidden="true">&#9728;</span>Daily</a>
-                <a href="#unlimited" data-view="unlimited"><span class="nav-ic" aria-hidden="true">&#8734;</span>Unlimited</a>
-                <a href="#stats" data-view="stats"><span class="nav-ic" aria-hidden="true">&#9638;</span>Stats</a>
-                <a href="#settings" data-view="settings"><span class="nav-ic" aria-hidden="true">&#9881;</span>Settings</a>
-            </nav>
-            <div class="tools">
-                <button type="button" class="tool" id="howto-btn" title="How to Play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path class="dot" d="M12 17.2v.1"/></svg><span class="sr">How to Play</span></button>
-                <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
-                <button type="button" class="tool" id="sound-toggle" title="Sound effects"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound effects</span></button>
+            <!-- the screens and, right after Settings, the three quick buttons: one pill (on phones the buttons sit by the logo) -->
+            <div class="bar-group">
+                <nav class="modes" aria-label="Screens">
+                    <a href="#" data-view="home">Home</a>
+                    <a href="#campaign" data-view="campaign">Campaign</a>
+                    <a href="#daily" data-view="daily">Daily</a>
+                    <a href="#unlimited" data-view="unlimited">Unlimited</a>
+                    <a href="#stats" data-view="stats">Stats</a>
+                    <a href="#settings" data-view="settings">Settings</a>
+                </nav>
+                <div class="tools">
+                    <button type="button" class="tool" id="howto-btn" title="How to Play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path class="dot" d="M12 17.2v.1"/></svg><span class="sr">How to Play</span></button>
+                    <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="world-pop"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
+                    <button type="button" class="tool" id="sound-toggle" title="Sound" aria-haspopup="true" aria-expanded="false" aria-controls="sound-pop"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound</span></button>
+                </div>
             </div>
             <div class="world-pop" id="world-pop" hidden>
                 <div class="world-pop-head">
-                    <b>Pick a world</b>
+                    <b>Pick a World</b>
                     <div class="pop-mode" role="group" aria-label="Light or dark mode">
                         <button type="button" data-mode="light">&#9728; Light</button>
                         <button type="button" data-mode="dark">&#9790; Dark</button>
                     </div>
                 </div>
                 <div class="world-pop-cards" id="world-pop-cards"></div>
+            </div>
+            <!-- every sound option (the same ones as Settings > Sound, built by app.js) -->
+            <div class="sound-pop" id="sound-pop" role="dialog" aria-label="Sound" hidden>
+                <div class="sound-controls" id="sound-pop-controls"></div>
             </div>
         </header>
 
@@ -91,7 +99,7 @@
                         <p class="home-ach" id="home-ach"></p>
                     </article>
                     <article class="card leader-card">
-                        <header class="card-head"><h2>Leaderboard</h2><a class="kicker link" href="#stats">See All &rsaquo;</a></header>
+                        <header class="card-head"><h2>Leaderboard</h2><span class="kicker" id="home-lb-count"></span></header>
                         <div id="home-leaderboard"></div>
                     </article>
                 </div>
@@ -230,12 +238,7 @@
                     </fieldset>
                     <fieldset class="card">
                         <legend>Sound</legend>
-                        <div class="options col">
-                            <label class="switch"><input type="checkbox" name="sound"><span class="track"></span>Sound Effects</label>
-                            <label class="switch"><input type="checkbox" name="bossMusic"><span class="track"></span>Boss Music</label>
-                            <label class="range">Volume <input type="range" name="volume" min="0" max="100" step="5"></label>
-                            <label class="range">Boss Music Volume <input type="range" name="musicVolume" min="0" max="100" step="5"><output id="music-vol-out">100%</output></label>
-                        </div>
+                        <div class="sound-controls" id="sound-controls"></div>
                     </fieldset>
                     <fieldset class="card">
                         <legend>Effects</legend>

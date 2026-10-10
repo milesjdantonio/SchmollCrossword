@@ -2,7 +2,8 @@
 //   Home: today's three dailies, Unlimited, the streak (with fire) and this week, the worlds
 //   Stats: tiles that count up, a calendar heatmap, best/average times, achievements, history
 //   Settings: the world picker (live previews), mode, sound, effects, timer, intro, difficulty
-//   The top bar (sound and world buttons), screen switching (#daily, #stats...), and the start-up intro.
+//   The top bar (How to Play, world and sound buttons, each next to Settings), screen switching (#daily, #stats...),
+//   and the start-up intro.
 
 const App = (() => {
     const $ = U.$;
@@ -85,8 +86,7 @@ const App = (() => {
         }
         Game.closeResults();
         root.dataset.view = gameView ? "game" : view;
-        $("#world-pop").hidden = true;
-        $("#world-toggle").setAttribute("aria-expanded", "false");
+        closePops();
         Mascot.away = mascotInTheWay();
         if (!firstShow) Sound.play("nav");
         firstShow = false;
@@ -150,7 +150,7 @@ const App = (() => {
         const ach = Achievements.load(), got = Object.keys(ach.unlocked);
         $("#home-ach").textContent = got.length ? `${got.length} of ${Achievements.LIST.length} Achievements  ` + Achievements.LIST.filter(a => ach.unlocked[a.id]).slice(-5).map(a => a.icon).join(" ") : `0 of ${Achievements.LIST.length} Achievements`;
         Campaign.drawHomeCard();
-        Leaderboard.drawHome($("#home-leaderboard"));
+        Leaderboard.drawHome($("#home-leaderboard"), $("#home-lb-count"));
     }
     function drawCountdown() {
         if (screens.home.hidden) return;
@@ -273,12 +273,8 @@ const App = (() => {
         for (const input of f.effects) input.checked = input.value === s.effects;
         f.hardWords.checked = s.hardWords;
         f.showTimer.checked = s.showTimer;
-        f.sound.checked = s.sound;
         f.intro.checked = s.intro;
-        f.volume.value = Math.round(s.volume * 100);
-        f.bossMusic.checked = s.bossMusic !== false;
-        f.musicVolume.value = Math.round((s.musicVolume ?? 1) * 100);
-        $("#music-vol-out").textContent = f.musicVolume.value + "%";
+        syncSound();
         $("#mode-note").hidden = !locked;
         $("#mode-note").textContent = `${w.name} is always ${w.modes[0]}.`;
     }
@@ -290,15 +286,6 @@ const App = (() => {
         else if (input.type === "range") Settings.set(input.name, Number(input.value) / 100);
         else { Settings.set(input.name, input.value); Sound.play("select"); }
     });
-    form.elements.volume.addEventListener("input", e => Settings.set("volume", Number(e.target.value) / 100));
-    // boss music volume: drag it or scroll the mouse wheel over it (the same setting as the slider in a boss fight)
-    const mv = form.elements.musicVolume;
-    mv.addEventListener("input", () => { Settings.set("musicVolume", Number(mv.value) / 100); $("#music-vol-out").textContent = mv.value + "%"; });
-    mv.closest("label").addEventListener("wheel", e => {
-        e.preventDefault();
-        mv.value = U.clamp(Number(mv.value) + (e.deltaY < 0 ? 5 : -5), 0, 100);
-        mv.dispatchEvent(new Event("input"));
-    }, { passive: false });
     // About & credits: report a problem with the puzzle you're playing (or go play one first)
     $("#about-report").addEventListener("click", () => {
         if (Game.state.puzzle) Game.openReport();
@@ -313,23 +300,110 @@ const App = (() => {
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The top bar: sound and world buttons
+    // Sound: every option (the user, 2026-10-10: the sound button should "open up all the sound options like boss
+    // fight music and other sounds"). Built the same way in Settings > Sound and in the sound button's menu; both show
+    // the same settings, so changing one moves the other (syncSound).
+    //   Sound (everything on or off) and Volume; Boss Music and Music Volume (the boss fights, the story, winning and
+    //   losing; the same setting as the slider in a boss fight); Effects Volume, Boss Fight Effects (the bosses' moves
+    //   and your abilities), Typing Sounds and Click Sounds.
+    // ---------------------------------------------------------------------------------------------
+    const SOUND_GROUPS = [
+        { key: "all", rows: [["switch", "sound", "All Sound"], ["range", "volume", "Volume"]] },
+        { key: "music", head: "Music", rows: [["switch", "bossMusic", "Boss Music"], ["range", "musicVolume", "Music Volume"]] },
+        { key: "fx", head: "Effects", rows: [["range", "fxVolume", "Effects Volume"], ["range", "bossFxVolume", "Boss Fight Effects"], ["switch", "typingSounds", "Typing Sounds"], ["switch", "clickSounds", "Click Sounds"]] }
+    ];
+    const SOUND_KEYS = new Set(SOUND_GROUPS.flatMap(g => g.rows.map(r => r[1])));
+    const soundOn = key => Settings.get(key) !== false;              // the switches (older saves may not have the new ones)
+    const level = key => Math.round(U.clamp(Settings.get(key) ?? 1, 0, 1) * 100);
+    // a short sound at the new level when a slider is let go, so you hear what you picked
+    const PREVIEW = {
+        volume: () => Sound.play("word"),
+        fxVolume: () => Sound.play("word"),
+        bossFxVolume: () => Sound.custom(() => {
+            Sound.tone({ f: 196, f2: 98, d: 0.35, v: 0.3, type: "sawtooth", filt: { f: 900 }, boss: true });
+            Sound.tone({ t: 0.08, f: 392, f2: 784, d: 0.3, v: 0.12, type: "triangle", boss: true });
+        })
+    };
+    function soundControls(box) {
+        box.innerHTML = "";
+        for (const g of SOUND_GROUPS) {
+            const group = U.el("div", { class: "snd-group", "data-group": g.key }, g.head ? U.el("h3", { class: "snd-head", text: g.head }) : null);
+            for (const [kind, key, label] of g.rows) {
+                if (kind === "switch") {
+                    const input = U.el("input", { type: "checkbox", "data-skey": key });
+                    input.addEventListener("change", () => {
+                        Settings.set(key, input.checked);
+                        Sound.play("toggle", input.checked);
+                    });
+                    group.appendChild(U.el("label", { class: "switch snd-row" + (key === "sound" ? " snd-master" : "") }, input, U.el("span", { class: "track" }), label));
+                } else {
+                    const input = U.el("input", { type: "range", min: "0", max: "100", step: "5", "data-skey": key });
+                    const out = U.el("output", { "data-sout": key });
+                    input.addEventListener("input", () => {
+                        Settings.set(key, Number(input.value) / 100);
+                        // turning a volume up turns its sound back on
+                        if (Number(input.value) > 0 && key === "volume" && !Settings.get("sound")) Settings.set("sound", true);
+                        if (Number(input.value) > 0 && key === "musicVolume" && !soundOn("bossMusic")) Settings.set("bossMusic", true);
+                        syncSound();
+                    });
+                    input.addEventListener("change", () => { if (PREVIEW[key]) PREVIEW[key](); });
+                    const row = U.el("label", { class: "range snd-row" }, U.el("span", { class: "snd-label", text: label }), input, out);
+                    // the mouse wheel moves it too
+                    row.addEventListener("wheel", e => {
+                        e.preventDefault();
+                        input.value = U.clamp(Number(input.value) + (e.deltaY < 0 ? 5 : -5), 0, 100);
+                        input.dispatchEvent(new Event("input"));
+                    }, { passive: false });
+                    group.appendChild(row);
+                }
+            }
+            box.appendChild(group);
+        }
+        syncSound();
+    }
+    function syncSound() {
+        for (const input of document.querySelectorAll("[data-skey]")) {
+            const key = input.dataset.skey;
+            if (input.type === "checkbox") input.checked = key === "sound" ? !!Settings.get("sound") : soundOn(key);
+            else if (document.activeElement !== input) input.value = level(key);
+        }
+        for (const out of document.querySelectorAll("[data-sout]")) out.textContent = level(out.dataset.sout) + "%";
+        // with all sound off the rest is dimmed (still changeable); the music volume dims with the music off
+        for (const g of document.querySelectorAll(".snd-group")) g.classList.toggle("dim", g.dataset.group !== "all" && !Settings.get("sound"));
+        for (const r of document.querySelectorAll('[data-skey="musicVolume"]')) r.closest(".snd-row").classList.toggle("dim", !soundOn("bossMusic"));
+    }
+    soundControls($("#sound-controls"));
+    soundControls($("#sound-pop-controls"));
+    Settings.on(key => { if (SOUND_KEYS.has(key)) syncSound(); });
+
+    // ---------------------------------------------------------------------------------------------
+    // The top bar: How to Play (howto.js), the world menu and the sound menu, right after Settings
     // ---------------------------------------------------------------------------------------------
     function drawTools() {
         $("#sound-toggle").classList.toggle("off", !Settings.get("sound"));
-        $("#sound-toggle").setAttribute("aria-pressed", String(Settings.get("sound")));
+        $("#sound-toggle").title = Settings.get("sound") ? "Sound" : "Sound: Off";
     }
-    $("#sound-toggle").addEventListener("click", e => { Settings.set("sound", !Settings.get("sound")); Sound.play("toggle", true); e.currentTarget.blur(); });
+    // a menu that opens under its button; only one is open at a time, and a click elsewhere or Escape closes it
+    const pops = [];
+    function closePops() { for (const p of pops) p.set(false); }
+    function popMenu(btn, pop, onOpen) {
+        const set = open => { pop.hidden = !open; btn.setAttribute("aria-expanded", String(open)); };
+        pops.push({ set, pop });
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            const open = pop.hidden;
+            closePops();
+            set(open);
+            if (open) { if (onOpen) onOpen(); Sound.play("select"); }
+        });
+        document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && !btn.contains(e.target)) set(false); });
+        addEventListener("keydown", e => { if (e.key === "Escape" && !pop.hidden) { e.stopPropagation(); set(false); btn.focus({ preventScroll: true }); } }, true);
+        return set;
+    }
     const pop = $("#world-pop");
-    $("#world-toggle").addEventListener("click", e => {
-        e.stopPropagation();
-        const open = pop.hidden;
-        pop.hidden = !open;
-        e.currentTarget.setAttribute("aria-expanded", String(open));
-        if (open) { worldCards($("#world-pop-cards"), { compact: true }); Sound.play("select"); }
-    });
-    document.addEventListener("pointerdown", e => { if (!pop.hidden && !pop.contains(e.target) && !e.target.closest("#world-toggle")) pop.hidden = true; });
-    pop.addEventListener("click", e => { if (e.target.closest(".world-card")) pop.hidden = true; });
+    popMenu($("#world-toggle"), pop, () => worldCards($("#world-pop-cards"), { compact: true }));
+    popMenu($("#sound-toggle"), $("#sound-pop"), syncSound);
+    pop.addEventListener("click", e => { if (e.target.closest(".world-card")) closePops(); });
     // Light / dark, right in the world menu (the same setting as Settings > Mode)
     const drawPopMode = () => pop.querySelectorAll(".pop-mode button").forEach(b => {
         const on = b.dataset.mode === Settings.get("theme");
