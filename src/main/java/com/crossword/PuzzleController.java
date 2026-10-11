@@ -38,6 +38,11 @@ public class PuzzleController {
 
     // Step 26: limits how many paid unlimited puzzles can be made (see RateLimiter)
     private final RateLimiter unlimitedLimiter;
+    // The Unlimited Boss's own board is free (no clues), but making a grid takes the solver up to half a second, and
+    // the solver is shared (PuzzleStore.buildGrid is synchronized), so a flood of them would hold up everyone's
+    // dailies. One a fight is all the website asks for; 60 an hour per person is far more than anyone plays.
+    // (Added by Claude in the 2026-10-10 review.)
+    private final RateLimiter boardLimiter = new RateLimiter(60, RateLimiter.HOUR, 100_000);
 
     // Spring Boot uses this one when the server starts (@Autowired picks it). @Value reads each limit from
     // application.properties, which lets the host override them with environment variables.
@@ -220,7 +225,10 @@ public class PuzzleController {
         }
         long seed = new Random().nextLong() & ((1L << 53) - 1);
         Map<Integer, List<String>> words = wordsFor(Campaign.bigGrid(section.bossDifficulty()) ? "challenge" : section.bossDifficulty());
-        if (boss) return PuzzleStore.bossPuzzle(seed, section, words, false);        // free: no clues
+        if (boss) {                                                                  // free: no clues
+            if (!boardLimiter.allow(request.getRemoteAddr(), System.currentTimeMillis())) throw tooManyPuzzles();
+            return PuzzleStore.bossPuzzle(seed, section, words, false);
+        }
         if (!unlimitedLimiter.allow(request.getRemoteAddr(), System.currentTimeMillis())) {
             throw tooManyPuzzles();
         }

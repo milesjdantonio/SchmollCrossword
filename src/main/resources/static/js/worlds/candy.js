@@ -125,7 +125,7 @@
                 g.fillStyle = bg;
                 g.fillRect(0, 0, W, H);
                 if (night) {
-                    for (const s of stars) { g.fillStyle = `rgba(255,240,255,${(0.3 + 0.7 * Math.abs(Math.sin(t * 1.2 + s.tw))).toFixed(2)})`; g.fillRect(s.x - inp.px * 2, s.y, s.r, s.r); }
+                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 1.2 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(255,240,255,${(0.3 + 0.7 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(255,240,255)"); }
                     // the marshmallow moon
                     const mx = W * 0.8 - inp.px * 5, my = H * 0.16, mr = Math.min(W, H) * 0.06;
                     const mg = g.createRadialGradient(mx, my, mr * 0.8, mx, my, mr * 3.5);
@@ -197,6 +197,8 @@
                         if (k < 0.05) continue;
                         g.fillStyle = `rgba(255,230,255,${k.toFixed(2)})`;
                         g.fillRect(c.x - 2 * k - inp.px * 8, c.y - 0.5, 4 * k, 1); g.fillRect(c.x - 0.5 - inp.px * 8, c.y - 2 * k, 1, 4 * k);
+                        Worlds.glow(g, c.x - inp.px * 8, c.y, 10 * k, "#ffc8f0", k * 0.7);
+                        Worlds.glint(g, c.x - inp.px * 8, c.y, 7 * k, k * 0.8, "#fff0ff");
                     }
                 }
                 // sprinkles drifting down
@@ -209,6 +211,8 @@
                     g.globalAlpha = night ? 0.55 : 0.9;
                     g.fillStyle = s.c;
                     g.beginPath(); g.roundRect(-4, -1.3, 8, 2.6, 1.3); g.fill();
+                    g.fillStyle = "rgba(255,255,255,.5)";                    // a sugary shine along the top
+                    g.fillRect(-2.8, -1, 5.6, 0.75);
                     g.restore();
                 }
                 g.globalAlpha = 1;

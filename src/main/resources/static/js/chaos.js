@@ -26,10 +26,20 @@ const Chaos = (() => {
         if (fill) { ctx.fillStyle = fill; ctx.fill(); }
         if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); }
     }
-    // a trail of fading circles behind something moving
+    // a trail behind something moving: fading circles, a ribbon of light thinning toward the tail, and glows along it
+    function halo(x, y, r, color, a = 1) { if (r < 1) return; const ga = ctx.globalAlpha, op = ctx.globalCompositeOperation; ctx.shadowBlur = 0; ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = ga * a; ctx.drawImage(FX.art.halo(color), x - r, y - r, r * 2, r * 2); ctx.globalAlpha = ga; ctx.globalCompositeOperation = op; }
     function trail(list, color, size) {
-        list.forEach(([x, y], i) => { ctx.globalAlpha = (i / list.length) * 0.7; circle(x, y, size * (i / list.length), color); });
+        const n = list.length;
+        if (n > 2) {
+            ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = color;
+            for (const [from, w, a] of [[0, 0.5, 0.25], [Math.floor(n / 2), 1.1, 0.4]]) {
+                ctx.globalAlpha = a; ctx.lineWidth = size * w;
+                ctx.beginPath(); list.slice(from).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+            }
+        }
+        list.forEach(([x, y], i) => { ctx.globalAlpha = (i / n) * 0.7; circle(x, y, size * (i / n), color); });
         ctx.globalAlpha = 1;
+        for (let i = n - 1; i >= 0; i -= 4) halo(list[i][0], list[i][1], size * 2.2 * (i / n), color, (i / n) * 0.5);
     }
     // a branching lightning bolt from (x, y) down to the ground, as a list of segments
     function bolt(x, y, x2, y2, spread, depth = 0) {
@@ -58,16 +68,35 @@ const Chaos = (() => {
             const a = rand(0, TAU), v = rand(...speed), c = pick(colors), s = rand(...size), lf = rand(...life);
             add({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: lf, t: 0,
                 step(dt) { this.vy += gravity * dt; this.x += this.vx * dt; this.y += this.vy * dt; this.vx *= 0.99; },
-                draw() { ctx.globalAlpha = Math.max(0, 1 - this.t / this.life); circle(this.x, this.y, s, c); ctx.globalAlpha = 1; } });
+                draw() {
+                    const a = Math.max(0, 1 - this.t / this.life);
+                    ctx.globalAlpha = a * 0.5; ctx.strokeStyle = c; ctx.lineWidth = s; ctx.lineCap = "round";
+                    ctx.beginPath(); ctx.moveTo(this.x - this.vx * 0.03, this.y - this.vy * 0.03); ctx.lineTo(this.x, this.y); ctx.stroke();
+                    ctx.globalAlpha = a; circle(this.x, this.y, s, c); ctx.globalAlpha = 1;
+                    if (a > 0.5 && s > 2.5) halo(this.x, this.y, s * 3, c, (a - 0.5));
+                } });
         }
     }
     function ring(x, y, color, maxR, life = 0.8, width = 6) {
-        add({ t: 0, life, draw() { const k = this.t / this.life; ctx.globalAlpha = 1 - k; ctx.strokeStyle = color; ctx.lineWidth = width * (1 - k) + 1; ctx.beginPath(); ctx.arc(x, y, maxR * Math.pow(k, 0.6), 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; } });
+        add({ t: 0, life, draw() {
+            const k = this.t / this.life, r = maxR * Math.pow(k, 0.6), w = width * (1 - k) + 1;
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = (1 - k) * 0.3; ctx.lineWidth = w * 2.6; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+            ctx.globalAlpha = 1 - k; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+            ctx.globalAlpha = (1 - k) * 0.7; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = Math.max(1, w * 0.3); ctx.beginPath(); ctx.arc(x, y, Math.max(1, r - w), 0, TAU); ctx.stroke();
+            ctx.globalAlpha = 1;
+        } });
     }
     function boom(x, y, colors, size = 1) {
         add({ t: 0, life: 0.5, draw() { const k = this.t / this.life; circle(x, y, 70 * size * (0.4 + k), radial(x, y, 70 * size * (0.4 + k), [[0, `rgba(255,255,255,${1 - k})`], [0.4, colors[0] + Math.round((1 - k) * 200).toString(16).padStart(2, "0")], [1, "rgba(0,0,0,0)"]])); } });
         ring(x, y, colors[1] || colors[0], 160 * size);
+        ring(x, y, "#ffffff", 90 * size, 0.4, 3);
         debris(x, y, Math.round(26 * size), colors);
+        for (let i = 0; i < Math.round(5 * size); i++) {
+            const sx = x + rand(-20, 20) * size, sr = rand(10, 22) * size, vx = rand(-20, 20), vy = rand(-50, -25);
+            add({ x: sx, y, t: -0.12 - i * 0.04, life: rand(1, 1.6), step(dt) { this.x += vx * dt; this.y += vy * dt; },
+                draw() { if (this.t < 0) return; const k = this.t / this.life; ctx.globalAlpha = 0.4 * (1 - k); circle(this.x, this.y, sr * (0.5 + k), "#4a3e3e"); ctx.globalAlpha = 1; } });
+        }
         flash = Math.max(flash, 0.18 * size); flashColor = colors[0];
         shake = Math.max(shake, 6 * size);
     }

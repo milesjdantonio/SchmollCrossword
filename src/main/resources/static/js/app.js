@@ -78,7 +78,9 @@ const App = (() => {
         const view = U.view();
         const gameView = view === "daily" || view === "unlimited" || view === "level";
         if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
-        document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === (view === "level" ? "campaign" : view)));
+        // a level lights up Campaign, but the Daily and Unlimited Boss belong to their own screens (the user's rule)
+        const tab = view === "level" ? (Campaign.playing && Campaign.playing.special) || "campaign" : view;
+        document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === tab));
         for (const [name, el] of Object.entries(screens)) {
             const on = name === view || (name === "game" && gameView);
             if (on && el.hidden) U.restart(el, "enter");
@@ -209,7 +211,7 @@ const App = (() => {
                 U.el("td", { text: keyDate(key).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" }) }),
                 U.el("td", {}, U.el("span", { class: "diff-tag " + (r.difficulty || ""), text: r.difficulty || "" })),
                 U.el("td", { class: "num", text: typeof r.seconds === "number" ? U.fmtTime(r.seconds) : "–" }),
-                U.el("td", { class: "num", text: r.surrendered ? "revealed" : String(r.points) })));
+                U.el("td", { class: "num", text: r.surrendered ? "Revealed" : String(r.points) })));
         }
         $("#history").hidden = keys.length === 0;
         $("#no-history").hidden = keys.length > 0;
@@ -303,13 +305,14 @@ const App = (() => {
     // Sound: every option (the user, 2026-10-10: the sound button should "open up all the sound options like boss
     // fight music and other sounds"). Built the same way in Settings > Sound and in the sound button's menu; both show
     // the same settings, so changing one moves the other (syncSound).
-    //   Sound (everything on or off) and Volume; Boss Music and Music Volume (the boss fights, the story, winning and
-    //   losing; the same setting as the slider in a boss fight); Effects Volume, Boss Fight Effects (the bosses' moves
+    //   Sound (everything on or off) and Volume; Level Music (each campaign level's chill song), Boss Music (the boss
+    //   fights, the story, winning and losing) and Music Volume (both; the same setting as the sliders in a level and
+    //   in a boss fight); Effects Volume, Boss Fight Effects (the bosses' moves
     //   and your abilities), Typing Sounds and Click Sounds.
     // ---------------------------------------------------------------------------------------------
     const SOUND_GROUPS = [
         { key: "all", rows: [["switch", "sound", "All Sound"], ["range", "volume", "Volume"]] },
-        { key: "music", head: "Music", rows: [["switch", "bossMusic", "Boss Music"], ["range", "musicVolume", "Music Volume"]] },
+        { key: "music", head: "Music", rows: [["switch", "levelMusic", "Level Music"], ["switch", "bossMusic", "Boss Music"], ["range", "musicVolume", "Music Volume"]] },
         { key: "fx", head: "Effects", rows: [["range", "fxVolume", "Effects Volume"], ["range", "bossFxVolume", "Boss Fight Effects"], ["switch", "typingSounds", "Typing Sounds"], ["switch", "clickSounds", "Click Sounds"]] }
     ];
     const SOUND_KEYS = new Set(SOUND_GROUPS.flatMap(g => g.rows.map(r => r[1])));
@@ -343,7 +346,7 @@ const App = (() => {
                         Settings.set(key, Number(input.value) / 100);
                         // turning a volume up turns its sound back on
                         if (Number(input.value) > 0 && key === "volume" && !Settings.get("sound")) Settings.set("sound", true);
-                        if (Number(input.value) > 0 && key === "musicVolume" && !soundOn("bossMusic")) Settings.set("bossMusic", true);
+                        if (Number(input.value) > 0 && key === "musicVolume" && !soundOn("bossMusic") && !soundOn("levelMusic")) { Settings.set("bossMusic", true); Settings.set("levelMusic", true); }
                         syncSound();
                     });
                     input.addEventListener("change", () => { if (PREVIEW[key]) PREVIEW[key](); });
@@ -370,7 +373,7 @@ const App = (() => {
         for (const out of document.querySelectorAll("[data-sout]")) out.textContent = level(out.dataset.sout) + "%";
         // with all sound off the rest is dimmed (still changeable); the music volume dims with the music off
         for (const g of document.querySelectorAll(".snd-group")) g.classList.toggle("dim", g.dataset.group !== "all" && !Settings.get("sound"));
-        for (const r of document.querySelectorAll('[data-skey="musicVolume"]')) r.closest(".snd-row").classList.toggle("dim", !soundOn("bossMusic"));
+        for (const r of document.querySelectorAll('[data-skey="musicVolume"]')) r.closest(".snd-row").classList.toggle("dim", !soundOn("bossMusic") && !soundOn("levelMusic"));
     }
     soundControls($("#sound-controls"));
     soundControls($("#sound-pop-controls"));

@@ -39,31 +39,128 @@
             }
         });
     }
+    // How each particle looks (redone 2026-10-10, the user: "make large adjustments to every particle"): glows and
+    // embers use the cached glow sprites from fx.js (cheaper than shadow blurs), stars twinkle, streaks fade at the
+    // tail with a bright head, drops and hearts have a shine, leaves and petals have veins and light, confetti squares
+    // show a darker back as they flip, coins spin with a rim and a glint, bubbles have a rainbow rim, dots are shaded.
+    const A = () => FX.art;
+    let rimGrad = null;
+    function halo0(ctx, r, color, a = 1) {                  // a glow centred where the particle is (lighter blend)
+        if (r < 0.8) return;
+        const op = ctx.globalCompositeOperation, ga = ctx.globalAlpha;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = ga * a;
+        ctx.drawImage(A().halo(color), -r, -r, r * 2, r * 2);
+        ctx.globalCompositeOperation = op;
+        ctx.globalAlpha = ga;
+    }
+    const shade = (p, key, k) => p[key] || (p[key] = A().tint(p.color, k));
     function draw(ctx, p, a, s) {
+        if (s <= 0.05 || a <= 0.005) return;
         ctx.save();
         ctx.globalAlpha = Math.max(0, a);
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
         ctx.fillStyle = p.color; ctx.strokeStyle = p.color;
-        if (p.glow) { ctx.shadowColor = p.glow; ctx.shadowBlur = s * 3; }
         if (p.add) ctx.globalCompositeOperation = "lighter";
+        if (p.glow) halo0(ctx, s * 3, p.glow, 0.7);
         switch (p.shape) {
-            case "glow": { const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s); g.addColorStop(0, p.color); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.fill(); break; }
-            case "streak": ctx.rotate(-p.rot + Math.atan2(p.vy, p.vx)); ctx.fillRect(-s * 3, -s * 0.25, s * 3, s * 0.5); break;
-            case "drop": ctx.rotate(-p.rot + Math.atan2(p.vy, p.vx) - Math.PI / 2); ctx.beginPath(); ctx.moveTo(0, s * 1.6); ctx.quadraticCurveTo(s, 0, 0, -s * 0.6); ctx.quadraticCurveTo(-s, 0, 0, s * 1.6); ctx.fill(); break;
-            case "leaf": ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.45, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = "rgba(0,0,0,.25)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-s, 0); ctx.lineTo(s, 0); ctx.stroke(); break;
-            case "petal": ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.55, 0, 0, TAU); ctx.fill(); break;
-            case "flake": ctx.lineWidth = Math.max(1, s * 0.18); ctx.lineCap = "round"; for (let i = 0; i < 3; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(-s, 0); ctx.lineTo(s, 0); ctx.moveTo(s * 0.55, 0); ctx.lineTo(s * 0.8, -s * 0.25); ctx.moveTo(s * 0.55, 0); ctx.lineTo(s * 0.8, s * 0.25); ctx.stroke(); } break;
-            case "star": ctx.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? s * 0.45 : s; ctx.lineTo(Math.cos(i * Math.PI / 5) * r, Math.sin(i * Math.PI / 5) * r); } ctx.fill(); break;
-            case "square": ctx.fillRect(-s / 2, -s / 2, s, s); break;
-            case "crumb": ctx.beginPath(); ctx.moveTo(-s, -s * 0.4); ctx.lineTo(s * 0.6, -s * 0.7); ctx.lineTo(s, s * 0.5); ctx.lineTo(-s * 0.4, s * 0.7); ctx.fill(); break;
-            case "ring": ctx.lineWidth = Math.max(1, s * 0.15); ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.stroke(); break;
-            case "bubble": ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.stroke(); ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(-s * 0.35, -s * 0.35, s * 0.22, 0, TAU); ctx.fill(); break;
-            case "coin": ctx.scale(Math.abs(Math.cos(p.age * 9)) + 0.1, 1); ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.fill(); ctx.strokeStyle = "#b8860b"; ctx.lineWidth = 1.5; ctx.stroke(); break;
-            case "heart": ctx.beginPath(); ctx.moveTo(0, s * 0.8); ctx.bezierCurveTo(-s * 1.4, -s * 0.2, -s * 0.5, -s * 1.1, 0, -s * 0.3); ctx.bezierCurveTo(s * 0.5, -s * 1.1, s * 1.4, -s * 0.2, 0, s * 0.8); ctx.fill(); break;
-            case "text": ctx.rotate(-p.rot * 0.2); ctx.font = `900 ${s}px ${p.font || "sans-serif"}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.text, 0, 0); break;
-            case "ember": ctx.globalCompositeOperation = "lighter"; { const g = ctx.createRadialGradient(0, 0, 0, 0, 0, s * 2); g.addColorStop(0, "#fff"); g.addColorStop(0.3, p.color); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s * 2, 0, TAU); ctx.fill(); } break;
-            default: ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.fill();
+            case "glow": halo0(ctx, s * 1.2, p.color, 1); if (p.add) { ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.beginPath(); ctx.arc(0, 0, s * 0.18, 0, TAU); ctx.fill(); } break;
+            case "streak": {                                // a streak that fades at its tail, with a bright head
+                ctx.rotate(-p.rot + Math.atan2(p.vy, p.vx));
+                const gr = ctx.createLinearGradient(-s * 3.4, 0, 0, 0);
+                gr.addColorStop(0, A().fade(p.color, 0)); gr.addColorStop(1, p.color);
+                ctx.fillStyle = gr;
+                ctx.beginPath(); ctx.moveTo(-s * 3.4, 0); ctx.lineTo(0, -s * 0.3); ctx.lineTo(s * 0.25, 0); ctx.lineTo(0, s * 0.3); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(0, 0, s * 0.2, 0, TAU); ctx.fill();
+                break;
+            }
+            case "drop":                                    // a teardrop with a shine
+                ctx.rotate(-p.rot + Math.atan2(p.vy, p.vx) - Math.PI / 2);
+                ctx.beginPath(); ctx.moveTo(0, s * 1.6); ctx.quadraticCurveTo(s, 0, 0, -s * 0.6); ctx.quadraticCurveTo(-s, 0, 0, s * 1.6); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.ellipse(-s * 0.26, s * 0.4, s * 0.15, s * 0.32, 0.25, 0, TAU); ctx.fill();
+                break;
+            case "leaf": {                                  // a pointed leaf, lit on one half, with a vein and a stem
+                ctx.beginPath(); ctx.moveTo(-s, 0); ctx.quadraticCurveTo(-s * 0.1, -s * 0.55, s, 0); ctx.quadraticCurveTo(-s * 0.1, s * 0.55, -s, 0); ctx.fill();
+                ctx.globalAlpha = Math.max(0, a) * 0.35; ctx.fillStyle = shade(p, "_l", 0.45);
+                ctx.beginPath(); ctx.moveTo(-s, 0); ctx.quadraticCurveTo(-s * 0.1, -s * 0.55, s, 0); ctx.closePath(); ctx.fill();
+                ctx.globalAlpha = Math.max(0, a);
+                ctx.strokeStyle = "rgba(0,0,0,.28)"; ctx.lineWidth = Math.max(0.6, s * 0.09);
+                ctx.beginPath(); ctx.moveTo(-s * 1.25, 0); ctx.lineTo(s * 0.85, 0);
+                for (const x of [-0.4, 0.1]) for (const side of [-1, 1]) { ctx.moveTo(x * s, 0); ctx.lineTo((x + 0.3) * s, side * s * 0.26); }
+                ctx.stroke();
+                break;
+            }
+            case "petal":                                   // a petal with a notch at the tip and light near it
+                ctx.beginPath(); ctx.moveTo(-s, 0);
+                ctx.bezierCurveTo(-s * 0.6, -s * 0.75, s * 0.75, -s * 0.7, s, -s * 0.12); ctx.lineTo(s * 0.8, 0); ctx.lineTo(s, s * 0.12);
+                ctx.bezierCurveTo(s * 0.75, s * 0.7, -s * 0.6, s * 0.75, -s, 0); ctx.fill();
+                ctx.globalAlpha = Math.max(0, a) * 0.5; ctx.fillStyle = shade(p, "_l", 0.5);
+                ctx.beginPath(); ctx.ellipse(s * 0.28, -s * 0.1, s * 0.46, s * 0.2, 0, 0, TAU); ctx.fill();
+                break;
+            case "flake": ctx.drawImage(A().flake(p.color), -s * 2, -s * 2, s * 4, s * 4); break;
+            case "star": {                                  // it twinkles, with a bright middle and a soft glow
+                const tw = 1 + Math.sin(p.age * 13 + (p.ph || 0) * 3) * 0.16, r = s * tw;
+                ctx.drawImage(A().starImg(p.color, shade(p, "_l", 0.5), !!p.add), -r * 2, -r * 2, r * 4, r * 4);
+                break;
+            }
+            case "square": {                                // a scrap of paper tumbling: its back is a shade darker
+                const f = Math.cos(p.age * 9 + (p.ph || 0));
+                ctx.scale(Math.abs(f) * 0.8 + 0.2, 1);
+                ctx.fillStyle = f >= 0 ? p.color : shade(p, "_d", -0.3);
+                ctx.fillRect(-s / 2, -s / 2, s, s);
+                if (f > 0.4) { ctx.fillStyle = "rgba(255,255,255,.4)"; ctx.fillRect(-s / 2, -s / 2, s, s * 0.22); }
+                break;
+            }
+            case "crumb":                                   // a chip with a lit edge
+                ctx.beginPath(); ctx.moveTo(-s, -s * 0.4); ctx.lineTo(s * 0.6, -s * 0.7); ctx.lineTo(s, s * 0.5); ctx.lineTo(-s * 0.4, s * 0.7); ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.lineWidth = Math.max(0.5, s * 0.18);
+                ctx.beginPath(); ctx.moveTo(-s, -s * 0.4); ctx.lineTo(s * 0.6, -s * 0.7); ctx.stroke();
+                break;
+            case "ring":                                    // a ring with a thin bright ring inside it
+                ctx.lineWidth = Math.max(1, s * 0.15); ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.stroke();
+                ctx.globalAlpha = Math.max(0, a) * 0.6; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = Math.max(0.6, s * 0.05);
+                ctx.beginPath(); ctx.arc(0, 0, Math.max(0.5, s * 0.84), 0, TAU); ctx.stroke();
+                break;
+            case "bubble": {                                // a rainbow rim and two highlights
+                if (!rimGrad) { rimGrad = ctx.createLinearGradient(-1, -1, 1, 1); rimGrad.addColorStop(0, "rgba(255,255,255,.95)"); rimGrad.addColorStop(0.42, "rgba(255,190,240,.95)"); rimGrad.addColorStop(0.68, "rgba(180,255,235,.95)"); rimGrad.addColorStop(1, "rgba(255,255,255,.95)"); }
+                ctx.save(); ctx.scale(s, s);
+                ctx.beginPath(); ctx.arc(0, 0, 1, 0, TAU);
+                ctx.globalAlpha = Math.max(0, a) * 0.14; ctx.fillStyle = "#ffffff"; ctx.fill();
+                ctx.globalAlpha = Math.max(0, a); ctx.strokeStyle = rimGrad; ctx.lineWidth = Math.max(1.4 / s, 0.1); ctx.stroke();
+                ctx.restore();
+                ctx.fillStyle = "rgba(255,255,255,.88)"; ctx.beginPath(); ctx.ellipse(-s * 0.36, -s * 0.38, s * 0.22, s * 0.13, -0.7, 0, TAU); ctx.fill();
+                ctx.beginPath(); ctx.arc(s * 0.4, s * 0.42, s * 0.08, 0, TAU); ctx.fill();
+                break;
+            }
+            case "coin": {                                  // it spins: a gold face with a rim and a glint, its edge when it's side on
+                const f = Math.cos(p.age * 9);
+                ctx.scale(Math.abs(f) + 0.1, 1);
+                ctx.fillStyle = Math.abs(f) < 0.3 ? "#a8780f" : p.color;
+                ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.fill();
+                ctx.strokeStyle = "#b8860b"; ctx.lineWidth = Math.max(1, s * 0.16); ctx.stroke();
+                ctx.strokeStyle = "rgba(255,240,170,.8)"; ctx.lineWidth = Math.max(0.6, s * 0.08);
+                ctx.beginPath(); ctx.arc(0, 0, s * 0.62, 0, TAU); ctx.stroke();
+                ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.beginPath(); ctx.ellipse(-s * 0.35, -s * 0.35, s * 0.18, s * 0.1, -0.7, 0, TAU); ctx.fill();
+                break;
+            }
+            case "heart":                                   // a heart with a shine on one side
+                ctx.beginPath(); ctx.moveTo(0, s * 0.8); ctx.bezierCurveTo(-s * 1.4, -s * 0.2, -s * 0.5, -s * 1.1, 0, -s * 0.3); ctx.bezierCurveTo(s * 0.5, -s * 1.1, s * 1.4, -s * 0.2, 0, s * 0.8); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.beginPath(); ctx.ellipse(-s * 0.42, -s * 0.38, s * 0.18, s * 0.11, -0.7, 0, TAU); ctx.fill();
+                break;
+            case "text":
+                ctx.rotate(-p.rot * 0.2);
+                if (!p.font) { const w = s * 80 / 56; ctx.drawImage(A().text(p.text, p.color), -w / 2, -w / 2, w, w); }
+                else { ctx.font = `900 ${s}px ${p.font}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.text, 0, 0); }
+                break;
+            case "ember":                                   // a hot glowing spark, white in the middle
+                halo0(ctx, s * 2.4, p.color, 1);
+                ctx.globalCompositeOperation = "lighter";
+                ctx.fillStyle = "rgba(255,250,230,.95)"; ctx.beginPath(); ctx.arc(0, 0, s * 0.42, 0, TAU); ctx.fill();
+                break;
+            default:                                        // a dot: a shaded little ball
+                if (s < 2.5 || p.add) { ctx.beginPath(); ctx.arc(0, 0, s, 0, TAU); ctx.fill(); }
+                else ctx.drawImage(A().ball(p.color), -s, -s, s * 2, s * 2);
         }
         ctx.restore();
     }
@@ -79,8 +176,17 @@
         burst(list);
     }
     // a shockwave ring
+    // (a soft wide glow, the ring, and a thin bright ring just inside it)
     function ring(p, { color = "#fff", r = 120, life = 0.6, width = 8 } = {}) {
-        add({ life, draw(ctx, k) { ctx.globalAlpha = 1 - k; ctx.strokeStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 16; ctx.lineWidth = width * (1 - k) + 1; ctx.beginPath(); ctx.arc(p.x, p.y, r * ease(k), 0, TAU); ctx.stroke(); } });
+        add({ life, draw(ctx, k) {
+            const rr = r * ease(k), w = width * (1 - k) + 1;
+            ctx.globalCompositeOperation = "lighter";
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = (1 - k) * 0.3; ctx.lineWidth = w * 2.8; ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, TAU); ctx.stroke();
+            ctx.globalAlpha = 1 - k; ctx.lineWidth = w; ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, TAU); ctx.stroke();
+            ctx.globalAlpha = (1 - k) * 0.7; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = Math.max(1, w * 0.28);
+            ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, rr - w * 0.9), 0, TAU); ctx.stroke();
+        } });
     }
     // something flying along an arc (a parabola) from a to b, drawn by drawFn(ctx, x, y, k, t); resolves when it lands
     function lob(a, b, { life = 0.65, height = 160, drawFn, trail } = {}) {
@@ -89,7 +195,7 @@
             const path = [];
             add({ life, draw(ctx, k, t) {
                 const x = lerp(a.x, b.x, k), y = lerp(a.y, b.y, k) - Math.sin(k * Math.PI) * height;
-                if (trail) { path.push([x, y]); if (path.length > 14) path.shift(); path.forEach(([px, py], i) => { ctx.globalAlpha = i / path.length * 0.5; ctx.fillStyle = trail; ctx.beginPath(); ctx.arc(px, py, 3 + i * 0.4, 0, TAU); ctx.fill(); }); ctx.globalAlpha = 1; }
+                if (trail) { path.push([x, y]); if (path.length > 14) path.shift(); ctx.globalAlpha = 1; path.forEach(([px, py], i) => K.haloAt(ctx, px, py, 4 + i * 0.7, trail, i / path.length * 0.6)); ctx.globalAlpha = 1; }
                 drawFn(ctx, x, y, k, t);
             } });
             setTimeout(resolve, life * 1000);

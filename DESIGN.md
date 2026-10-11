@@ -169,8 +169,7 @@ board gets the class `ID-solved` when solved. The seven worlds added last use it
 
 ### 6. Testing
 
-Use the temporary **Win (test)** button under Check/Reveal to watch the win (it saves nothing; remove it before
-going online). Then drive headless Edge over the DevTools protocol: type a daily for real, screenshot the
+To watch a world's win, solve a daily (the answers are in the puzzle's JSON). Drive headless Edge over the DevTools protocol: type a daily for real, screenshot the
 title card, the win at several moments, the results card, Stats, Settings, a world switch mid-transition, both
 modes, and phone width (390×844). No console errors. Serve dailies from a scratch `PUZZLE_DIR` so testing never
 calls Claude.

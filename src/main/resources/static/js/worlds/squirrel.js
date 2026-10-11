@@ -249,8 +249,10 @@
                 const sx = W * 0.8 - inp.px * 6, sy = H * (night ? 0.3 : 0.27), sr = Math.min(W, H) * (night ? 0.075 : 0.06);
                 if (night) {
                     for (const s of stars) {
-                        g.fillStyle = `rgba(255,240,220,${(0.25 + 0.6 * Math.abs(Math.sin(t * 1.2 + s.tw))).toFixed(2)})`;
-                        g.fillRect(s.x - inp.px * 2, s.y, s.r * 1.3, s.r * 1.3);
+                        const tw = Math.abs(Math.sin(t * 1.2 + s.tw)), x = s.x - inp.px * 2;
+                        g.fillStyle = `rgba(255,240,220,${(0.25 + 0.6 * tw).toFixed(2)})`;
+                        g.fillRect(x, s.y, s.r * 1.3, s.r * 1.3);
+                        if (s.r > 1) Worlds.twinkle(g, x + s.r * 0.65, s.y + s.r * 0.65, s.r, tw, "#fff0dc");
                     }
                     // a big harvest moon
                     const mg = g.createRadialGradient(sx, sy, sr * 0.7, sx, sy, sr * 3.5);
@@ -380,6 +382,11 @@
                     g.fillStyle = canopyCol(l.c);
                     leafPath(g, l.s * l.depth, l.pointy);
                     g.fill();
+                    if (l.s * l.depth > 3.5) {                              // a vein and a stem on the bigger, nearer ones
+                        const s = l.s * l.depth;
+                        g.strokeStyle = "rgba(70, 30, 8, .4)"; g.lineWidth = Math.max(0.6, s * 0.09);
+                        g.beginPath(); g.moveTo(-s * 1.3, 0); g.lineTo(s * 0.8, 0); g.stroke();
+                    }
                     g.restore();
                 }
             }

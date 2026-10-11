@@ -178,9 +178,14 @@ public class ChallengeGrid {
     // answers of recent puzzles, so the same words don't keep coming back). Tries `first`'s words, then `second`'s.
     // If a few patterns in a row can't be filled without the avoided words, it stops avoiding them.
     static Filled fill(long seed, int n, Map<Integer, List<String>> first, Map<Integer, List<String>> second, Set<String> avoid) {
+        return fill(seed, n, first, second, avoid, 0);
+    }
+    // firstOnly: how many patterns to try with `first`'s words alone before `second`'s are allowed too (the campaign
+    // uses this so its easier words win far more often: added by Claude, 2026-10-10)
+    static Filled fill(long seed, int n, Map<Integer, List<String>> first, Map<Integer, List<String>> second, Set<String> avoid, int firstOnly) {
         for (int attempt = 0; ; attempt++) {
             boolean[][] black = shape(seed * 31 + attempt, n);
-            for (Map<Integer, List<String>> words : List.of(first, second)) {
+            for (Map<Integer, List<String>> words : attempt < firstOnly ? List.of(first) : List.of(first, second)) {
                 char[][] grid = new char[n][n];
                 for (char[] row : grid) Arrays.fill(row, '.');
                 App.solveBudget = BUDGET;

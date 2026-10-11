@@ -1,8 +1,8 @@
 // How to Play (built by Claude at the user's request, 2026-10-10): a short guide in two parts, Normal and Boss Fights,
 // that works like a video (the user: "make the tutorial work through videos/animations"). Each topic is a chapter
 // with its own little animation on a stage: a real board in the current world's colours, a pointer that clicks,
-// keys that light up, subtitles. A chapter plays once and stops on its last frame with a Replay button (the user,
-// 2026-10-10: no moving on by itself, and no check marks); Next, the arrow keys or the chapter list go to another.
+// keys that light up, subtitles. A chapter plays over and over (the user, 2026-10-10: it doesn't move on to the
+// next one by itself, it replays; and no check marks); Next, the arrow keys or the chapter list go to another.
 // Click the stage (or press Space) to pause.
 //
 //   HowTo.open("normal" | "boss")
@@ -122,12 +122,14 @@ const HowTo = (() => {
                 const el = s.add("ht-float " + tone, { x, y, text });
                 s.later(1300, () => el.remove());
             },
-            // a burst of dots
+            // a burst of glowing dots and four-pointed sparkles, flung out at different distances, with a flash
             burst(x, y, color = "var(--accent)", n = 12) {
+                const fl = s.add("ht-flash-dot", { x, y, style: { "--c": color } });
+                s.later(500, () => fl.remove());
                 for (let i = 0; i < n; i++) {
-                    const a = (i / n) * Math.PI * 2, d = 26 + (i % 3) * 10;
-                    const el = s.add("ht-dot", { x, y, style: { "--dx": (Math.cos(a) * d).toFixed(1) + "px", "--dy": (Math.sin(a) * d).toFixed(1) + "px", "--c": color } });
-                    s.later(700, () => el.remove());
+                    const a = (i / n) * Math.PI * 2 + (i % 2) * 0.2, d = 24 + (i % 3) * 12 + (i % 5) * 3;
+                    const el = s.add("ht-dot" + (i % 3 === 0 ? " spark" : ""), { x, y, style: { "--dx": (Math.cos(a) * d).toFixed(1) + "px", "--dy": (Math.sin(a) * d).toFixed(1) + "px", "--c": i % 4 === 1 ? "#ffffff" : color, "--s": String(0.7 + (i % 4) * 0.22), "--r": (i * 47 % 360) + "deg" } });
+                    s.later(800, () => el.remove());
                 }
             },
             // a banner across the middle ("Phase 2", "You Win")
@@ -637,7 +639,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "World Leaderboard", len: 8400, text: "Post your day's total under your first name and last initial. The server works out the points itself.",
+            title: "World Leaderboard", len: 8400, text: "Post your day's total under your first name and last initial. Everyone's ranked by their total for the day.",
             async demo(s) {
                 const list = s.add("ht-lb", { x: 150, y: 14, w: 340 });
                 const people = [["Ava R.", 640], ["Ben K.", 590], ["Cleo M.", 505], ["Dev S.", 470], ["Eli T.", 410]];
@@ -670,7 +672,7 @@ const HowTo = (() => {
                 s.pop(mine, "ht-slide");
                 s.cursor.hide();
                 await s.wait(1700);
-                s.sub("The server works out the points itself");
+                s.sub("Everyone's ranked by their total for the day");
                 await s.wait(2000);
             }
         },
@@ -760,12 +762,12 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Sound", len: 9600, text: "The speaker at the top opens every sound option: all sound on or off, the volume, the boss music and its volume, the sound effects, the bosses' attacks and your abilities, typing and clicks. Settings has the same ones.",
+            title: "Sound", len: 9800, text: "The speaker at the top opens every sound option: all sound on or off, the volume, each level's own calm song, the boss music, the music volume, the sound effects, the bosses' attacks and your abilities, typing and clicks. Settings has the same ones, and in a level the slider by the timer changes the music.",
             async demo(s) {
                 const tools = s.add("ht-tools", { x: 452, y: 14 });
                 s.add("ht-tool", { text: "?" }, tools); s.add("ht-tool", { text: Worlds.current.icon || "🌍" }, tools);
                 const spk = s.add("ht-tool", { text: "🔊" }, tools);
-                const menu = s.add("ht-sound", { x: 330, y: 62, w: 280 });
+                const menu = s.add("ht-sound", { x: 330, y: 54, w: 280 });
                 menu.style.opacity = "0";
                 const rows = {};
                 const sw = (key, label, on = true) => { const r = s.add("ht-srow2", {}, menu); r.append(U.el("i", { class: "ht-switch" + (on ? " on" : "") }), U.el("span", { text: label })); rows[key] = r; return r; };
@@ -780,7 +782,7 @@ const HowTo = (() => {
                     return r;
                 };
                 sw("all", "All Sound");
-                s.add("ht-shead", { text: "Music" }, menu); sw("music", "Boss Music"); sl("mvol", "Music Volume", 100);
+                s.add("ht-shead", { text: "Music" }, menu); sw("level", "Level Music"); sw("music", "Boss Music"); sl("mvol", "Music Volume", 100);
                 s.add("ht-shead", { text: "Effects" }, menu); sl("boss", "Boss Fight Effects", 100); sw("typing", "Typing Sounds"); sw("clicks", "Click Sounds");
                 s.cursor.show(560, 330);
                 await s.wait(300);
@@ -789,7 +791,7 @@ const HowTo = (() => {
                 menu.style.opacity = "";
                 s.pop(menu);
                 await s.wait(1200);
-                s.sub("Turn the boss music down");
+                s.sub("Every level has its own song: turn the music down");
                 const mv = rows.mvol;
                 await s.cursor.to(mv.knob);
                 await s.tween(900, k => { const x = U.lerp(100, 55, k); mv.set(x); s.cursor.show(s.pos(mv.knob).x, s.pos(mv.knob).y); });
@@ -862,7 +864,7 @@ const HowTo = (() => {
                 for (const row of big.cells) for (const d of row) { const l = d.querySelector(".ltr"); if (l) l.textContent = ""; }
                 race.set(0, 0);
                 await s.wait(900);
-                s.sub("Each board is bigger, and the boss is faster");
+                s.sub("Each board is bigger than the last");
                 await s.wait(2200);
             }
         },
@@ -893,7 +895,7 @@ const HowTo = (() => {
                 s.sub("If one lands, the box says how to undo it");
                 const landed = await warn.windup("Ink Blot", "Finish a word to block it", 2200);
                 if (landed) {
-                    warn.show("🖋️ Ink Blot Hit You", "Tip: click the blots to wipe them.", "bad");
+                    warn.show("🖋️ Ink Blot Hit You", "Tip: Click The Blots To Wipe Them", "bad");
                     const blots = [[0, 1], [2, 3], [1, 2]].map(([r, c]) => { const bl = s.add("ht-blot", {}, b.cell(r, c)); s.pop(bl); return bl; });
                     s.cursor.show(560, 330);
                     await s.wait(900);
@@ -1036,7 +1038,7 @@ const HowTo = (() => {
                 race.set(0.2, 0.2);
                 await race.to(0.62, 0.3, 1600);
                 race.el.classList.add("rage");
-                warn.show(`😡 ${sc.boss.name} Is Enraged`, "It's faster and angrier now.", "rage");
+                warn.show(`😡 ${sc.boss.name} Is Enraged`, "", "rage");
                 s.pop(race.el, "ht-shake");
                 await s.wait(1300);
                 s.sub("Faster, with more attacks");
@@ -1242,9 +1244,9 @@ const HowTo = (() => {
         const modal = U.el("div", { class: "results shop-page howto-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "howto-title" });
         const card = U.el("div", { class: "shop-card howto-card" });
         modal.appendChild(card);
-        let chapters = [], idx = 0, run = null, paused = still, raf = 0, last = 0, ended = false;
+        let chapters = [], idx = 0, run = null, paused = still, raf = 0, last = 0;
         const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg>';
-        const REPLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ln" d="M5 12a7 7 0 1 0 2.1-5"/><path d="M4 3.5v5h5z"/></svg>';
+        const REPLAY_GAP = 900;                 // ms on the last frame before the chapter starts again
         // the parts of the page
         const tabs = U.el("div", { class: "shop-tabs", role: "tablist" });
         const stage = U.el("div", { class: "ht-stage", role: "img", tabindex: "0", "aria-label": "Animation" });
@@ -1281,14 +1283,10 @@ const HowTo = (() => {
         ro.observe(stage);
 
         const drawPlay = () => {
-            const showPlay = paused || ended;
-            playBtn.innerHTML = ended ? REPLAY : showPlay ? PLAY : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.5v13M16.5 5.5v13"/></svg>';
-            playBtn.setAttribute("aria-label", ended ? "Replay" : paused ? "Play" : "Pause");
-            big.innerHTML = ended ? REPLAY : PLAY;
-            big.classList.toggle("replay", ended);
-            big.setAttribute("aria-label", ended ? "Replay" : "Play");
-            big.hidden = !showPlay;
-            stage.classList.toggle("paused", showPlay);
+            playBtn.innerHTML = paused ? PLAY : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5.5v13M16.5 5.5v13"/></svg>';
+            playBtn.setAttribute("aria-label", paused ? "Play" : "Pause");
+            big.hidden = !paused;
+            stage.classList.toggle("paused", paused);
         };
         function drawTabs() {
             tabs.innerHTML = "";
@@ -1309,7 +1307,6 @@ const HowTo = (() => {
         function go(i, user = false) {
             if (run) run.kill();
             idx = U.clamp(i, 0, chapters.length - 1);
-            ended = false;
             if (user && still) paused = false;                     // (choosing a chapter plays it)
             world.innerHTML = "";
             world.classList.remove("sub-side", "ht-close");
@@ -1325,7 +1322,7 @@ const HowTo = (() => {
             const s = makeRun(world, { onSub: text => { if (run === me) cap.textContent = text; } }), me = s.run;
             run = me;
             me.len = ch.len || 12000;                                  // (each chapter's measured length, for its progress bar)
-            ch.demo(s).then(() => { if (run === me) me.done = true; }, err => { if (err !== STOP) console.error(err); });
+            ch.demo(s).then(() => { if (run === me) { me.done = true; me.doneAt = me.t; } }, err => { if (err !== STOP) console.error(err); });
             drawPlay();
         }
         function load() {
@@ -1333,24 +1330,23 @@ const HowTo = (() => {
             drawTabs();
             go(0);
         }
-        // the clock: runs the animation while playing; when a chapter ends it stays on its last frame
+        // the clock: runs the animation while playing; when a chapter ends it starts again
         function frame(t) {
             const dt = Math.min(50, t - (last || t));
             last = t;
-            if (run && !paused && !ended) {
+            if (run && !paused) {
                 run.step(dt * test.speed);
                 test.info = { tab, idx, t: run.t, done: !!run.done, count: chapters.length };
                 const k = run.done ? 1 : Math.min(0.97, run.t / run.len);
                 const seg = segs.children[idx], bar = list.children[idx] && list.children[idx].querySelector(".ht-chbar");
                 if (seg) seg.firstChild.style.width = (k * 100).toFixed(1) + "%";
                 if (bar) bar.style.width = (k * 100).toFixed(1) + "%";
-                if (run.done) { ended = true; drawPlay(); }
+                if (run.done && run.t >= run.doneAt + REPLAY_GAP) go(idx);
             }
             raf = requestAnimationFrame(frame);
         }
         const toggle = () => {
-            if (ended) { paused = false; go(idx); }                    // Replay: the same chapter again
-            else paused = !paused;
+            paused = !paused;
             drawPlay();
         };
         playBtn.addEventListener("click", toggle);

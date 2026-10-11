@@ -164,8 +164,8 @@
  "library-p2": {
   "file": "library-p2.mp3",
   "hit": 6.5,
-  "loopStart": 6.5,
-  "loopEnd": 40.2669,
+  "loopStart": 27.6173,
+  "loopEnd": 61.3841,
   "title": "Shadows Awaken Within",
   "author": "vitalezzz",
   "page": "shadows-awaken-within"
@@ -283,7 +283,7 @@
  },
  "story": {
   "file": "story.mp3",
-  "title": "The Lost Lexicon (composed for this game)",
+  "title": "The Lost Everbook (composed for this game)",
   "author": "composed for this game",
   "page": ""
  },
@@ -295,7 +295,7 @@
  },
  "story-finale": {
   "file": "story-finale.mp3",
-  "title": "The Lexicon Is Whole (composed for this game)",
+  "title": "The Everbook Is Whole (composed for this game)",
   "author": "composed for this game",
   "page": ""
  }

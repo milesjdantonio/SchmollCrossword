@@ -153,16 +153,29 @@
                     const tip = arm(g, arms[i], t, inp.px * 12);
                     if (night && i === 1 && !preview && Math.sin(t * 0.9 + arms[i].ph) > 0.3) {
                         for (let k = 0; k < 3; k++) sparks.push({ x: tip.x, y: tip.y, vx: (Math.random() - 0.5) * 220, vy: -Math.random() * 160, life: 0.6 + Math.random() * 0.5 });
-                        g.globalCompositeOperation = "lighter"; g.fillStyle = "rgba(180,230,255,.6)"; g.beginPath(); g.arc(tip.x, tip.y, 8 + Math.random() * 6, 0, TAU); g.fill(); g.globalCompositeOperation = "source-over";
+                        // the weld: a white-blue flare that flickers, with a hot core
+                        const fl = 0.7 + Math.random() * 0.3;
+                        Worlds.glow(g, tip.x, tip.y, 40 * fl, "#a8dcff", 0.8);
+                        Worlds.glow(g, tip.x, tip.y, 14 * fl, "#ffffff", 1);
+                        Worlds.glint(g, tip.x, tip.y, 26 * fl, 0.7, "#e8f6ff");
                     }
                 }
                 if (sparks.length > 260) sparks.splice(0, sparks.length - 260);
                 sparks = sparks.filter(s => (s.life -= dt) > 0);
-                for (const s of sparks) { s.vy += 500 * dt; s.x += s.vx * dt; s.y += s.vy * dt; g.fillStyle = `rgba(255,${200 + Math.round(s.life * 50)},120,${Math.min(1, s.life * 1.5).toFixed(2)})`; g.fillRect(s.x, s.y, 2, 2); }
+                // weld sparks: streaks along their path that cool from white-yellow to orange, the hottest glowing
+                g.lineCap = "round"; g.lineWidth = 1.6;
+                for (const s of sparks) {
+                    s.vy += 500 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+                    const a = Math.min(1, s.life * 1.5);
+                    g.strokeStyle = `rgba(255,${170 + Math.round(s.life * 80)},${Math.round(60 + s.life * 120)},${a.toFixed(2)})`;
+                    g.beginPath(); g.moveTo(s.x - s.vx * 0.025, s.y - s.vy * 0.025); g.lineTo(s.x, s.y); g.stroke();
+                    if (s.life > 0.55) Worlds.glow(g, s.x, s.y, 5, "#ffd890", a * 0.6);
+                }
                 // steam puffing from a pipe now and then
                 if (!preview && Math.random() < dt * 1.2) steam.push({ x: W * U.rand(0.2, 0.8), y: H * 0.04 + 10, age: 0 });
                 steam = steam.filter(s => (s.age += dt) < 2);
-                for (const s of steam) { const k = s.age / 2; g.fillStyle = night ? `rgba(160,180,200,${(0.25 * (1 - k)).toFixed(3)})` : `rgba(255,255,255,${(0.7 * (1 - k)).toFixed(3)})`; g.beginPath(); g.arc(s.x - inp.px * 4 + k * 20, s.y + k * 30, 6 + k * 26, 0, TAU); g.fill(); }
+                // steam: a billow of three puffs that spreads and fades
+                for (const s of steam) { const k = s.age / 2, x = s.x - inp.px * 4 + k * 20, y = s.y + k * 30, r = 6 + k * 26; g.fillStyle = night ? `rgba(160,180,200,${(0.25 * (1 - k)).toFixed(3)})` : `rgba(255,255,255,${(0.7 * (1 - k)).toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.arc(x + r * 0.7, y + r * 0.25, r * 0.65, 0, TAU); g.arc(x - r * 0.6, y + r * 0.3, r * 0.55, 0, TAU); g.fill(); }
                 // a little delivery drone buzzing across
                 nextDrone -= dt;
                 if (!drone && nextDrone <= 0) drone = { x: -40, y: H * U.rand(0.42, 0.6), vx: U.rand(70, 110) };

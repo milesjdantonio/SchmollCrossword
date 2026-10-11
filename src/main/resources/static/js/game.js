@@ -28,7 +28,6 @@ const Game = (() => {
         surrendered: false,  // "Reveal puzzle" was used: 0 points
         wrong: [], revealed: [],
         squaresChecked: 0, squaresRevealed: 0, checks: 0,
-        testWin: false,      // (the old Win (test) button set this; it's gone, so this stays false)
         celebrating: false,  // the win cinematic is playing
         result: null         // what the result banner says once the puzzle is finished
     };
@@ -69,8 +68,14 @@ const Game = (() => {
     function loadProgress() {
         try { return JSON.parse(localStorage.getItem(PROGRESS_KEY)) || {}; } catch (err) { return {}; }
     }
-    function saveProgress() {
-        if (!game.puzzle || game.testWin) return;   // a test win is never saved
+    // Saved at most every 400 ms: render() asks after every keystroke, and each save re-writes every saved puzzle.
+    // A pending save is written at once when the page is hidden or closed, and before another puzzle takes over.
+    let saveTimer = 0;
+    function saveProgress() { if (!saveTimer) saveTimer = setTimeout(flushProgress, 400); }
+    function flushProgress() {
+        clearTimeout(saveTimer);
+        saveTimer = 0;
+        if (!game.puzzle) return;
         const all = loadProgress();
         all[slotOf(game.puzzle)] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
         try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(all)); } catch (err) { /* storage blocked or full */ }
@@ -111,7 +116,7 @@ const Game = (() => {
             locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
             squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0,
-            row: saved.row, col: saved.col, direction: saved.direction, testWin: false, celebrating: false
+            row: saved.row, col: saved.col, direction: saved.direction, celebrating: false
         });
         // games saved before the redesign kept the banner text instead of a result
         game.result = saved.result || (saved.winShown ? { title: saved.winTitle, text: saved.winText, kind: saved.surrendered ? "surrender" : "win" } : null);
@@ -140,8 +145,7 @@ const Game = (() => {
         const el = $("#unlimited-left");
         try {
             const r = await (await fetch("/api/unlimited/left")).json();
-            if (r.limit >= 1000) el.textContent = "";            // no real limit (switched off for testing)
-            else if (r.left > 0) el.textContent = `${r.left} of ${r.limit} Left Today`;
+            if (r.left > 0) el.textContent = `${r.left} of ${r.limit} Left Today`;
             else {
                 const m = Math.ceil(r.nextInSeconds / 60), h = Math.floor(m / 60);
                 el.textContent = `0 of ${r.limit} Left · Next in ${h ? h + "h " : ""}${m % 60}m`;
@@ -187,6 +191,7 @@ const Game = (() => {
 
     let pendingCard = false;
     function startGame(puzzle) {
+        if (saveTimer) flushProgress();
         clockStoppedUntil = 0;
         if (game.puzzle && slotOf(game.puzzle) !== slotOf(puzzle)) savedGames[slotOf(game.puzzle)] = snapshot();
         const sameGrid = game.puzzle && game.puzzle.seed === puzzle.seed && game.puzzle.mode === puzzle.mode && fingerprint(game.puzzle) === fingerprint(puzzle);
@@ -199,7 +204,7 @@ const Game = (() => {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
                 letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
-                squaresChecked: 0, squaresRevealed: 0, checks: 0, testWin: false, celebrating: false, result: null
+                squaresChecked: 0, squaresRevealed: 0, checks: 0, celebrating: false, result: null
             });
         }
         drawTimer();
@@ -452,7 +457,7 @@ const Game = (() => {
         const record = p && p.mode === "daily" ? all[scoreKey(p)] : null;
         const streaks = calculateStreaks(all), parts = [];
         if (p && p.mode === "campaign") { pointsTodayEl.textContent = Campaign.bestLine(p); return; }
-        if (record) parts.push(record.surrendered ? `Today's ${p.difficulty}: revealed (0 pts)` : `Today's ${p.difficulty}: ${record.points} pts`);
+        if (record) parts.push(record.surrendered ? `Today's ${cap(p.difficulty)}: Revealed` : `Today's ${cap(p.difficulty)}: ${record.points} pts`);
         if (streaks.current > 0) parts.push(`\u{1F525} ${streaks.current}-Day Streak`);
         pointsTodayEl.textContent = parts.join(" · ");
     }
@@ -472,6 +477,11 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     // Winning
     // ---------------------------------------------------------------------------------------------
+    // the fastest saved daily at this difficulty (null: none yet)
+    function bestTime(difficulty) {
+        const t = Object.values(scores()).filter(r => r.difficulty === difficulty && !r.surrendered && typeof r.seconds === "number").map(r => r.seconds);
+        return t.length ? Math.min(...t) : null;
+    }
     function isSolved() {
         const size = game.puzzle.size;
         for (let row = 0; row < size; row++) for (let col = 0; col < size; col++) {
@@ -481,7 +491,7 @@ const Game = (() => {
     }
 
     // Today's dailies that aren't done yet. A saved score counts, and so does a board that's solved on screen in
-    // this visit (a test win, or a solve whose score was saved before), so the mascot never asks for one you finished.
+    // this visit (a solve whose score was saved before), so the mascot never asks for one you finished.
     function dailiesLeft(seed) {
         const all = scores(), day = seedDay(seed);
         return ["easy", "medium", "hard", "challenge", "boss"].filter(d => {
@@ -499,12 +509,9 @@ const Game = (() => {
         if (game.puzzle.mode === "campaign" && Campaign.nextPhase(game)) return false;     // a boss's phase 2 starts instead
         game.solved = true;
         const p = game.puzzle;
-        const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks, test: game.testWin };
-        if (game.testWin && p.mode !== "campaign") {
-            info.title = "Test win";
-            info.note = "The test button filled this in, so nothing was saved.";
-        } else if (p.mode === "daily") {
-            const dayWasDone = todayIsDone(scores());
+        const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks };
+        if (p.mode === "daily") {
+            const dayWasDone = todayIsDone(scores()), before = bestTime(p.difficulty);
             info.breakdown = scoreBreakdown(p.difficulty, game.seconds, game.squaresChecked, game.squaresRevealed);
             info.points = info.breakdown.total;
             info.counted = saveDailyScore(p, info.points);
@@ -513,12 +520,12 @@ const Game = (() => {
             info.streak = calculateStreaks(scores()).current;
             info.left = dailiesLeft(p.seed);
             if (!info.counted) info.note = "This daily was already completed, so no extra points.";
+            else if (before != null && game.seconds < before) info.best = before;     // a new personal best for this difficulty
         } else if (p.mode === "campaign") {
             Object.assign(info, Campaign.onWin(game, p));
-            if (game.testWin) info.note = "Test win: it still counts for the campaign (beta), so you can try the map.";
             // the Daily Boss is the 5th daily: points, the streak, the week. Every attempt costs 40, and the day's BEST
             // score is kept, so a rematch can still improve it (the user's rule)
-            if (info.campaign && info.campaign.special === "daily" && !game.testWin) {
+            if (info.campaign && info.campaign.special === "daily") {
                 const day = (Campaign.playing.date || "").replace(/-/g, "") || dayKey(new Date());
                 const dayWasDone = todayIsDone(scores());
                 info.daily = true;
@@ -540,7 +547,7 @@ const Game = (() => {
         info.unlocked = Achievements.onWin(info, Worlds.current.id);
         game.result = {
             kind: "win",
-            title: game.testWin ? "Test Win" : "Solved",
+            title: "Solved",
             text: `${U.fmtTime(game.seconds)}` + (info.counted ? ` · ${info.points} pts` : ""),
             info
         };
@@ -558,7 +565,7 @@ const Game = (() => {
         Mascot.hush();
         if (info.campaign && info.campaign.boss) await FX.cinematic(c => Campaign.bossFinale(c, game));
         if (w && w.celebrate) await FX.cinematic(c => w.celebrate(c, { boardEl, game, info }));
-        if (info.campaign && info.campaign.boss && info.campaign.firstClear) await FX.cinematic(c => Campaign.storyAfterBoss(c, info));   // its page goes into the Lexicon
+        if (info.campaign && info.campaign.boss && info.campaign.firstClear) await FX.cinematic(c => Campaign.storyAfterBoss(c, info));   // its page goes into the Everbook
         // they moved on to another puzzle or page during the animation: don't open these results over it
         // (they wait behind the board's Results button for when they come back)
         if (game.puzzle !== puzzle) return;
@@ -591,8 +598,12 @@ const Game = (() => {
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
             U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `WORLD ${info.campaign.si + 1} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
-            U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : info.test ? "Test Win" : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
+            U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
+        if (info.best != null) {
+            card.appendChild(U.el("div", { class: "res-pb" }, U.el("b", { text: "New Personal Best" }), U.el("span", { text: `${cap(p.difficulty)} · ${U.fmtTime(info.best - info.seconds)} faster` })));
+            setTimeout(() => { if (card.isConnected) Sound.play("achievement"); }, 700);
+        }
         const tally = U.el("div", { class: "res-tally" });
         card.appendChild(tally);
         if (info.breakdown && (info.counted || info.daily)) {           // (a Daily Boss rematch shows what it scored even when it isn't a new best)
@@ -613,12 +624,12 @@ const Game = (() => {
         }
         if (info.campaign) campaignResults(card, info.campaign);
         if (info.note) card.appendChild(U.el("p", { class: "res-note", text: info.note }));
-        if ((p.mode === "daily" || info.daily) && info.counted && !info.test && typeof Leaderboard !== "undefined") {
+        if ((p.mode === "daily" || info.daily) && info.counted && typeof Leaderboard !== "undefined") {
             const box = U.el("div", { class: "res-leader" });               // the World Leaderboard: post this daily
             card.appendChild(box);
             Leaderboard.after({ key: info.scoreKey, ...scores()[info.scoreKey] }, box);
         }
-        if ((p.mode === "daily" || info.daily) && !info.test) {
+        if (p.mode === "daily" || info.daily) {
             const s = calculateStreaks(scores());
             card.appendChild(U.el("div", { class: "res-streak" }, streakBadge(s)));
         }
@@ -650,7 +661,7 @@ const Game = (() => {
         } else if (p.mode === "unlimited") {
             actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New Puzzle", onclick: () => { closeResults(); loadPuzzle("unlimited", difficultyFor.unlimited); } }));
         }
-        if (!info.test && !info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
+        if (!info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
         // after a boss fight there's no going back to the board (the user, 2026-10-09): the buttons above move you on
         const bossEnd = !!(info.campaign && info.campaign.boss);
         if (!bossEnd) {
@@ -716,6 +727,7 @@ const Game = (() => {
     // be changed. Squares that are already locked aren't checked (or charged for) again.
     function check(scope) {
         const cells = scopeCells(scope).filter(([row, col]) => !isLocked(row, col));
+        if (!cells.length) { Sound.play("right"); return; }      // all locked already (so all right): nothing to check, and no charge
         game.squaresChecked += cells.length;
         game.checks++;
         let anyWrong = false, anyFilled = false;
@@ -1087,11 +1099,13 @@ const Game = (() => {
     document.documentElement.classList.toggle("no-timer", !Settings.get("showTimer"));
 
     // Campaign: start a level over (it was finished or given up, or it's a boss fight)
+    // (true: it starts over; false: a level in progress was kept)
     function restartSlot(slot) {
         const saved = game.puzzle && slotOf(game.puzzle) === slot ? snapshot() : savedGames[slot];
-        if (saved && !saved.solved && !saved.surrendered && !slot.endsWith("-5")) return;     // keep a level in progress
+        if (saved && !saved.solved && !saved.surrendered && !slot.endsWith("-5")) return false;     // keep a level in progress
         delete savedGames[slot];
         if (game.puzzle && slotOf(game.puzzle) === slot) game.puzzle = null;
+        return true;
     }
     // Daily / Unlimited Boss: a new fight gets a new copy of its puzzle (a Rematch keeps the one it has: restartSlot)
     function forgetSlot(slot) {
@@ -1226,10 +1240,11 @@ const Game = (() => {
     }
     // Campaign boss phases: swap in the boss's next puzzle, keeping the clock (and the Check/Reveal counts) going
     function startPhase(puzzle) {
+        if (saveTimer) flushProgress();
         Worlds.board("reset");
         game.puzzle = puzzle;
         const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
-        Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, testWin: false, celebrating: false, result: null });
+        Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, celebrating: false, result: null });
         indexEntries(puzzle);
         drawBoard(puzzle);
         drawClues(puzzle);
@@ -1255,6 +1270,8 @@ const Game = (() => {
     }
 
     restoreProgress();
+    addEventListener("pagehide", flushProgress);
+    document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flushProgress(); });
 
     return {
         restartSlot, forgetSlot, endLoss, checkWin: checkForWin, markBossChanges, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,

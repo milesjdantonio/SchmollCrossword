@@ -32,6 +32,7 @@
 .cm-map > .status { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; }
 @media (max-width: 880px) { .cm-map { border-radius: 0; border-width: 0; margin-top: 0; } }
 .cm-svg { display: block; width: 100%; height: auto; user-select: none; -webkit-user-select: none; }
+.cm-svg-dyn { position: absolute; top: 0; left: 0; will-change: transform; }      /* the moving parts, on their own layer */
 .cm-road, .cm-road-shadow, .cm-road-dash, .cm-road-done { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .cm-road { stroke-width: 30; }
 .cm-road-shadow { stroke: rgba(0, 0, 0, .16); stroke-width: 30; }
@@ -798,6 +799,17 @@
 .bp-vol-mute { width: 30px; height: 30px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-solid, #fff); font-size: 15px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
 .bp-vol-mute:hover { transform: scale(1.08); }
 .bp-volume.off input { opacity: .45; }
+/* a campaign level's music control, by the timer (the level's own chill song) */
+.music-ctl { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; width: 132px; margin-left: auto; padding: 3px 8px 3px 3px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent, #888) 9%, var(--surface-2, #f4f0f6)); border: 1.5px solid color-mix(in srgb, var(--accent, #888) 25%, transparent); }
+.music-ctl[hidden] { display: none; }
+.music-ctl input { flex: 1; min-width: 0; accent-color: var(--accent); cursor: pointer; }
+.music-ctl output { display: none; }   /* (the level shows in the button's tooltip; the slider says the rest) */
+.mc-mute { width: 28px; height: 28px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--surface-solid, #fff); font-size: 14px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); transition: transform .15s; }
+.mc-mute:hover { transform: scale(1.08); }
+.music-ctl.off input { opacity: .45; }
+@media (max-width: 600px) { .music-ctl { width: 108px; } }
+.in-level .hud-row .points-today { flex: 1 1 0; min-width: 0; }
 @media (max-width: 960px) { .cm-rail .cm-dot { --dot: clamp(16px, calc((100vh - 150px) / 15 - 4px), 24px); } }
 /* boss fights have no Check or Reveal (the user, 2026-10-09): it's a race, you solve it yourself */
 .in-boss #helpers .helper-row { display: none; }
@@ -852,3 +864,9 @@
     #cm-howto .ht-q { display: inline; font-weight: 900; }
     .cmv-bar .cmv-stat.coins { margin-left: auto; }
 }
+/* the beta's helpers on the map (+500 Coins, Unlock All): a small strip in the bottom-left corner */
+.cm-beta { position: fixed; left: 14px; bottom: 14px; z-index: 45; display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 12px; border-radius: 999px;
+    background: var(--surface-solid, #fff); border: 2px dashed color-mix(in srgb, var(--accent, #888) 55%, transparent); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.cm-beta > b { font-size: .72rem; font-weight: 900; color: var(--accent, #c33); margin-right: 2px; }
+.cm-beta .btn { padding: 5px 12px; font-size: .8rem; }
+@media (max-width: 640px) { .cm-beta { left: 8px; bottom: 8px; } }

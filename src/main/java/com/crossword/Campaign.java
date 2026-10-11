@@ -14,7 +14,8 @@ public class Campaign {
 
     // One section of the map: a world, the difficulty and board size of its levels 1-4, and its boss's (level 5).
     // Difficulties: "easy" and "medium" are normal 5x5 puzzles. "challenge" is a Challenge grid with medium clues,
-    // like the Challenge daily. "expert" is a Challenge grid with hard words first and hard clues.
+    // like the Challenge daily. "expert" is a Challenge grid with hard clues. The words are one step easier than the
+    // difficulty (the user, 2026-10-10): see "Easier words in the campaign" in PuzzleStore.java.
     record Section(String world, String difficulty, int size, String bossDifficulty, int bossSize) {}
 
     // The order of the map, easiest first. The ids match the worlds in static/js/worlds/.
@@ -98,7 +99,10 @@ public class Campaign {
     // Rerolls (the user's rule, 2026-10-09): if you lose or give up, your next try is a NEW puzzle with new clues,
     // so you can't win by remembering the answers. Try 0 is the level's first puzzle, try 1 the next one, and so on.
     // Each one is saved like the first (so Claude is paid once per puzzle); after VARIANTS tries they come round again.
-    static final int VARIANTS = 20;
+    // The puzzle pool (the user, 2026-10-10: "make 25 [per level] ... that it pulls from randomly ... they must feel
+    // the same"): every level has VARIANTS ready-made puzzles (CampaignPool.java), and the website picks one at random
+    // each time a level starts (never one of the last few you played there).
+    static final int VARIANTS = 25;
 
     // A fixed seed for each level, far away from the daily seeds (those look like 202610081):
     // world 1 level 1 -> 7000000011, world 15 level 5 -> 7000000155 (6 = the boss's own board, 7-10 = boss phases 2-5)

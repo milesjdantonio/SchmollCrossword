@@ -309,8 +309,10 @@
 
                 if (night) {
                     for (const s of stars) {
-                        g.fillStyle = `rgba(255,255,255,${(0.3 + 0.7 * Math.abs(Math.sin(t * 1.1 + s.tw))).toFixed(2)})`;
-                        g.fillRect(s.x - inp.px * 2, s.y, s.r * 1.4, s.r * 1.4);
+                        const tw = Math.abs(Math.sin(t * 1.1 + s.tw)), x = s.x - inp.px * 2;
+                        g.fillStyle = `rgba(255,255,255,${(0.3 + 0.7 * tw).toFixed(2)})`;
+                        g.fillRect(x, s.y, s.r * 1.4, s.r * 1.4);
+                        if (s.r > 1) Worlds.twinkle(g, x + s.r * 0.7, s.y + s.r * 0.7, s.r, tw, "#eef6ff");
                     }
                     // the northern lights: glowing curtains that ripple slowly
                     g.globalCompositeOperation = "lighter";
@@ -435,7 +437,11 @@
                     if (f.x > W + 10) f.x -= W + 20; else if (f.x < -10) f.x += W + 20;
                     const x = f.x - inp.px * (3 + f.layer * 9);
                     if (f.layer === 0) { g.fillStyle = night ? "rgba(220,230,255,.6)" : "rgba(255,255,255,.75)"; g.fillRect(x, f.y, f.r, f.r); }
-                    else { const d = f.r * 2.6; g.globalAlpha = f.layer === 2 ? 0.85 : 0.95; g.drawImage(flakeSpr, x - d / 2, f.y - d / 2, d, d); g.globalAlpha = 1; }
+                    else {
+                        const d = f.r * 2.6; g.globalAlpha = f.layer === 2 ? 0.85 : 0.95; g.drawImage(flakeSpr, x - d / 2, f.y - d / 2, d, d); g.globalAlpha = 1;
+                        const gl = Math.sin(t * 2.3 + f.ph * 5);                       // a near flake catching the light as it turns
+                        if (f.layer === 2 && gl > 0.95) Worlds.glint(g, x, f.y, d * 0.7, (gl - 0.95) * 16, night ? "#dfe8ff" : "#ffffff");
+                    }
                 }
             }
         };

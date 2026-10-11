@@ -109,7 +109,7 @@
                 }
                 g.fillStyle = sky; g.fillRect(0, 0, W, H);
                 if (night) {
-                    for (const s of stars) { g.fillStyle = `rgba(230,240,255,${(0.25 + 0.75 * Math.abs(Math.sin(t * 0.9 + s.tw))).toFixed(2)})`; g.fillRect(s.x - inp.px * 2, s.y, s.r, s.r); }
+                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 0.9 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(230,240,255,${(0.25 + 0.75 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(230,240,255)"); }
                     const mx = W * 0.3 - inp.px * 3, my = H * 0.24, mr = Math.min(W, H) * 0.13;           // a giant moon
                     const mg = g.createRadialGradient(mx, my, mr, mx, my, mr * 2.6);
                     mg.addColorStop(0, "rgba(200,220,255,.25)"); mg.addColorStop(1, "rgba(200,220,255,0)");
@@ -155,7 +155,8 @@
                     if (Math.random() < dt * 8) sparks.push({ x, y: y - 30, vx: (Math.random() - 0.5) * 20, vy: -40 - Math.random() * 40, life: 1.5 });
                 }
                 sparks = sparks.filter(s => (s.life -= dt) > 0);
-                for (const s of sparks) { s.x += s.vx * dt + Math.sin(t * 6 + s.vy) * 0.3; s.y += s.vy * dt; g.fillStyle = `rgba(255,200,90,${(s.life / 1.5).toFixed(2)})`; g.fillRect(s.x, s.y, 2, 2); }
+                // campfire sparks: they wiggle up, glowing, and wink out
+                for (const s of sparks) { s.x += s.vx * dt + Math.sin(t * 6 + s.vy) * 0.3; s.y += s.vy * dt; const a = (s.life / 1.5) * (0.7 + 0.3 * Math.sin(t * 17 + s.vx)); g.fillStyle = `rgba(255,${170 + Math.round(a * 60)},90,${a.toFixed(2)})`; g.fillRect(s.x, s.y, 2, 2); Worlds.glow(g, s.x + 1, s.y + 1, 7, "#ffb050", a * 0.55); }
                 // tumbleweeds rolling by
                 nextWeed -= dt;
                 if (nextWeed <= 0) { weeds.push({ x: -40, y: H * U.rand(0.86, 0.95), vx: U.rand(60, 110), r: U.rand(12, 22), ph: Math.random() * TAU }); nextWeed = U.rand(9, 18); }

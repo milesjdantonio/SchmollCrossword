@@ -706,8 +706,10 @@
                 const sx = W * (preview ? 0.8 : 0.84) - inp.px * 6, sy = H * (preview ? 0.22 : 0.15) - inp.py * 4, sr = Math.min(W, H) * (preview ? 0.09 : 0.055);
                 if (night) {
                     for (const s of stars) {
-                        g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * Math.abs(Math.sin(t * 0.8 + s.tw))).toFixed(2)})`;
+                        const tw = Math.abs(Math.sin(t * 0.8 + s.tw));
+                        g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * tw).toFixed(2)})`;
                         g.fillRect(s.x, s.y, s.r, s.r);
+                        if (s.r > 1.2) Worlds.twinkle(g, s.x + s.r / 2, s.y + s.r / 2, s.r, tw, "#fffff0");
                     }
                     const mg = g.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4);
                     mg.addColorStop(0, "rgba(255,250,220,.25)");
@@ -793,14 +795,16 @@
                     if (night) {
                         const a = Math.max(0, Math.sin(t * 1.6 + m.ph * 3));
                         if (a < 0.05) continue;
-                        const fg = g.createRadialGradient(m.x, m.y, 0, m.x, m.y, m.r * 6);
-                        fg.addColorStop(0, `rgba(235,255,140,${(0.9 * a).toFixed(2)})`);
-                        fg.addColorStop(1, "rgba(200,255,100,0)");
-                        g.fillStyle = fg;
-                        g.fillRect(m.x - m.r * 6, m.y - m.r * 6, m.r * 12, m.r * 12);
+                        // a firefly: a wide soft glow, a brighter one close in, and a hot little body
+                        Worlds.glow(g, m.x, m.y, m.r * 8, "#c8ff6a", a * 0.55);
+                        Worlds.glow(g, m.x, m.y, m.r * 3, "#f0ffb0", a);
+                        g.fillStyle = `rgba(255,255,220,${a.toFixed(2)})`;
+                        g.beginPath(); g.arc(m.x, m.y, m.r * 0.7, 0, 7); g.fill();
                     } else {
-                        g.fillStyle = `rgba(255,236,150,${(0.35 + 0.3 * Math.sin(t * 2 + m.ph)).toFixed(2)})`;
+                        const a = 0.35 + 0.3 * Math.sin(t * 2 + m.ph);
+                        g.fillStyle = `rgba(255,236,150,${a.toFixed(2)})`;
                         g.beginPath(); g.arc(m.x, m.y, m.r, 0, 7); g.fill();
+                        if (a > 0.6) Worlds.glint(g, m.x, m.y, m.r * 3.5, (a - 0.6) * 6, "#fff4c0");      // pollen catching the sun
                     }
                 }
                 g.globalCompositeOperation = "source-over";

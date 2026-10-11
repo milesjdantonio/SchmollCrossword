@@ -519,9 +519,11 @@
                         continue;
                     }
                     g.fillStyle = `rgba(${s.c},${a.toFixed(2)})`;
-                    if (s.layer === 2 && tw > 0.9) {                       // the brightest stars get a little glint
+                    if (s.layer === 2 && tw > 0.9) {                       // the brightest stars get a little glint, and a glow
                         g.fillRect(x - s.r * 2.5, y - 0.4, s.r * 5, 0.8);
                         g.fillRect(x - 0.4, y - s.r * 2.5, 0.8, s.r * 5);
+                        Worlds.glow(g, x, y, s.r * 7, `rgb(${s.c})`, (tw - 0.9) * 6);
+                        g.fillStyle = `rgba(${s.c},${a.toFixed(2)})`;
                     }
                     g.beginPath();
                     g.arc(x, y, s.r * 0.6, 0, TAU);

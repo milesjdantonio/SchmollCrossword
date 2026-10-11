@@ -210,6 +210,7 @@
                     const k = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.4 + p.tw));
                     g.fillStyle = `rgba(${p.c},${(k * 0.8).toFixed(2)})`;
                     g.fillRect(p.x - inp.px * 6, p.y, p.r, p.r);
+                    if (k > 0.8) Worlds.glow(g, p.x - inp.px * 6 + p.r / 2, p.y + p.r / 2, p.r * 6, `rgb(${p.c})`, (k - 0.8) * 3);      // the brightest pulse with light
                 }
                 // a whale singing far away in the blue
                 nextWhale -= dt;
@@ -280,8 +281,13 @@
                 g.lineWidth = 1.2;
                 for (const b of bubbles) {
                     b.y -= b.sp * dt; if (b.y < -10) { b.y = H + 10; b.x = Math.random() * W; }
-                    const x = b.x + Math.sin(t * 2 + b.ph) * 4 - inp.px * 8;
-                    g.beginPath(); g.arc(x, b.y, b.r, 0, TAU); g.stroke();
+                    const x = b.x + Math.sin(t * 2 + b.ph) * 4 - inp.px * 8, wob = 1 + Math.sin(t * 7 + b.ph * 3) * 0.07;
+                    g.beginPath(); g.ellipse(x, b.y, b.r * wob, b.r / wob, 0, 0, TAU); g.stroke();
+                    if (b.r > 2.5) {                                        // a bubble's shine, and a faint film
+                        g.fillStyle = night ? "rgba(160,220,255,.08)" : "rgba(255,255,255,.12)"; g.fill();
+                        g.fillStyle = night ? "rgba(200,240,255,.7)" : "rgba(255,255,255,.9)";
+                        g.beginPath(); g.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.24, 0, TAU); g.fill();
+                    }
                 }
             }
         };

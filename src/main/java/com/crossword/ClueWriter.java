@@ -266,6 +266,10 @@ public class ClueWriter {
      *
      * Related LeetCode: none. This is API integration, the most common "AI at work" task.
      */
+    // every call made since the server (or a batch like CampaignPool) started, and its tokens: what it cost
+    static final java.util.concurrent.atomic.AtomicLong CALLS = new java.util.concurrent.atomic.AtomicLong(),
+            INPUT_TOKENS = new java.util.concurrent.atomic.AtomicLong(), OUTPUT_TOKENS = new java.util.concurrent.atomic.AtomicLong();
+
     static ClueSet writeClues(List<String> answers, String difficulty) {
         return writeClues(answers, difficulty, "");
     }
@@ -283,6 +287,9 @@ public class ClueWriter {
         ClueSet clues = null;
         for (int attempt = 1; attempt <= 2; attempt++) {
             var response = client.messages().create(params);   // ← the actual internet call
+            CALLS.incrementAndGet();                            // (counted, so a big batch can say what it cost)
+            INPUT_TOKENS.addAndGet(response.usage().inputTokens());
+            OUTPUT_TOKENS.addAndGet(response.usage().outputTokens());
             clues = response.content().stream()
                 .flatMap(block -> block.text().stream())
                 .findFirst().orElseThrow()

@@ -41,7 +41,7 @@ const FX = (() => {
         last = now;
         const sx = scrollX, sy = scrollY, mx = lastSX - sx, my = lastSY - sy;
         lastSX = sx; lastSY = sy;
-        if (mx || my) for (const p of parts) { p.x += mx; p.y += my; }
+        if (mx || my) for (const p of parts) { p.x += mx; p.y += my; if (p.tr) for (let i = 0; i < p.tr.length; i += 2) { p.tr[i] += mx; p.tr[i + 1] += my; } }
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, W, H);
         effects = effects.filter(e => {
@@ -54,6 +54,7 @@ const FX = (() => {
         });
         g.globalCompositeOperation = "source-over";
         parts = parts.filter(p => stepParticle(p, dt));
+        if (born.length) { parts = parts.concat(born); born = []; }
         for (const p of parts) drawParticle(p);
         g.globalAlpha = 1;
         g.globalCompositeOperation = "source-over";
@@ -62,9 +63,180 @@ const FX = (() => {
     }
 
     // ---- particles ----
+    // Redone on 2026-10-10 (the user: "make large adjustments to every particle, animation: make them look nicer, add
+    // extra details"). Every particle pops in with a little overshoot and gets its own shade of its colour, and each
+    // shape has more to it: glowing halos (cached sprites, so they're cheap), trails behind fast sparks and stars,
+    // stars that twinkle and flash a cross-shaped glint, confetti with a darker back as it flips and a glint on its
+    // edge, shaded round dots, petals and leaves with veins and light, snowflakes with branches and a sparkle, nuts with
+    // a scaly cap, bubbles with a rainbow rim that pop into droplets, 8-bit pixels with lit and shadowed edges.
+    const colorCache = new Map(), probe = document.createElement("canvas").getContext("2d");
+    // any CSS colour (a name, #hex, rgb(), rgba()) as [r, g, b, a]
+    function rgba(color) {
+        let v = colorCache.get(color);
+        if (v) return v;
+        if (colorCache.size > 800) colorCache.clear();
+        probe.fillStyle = "#000";
+        probe.fillStyle = color;
+        const s = probe.fillStyle;                      // the browser gives it back as "#rrggbb" or "rgba(r, g, b, a)"
+        if (s[0] === "#") v = [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16), 1];
+        else { const m = s.match(/[\d.]+/g) || [0, 0, 0, 1]; v = [+m[0], +m[1], +m[2], m[3] != null ? +m[3] : 1]; }
+        colorCache.set(color, v);
+        return v;
+    }
+    const css = (v, a = v[3]) => `rgba(${v[0] | 0},${v[1] | 0},${v[2] | 0},${a})`;
+    // a colour made lighter (k > 0, toward white) or darker (k < 0, toward black)
+    function tint(color, k) {
+        const v = rgba(color);
+        return css(k >= 0 ? [v[0] + (255 - v[0]) * k, v[1] + (255 - v[1]) * k, v[2] + (255 - v[2]) * k] : [v[0] * (1 + k), v[1] * (1 + k), v[2] * (1 + k)], v[3]);
+    }
+    const sprites = new Map();
+    function sprite(key, size, paint) {
+        let s = sprites.get(key);
+        if (s) return s;
+        if (sprites.size > 400) sprites.clear();
+        s = document.createElement("canvas");
+        s.width = s.height = size;
+        paint(s.getContext("2d"), size);
+        sprites.set(key, s);
+        return s;
+    }
+    // a soft glow: the colour fading out to nothing (fading to the same colour, so there's no dark fringe)
+    const haloSprite = color => sprite("h" + color, 64, (c, n) => {
+        const v = rgba(color), gr = c.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+        gr.addColorStop(0, css(v, 0.95)); gr.addColorStop(0.2, css(v, 0.6)); gr.addColorStop(0.5, css(v, 0.18)); gr.addColorStop(1, css(v, 0));
+        c.fillStyle = gr;
+        c.fillRect(0, 0, n, n);
+    });
+    // a little shaded ball: lit from the top left, darker at the rim, with a white highlight
+    const ballSprite = color => sprite("b" + color, 48, (c, n) => {
+        const gr = c.createRadialGradient(n * 0.37, n * 0.33, 1, n / 2, n / 2, n / 2 - 1);
+        gr.addColorStop(0, tint(color, 0.6)); gr.addColorStop(0.45, color); gr.addColorStop(1, tint(color, -0.38));
+        c.fillStyle = gr;
+        c.beginPath(); c.arc(n / 2, n / 2, n / 2 - 1, 0, Math.PI * 2); c.fill();
+        c.fillStyle = "rgba(255,255,255,.7)";
+        c.beginPath(); c.ellipse(n * 0.35, n * 0.31, n * 0.12, n * 0.08, -0.6, 0, Math.PI * 2); c.fill();
+    });
+    // stars, snowflakes and acorns look the same all the way through their flight (they only turn and grow), so each
+    // is drawn once per colour into a sprite and then just placed: far cheaper than drawing their paths every frame.
+    // The sprite is 4 particle-radii across (a radius is 16 of its 64 px), with room for the glow.
+    function starPath(c, x, y, r, rot, points = 5, inner = 0.45) {
+        c.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+            const rr = i % 2 ? r * inner : r, a = rot + (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
+            c[i ? "lineTo" : "moveTo"](x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+        }
+        c.closePath();
+    }
+    const starSprite = (color, light, glow) => sprite("s" + color + glow, 64, (c, n) => {
+        const v = rgba(color), gr = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gr.addColorStop(0, css(v, glow ? 0.7 : 0.45)); gr.addColorStop(0.35, css(v, glow ? 0.3 : 0.16)); gr.addColorStop(1, css(v, 0));
+        c.fillStyle = gr;
+        c.fillRect(0, 0, n, n);
+        c.fillStyle = color;
+        starPath(c, 32, 32, 16, 0);
+        c.fill();
+        c.fillStyle = light;
+        starPath(c, 32, 32, 8, 0);
+        c.fill();
+    });
+    const flakeSprite = color => sprite("f" + color, 64, c => {
+        const gr = c.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gr.addColorStop(0, "rgba(223,241,255,.4)"); gr.addColorStop(1, "rgba(223,241,255,0)");
+        c.fillStyle = gr;
+        c.fillRect(0, 0, 64, 64);
+        c.translate(32, 32);
+        c.strokeStyle = color;
+        c.lineWidth = 2.2;
+        c.lineCap = "round";
+        c.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const an = i * Math.PI / 3, ca = Math.cos(an), sa = Math.sin(an);
+            c.moveTo(0, 0);
+            c.lineTo(ca * 16, sa * 16);
+            for (const [at, len] of [[0.42, 0.3], [0.7, 0.2]]) for (const side of [-0.75, 0.75]) {
+                c.moveTo(ca * 16 * at, sa * 16 * at);
+                c.lineTo(ca * 16 * at + Math.cos(an + side) * 16 * len, sa * 16 * at + Math.sin(an + side) * 16 * len);
+            }
+        }
+        c.stroke();
+        c.fillStyle = "rgba(255,255,255,.9)";
+        c.beginPath();
+        for (let i = 0; i < 6; i++) { const an = i * Math.PI / 3; c[i ? "lineTo" : "moveTo"](Math.cos(an) * 2.9, Math.sin(an) * 2.9); }
+        c.closePath();
+        c.fill();
+    });
+    const acornSprite = (color, back) => sprite("a" + color, 64, c => {
+        c.translate(32, 32);
+        const s = 16;
+        c.fillStyle = color;
+        c.beginPath(); c.ellipse(0, s * 0.22, s * 0.55, s * 0.72, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = "rgba(255,255,255,.35)";
+        c.beginPath(); c.ellipse(-s * 0.2, s * 0.08, s * 0.14, s * 0.3, 0.2, 0, Math.PI * 2); c.fill();
+        c.fillStyle = back;
+        c.beginPath(); c.arc(0, s * 0.9, s * 0.09, 0, Math.PI * 2); c.fill();
+        c.fillStyle = "#6b4220";
+        c.beginPath(); c.ellipse(0, -s * 0.18, s * 0.72, s * 0.44, 0, Math.PI, Math.PI * 2); c.closePath(); c.fill();
+        c.strokeStyle = "rgba(40, 20, 6, .55)";
+        c.lineWidth = 1.1;
+        c.beginPath();
+        for (const [x, y] of [[-0.4, -0.3], [0, -0.32], [0.4, -0.3], [-0.2, -0.48], [0.2, -0.48]]) { c.moveTo((x - 0.13) * s, y * s); c.quadraticCurveTo(x * s, (y + 0.12) * s, (x + 0.13) * s, y * s); }
+        c.stroke();
+        c.fillStyle = "#5a3618";
+        c.fillRect(-s * 0.08, -s * 0.8, s * 0.16, s * 0.26);
+    });
+    // place a sprite (4 radii across) at x, y, turned by rot, for a particle of radius r
+    function place(img, x, y, r, rot) {
+        const c = Math.cos(rot), sn = Math.sin(rot);
+        g.setTransform(c * dpr, sn * dpr, -sn * dpr, c * dpr, x * dpr, y * dpr);
+        g.drawImage(img, -r * 2, -r * 2, r * 4, r * 4);
+        g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    // a bubble's rainbow rim, made once (in a bubble's own space: it's drawn as a circle of radius 1, then scaled)
+    let rimGrad = null;
+    function rim() {
+        if (rimGrad) return rimGrad;
+        rimGrad = g.createLinearGradient(-1, -1, 1, 1);
+        rimGrad.addColorStop(0, "rgba(190,240,255,.95)"); rimGrad.addColorStop(0.42, "rgba(255,190,240,.95)"); rimGrad.addColorStop(0.68, "rgba(180,255,235,.95)"); rimGrad.addColorStop(1, "rgba(190,230,255,.95)");
+        return rimGrad;
+    }
+    // text and emoji, drawn once each (with a soft shadow) and then just placed: drawing an emoji is slow
+    const textSprite = (text, color) => sprite("t" + text + color, 80, (c, n) => {
+        c.font = "56px sans-serif";
+        c.textAlign = "center";
+        c.textBaseline = "middle";
+        c.fillStyle = color;
+        c.shadowColor = "rgba(0,0,0,.3)";
+        c.shadowBlur = 8;
+        c.shadowOffsetY = 3;
+        c.fillText(text, n / 2, n / 2);
+    });
+    function halo(x, y, r, color, a) {
+        if (a <= 0.01 || r < 1) return;
+        const op = g.globalCompositeOperation, ga = g.globalAlpha;
+        g.globalCompositeOperation = "lighter";
+        g.globalAlpha = Math.min(1, a);
+        g.drawImage(haloSprite(color), x - r, y - r, r * 2, r * 2);
+        g.globalCompositeOperation = op;
+        g.globalAlpha = ga;
+    }
+    // a cross-shaped glint (two thin diamonds), like light catching something shiny
+    function flare(x, y, len, a) {
+        if (a <= 0.02) return;
+        const op = g.globalCompositeOperation, ga = g.globalAlpha, w = len * 0.09;
+        g.globalCompositeOperation = "lighter";
+        g.globalAlpha = Math.min(1, a);
+        g.fillStyle = "rgba(255,255,255,.95)";
+        g.beginPath();
+        g.moveTo(x - len, y); g.lineTo(x, y - w); g.lineTo(x + len, y); g.lineTo(x, y + w); g.closePath();
+        g.moveTo(x, y - len * 0.8); g.lineTo(x + w, y); g.lineTo(x, y + len * 0.8); g.lineTo(x - w, y); g.closePath();
+        g.fill();
+        g.globalCompositeOperation = op;
+        g.globalAlpha = ga;
+    }
+    let born = [];                                      // particles made while the others are being stepped (a bubble's droplets)
     function stepParticle(p, dt) {
         p.age += dt;
-        if (p.age >= p.life) return false;
+        if (p.age >= p.life) { if (p.shape === "bubble" && !p.popped) popBubble(p); return false; }
         if (p.delay > 0) { p.delay -= dt; p.age = 0; return true; }
         p.vx *= 1 - p.drag * dt;
         p.vy = p.vy * (1 - p.drag * dt) + p.gravity * dt;
@@ -73,7 +245,19 @@ const FX = (() => {
         p.rot += p.vr * dt;
         p.flip += p.vf * dt;
         if (p.wobble) p.x += Math.sin(p.age * 3 + p.seed) * p.wobble * dt;
+        if (p.tr) { p.tr.push(p.x, p.y); if (p.tr.length > p.trail * 2) p.tr.splice(0, 2); }
         return true;
+    }
+    // a bubble at the end of its life pops: a little ring and a few droplets
+    function popBubble(p) {
+        p.popped = true;
+        if (U.motion() !== "full") return;
+        const base = { x: p.x, y: p.y, gravity: 0, drag: 0, age: 0, delay: 0, rot: 0, vr: 0, flip: 0, vf: 0, alpha: p.alpha, fade: true, glow: false, shrink: false, wobble: 0, seed: 0, text: "", color: p.color, back: p.back, light: p.light, hot: p.hot };
+        born.push({ ...base, vx: 0, vy: 0, life: 0.28, size: p.size * 0.7, shape: "pop" });
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2 + Math.random() * 0.5, sp = U.rand(60, 150);
+            born.push({ ...base, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, gravity: 260, drag: 1.5, life: U.rand(0.25, 0.45), size: U.rand(1, 1.8), shape: "circle", shrink: true });
+        }
     }
     function star(x, y, r, rot, points = 5, inner = 0.45) {
         g.beginPath();
@@ -84,154 +268,203 @@ const FX = (() => {
         }
         g.closePath();
     }
+    // a fading trail along where it's been: a thin line from the oldest point, a thicker one over the newest half
+    function drawTrail(p, s, a) {
+        const t = p.tr, n = t.length / 2, mid = Math.floor(n / 2);
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        g.strokeStyle = p.color;
+        g.globalAlpha = a * 0.22;
+        g.lineWidth = Math.max(0.6, s * 0.45);
+        g.beginPath();
+        g.moveTo(t[0], t[1]);
+        for (let i = 1; i < n; i++) g.lineTo(t[i * 2], t[i * 2 + 1]);
+        g.stroke();
+        g.globalAlpha = a * 0.4;
+        g.lineWidth = Math.max(0.8, s * 0.8);
+        g.beginPath();
+        g.moveTo(t[mid * 2], t[mid * 2 + 1]);
+        for (let i = mid + 1; i < n; i++) g.lineTo(t[i * 2], t[i * 2 + 1]);
+        g.stroke();
+        g.globalAlpha = a;
+    }
+    const TAU = Math.PI * 2;
     function drawParticle(p) {
         if (p.delay > 0) return;
         const k = p.age / p.life;
-        g.globalAlpha = p.fade ? Math.min(1, (1 - k) * 2.2) * p.alpha : p.alpha;
+        const a = (p.fade ? Math.min(1, (1 - k) * 2.2) : 1) * p.alpha;
+        // it pops into being: a quick grow with a little overshoot
+        const grow = Math.min(1, p.age / 0.12), pin = grow < 1 ? Math.max(0, U.ease.outBack(grow)) : 1;
+        const s = p.size * (p.shrink ? 1 - k * 0.7 : 1) * pin;
+        if (s <= 0.05 || a <= 0.005) return;
+        g.globalAlpha = a;
         g.globalCompositeOperation = p.glow ? "lighter" : "source-over";
+        if (p.tr && p.tr.length > 4) drawTrail(p, s, a);
+        if (p.glow && p.shape !== "spark" && p.shape !== "star") halo(p.x, p.y, s * 3.2, p.color, a * 0.5);
         g.fillStyle = p.color;
         g.strokeStyle = p.color;
-        const s = p.size * (p.shrink ? 1 - k * 0.7 : 1);
         switch (p.shape) {
             case "rect": {                           // confetti: a little paper rectangle tumbling in 3D
                 const c = Math.cos(p.rot), sn = Math.sin(p.rot), f = Math.cos(p.flip);
                 g.setTransform(c * dpr, sn * dpr, -sn * f * dpr, c * f * dpr, p.x * dpr, p.y * dpr);
+                g.fillStyle = f >= 0 ? p.color : p.back;              // its back is a shade darker
                 g.fillRect(-s / 2, -s * 0.3, s, s * 0.6);
+                if (f > 0.4) { g.fillStyle = "rgba(255,255,255,.4)"; g.fillRect(-s / 2, -s * 0.3, s, s * 0.13); }   // light along the top edge
+                else if (f < -0.4) { g.fillStyle = "rgba(0,0,0,.12)"; g.fillRect(-s / 2, s * 0.17, s, s * 0.13); }
                 g.setTransform(dpr, 0, 0, dpr, 0, 0);
                 break;
             }
-            case "pixel":
-                g.fillRect(Math.round(p.x - s / 2), Math.round(p.y - s / 2), s, s);
+            case "pixel": {                          // an 8-bit block: lit top and left, shadowed bottom and right
+                const x = Math.round(p.x - s / 2), y = Math.round(p.y - s / 2), q = Math.max(1, Math.round(s / 4));
+                if (p.glow) halo(p.x, p.y, s * 2.4, p.color, a * 0.45);
+                g.fillRect(x, y, s, s);
+                g.fillStyle = p.light; g.fillRect(x, y, s, q); g.fillRect(x, y, q, s);
+                g.fillStyle = p.back; g.fillRect(x, y + s - q, s, q); g.fillRect(x + s - q, y, q, s);
                 break;
-            case "star":
-                star(p.x, p.y, s, p.rot);
-                g.fill();
+            }
+            case "star": {                           // it twinkles: a glow, a bright middle, a cross glint at each peak
+                const tw = 1 + Math.sin(p.age * 13 + p.seed * 3) * 0.16, r = s * tw;
+                place(starSprite(p.color, p.light, p.glow), p.x, p.y, r, p.rot);
+                if (tw > 1.1) flare(p.x, p.y, r * 2.1, a * (tw - 1.1) / 0.06);
                 break;
-            case "spark": {                          // a streak along the direction of travel
-                const len = Math.min(40, Math.hypot(p.vx, p.vy) * 0.05 + 2);
-                const a = Math.atan2(p.vy, p.vx);
+            }
+            case "spark": {                          // a streak along its path, fading at the tail, white-hot at the head
+                const sp = Math.hypot(p.vx, p.vy), len = Math.min(46, sp * 0.06 + 3), ang = Math.atan2(p.vy, p.vx);
+                const tx = p.x - Math.cos(ang) * len, ty = p.y - Math.sin(ang) * len;
+                const gr = g.createLinearGradient(tx, ty, p.x, p.y);
+                gr.addColorStop(0, css(rgba(p.color), 0));
+                gr.addColorStop(1, p.color);
+                g.strokeStyle = gr;
                 g.lineWidth = s;
                 g.lineCap = "round";
-                g.beginPath();
-                g.moveTo(p.x, p.y);
-                g.lineTo(p.x - Math.cos(a) * len, p.y - Math.sin(a) * len);
-                g.stroke();
+                g.beginPath(); g.moveTo(tx, ty); g.lineTo(p.x, p.y); g.stroke();
+                g.fillStyle = p.hot;
+                g.beginPath(); g.arc(p.x, p.y, s * 0.55, 0, TAU); g.fill();
+                halo(p.x, p.y, s * 3, p.color, a * 0.5);
                 break;
             }
-            case "petal":
+            case "petal": {                          // round at the base, a notch at the tip, a crease, light near the tip
                 g.save();
                 g.translate(p.x, p.y);
                 g.rotate(p.rot);
-                g.scale(1, Math.abs(Math.cos(p.flip)) * 0.8 + 0.2);
-                g.beginPath();
-                g.ellipse(0, 0, s, s * 0.55, 0, 0, Math.PI * 2);
-                g.fill();
-                g.restore();
-                break;
-            case "flake": {                          // a six-armed snowflake with little branches
-                g.save();
-                g.translate(p.x, p.y);
-                g.rotate(p.rot);
-                g.lineWidth = Math.max(1, s * 0.16);
-                g.lineCap = "round";
-                g.beginPath();
-                for (let i = 0; i < 6; i++) {
-                    const a = i * Math.PI / 3, ca = Math.cos(a), sa = Math.sin(a);
-                    g.moveTo(0, 0);
-                    g.lineTo(ca * s, sa * s);
-                    for (const side of [-0.7, 0.7]) {
-                        g.moveTo(ca * s * 0.55, sa * s * 0.55);
-                        g.lineTo(ca * s * 0.55 + Math.cos(a + side) * s * 0.3, sa * s * 0.55 + Math.sin(a + side) * s * 0.3);
-                    }
-                }
-                g.stroke();
-                g.restore();
-                break;
-            }
-            case "leaf": {                           // a pointed leaf with a vein, fluttering as it turns
-                g.save();
-                g.translate(p.x, p.y);
-                g.rotate(p.rot);
-                g.scale(1, Math.abs(Math.cos(p.flip)) * 0.85 + 0.15);
+                const sy = Math.abs(Math.cos(p.flip)) * 0.8 + 0.2;
+                g.scale(1, sy);
                 g.beginPath();
                 g.moveTo(-s, 0);
-                g.quadraticCurveTo(-s * 0.1, -s * 0.62, s, 0);
-                g.quadraticCurveTo(-s * 0.1, s * 0.62, -s, 0);
+                g.bezierCurveTo(-s * 0.6, -s * 0.78, s * 0.75, -s * 0.72, s, -s * 0.14);
+                g.lineTo(s * 0.78, 0);
+                g.lineTo(s, s * 0.14);
+                g.bezierCurveTo(s * 0.75, s * 0.72, -s * 0.6, s * 0.78, -s, 0);
+                g.fillStyle = sy > 0.55 ? p.color : p.back;
                 g.fill();
-                g.strokeStyle = "rgba(70, 30, 8, .45)";
-                g.lineWidth = Math.max(0.6, s * 0.08);
-                g.beginPath();
-                g.moveTo(-s * 0.9, 0);
-                g.lineTo(s * 0.85, 0);
-                g.stroke();
+                g.globalAlpha = a * 0.5;
+                g.fillStyle = p.light;
+                g.beginPath(); g.ellipse(s * 0.28, -s * 0.12, s * 0.48, s * 0.2, 0, 0, TAU); g.fill();
+                g.globalAlpha = a * 0.7;
+                g.strokeStyle = p.back;
+                g.lineWidth = Math.max(0.5, s * 0.07);
+                g.beginPath(); g.moveTo(-s * 0.85, 0); g.quadraticCurveTo(0, s * 0.07, s * 0.62, 0); g.stroke();
                 g.restore();
                 break;
             }
-            case "acorn": {                          // a nut (its colour) under a scaly brown cap
+            case "flake": {                          // six arms with two pairs of branches, a hexagon middle, a sparkle
+                place(flakeSprite(p.color), p.x, p.y, s, p.rot);
+                if (Math.sin(p.age * 6 + p.seed) > 0.88) flare(p.x, p.y, s * 1.5, a * 0.8);
+                break;
+            }
+            case "leaf": {                           // a pointed leaf with a stem, a vein and side veins, lit on one half
                 g.save();
                 g.translate(p.x, p.y);
                 g.rotate(p.rot);
+                const turn = Math.cos(p.flip);
+                g.scale(1, Math.abs(turn) * 0.85 + 0.15);
                 g.beginPath();
-                g.ellipse(0, s * 0.22, s * 0.55, s * 0.72, 0, 0, Math.PI * 2);
+                g.moveTo(-s, 0);
+                g.quadraticCurveTo(-s * 0.1, -s * 0.66, s, 0);
+                g.quadraticCurveTo(-s * 0.1, s * 0.66, -s, 0);
+                g.fillStyle = turn >= 0 ? p.color : p.back;
                 g.fill();
-                g.fillStyle = "#6b4220";
+                g.globalAlpha = a * 0.32;
+                g.fillStyle = p.light;
                 g.beginPath();
-                g.ellipse(0, -s * 0.18, s * 0.7, s * 0.42, 0, Math.PI, Math.PI * 2);
+                g.moveTo(-s, 0);
+                g.quadraticCurveTo(-s * 0.1, -s * 0.66, s, 0);
                 g.closePath();
                 g.fill();
-                g.fillRect(-s * 0.08, -s * 0.78, s * 0.16, s * 0.24);
+                g.globalAlpha = a;
+                g.strokeStyle = "rgba(60, 28, 8, .42)";
+                g.lineWidth = Math.max(0.6, s * 0.08);
+                g.beginPath();
+                g.moveTo(-s * 1.32, 0); g.lineTo(s * 0.85, 0);
+                for (const x of [-0.45, 0, 0.42]) for (const side of [-1, 1]) { g.moveTo(x * s, 0); g.lineTo((x + 0.32) * s, side * s * 0.3); }
+                g.stroke();
                 g.restore();
                 break;
             }
-            case "bubble": {                         // a see-through bubble with a highlight, wobbling as it rises
-                const wob = 1 + Math.sin(p.age * 9 + p.seed) * 0.06;
-                g.lineWidth = Math.max(1, s * 0.12);
-                g.beginPath();
-                g.ellipse(p.x, p.y, s * wob, s / wob, 0, 0, Math.PI * 2);
-                g.stroke();
-                g.globalAlpha *= 0.25;
-                g.fill();
-                g.globalAlpha /= 0.25;
-                g.fillStyle = "rgba(255,255,255,.85)";
-                g.beginPath();
-                g.arc(p.x - s * 0.35, p.y - s * 0.35, s * 0.22, 0, Math.PI * 2);
-                g.fill();
+            case "acorn":                            // a shiny nut under a scaly cap, with a stem
+                place(acornSprite(p.color, p.back), p.x, p.y, s, p.rot);
                 break;
-            }
-            case "text":
-                g.font = `${s}px sans-serif`;
-                g.textAlign = "center";
-                g.textBaseline = "middle";
+            case "bubble": {                         // a see-through bubble with a rainbow rim and two highlights
+                const wob = 1 + Math.sin(p.age * 9 + p.seed) * 0.06, rx = s * wob, ry = s / wob;
                 g.save();
                 g.translate(p.x, p.y);
-                g.rotate(p.rot);
-                g.fillText(p.text, 0, 0);
-                g.restore();
-                break;
-            default:                                 // circle
+                g.scale(rx, ry);
                 g.beginPath();
-                g.arc(p.x, p.y, s, 0, Math.PI * 2);
+                g.arc(0, 0, 1, 0, TAU);
+                g.globalAlpha = a * 0.16;
                 g.fill();
+                g.globalAlpha = a;
+                g.strokeStyle = rim();
+                g.lineWidth = Math.max(1 / s, 0.11);
+                g.stroke();
+                g.restore();
+                g.fillStyle = "rgba(255,255,255,.9)";
+                g.beginPath(); g.ellipse(p.x - rx * 0.38, p.y - ry * 0.4, s * 0.24, s * 0.13, -0.7, 0, TAU); g.fill();
+                g.beginPath(); g.arc(p.x + rx * 0.42, p.y + ry * 0.4, s * 0.08, 0, TAU); g.fill();
+                break;
+            }
+            case "pop":                              // what's left of a popped bubble: a ring that spreads and fades
+                g.lineWidth = Math.max(0.6, 1.8 * (1 - k));
+                g.globalAlpha = a * (1 - k);
+                g.beginPath(); g.arc(p.x, p.y, s * (1 + k * 2.4), 0, TAU); g.stroke();
+                break;
+            case "text": {                           // (56 px in an 80 px sprite: s is the font size)
+                const c = Math.cos(p.rot), sn = Math.sin(p.rot), w = s * 80 / 56;
+                g.setTransform(c * dpr, sn * dpr, -sn * dpr, c * dpr, p.x * dpr, p.y * dpr);
+                g.drawImage(textSprite(p.text, p.color), -w / 2, -w / 2, w, w);
+                g.setTransform(dpr, 0, 0, dpr, 0, 0);
+                break;
+            }
+            default:                                 // circle: a shaded little ball (a glowing one is a hot core in its halo)
+                if (p.glow) { g.fillStyle = p.hot; g.beginPath(); g.arc(p.x, p.y, s * 0.8, 0, TAU); g.fill(); }
+                else if (s < 2.5) { g.beginPath(); g.arc(p.x, p.y, s, 0, TAU); g.fill(); }
+                else g.drawImage(ballSprite(p.color), p.x - s, p.y - s, s * 2, s * 2);
         }
     }
     const range = (r, d) => (Array.isArray(r) ? U.rand(r[0], r[1]) : r ?? d);
 
-    // burst({ x, y, n, colors, shape, speed:[a,b], angle, spread, gravity, life:[a,b], size:[a,b], ... })
+    // burst({ x, y, n, colors, shape, speed:[a,b], angle, spread, gravity, life:[a,b], size:[a,b], trail, ... })
     function burst(o) {
         const lite = U.motion() === "lite";
         if (U.motion() === "still") return;
         const n = Math.round((o.n || 30) * (lite ? 0.45 : 1));
         const colors = o.colors || ["#ffffff"];
+        const shape = o.shape || "rect";
+        // fast, bright things leave a trail (not in Lite effects)
+        const trail = lite ? 0 : o.trail ?? (shape === "star" ? 5 : shape === "circle" && o.glow ? 6 : 0);
         for (let i = 0; i < n; i++) {
             const a = o.angle != null ? o.angle + U.rand(-1, 1) * (o.spread ?? Math.PI) : Math.random() * Math.PI * 2;
             const sp = range(o.speed, 300) * (o.even ? 1 : U.rand(0.35, 1));
+            const shadeK = [-0.12, 0, 0.14][i % 3], base = colors[i % colors.length];
+            const color = shadeK && shape !== "text" ? tint(base, shadeK) : base;      // each one a slightly different shade
             parts.push({
                 x: (o.x ?? W / 2) + U.rand(-1, 1) * (o.jitter || 0), y: (o.y ?? H / 2) + U.rand(-1, 1) * (o.jitterY ?? o.jitter ?? 0),
                 vx: Math.cos(a) * sp + (o.vx || 0), vy: Math.sin(a) * sp + (o.vy || 0),
                 gravity: o.gravity ?? 600, drag: o.drag ?? 1.2, life: range(o.life, 1.4), age: 0, delay: range(o.delay, 0),
-                size: range(o.size, 8), color: colors[i % colors.length], shape: o.shape || "rect",
+                size: range(o.size, 8), color, back: tint(color, -0.32), light: tint(color, 0.5), hot: tint(color, 0.78), shape,
                 rot: Math.random() * 6.28, vr: U.rand(-1, 1) * (o.spin ?? 8), flip: Math.random() * 6.28, vf: U.rand(4, 12),
                 alpha: o.alpha ?? 1, fade: o.fade ?? true, glow: !!o.glow, shrink: !!o.shrink, wobble: o.wobble || 0,
+                trail, tr: trail ? [] : null,
                 seed: Math.random() * 10, text: o.text ? (Array.isArray(o.text) ? U.pick(o.text) : o.text) : ""
             });
         }
@@ -245,21 +478,33 @@ const FX = (() => {
         return effect;
     }
 
-    // An expanding shockwave ring
+    // An expanding shockwave ring: a soft outer glow, the ring itself, a thin bright ring just inside it, and glints
+    // of light scattered round it
     function ring({ x = W / 2, y = H / 2, color = "#fff", r0 = 10, r1 = 300, dur = 0.7, width = 10, glow = true } = {}) {
         if (U.motion() === "still") return;
         let t = 0;
+        const glints = Array.from({ length: U.motion() === "lite" ? 0 : 9 }, () => ({ a: Math.random() * Math.PI * 2, d: U.rand(0.9, 1.08), s: U.rand(0.6, 1.2) }));
         add({
             update: dt => (t += dt) < dur,
             draw(c) {
-                const k = t / dur, e = U.ease.outCubic(k);
+                const k = t / dur, e = U.ease.outCubic(k), r = U.lerp(r0, r1, e), w = width * (1 - k * 0.7);
                 c.globalCompositeOperation = glow ? "lighter" : "source-over";
-                c.globalAlpha = 1 - k;
                 c.strokeStyle = color;
-                c.lineWidth = width * (1 - k * 0.7);
-                c.beginPath();
-                c.arc(x, y, U.lerp(r0, r1, e), 0, Math.PI * 2);
-                c.stroke();
+                c.globalAlpha = (1 - k) * 0.28;
+                c.lineWidth = w * 2.6;
+                c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
+                c.globalAlpha = 1 - k;
+                c.lineWidth = w;
+                c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
+                c.globalAlpha = (1 - k) * 0.7;
+                c.strokeStyle = "rgba(255,255,255,.9)";
+                c.lineWidth = Math.max(1, w * 0.25);
+                c.beginPath(); c.arc(x, y, Math.max(1, r - w * 0.9), 0, Math.PI * 2); c.stroke();
+                for (const gl of glints) {
+                    const gx = x + Math.cos(gl.a) * r * gl.d, gy = y + Math.sin(gl.a) * r * gl.d, a = (1 - k) * gl.s;
+                    c.globalAlpha = Math.min(1, a);
+                    c.drawImage(haloSprite(color), gx - w * 1.6, gy - w * 1.6, w * 3.2, w * 3.2);
+                }
                 c.globalAlpha = 1;
                 c.globalCompositeOperation = "source-over";
             }
@@ -269,7 +514,9 @@ const FX = (() => {
     // A full-screen flash of colour that fades away
     function flash(color = "#fff", dur = 450, peak = 0.9) {
         if (U.motion() === "still") return;
-        const d = U.el("div", { class: "fx-flash", "aria-hidden": "true", style: { background: color } });
+        const d = U.el("div", { class: "fx-flash", "aria-hidden": "true" },
+            U.el("i", { class: "fx-flash-sheet", style: { background: color } }),
+            U.el("i", { class: "fx-flash-core", style: { background: `radial-gradient(ellipse at 50% 45%, ${color} 0%, ${color} 18%, transparent 72%)` } }));
         document.body.appendChild(d);
         d.animate([{ opacity: peak }, { opacity: 0 }], { duration: dur, easing: "ease-out" }).onfinish = () => d.remove();
     }
@@ -750,6 +997,9 @@ const FX = (() => {
 
     return {
         burst, add, ring, flash, shake, toast, countUp, cinematic, transition, follow, clear, star,
+        // the shared sprites and colour helpers, for the other particle systems (spells, powers): halo(color) is a soft
+        // glow, ball(color) a shaded ball, starImg(color, light, glow) and flake(color) are 4 radii across
+        art: { halo: haloSprite, ball: ballSprite, starImg: starSprite, flake: flakeSprite, text: textSprite, tint, fade: (c, a) => css(rgba(c), a), rgba },
         get playing() { return playing > 0; }, get W() { return W; }, get H() { return H; }
     };
 })();

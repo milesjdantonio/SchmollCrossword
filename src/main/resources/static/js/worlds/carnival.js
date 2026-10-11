@@ -129,7 +129,7 @@
                 }
                 g.fillStyle = sky; g.fillRect(0, 0, W, H);
                 if (night) {
-                    for (const s of stars) { g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * Math.abs(Math.sin(t * 1.1 + s.tw))).toFixed(2)})`; g.fillRect(s.x - inp.px * 2, s.y, s.r, s.r); }
+                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 1.1 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(255,255,240)"); }
                     // searchlights sweeping the sky
                     for (const [bx, sp] of [[W * 0.15, 0.5], [W * 0.62, -0.4]]) {
                         const a = -Math.PI / 2 + Math.sin(t * sp) * 0.5, L = H;
@@ -141,10 +141,26 @@
                     nextFirework -= dt;
                     if (nextFirework <= 0) { const c = U.pick(FLAGS); fireworks.push({ x: W * U.rand(0.1, 0.9), y: H * U.rand(0.1, 0.3), age: 0, c, n: 18 }); nextFirework = U.rand(3, 7); }
                     fireworks = fireworks.filter(f => (f.age += dt) < 1.6);
+                    // each one: a rocket climbs with a spark trail, bursts with a flash into streaks that droop as they
+                    // fall, an inner ring of white sparks, and glitter that twinkles on the way down
+                    g.lineCap = "round";
                     for (const f of fireworks) {
-                        const k = f.age / 1.6, r = 10 + U.ease.outCubic(k) * 50;
-                        g.fillStyle = f.c; g.globalAlpha = 1 - k;
-                        for (let i = 0; i < f.n; i++) { const a = i / f.n * TAU; g.fillRect(f.x - inp.px * 3 + Math.cos(a) * r, f.y + Math.sin(a) * r + k * k * 20, 2.5, 2.5); }
+                        const x0 = f.x - inp.px * 3;
+                        if (f.age < 0.45) {
+                            const k = f.age / 0.45, y = f.y + (1 - U.ease.outCubic(k)) * H * 0.25;
+                            g.strokeStyle = "rgba(255,230,180,.7)"; g.lineWidth = 1.5;
+                            g.beginPath(); g.moveTo(x0 + Math.sin(f.age * 40) * 1.5, y + 18); g.lineTo(x0, y); g.stroke();
+                            Worlds.glow(g, x0, y, 7, "#fff2c0", 0.9);
+                            continue;
+                        }
+                        const k = (f.age - 0.45) / 1.15, r = 10 + U.ease.outCubic(k) * 50, drop = k * k * 20;
+                        if (k < 0.25) Worlds.glow(g, x0, f.y, 70 * (1 - k * 2), f.c, 0.8 * (1 - k * 4));
+                        g.strokeStyle = f.c; g.lineWidth = 2; g.globalAlpha = 1 - k;
+                        g.beginPath();
+                        for (let i = 0; i < f.n; i++) { const a = i / f.n * TAU, cx = Math.cos(a), sy = Math.sin(a); g.moveTo(x0 + cx * r * 0.76, f.y + sy * r * 0.76 + drop * 0.8); g.lineTo(x0 + cx * r, f.y + sy * r + drop); }
+                        g.stroke();
+                        g.fillStyle = "#ffffff";
+                        for (let i = 0; i < f.n; i += 2) { const a = i / f.n * TAU + 0.17; if (Math.sin(f.age * 30 + i) > 0.2) g.fillRect(x0 + Math.cos(a) * r * 0.55 - 1, f.y + Math.sin(a) * r * 0.55 + drop * 1.2 - 1, 2, 2); }
                         g.globalAlpha = 1;
                     }
                 } else {

@@ -51,11 +51,12 @@ const Sound = (() => {
         return true;
     }
     for (const type of ["pointerdown", "keydown", "touchstart"]) {
-        addEventListener(type, () => init(), { capture: true, passive: true });
+        addEventListener(type, () => { init(); wakeSong(); }, { capture: true, passive: true });
     }
     document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
         if (document.hidden) ctx.suspend(); else ctx.resume();
+        if (song && song.el) { if (document.hidden) song.el.pause(); else wakeSong(); }
     });
     // the sound effects' own volume (Settings > Sound, and the sound button's menu), under the main volume
     function fxLevel() { return Settings.get("sound") ? 0.6 * Math.max(0, Math.min(1, Settings.get("fxVolume") ?? 1)) : 0; }
@@ -221,7 +222,7 @@ const Sound = (() => {
         while (musicUsed.length > MUSIC_KEEP) { const old = musicUsed.shift(); if (!track || `audio/music/${track.name}.mp3` !== old) { delete buffers[old]; delete loadingBuf[old]; } }
     }
     // start loading a song now, so it can play the moment it's needed (a boss's next phase)
-    function preloadMusic(name) { if (!init() || !name) return; const path = `audio/music/${name}.mp3`; keepSong(path); load(path); }
+    function preloadMusic(name) { if (!init() || !name || !musicOn()) return; const path = `audio/music/${name}.mp3`; keepSong(path); load(path); }
     function sample(name, { v = 0.5, rate = 1, t = 0, boss = false } = {}) {
         if (boss) v *= bossGain();
         if (!Settings.get("sound") || !init() || !ready()) return;
@@ -237,7 +238,9 @@ const Sound = (() => {
     // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
     let musicBus = null, track = null;
     const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
-    const musicLevel = () => (musicOn() ? Math.max(0, Math.min(1, Settings.get("musicVolume") ?? 1)) : 0);
+    // the music bus: the Music Volume (boss songs and level songs both go through it); each kind has its own switch
+    const musicLevel = () => (Settings.get("sound") ? Math.max(0, Math.min(1, Settings.get("musicVolume") ?? 1)) : 0);
+    const makeBus = () => { if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); } };
     // songs.json: each boss song's loop points. A song file starts with its build-up (the user's design: the intro is
     // music that builds up and runs straight into the song), the song proper starts at "hit", then the browser loops
     // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
@@ -245,13 +248,17 @@ const Sound = (() => {
     const songList = () => songs || (songs = fetch("audio/music/songs.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
     async function music(name, { loop = true, v = 0.32, fade = 0.8, rate = 1, then = null, thenOpts = {}, offset = 0, fromLoop = false } = {}) {
         if (!init()) return;
-        if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); }
+        makeBus();
         stopMusic(fade);
+        if (name) levelSong(null, { fade: Math.max(0.3, fade) });        // a boss song (or the win or lose music) takes over
         if (!name) return;
         const path = `audio/music/${name}.mp3`;
-        keepSong(path);
         let started;
-        const me = (track = { name, gain: null, src: null, hit: 0, t0: 0, rate, offset, ready: new Promise(r => (started = r)) });
+        const me = (track = { name, gain: null, src: null, hit: 0, t0: 0, rate, offset, ready: new Promise(r => (started = r)), args: { loop, v, rate, then, thenOpts } });
+        // music switched off: remember what would be playing, but don't download or decode it (a song is ~50 MB
+        // decoded); it starts if music is switched back on (see Settings.on below)
+        if (!musicOn()) { started(false); return; }
+        keepSong(path);
         const [buf, list] = await Promise.all([buffers[path] || load(path), songList()]);
         if (!buf || track !== me) { started(false); return; }
         const info = list[name];
@@ -292,8 +299,59 @@ const Sound = (() => {
         old.src.stop(ctx.currentTime + fade + 0.05);
     }
     Settings.on(key => {
-        if (musicBus && (key === "sound" || key === "bossMusic" || key === "musicVolume")) musicBus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, 0.05);
+        if (musicBus && (key === "sound" || key === "musicVolume")) musicBus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, 0.05);
+        // Boss Music switched off: the song stops (but is remembered, so switching it back on brings it back)
+        if (key === "bossMusic" && !musicOn() && track && track.src) { const { name, args } = track; stopMusic(0.4); track = { name, src: null, args, hit: 0, ready: Promise.resolve(false) }; }
+        if (key === "sound" || key === "levelMusic") { if (songOn()) wakeSong(); else if (song && song.el) song.el.pause(); }
+        // switched back on in the middle of a fight: the song that was skipped starts now (from its loop, no build-up)
+        if ((key === "sound" || key === "bossMusic") && musicOn() && track && !track.src && track.args && track.args.loop) {
+            const { name, args } = track;
+            music(name, { ...args, fade: 0.05, fromLoop: true });
+        }
     });
+
+    // ---- level songs (the user, 2026-10-10: a chill song for every campaign level, each one different) ----
+    // levelSong("level-garden-2") plays audio/music/level-garden-2.mp3 on a loop, fading in; levelSong(null) fades it
+    // out. Streamed from an <audio> element instead of decoded like the boss songs (a decoded song is ~50 MB), under
+    // the Music Volume, and switched on and off by the Level Music setting. Only one plays at a time, and a boss song
+    // (or the win or lose music) stops it.
+    let song = null;
+    const songOn = () => Settings.get("sound") && Settings.get("levelMusic") !== false;
+    function levelSong(name, { v = 0.55, fade = 1.2 } = {}) {
+        if (name && song && song.name === name) { wakeSong(); return; }
+        const old = song;
+        song = null;
+        if (old && old.el && ctx) {
+            old.gain.gain.cancelScheduledValues(ctx.currentTime);
+            old.gain.gain.setValueAtTime(Math.max(0.0001, old.gain.gain.value), ctx.currentTime);
+            old.gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + fade);
+            setTimeout(() => { old.el.pause(); old.el.removeAttribute("src"); old.el.load(); old.node.disconnect(); }, fade * 1000 + 120);
+        }
+        if (!name) return;
+        song = { name, v, el: null };
+        wakeSong();
+    }
+    // start (or carry on with) the level song, once sound is allowed; a browser blocks it before the first click
+    function wakeSong() {
+        if (!song || !songOn() || document.hidden || !init()) return;
+        makeBus();
+        if (!song.el) {
+            const el = new Audio(`audio/music/${song.name}.mp3`), node = ctx.createMediaElementSource(el), gain = ctx.createGain();
+            el.loop = true;
+            el.preload = "auto";
+            gain.gain.value = 0.0001;
+            node.connect(gain).connect(musicBus);
+            Object.assign(song, { el, node, gain, faded: false });
+        }
+        if (!song.el.paused) return;
+        const me = song;
+        me.el.play().then(() => {
+            if (song !== me || me.faded) return;
+            me.faded = true;                                       // the first time it starts: a slow fade in
+            me.gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+            me.gain.gain.exponentialRampToValueAtTime(me.v, ctx.currentTime + 2.5);
+        }).catch(() => { /* not allowed yet (no click so far), or no such file: tried again on the next click */ });
+    }
 
     // a one-off sound written somewhere else (each campaign ability and boss move has its own, see powers.js)
     function custom(fn, ...args) {
@@ -302,5 +360,5 @@ const Sound = (() => {
     }
 
     const hasSong = async name => !!(await songList())[name];
-    return { play, custom, sample, bossLevel, preload, preloadMusic, music, stopMusic, hasSong, buildDone, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    return { play, custom, sample, bossLevel, preload, preloadMusic, music, stopMusic, hasSong, buildDone, levelSong, get levelSongName() { return song ? song.name : null; }, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

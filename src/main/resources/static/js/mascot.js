@@ -143,9 +143,8 @@ const Mascot = (() => {
     Bus.on("idle", () => react("idle", { mood: "idle" }));
     Bus.on("surrender", () => react("surrender", { mood: "sad" }));
     Bus.on("results", info => {
-        if (info.test && !info.campaign) return say("Test win! Nothing was saved.", { mood: "wow" });
         if (info.campaign) { const camp = lineFor("win", info); if (camp) return say(camp, { mood: "happy", hold: 9000 }); }
-        let line = lineFor("win");
+        let line = info.best != null ? "A new personal best! " + lineFor("win") : lineFor("win");
         if (info.firstToday && info.streak > 1) line += ` That's a ${info.streak}-day streak!`;
         else if (info.mode === "daily" && info.left && info.left.length) line += ` Still to play today: ${info.left.join(", ")}.`;
         else if (info.mode === "daily" && info.left && !info.left.length) line += " That's every daily done for today!";

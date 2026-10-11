@@ -1,5 +1,5 @@
 // Achievements: little goals, saved in this browser (schmoll.achievements). Unlocked ones pop up as a toast
-// and show on the results screen and the Stats page. Test wins (the temporary Win button) never count.
+// and show on the results screen and the Stats page.
 
 const Achievements = (() => {
     const LIST = [
@@ -62,7 +62,6 @@ const Achievements = (() => {
     // Check everything after a win; returns the newly unlocked achievements
     function onWin(info, worldId) {
         const fromCampaign = info.campaignStats ? campaign(info.campaignStats) : [];
-        if (info.test) return fromCampaign;
         const data = load(), got = [...fromCampaign];
         const unlock = id => {
             if (data.unlocked[id]) return;
@@ -109,7 +108,7 @@ const Achievements = (() => {
         return got;
     }
 
-    // Campaign achievements: checked after a campaign win (test wins count, like the campaign itself in the beta)
+    // Campaign achievements: checked after a campaign win
     // and after buying something in the shop. Returns the newly unlocked ones.
     function campaign(st) {
         const data = load(), got = [];

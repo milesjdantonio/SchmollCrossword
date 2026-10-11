@@ -117,7 +117,7 @@
                 }
                 g.fillStyle = sky; g.fillRect(0, 0, W, H);
                 if (night) {
-                    for (const s of stars) { g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * Math.abs(Math.sin(t * 1.1 + s.tw))).toFixed(2)})`; g.fillRect(s.x - inp.px * 2, s.y, s.r, s.r); }
+                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 1.1 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(255,255,240)"); }
                     const mx = W * 0.2 - inp.px * 3, my = H * 0.14, mr = Math.min(W, H) * 0.05;
                     const mg = g.createRadialGradient(mx, my, mr, mx, my, mr * 4);
                     mg.addColorStop(0, "rgba(255,250,220,.3)"); mg.addColorStop(1, "rgba(255,250,220,0)");
@@ -151,8 +151,14 @@
                     l.y -= l.sp * dt; if (l.y < -30) { l.y = H + 30; l.x = Math.random() * W; }
                     const x = l.x + Math.sin(t * 0.6 + l.ph) * 12 - inp.px * 14 * l.s, y = l.y, s = l.s;
                     g.drawImage(halo, x - 30 * s, y - 30 * s, 60 * s, 60 * s);
-                    g.fillStyle = `rgba(255,${200 + Math.round(Math.sin(t * 5 + l.ph) * 20)},120,.95)`;
+                    const fl = Math.sin(t * 5 + l.ph);
+                    g.fillStyle = `rgba(255,${200 + Math.round(fl * 20)},120,.95)`;
                     g.beginPath(); g.moveTo(x - 7 * s, y - 10 * s); g.lineTo(x + 7 * s, y - 10 * s); g.lineTo(x + 5 * s, y + 9 * s); g.lineTo(x - 5 * s, y + 9 * s); g.fill();
+                    // its paper ribs, a darker rim at the top, and the flame flickering inside near the bottom
+                    g.strokeStyle = "rgba(160,80,30,.35)"; g.lineWidth = 0.8 * s;
+                    g.beginPath(); g.moveTo(x - 2.4 * s, y - 10 * s); g.lineTo(x - 1.8 * s, y + 9 * s); g.moveTo(x + 2.4 * s, y - 10 * s); g.lineTo(x + 1.8 * s, y + 9 * s); g.stroke();
+                    g.fillStyle = "rgba(170,90,40,.55)"; g.fillRect(x - 7 * s, y - 10 * s, 14 * s, 2 * s);
+                    Worlds.glow(g, x, y + 6 * s, (6 + fl * 1.5) * s, "#fff6c8", 0.9);
                 }
                 // a hot-air balloon rising past now and then
                 nextBalloon -= dt;

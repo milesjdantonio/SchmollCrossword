@@ -118,8 +118,11 @@
                 g.fillStyle = sky;
                 g.fillRect(0, 0, W, hz);
                 for (const s of stars) {
-                    g.fillStyle = `rgba(255,255,255,${(0.35 + 0.65 * Math.abs(Math.sin(t * 1.4 + s.tw))).toFixed(2)})`;
+                    const tw = Math.abs(Math.sin(t * 1.4 + s.tw));
+                    g.fillStyle = `rgba(255,255,255,${(0.35 + 0.65 * tw).toFixed(2)})`;
                     g.fillRect(s.x, s.y, s.r * 1.4, s.r * 1.4);
+                    // the brightest flash a pixel cross, like an 8-bit sparkle
+                    if (tw > 0.93 && s.r > 1) { const L = Math.round(s.r * 3), c = s.r * 0.7; g.fillRect(s.x + c - L, s.y + c, L * 2, 1); g.fillRect(s.x + c, s.y + c - L, 1, L * 2); }
                 }
                 // pixel clouds drifting by (daytime)
                 for (const cl of clouds) {
@@ -237,7 +240,7 @@
                 shown = s;
                 FX.countUp(scoreEl, s, { from, dur: 350, fmt: v => String(Math.round(v)).padStart(6, "0") });
             }
-            if (game.solved && !game.surrendered && !game.testWin && s > hi) { hi = s; U.store.set("arcade.hi", hi); hiEl.textContent = String(hi).padStart(6, "0"); }
+            if (game.solved && !game.surrendered && s > hi) { hi = s; U.store.set("arcade.hi", hi); hiEl.textContent = String(hi).padStart(6, "0"); }
             // finished words keep a rainbow border
             const done = new Set();
             for (const e of [...game.puzzle.across, ...game.puzzle.down]) {

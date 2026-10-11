@@ -1,6 +1,8 @@
 package com.crossword;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files; // read/write a whole file in one line
 import java.nio.file.Path;  // a file or folder location
 import java.time.LocalDate; // a calendar date with no time, e.g. 2026-10-07
@@ -113,6 +115,9 @@ public class PuzzleStore {
         if (Files.exists(file)) {
             return Files.readString(file);
         }
+        // Made ahead of time and shipped with the app (PuzzleBatch, 2026-10-10)? Serve that one
+        String shipped = shippedDaily(file.getFileName().toString());
+        if (shipped != null) return shipped;
 
         // First request for this date + difficulty: generate once (one API call), save, return
         String json = generateDaily(date, difficulty, wordsByLength, recentDailyAnswers(folder, date, difficulty));
@@ -177,7 +182,35 @@ public class PuzzleStore {
     }
     static synchronized ChallengeGrid.Filled buildChallenge(long seed, int size, Map<Integer, List<String>> first,
                                                             Map<Integer, List<String>> second, Set<String> avoid) {
-        return ChallengeGrid.fill(seed, size, first, second, avoid);
+        return buildChallenge(seed, size, first, second, avoid, 0);
+    }
+    static synchronized ChallengeGrid.Filled buildChallenge(long seed, int size, Map<Integer, List<String>> first,
+                                                            Map<Integer, List<String>> second, Set<String> avoid, int firstOnly) {
+        return ChallengeGrid.fill(seed, size, first, second, avoid, firstOnly);
+    }
+
+    // Easier words in the campaign (the user, 2026-10-10: "lower the difficulty of the words chosen"). Every campaign
+    // puzzle (and the Daily and Unlimited Boss, which use the campaign's settings) fills from the word list one step
+    // easier than its difficulty; the clues stay at the level's own difficulty.
+    //   medium 5x5:  Easy's words (was Medium's)
+    //   challenge:   Easy's words first, then Medium's (was Medium's, then Hard's)
+    //   expert:      Medium's words first, then Hard's (was Hard's)
+    // A big grid tries CAMPAIGN_FIRST_ONLY board patterns with the easier list alone before it may use the other.
+    static final int CAMPAIGN_FIRST_ONLY = 10;
+    private static Map<Integer, List<String>> easyWords = null;
+    private static synchronized Map<Integer, List<String>> easyWords() {
+        if (easyWords == null) {
+            try {
+                easyWords = App.loadWordsFor("easy");
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+        }
+        return easyWords;
+    }
+    // a small (5x5) campaign puzzle's words: one step easier than its difficulty (easy stays easy)
+    static Map<Integer, List<String>> campaignSmallWords(String difficulty, Map<Integer, List<String>> wordsByLength) {
+        return difficulty.equals("medium") ? easyWords() : wordsByLength;
     }
 
     // Medium's word list, loaded once: challenges use medium words first (see ChallengeGrid.fill)
@@ -201,6 +234,7 @@ public class PuzzleStore {
 
     // A Challenge-style grid of a chosen size as JSON. "challenge": medium words first and medium clues.
     // "expert" (the later campaign worlds): Hard's words and hard clues. wordsByLength = Hard's list.
+    // (Campaign puzzles use easier words than these since 2026-10-10: see "Easier words in the campaign" above.)
     // COSTS MONEY (one API call).
     static String generateBig(long seed, String mode, String difficulty, int size,
                               Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
@@ -215,12 +249,15 @@ public class PuzzleStore {
     // withClues = false: just the grid, no clues and NO Claude call (a boss's own board: nobody reads its clues)
     static String generateBig(long seed, String mode, String difficulty, int size,
                               Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors, String focus, boolean withClues) {
-        boolean expert = difficulty.equals("expert");
+        boolean expert = difficulty.equals("expert"), campaign = mode.equals("campaign");
+        // which words fill it: see "Easier words in the campaign" above (the dailies and Unlimited are unchanged)
+        Map<Integer, List<String>> first = campaign ? (expert ? mediumWords() : easyWords()) : (expert ? wordsByLength : mediumWords());
+        Map<Integer, List<String>> second = campaign && !expert ? mediumWords() : wordsByLength;
         ChallengeGrid.Filled filled = null;
         List<String> answers = null;
         int bestScore = Integer.MIN_VALUE;
         for (int attempt = 0; attempt < (favors.isEmpty() ? 1 : BIG_LESSON_TRIES); attempt++) {
-            ChallengeGrid.Filled f = buildChallenge(seed + attempt * 1000L, size, expert ? wordsByLength : mediumWords(), wordsByLength, avoid);
+            ChallengeGrid.Filled f = buildChallenge(seed + attempt * 1000L, size, first, second, avoid, campaign ? CAMPAIGN_FIRST_ONLY : 0);
             List<String> list = new ArrayList<>();
             for (Slot slot : Slot.findAllSlots(f.blackSquares())) {
                 list.add(slot.getPattern(f.grid()));
@@ -322,8 +359,31 @@ public class PuzzleStore {
                                            Map<Integer, List<String>> wordsByLength) throws IOException {
         return getCampaign(folder, section, level, boss, 0, wordsByLength);
     }
+    // The campaign's puzzle pool (2026-10-10): 25 ready-made puzzles per level, made by CampaignPool.java to the same
+    // settings and shipped inside the app (src/main/resources/campaign/<world>-<level>[-boss|-pN]-v<k>.json), so
+    // nothing has to be generated (or paid for) while people play. null when a puzzle isn't in the pool.
+    static String poolPuzzle(String name, int variant) throws IOException {
+        try (InputStream in = PuzzleStore.class.getResourceAsStream("/campaign/" + name + "-v" + variant + ".json")) {
+            return in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+    // a daily made ahead of time by PuzzleBatch, shipped in the app (src/main/resources/daily/<date>-<kind>.json)
+    static String shippedDaily(String fileName) throws IOException {
+        try (InputStream in = PuzzleStore.class.getResourceAsStream("/daily/" + fileName)) {
+            return in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+    static String poolName(Campaign.Section section, int level, boolean boss) {
+        return section.world() + "-" + level + (boss ? "-boss" : "");
+    }
+    static String poolPhaseName(Campaign.Section section, int phase) {
+        return section.world() + "-" + Campaign.LEVELS + "-p" + phase;
+    }
+
     static synchronized String getCampaign(Path folder, Campaign.Section section, int level, boolean boss, int variant,
                                            Map<Integer, List<String>> wordsByLength) throws IOException {
+        String pooled = poolPuzzle(poolName(section, level, boss), variant);
+        if (pooled != null) return pooled;
         Path file = variantFile(campaignFile(folder, section, level, boss), variant);
         if (Files.exists(file)) {
             return Files.readString(file);
@@ -336,7 +396,7 @@ public class PuzzleStore {
         String favors = Lesson.favors(section.world(), level), focus = Lesson.clueFocus(section.world(), level);
         String json = Campaign.bigGrid(difficulty)
                 ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid, favors, focus, !boss)
-                : generateSmall(seed, "campaign", difficulty, wordsByLength, avoid, favors, focus, !boss);     // the boss's own board: no clues
+                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), avoid, favors, focus, !boss);     // the boss's own board: no clues
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
@@ -346,6 +406,8 @@ public class PuzzleStore {
     // Each stays away from the boss's earlier puzzles in the same fight and the boards before them.
     static synchronized String getBossPhase(Path folder, Campaign.Section section, int phase, int variant,
                                             Map<Integer, List<String>> wordsByLength) throws IOException {
+        String pooled = poolPuzzle(poolPhaseName(section, phase), variant);
+        if (pooled != null) return pooled;
         Path file = variantFile(phaseFile(folder, section, phase), variant);
         if (Files.exists(file)) {
             return Files.readString(file);
@@ -383,6 +445,8 @@ public class PuzzleStore {
         if (Files.exists(file)) {
             return Files.readString(file);
         }
+        String shipped = shippedDaily(file.getFileName().toString());
+        if (shipped != null) return shipped;
         Campaign.Section section = dailyBossSection(date);
         long seed = seedForDate(date) * 10 + (bossBoard ? 6 : 5);       // the dailies use 1-4
         String json = bossPuzzle(seed, section, wordsByLength, !bossBoard);
@@ -395,7 +459,7 @@ public class PuzzleStore {
         String difficulty = section.bossDifficulty();
         return Campaign.bigGrid(difficulty)
                 ? generateBig(seed, "campaign", difficulty, section.bossSize(), wordsByLength, new HashSet<>(), "", "", withClues)
-                : generateSmall(seed, "campaign", difficulty, wordsByLength, new HashSet<>(), "", "", withClues);
+                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), new HashSet<>(), "", "", withClues);
     }
 
     static Path campaignFile(Path folder, Campaign.Section section, int level, boolean boss) {

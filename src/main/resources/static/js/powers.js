@@ -427,8 +427,20 @@ const Powers = (() => {
             if (path === "rise") { x += Math.sin(k * 9) * 18; y -= Math.sin(k * Math.PI) * 60; }
             trail.push([x, y]); if (trail.length > 16) trail.shift();
             ctx.globalCompositeOperation = "lighter";
-            trail.forEach(([px, py], i) => { ctx.globalAlpha = (i / trail.length) * 0.6; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px, py, 2 + i * 0.6, 0, 7); ctx.fill(); });
-            ctx.globalAlpha = 1; ctx.fillStyle = "#fff"; ctx.shadowColor = c; ctx.shadowBlur = 22; ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill();
+            // the tail: a ribbon of light that thins out behind it, with glows along it
+            ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = c;
+            for (const [from_, w, al] of [[0, 3, 0.25], [Math.floor(trail.length / 2), 7, 0.45]]) {
+                if (trail.length - from_ < 2) continue;
+                ctx.globalAlpha = al; ctx.lineWidth = w;
+                ctx.beginPath(); trail.slice(from_).forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            trail.forEach(([px, py], i) => { if (i % 3 === 0) K.haloAt(ctx, px, py, 4 + i * 0.9, c, (i / trail.length) * 0.6); });
+            K.haloAt(ctx, x, y, 30, c, 1);
+            K.haloAt(ctx, x, y, 12, "#ffffff", 1);
+            ctx.globalAlpha = 1; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 7); ctx.fill();
+            const tw = Math.sin(k * 40);
+            if (tw > 0.5) { ctx.globalAlpha = (tw - 0.5) * 2; ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.moveTo(x - 22, y); ctx.lineTo(x, y - 2); ctx.lineTo(x + 22, y); ctx.lineTo(x, y + 2); ctx.closePath(); ctx.moveTo(x, y - 18); ctx.lineTo(x + 2, y); ctx.lineTo(x, y + 18); ctx.lineTo(x - 2, y); ctx.closePath(); ctx.fill(); }
             if (Math.random() < 0.5) K.spray({ x, y }, 1, { color: cols, shape, speed: [20, 80], size: [2, 4], g: 120, life: [0.3, 0.6] });
         } });
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -446,7 +458,10 @@ const Powers = (() => {
             const cols = color ? [color, "#ffffff"] : looks[0][1], R = Math.max(r.width, r.height) * 0.55;
             K.add({ life, draw(ctx, k, t) {
                 ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = Math.min(1, k * 4) * (k > 0.85 ? (1 - k) / 0.15 : 1);
-                for (let i = 0; i < 6; i++) { const a = t * (3 + k * 6) + i * 1.047, rr = R * (1 - k * 0.35); ctx.fillStyle = cols[i % cols.length]; ctx.shadowColor = cols[0]; ctx.shadowBlur = 16; ctx.beginPath(); ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.8, 5, 0, 7); ctx.fill(); }
+                const al = ctx.globalAlpha;
+                for (let i = 0; i < 6; i++) { const a = t * (3 + k * 6) + i * 1.047, rr = R * (1 - k * 0.35), x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr; K.haloAt(ctx, x, y, 14, cols[i % cols.length], 0.9); ctx.globalAlpha = al; ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, y, 2.6, 0, 7); ctx.fill(); }
+                for (let i = 0; i < 4; i++) { const a = -t * (2 + k * 4) + i * 1.571, rr = R * 0.7 * (1 - k * 0.3); K.haloAt(ctx, cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.6, 9, cols[0], 0.6); }
+                ctx.globalAlpha = al;
                 ctx.strokeStyle = cols[0]; ctx.lineWidth = 2; ctx.globalAlpha *= 0.5; ctx.beginPath(); ctx.arc(cx, cy, R * (1 - k * 0.35), t * 4, t * 4 + 2); ctx.stroke();
             } });
             return;
@@ -468,12 +483,20 @@ const Powers = (() => {
     function chargeUp(at, color, ms = 320) {
         const K = KIT();
         if (still() || !K) return Promise.resolve();
+        const motes = Array.from({ length: U.motion() === "lite" ? 8 : 18 }, () => ({ a: Math.random() * 6.283, d: 90 + Math.random() * 70, s: 2 + Math.random() * 2.5, w: Math.random() }));
         K.add({ life: ms / 1000, draw(ctx, k) {
             ctx.globalCompositeOperation = "lighter";
             for (let i = 0; i < 14; i++) { const a = i / 14 * 6.283 + k * 2, rr = 120 * (1 - k); ctx.strokeStyle = color; ctx.globalAlpha = k; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(at.x + Math.cos(a) * rr, at.y + Math.sin(a) * rr); ctx.lineTo(at.x + Math.cos(a) * (rr + 26), at.y + Math.sin(a) * (rr + 26)); ctx.stroke(); }
-            const g = ctx.createRadialGradient(at.x, at.y, 0, at.x, at.y, 40 * k + 1); g.addColorStop(0, "#fff"); g.addColorStop(1, "transparent"); ctx.fillStyle = g; ctx.globalAlpha = k; ctx.beginPath(); ctx.arc(at.x, at.y, 40 * k + 1, 0, 7); ctx.fill();
+            for (const m of motes) { const e = Math.min(1, k * (1.1 + m.w * 0.5)), rr = m.d * (1 - e), a = m.a + e * 2.2; ctx.globalAlpha = 1; K.haloAt(ctx, at.x + Math.cos(a) * rr, at.y + Math.sin(a) * rr, m.s * 3, color, 0.8 * (1 - e * 0.5)); }
+            ctx.globalAlpha = 1;
+            K.haloAt(ctx, at.x, at.y, 20 + 46 * k, color, k * 0.8);
+            K.haloAt(ctx, at.x, at.y, 8 + 22 * k, "#ffffff", k);
         } });
-        return new Promise(resolve => setTimeout(() => { K.ring(at, { color, r: 110, width: 7, life: 0.45 }); resolve(); }, ms));
+        return new Promise(resolve => setTimeout(() => {
+            K.ring(at, { color, r: 110, width: 7, life: 0.45 });
+            K.glow && K.glow(at, { color, r: 70, life: 0.35 });
+            resolve();
+        }, ms));
     }
     // a glowing ring that sits on an element while an effect lasts (removed by the caller)
     function halo(target, cls, ms) {

@@ -38,6 +38,7 @@ All from https://opengameart.org/content/<page>
   arcade-p2.mp3   Level 2 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
   library.mp3     Sinister Abode                                Zane Little Music                     sinister-abode
   library-p2.mp3  Shadows Awaken Within                         vitalezzz                             shadows-awaken-within
+                  (rebuilt 2026-10-10: a new build-up from its loud part, which plays first; its guitar section comes in when the song comes round)
   robot.mp3       Return of the Omega Droid                     Umplix                                return-of-the-omega-droid
   robot-p2.mp3    Epic Combat                                   Chester01                             epic-combat
   robot-p3.mp3    Steel Commander                               vitalezzz                             steel-commander
@@ -56,9 +57,75 @@ FluidSynth):
   desert-p2.mp3   Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani
   lose.mp3        Defeat: horn and strings in C minor, harp and a fading timpani roll (about 5 seconds)
   win.mp3         Victory: a brass fanfare in C, strings, choir, harp and timpani (about 7 seconds)
-  story.mp3       The Lost Lexicon: the story's intro, scored to its scenes (celesta, harp, strings, choir, brass;
+  story.mp3       The Lost Everbook: the story's intro, scored to its scenes (celesta, harp, strings, choir, brass;
                   C major, the Void's tear in C minor) (19.8 seconds)
   story-page.mp3  A Page Comes Home: a page won back (6.4 seconds)
-  story-finale.mp3 The Lexicon Is Whole: the ending (14.4 seconds)
+  story-finale.mp3 The Everbook Is Whole: the ending (14.4 seconds)
   rain-p2.mp3     the chorus: a big-band shout chorus (trumpet, alto and tenor sax, trombones, brass section) on top of
                   Emma_MA's Jazz n' brass loop (CC0), using only the notes the loop plays in each half bar
+
+Level music (audio/music/level-<world>-<1..4>.mp3, added 2026-10-10): a calm song for every campaign level, each one
+different, picked to fit its world. All CC0 from https://opengameart.org/content/<page> (each page checked). For the
+game they were cut to 2.5 minutes at most (short loops repeated), faded at the end so the loop restarts gently, and
+levelled to the same, quieter loudness. Titles are as listed on OpenGameArt.
+  file                     track                                        author                     page
+  level-paper-1.mp3        Cozy Puzzle In Game 1                        MintoDog                   cozy-puzzle-in-game-1
+  level-paper-2.mp3        Lofi Hip Hop Loop                            omfgdude                   lofi-hip-hop-loop
+  level-paper-3.mp3        Chill Lofi Inspired                          omfgdude                   chill-lofi-inspired
+  level-paper-4.mp3        Daisy                                        Kistol                     daisy
+  level-garden-1.mp3       Restful Meadow                               Tozan                      restful-meadow
+  level-garden-2.mp3       Peaceful Theme                               pebonius                   peaceful-theme
+  level-garden-3.mp3       Meadow Thoughts                              Écrivain                   meadow-thoughts
+  level-garden-4.mp3       Yellow Flowers And Tall Mossy Trees          Écrivain                   yellow-flowers-and-tall-mossy-trees
+  level-squirrel-1.mp3     A Small Fire Will Do Calming Loop            Trex0n                     a-small-fire-will-do-calming-loop
+  level-squirrel-2.mp3     Wooden Inn                                   Indieteur                  wooden-inn
+  level-squirrel-3.mp3     Autumn Mp3 Free Music                        Duasun                     autumn-mp3-free-music
+  level-squirrel-4.mp3     Peaceful Forest                              Samza                      peaceful-forest
+  level-candy-1.mp3        Sugar Sweet                                  iamoneabe                  sugar-sweet
+  level-candy-2.mp3        Ice Cream Truck Theme                        CleytonKauffman            ice-cream-truck-theme
+  level-candy-3.mp3        Sunset Walk Ambient Quiet Sweet Loop         KiluaBoy                   sunset-walk-ambient-quiet-sweet-loop
+  level-candy-4.mp3        Snes Cute                                    Pro Sensory                snes-cute
+  level-ocean-1.mp3        Underwater Theme 1                           Spring Spring              underwater-theme-1
+  level-ocean-2.mp3        Underwater World                             Indieteur                  underwater-world
+  level-ocean-3.mp3        Aquaria                                      cynicmusic                 aquaria
+  level-ocean-4.mp3        Seaside Village                              KarateStudios              seaside-village
+  level-snow-1.mp3         Snowfall                                     Kistol                     snowfall
+  level-snow-2.mp3         Snow Globe                                   Bobjt                      snow-globe
+  level-snow-3.mp3         Ice Village                                  KarateStudios              ice-village
+  level-snow-4.mp3         Land Of Snow                                 haruta                     land-of-snow
+  level-rain-1.mp3         Coffee House Bump                            OatCog                     coffee-house-bump
+  level-rain-2.mp3         Mocha Frapp                                  Pro Sensory                mocha-frapp
+  level-rain-3.mp3         Bossa Nova                                   Joth                       bossa-nova
+  level-rain-4.mp3         Blue Rain                                    Pro Sensory                blue-rain
+  level-sky-1.mp3          Sleepy Clouds                                Fupi                       sleepy-clouds
+  level-sky-2.mp3          Napping On A Cloud                           congusbongus               napping-on-a-cloud
+  level-sky-3.mp3          Daydream                                     Adiutorium                 daydream
+  level-sky-4.mp3          Morning Sky                                  Centurion_of_war           morning-sky
+  level-desert-1.mp3       Desert Theme                                 yd                         desert-theme
+  level-desert-2.mp3       Desert Overworld                             KarateStudios              desert-overworld
+  level-desert-3.mp3       Telos Desert Village 2                       Tozan                      telos-desert-village-2
+  level-desert-4.mp3       Desert Settlement                            vitalezzz                  desert-settlement
+  level-carnival-1.mp3     4 Music Box Tracks                           Aureolus_Omicron           4-music-box-tracks
+  level-carnival-2.mp3     Taking You To The Circus Guitar              Pro Sensory                taking-you-to-the-circus-guitar
+  level-carnival-3.mp3     Childrens March Theme                        CleytonKauffman            childrens-march-theme
+  level-carnival-4.mp3     Carnival Rides                               Écrivain                   carnival-rides
+  level-arcade-1.mp3       Calm Ambient 1 Synthwave 4K                  cynicmusic                 calm-ambient-1-synthwave-4k
+  level-arcade-2.mp3       Calm Ambient 2 Synthwave 15K                 cynicmusic                 calm-ambient-2-synthwave-15k
+  level-arcade-3.mp3       Calm Relax 1 Synthwave 421K                  cynicmusic                 calm-relax-1-synthwave-421k
+  level-arcade-4.mp3       Midnight Drive                               congusbongus               midnight-drive
+  level-library-1.mp3      Magic Puzzle In Game 1                       MintoDog                   magic-puzzle-in-game-1
+  level-library-2.mp3      Magic Puzzle In Game 2                       MintoDog                   magic-puzzle-in-game-2
+  level-library-3.mp3      Haunting Piano                               Emma_MA                    haunting-piano
+  level-library-4.mp3      Moonlit Lullaby For The Lost                 Tsorthan Grove             moonlit-lullaby-for-the-lost
+  level-robot-1.mp3        Relaxed Robot Theme                          Nikke                      relaxed-robot-theme
+  level-robot-2.mp3        Sci Fi Puzzle In Game 3                      MintoDog                   sci-fi-puzzle-in-game-3
+  level-robot-3.mp3        Starfield Dreams                             congusbongus               starfield-dreams
+  level-robot-4.mp3        Insect Factory Wii Style Music               Zane Little Music          insect-factory-wii-style-music
+  level-volcano-1.mp3      Krakatoa                                     Kistol                     krakatoa
+  level-volcano-2.mp3      Chill Jungle                                 Pro Sensory                chill-jungle
+  level-volcano-3.mp3      I Think Id Stay Jungle Chill                 Emmntt                     i-think-id-stay-jungle-chill
+  level-volcano-4.mp3      Tribal Hangout                               Pro Sensory                tribal-hangout
+  level-space-1.mp3        Floating In Space                            Umplix                     floating-in-space
+  level-space-2.mp3        Safe Space 0                                 Tsorthan Grove             safe-space-0
+  level-space-3.mp3        Spacious                                     Indieteur                  spacious
+  level-space-4.mp3        Steller Dreams                               Synth-thetic               steller-dreams

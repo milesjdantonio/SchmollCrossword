@@ -223,8 +223,38 @@ const Worlds = (() => {
     // An offscreen canvas (for drawing a scene's still parts once)
     const canvas = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 
+    // Shared touches for the scenes' particles (2026-10-10, the user: "make large adjustments to every particle, add
+    // extra details"): glow() is a soft light round something (the cached sprite from fx.js, much cheaper than a shadow
+    // blur), glint() a cross-shaped sparkle for the brightest stars, sparks and crystals at the top of a twinkle.
+    function glow(g, x, y, r, color, a = 1) {
+        if (r < 1 || a <= 0.01) return;
+        const op = g.globalCompositeOperation, ga = g.globalAlpha;
+        g.globalCompositeOperation = "lighter";
+        g.globalAlpha = Math.min(1, a);
+        g.drawImage(FX.art.halo(color), x - r, y - r, r * 2, r * 2);
+        g.globalCompositeOperation = op;
+        g.globalAlpha = ga;
+    }
+    function glint(g, x, y, len, a = 1, color = "#ffffff") {
+        if (a <= 0.02 || len < 1) return;
+        const op = g.globalCompositeOperation, ga = g.globalAlpha, w = Math.max(0.5, len * 0.09);
+        g.globalCompositeOperation = "lighter";
+        g.globalAlpha = Math.min(1, a);
+        g.fillStyle = color;
+        g.beginPath();
+        g.moveTo(x - len, y); g.lineTo(x, y - w); g.lineTo(x + len, y); g.lineTo(x, y + w); g.closePath();
+        g.moveTo(x, y - len * 0.8); g.lineTo(x + w, y); g.lineTo(x, y + len * 0.8); g.lineTo(x - w, y); g.closePath();
+        g.fill();
+        g.globalCompositeOperation = op;
+        g.globalAlpha = ga;
+    }
+    // a field of stars twinkling: the brightest ones glow and flash a glint at the top of each twinkle
+    function twinkle(g, x, y, r, k, color = "#ffffff") {
+        if (k > 0.86) { glow(g, x, y, r * 6, color, (k - 0.86) * 4); glint(g, x, y, r * 5 * (k - 0.6), (k - 0.86) * 6, color); }
+    }
+
     return {
-        register, use, board, preview, modeFor, list, byId, decoBoard, canvas,
+        register, use, board, preview, modeFor, list, byId, decoBoard, canvas, glow, glint, twinkle,
         get current() { return current; },
         get time() { return t; }
     };

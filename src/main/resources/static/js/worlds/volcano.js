@@ -171,13 +171,16 @@
                 for (const e of embers) {
                     e.life -= dt; e.x += e.vx * dt; e.y += e.vy * dt;
                     if (e.life <= 0) { e.x = vx + (Math.random() - 0.5) * 50; e.y = vtop; e.vx = (Math.random() - 0.5) * 40; e.vy = -30 - Math.random() * 60; e.life = 2 + Math.random() * 3; }
-                    g.fillStyle = `rgba(255,${150 + Math.round(e.r * 30)},60,${Math.min(1, e.life * 0.5).toFixed(2)})`;
+                    const a = Math.min(1, e.life * 0.5) * (0.75 + 0.25 * Math.sin(t * 13 + e.r * 7));     // it flickers
+                    g.fillStyle = `rgba(255,${150 + Math.round(e.r * 30)},60,${a.toFixed(2)})`;
                     g.fillRect(e.x - inp.px * 6, e.y, e.r, e.r);
+                    Worlds.glow(g, e.x - inp.px * 6 + e.r / 2, e.y + e.r / 2, e.r * 5, "#ff8a3a", a * 0.55);
                 }
                 // a little spurt of sparks from the crater now and then (day)
                 if (!night && !preview && Math.random() < dt * 0.15) for (let i = 0; i < 10; i++) sparks.push({ x: vx, y: vtop, vx: (Math.random() - 0.5) * 80, vy: -60 - Math.random() * 80, life: 1.2 });
                 sparks = sparks.filter(s => (s.life -= dt) > 0);
-                for (const s of sparks) { s.vy += 120 * dt; s.x += s.vx * dt; s.y += s.vy * dt; g.fillStyle = `rgba(255,120,40,${s.life.toFixed(2)})`; g.fillRect(s.x - inp.px * 6, s.y, 3, 3); }
+                g.lineCap = "round"; g.lineWidth = 2.4;
+                for (const s of sparks) { s.vy += 120 * dt; s.x += s.vx * dt; s.y += s.vy * dt; g.strokeStyle = `rgba(255,${120 + Math.round(s.life * 80)},40,${s.life.toFixed(2)})`; g.beginPath(); g.moveTo(s.x - inp.px * 6 - s.vx * 0.05, s.y - s.vy * 0.05); g.lineTo(s.x - inp.px * 6, s.y); g.stroke(); Worlds.glow(g, s.x - inp.px * 6, s.y, 7, "#ff7a2a", s.life * 0.5); }
                 g.drawImage(mid, -30 - inp.px * 10, 0);
                 // sparkles (day) or glow streaks (night) on the water, and waves lapping the beach
                 for (let i = 0; i < (preview ? 12 : 40); i++) {
@@ -185,6 +188,7 @@
                     const a = Math.max(0, Math.sin(t * 2 + i * 1.7));
                     g.fillStyle = night ? `rgba(255,120,50,${(a * 0.4).toFixed(2)})` : `rgba(255,255,255,${(a * 0.8).toFixed(2)})`;
                     g.fillRect(x - inp.px * 10, y, night ? 14 : 6, 1.5);
+                    if (!night && a > 0.94) Worlds.glint(g, x - inp.px * 10 + 3, y + 0.75, 9, (a - 0.94) * 14);        // the sun catching a wave
                 }
                 const wy = H * 0.835 + Math.sin(t * 1.2) * 4;
                 g.fillStyle = night ? "rgba(255,140,90,.18)" : "rgba(255,255,255,.75)";

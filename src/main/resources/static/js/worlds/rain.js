@@ -20,6 +20,7 @@
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const night = opts.theme === "dark", preview = !!opts.preview;
+        let splashes = [];
         let sky, layers, windows, rain, puddles, walkers = [], nextWalker = preview ? 999 : 0.5, flash = 0, nextFlash = preview ? 999 : U.rand(8, 16), street, cafe;
 
         function skyline(R, base, minH, maxH, col, winCol, list, depth) {
@@ -150,6 +151,8 @@
                 for (const p of puddles) {
                     g.fillStyle = night ? "rgba(90,110,160,.35)" : "rgba(180,200,225,.55)";
                     g.beginPath(); g.ellipse(p.x - inp.px * 18, p.y, p.w, p.w * 0.16, 0, 0, TAU); g.fill();
+                    g.fillStyle = night ? "rgba(255,220,150,.12)" : "rgba(255,255,255,.35)";      // the sky (or the street lights) reflected in it
+                    g.beginPath(); g.ellipse(p.x - inp.px * 18 - p.w * 0.25, p.y - p.w * 0.03, p.w * 0.45, p.w * 0.035, 0, 0, TAU); g.fill();
                     if (Math.random() < dt * 4) p.rings.push({ x: (Math.random() - 0.5) * p.w * 1.4, age: 0 });
                     p.rings = p.rings.filter(r => (r.age += dt) < 0.8);
                     g.lineWidth = 1;
@@ -180,6 +183,17 @@
                         g.moveTo(r.x, r.y); g.lineTo(r.x - r.len * z * slant, r.y - r.len * z);
                     }
                     g.stroke();
+                }
+                // drops splashing on the street: a little crown that spreads, with two droplets thrown up
+                if (!preview) for (let i = 0; i < 2 && Math.random() < dt * 40; i++) splashes.push({ x: Math.random() * W, y: street.y + 6 + Math.random() * (H - street.y - 8), age: 0 });
+                splashes = splashes.filter(s => (s.age += dt) < 0.32);
+                g.lineWidth = 1;
+                for (const s of splashes) {
+                    const k = s.age / 0.32, a = (1 - k) * (night ? 0.45 : 0.7), r = 1 + k * 6;
+                    g.strokeStyle = night ? `rgba(190,210,240,${a.toFixed(2)})` : `rgba(255,255,255,${a.toFixed(2)})`;
+                    g.beginPath(); g.ellipse(s.x, s.y, r, r * 0.32, 0, 0, TAU); g.stroke();
+                    g.fillStyle = g.strokeStyle;
+                    for (const side of [-1, 1]) { g.beginPath(); g.arc(s.x + side * (2 + k * 6), s.y - Math.sin(k * Math.PI) * 7, 0.9, 0, TAU); g.fill(); }
                 }
             }
         };

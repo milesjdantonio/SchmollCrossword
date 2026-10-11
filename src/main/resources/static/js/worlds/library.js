@@ -220,6 +220,9 @@
                     const a = night ? 0.25 + 0.25 * Math.sin(t * 2 + m.ph) : 0.35 + 0.3 * Math.sin(t * 1.5 + m.ph);
                     g.fillStyle = night ? `rgba(180,255,220,${a.toFixed(2)})` : `rgba(255,248,220,${a.toFixed(2)})`;
                     g.beginPath(); g.arc(m.x - inp.px * 22, m.y, m.s, 0, TAU); g.fill();
+                    // by day the specks catch the light and glint; at night they glow like little spirits
+                    if (night) Worlds.glow(g, m.x - inp.px * 22, m.y, m.s * 6, "#b4ffdc", a * 0.6);
+                    else if (a > 0.58) Worlds.glint(g, m.x - inp.px * 22, m.y, m.s * 4, (a - 0.58) * 5, "#fff8dc");
                 }
                 // now and then: a book flaps across the room (day) or a ghost floats by (night)
                 nextEvent -= dt;

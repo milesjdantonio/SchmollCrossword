@@ -1,7 +1,7 @@
 // The campaign's story (the user, 2026-10-09: "the story is about getting a bunch of pages back for a book"):
-// the Lexicon, the book that holds every word in every world, was torn apart by the Void; its 15 pages fell into
+// the Everbook, the book that holds every word in every world, was torn apart by the Void; its 15 pages fell into
 // the 15 worlds and their bosses took them. Three cinematics and a book you can open:
-//   Story.intro(c, pages)            the opening: the Lexicon, the Void tearing it apart, the pages scattering
+//   Story.intro(c, pages)            the opening: the Everbook, the Void tearing it apart, its pages flying to the 15 bosses
 //   Story.page(c, pages, world)      after a boss's first defeat: its page flies into the book
 //   Story.finale(c, pages)           the last page: the book is whole, the words pour back into the worlds
 //   Story.openBook(pages)            the book itself (from the 📖 button on the map): the pages you've won
@@ -18,7 +18,7 @@ const Story = (() => {
         const slots = pages.map((p, i) => `<button type="button" class="lx-slot${p.won ? " won" : ""}" data-i="${i}" style="--c:${p.color}" ${p.won ? "" : "disabled"} title="${U.esc(p.won ? p.name + ": " + p.boss + "'s page" : "Page " + (i + 1) + ": not won yet")}"><b>${i + 1}</b><small>${U.esc(p.won ? p.name : "?")}</small></button>`).join("");
         return `<div class="lx-book${open ? " open" : ""}">
             <div class="lx-cover"><div class="lx-cover-inner"><i class="lx-corner tl"></i><i class="lx-corner tr"></i><i class="lx-corner bl"></i><i class="lx-corner br"></i>
-                <div class="lx-gem"></div><b class="lx-title">THE LEXICON</b><small class="lx-sub">every word in every world</small></div></div>
+                <div class="lx-gem"></div><b class="lx-title">THE EVERBOOK</b><small class="lx-sub">every word in every world</small></div></div>
             <div class="lx-spread">
                 <div class="lx-page lx-left">${showSlots ? `<h3 class="lx-h">The Pages</h3><div class="lx-slots">${slots}</div><p class="lx-count"><b>${pages.filter(p => p.won).length}</b> of ${pages.length} pages</p>` : linesHtml(14)}</div>
                 <div class="lx-page lx-right"><div class="lx-right-inner">${linesHtml(16)}</div></div>
@@ -26,7 +26,7 @@ const Story = (() => {
         </div>`;
     }
     const linesHtml = n => `<div class="lx-lines">${Array.from({ length: n }, (_, i) => `<i style="width:${(62 + ((i * 37) % 33))}%"></i>`).join("")}</div>`;
-    // one page of the Lexicon: the world's name in its own lettering, an illustration of its boss, lines of text
+    // one page of the Everbook: the world's name in its own lettering, an illustration of its boss, lines of text
     function leafHtml(p, i, total) {
         return `<div class="lx-leaf" data-world="${p.world}" style="--c:${p.color}">
             <div class="lx-leaf-band"></div>
@@ -97,10 +97,11 @@ const Story = (() => {
         const el = stage("lx-intro"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true });
         c.cleanup(() => { stop(); el.remove(); });
         await storyMusic(c, "story");
-        // 1. the Lexicon
-        scene.innerHTML = `<div class="lx-hero">${bookHtml(pages, { open: false })}</div>`;
+        // 1. the Everbook, whole: all fifteen pages in it, whether or not you've won them back yet (the user's rule)
+        const whole = pages.map(p => ({ ...p, won: true }));
+        scene.innerHTML = `<div class="lx-hero">${bookHtml(whole, { open: false })}</div>`;
         const book = scene.querySelector(".lx-book");
-        say(el, "Long ago, every word in every world was kept in one book: the Lexicon.");
+        say(el, "Long ago, every word in every world was kept in one book: the Everbook.");
         sfx(() => chime([60, 64, 67, 72], 0.18, "sine", 0.06));
         await c.wait(3200);
         // 2. it opens and the words rise out of it
@@ -108,7 +109,7 @@ const Story = (() => {
         say(el, "As long as it was whole, every word meant something, and every world could speak.");
         const rise = U.el("div", { class: "lx-words" });
         scene.appendChild(rise);
-        "PAGEWORDLEXICONSTORYCLUE".split("").forEach((ch, i) => { const s = U.el("span", { text: ch, style: { left: (20 + Math.random() * 60) + "%", animationDelay: (i * 90) + "ms" } }); rise.appendChild(s); });
+        "PAGEWORDCLUESTORYBOOKVERB".split("").forEach((ch, i) => { const s = U.el("span", { text: ch, style: { left: (20 + Math.random() * 60) + "%", animationDelay: (i * 90) + "ms" } }); rise.appendChild(s); });
         sfx(() => chime([67, 71, 74, 79], 0.14, "triangle", 0.05));
         await c.wait(3200);
         if (c.skipped) return;
@@ -116,40 +117,53 @@ const Story = (() => {
         const voidEl = U.el("div", { class: "lx-void", html: `<div class="lx-vortex"></div><div class="lx-void-boss">${Bosses.svg("space")}</div>` });
         scene.appendChild(voidEl);
         requestAnimationFrame(() => voidEl.classList.add("in"));
-        say(el, "Then the Void came, and tore the Lexicon apart.");
+        say(el, "Then the Void came, and tore the Everbook apart.");
         sfx(() => Sound.tone({ f: 70, f2: 35, d: 1.6, v: 0.25 }));
         await c.wait(1500);
         FX.shake(14, 700);
         FX.flash("#e8dcff", 300, 0.5);
         book.classList.add("torn");
         rise.remove();
-        const burst = U.el("div", { class: "lx-scatter" });
-        scene.appendChild(burst);
         const center = (() => { const r = book.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })();
-        pages.forEach((p, i) => {
-            const leaf = U.el("div", { class: "lx-mini-leaf", style: { "--c": p.color } });
-            burst.appendChild(leaf);
-            const a = (i / pages.length) * Math.PI * 2 + Math.random() * 0.3, d = Math.max(innerWidth, innerHeight) * 0.75;
-            if (!still()) leaf.animate([{ transform: `translate(${center.x}px, ${center.y}px) rotate(0) scale(.6)`, opacity: 1 },
-                { transform: `translate(${center.x + Math.cos(a) * d}px, ${center.y + Math.sin(a) * d}px) rotate(${720 * (Math.random() < 0.5 ? -1 : 1)}deg) scale(1.1)`, opacity: 0.9 }],
-                { duration: 1700 + Math.random() * 500, delay: i * 40, easing: "cubic-bezier(.2,.6,.4,1)", fill: "forwards" });
-        });
         sfx(() => Sound.tone({ f: 900, f2: 200, d: 0.8, v: 0.05, type: "sawtooth" }));
-        await c.wait(2300);
+        await c.wait(800);
         if (c.skipped) return;
-        // 4. fifteen pages, fifteen worlds, fifteen bosses
+        // 4. the pages go out to the fifteen bosses: each one flies from the torn book to its boss, who grabs it
         voidEl.classList.add("out");
         scene.querySelector(".lx-hero").classList.add("out");
-        burst.remove();
-        const grid = U.el("div", { class: "lx-worlds", html: pages.map((p, i) => `<div class="lx-world" style="--c:${p.color};--i:${i}"><div class="lx-world-boss">${Bosses.svg(p.world)}</div><div class="lx-mini-leaf held"></div><small>${U.esc(p.name)}</small></div>`).join("") });
+        const grid = U.el("div", { class: "lx-worlds dealing measure", html: pages.map((p, i) => `<div class="lx-world" style="--c:${p.color};--i:${i}"><div class="lx-world-boss">${Bosses.svg(p.world)}</div><div class="lx-mini-leaf held"></div><small>${U.esc(p.name)}</small></div>`).join("") });
         scene.appendChild(grid);
-        say(el, "Fifteen pages fell into fifteen worlds, and in every one, a boss took its page and won't give it back.");
+        // where each boss's page ends up, measured before the bosses start moving in
+        const spots = [...grid.querySelectorAll(".lx-mini-leaf.held")].map(h => { const r = h.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+        grid.classList.remove("measure");
+        say(el, "Its fifteen pages fell into fifteen worlds, and in every one, a boss grabbed its page and won't give it back.");
+        const flights = U.el("div", { class: "lx-scatter" });
+        scene.appendChild(flights);
+        const worlds = [...grid.querySelectorAll(".lx-world")];
+        pages.forEach((p, i) => {
+            const land = () => {
+                if (!el.isConnected) return;
+                worlds[i].classList.add("got");
+                FX.burst({ x: spots[i].x, y: spots[i].y, n: 14, colors: ["#fff", "#ffd98a", p.color], shape: "star", speed: [60, 180], gravity: 90, life: [0.4, 0.8], size: [2, 4] });
+                sfx(() => Sound.tone({ f: Sound.midi(64 + (i % 5) * 3), d: 0.25, v: 0.04, type: "triangle" }));
+            };
+            if (still()) { land(); return; }
+            const leaf = U.el("div", { class: "lx-mini-leaf", style: { "--c": p.color } });
+            flights.appendChild(leaf);
+            const t = spots[i], up = 120 + Math.random() * 120, side = (Math.random() - 0.5) * 160, spin = Math.random() < 0.5 ? -1 : 1;
+            leaf.animate([
+                { transform: `translate(${center.x}px, ${center.y}px) rotate(0) scale(.5)`, opacity: 0 },
+                { transform: `translate(${(center.x + t.x) / 2 + side}px, ${Math.min(center.y, t.y) - up}px) rotate(${360 * spin}deg) scale(1.15)`, opacity: 1, offset: 0.5 },
+                { transform: `translate(${t.x}px, ${t.y}px) rotate(${734 * spin}deg) scale(.6)`, opacity: 1 }
+            ], { duration: 1000, delay: 300 + i * 160, easing: "cubic-bezier(.35,.1,.35,1)", fill: "both" })
+                .finished.then(() => { leaf.remove(); land(); }, () => null);
+        });
         sfx(() => chime([57, 60, 64, 57, 60, 65], 0.1, "triangle", 0.04));
-        await c.wait(4200);
+        await c.wait(300 + pages.length * 160 + 1000 + 2000);          // the title lands where the score expects it (8 s after the tear starts)
         if (c.skipped) return;
         // 5. your quest
         grid.classList.add("out");
-        const title = U.el("div", { class: "lx-titlecard", html: `<small>A SCHMOLL CROSSWORD STORY</small><b>The Lost Lexicon</b><em>Win back every page, solve your way through every world, and make the book whole again.</em>` });
+        const title = U.el("div", { class: "lx-titlecard", html: `<small>A SCHMOLL CROSSWORD STORY</small><b>The Lost Everbook</b><em>Win back every page, solve your way through every world, and make the book whole again.</em>` });
         scene.appendChild(title);
         requestAnimationFrame(() => title.classList.add("in"));
         el.querySelector(".lx-caption").classList.remove("in");
@@ -188,7 +202,7 @@ const Story = (() => {
         const sr = slot.getBoundingClientRect();
         FX.burst({ x: sr.left + sr.width / 2, y: sr.top + sr.height / 2, n: 30, colors: ["#fff", "#ffd98a", p.color], shape: "star", speed: [80, 260], gravity: 120, life: [0.5, 1], size: [2, 5] });
         sfx(() => chime([72, 76, 79, 84], 0.1, "triangle", 0.07));
-        say(el, won >= pages.length ? "The last page is back where it belongs." : `The ${p.name} page is back in the Lexicon. ${pages.length - won} still missing.`);
+        say(el, won >= pages.length ? "The last page is back where it belongs." : `The ${p.name} page is back in the Everbook. ${pages.length - won} still missing.`);
         await c.wait(3000);
         el.classList.add("out");
         await c.wait(450);
@@ -207,7 +221,7 @@ const Story = (() => {
         await c.wait(2200);
         book.classList.remove("open");
         book.classList.add("whole");
-        say(el, "The Lexicon is whole again.");
+        say(el, "The Everbook is whole again.");
         sfx(() => chime([60, 64, 67, 72, 76, 79], 0.15, "sine", 0.07));
         await c.wait(1800);
         if (c.skipped) return;
@@ -222,7 +236,7 @@ const Story = (() => {
         if (c.skipped) return;
         ring.classList.add("out");
         scene.querySelector(".lx-hero").classList.add("out");
-        const end = U.el("div", { class: "lx-titlecard end", html: `<small>THE LOST LEXICON</small><b>The End</b><em>You won back every page. Thank you for playing Schmoll Crossword.</em>` });
+        const end = U.el("div", { class: "lx-titlecard end", html: `<small>THE LOST EVERBOOK</small><b>The End</b><em>You won back every page. Thank you for playing Schmoll Crossword.</em>` });
         scene.appendChild(end);
         requestAnimationFrame(() => end.classList.add("in"));
         el.querySelector(".lx-caption").classList.remove("in");
@@ -237,7 +251,7 @@ const Story = (() => {
     // The book itself: the pages you've won (click one to read it)
     // =============================================================================================
     function openBook(pages, { onReplay } = {}) {
-        const modal = U.el("div", { class: "lx-modal", role: "dialog", "aria-modal": "true", "aria-label": "The Lexicon" });
+        const modal = U.el("div", { class: "lx-modal", role: "dialog", "aria-modal": "true", "aria-label": "The Everbook" });
         modal.innerHTML = `<div class="lx-modal-inner">${bookHtml(pages)}<div class="lx-modal-btns">${onReplay ? `<button type="button" class="btn lx-replay">&#9654; Watch the story again</button>` : ""}<button type="button" class="btn primary lx-close">Close the book</button></div></div>`;
         const close = () => { modal.classList.add("out"); setTimeout(() => modal.remove(), 250); removeEventListener("keydown", onKey); };
         const onKey = e => { if (e.key === "Escape") close(); };

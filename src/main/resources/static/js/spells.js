@@ -53,6 +53,23 @@ const Spells = (() => {
     const rnd = (a, b) => a + Math.random() * (b - a);
 
     // ---- drawing helpers ----
+    // Redone on 2026-10-10 (the user: "make large adjustments to every particle, animation: make them look nicer, add
+    // extra details"): every one has more to it now: light blooms and flares where things hit, afterimages, splatter,
+    // shine, foam, bubbles, debris, embers, smoke, tapered stems with thorns and flowers. Glows use the shared cached
+    // sprites from fx.js (FX.art), which are much cheaper than shadow blurs.
+    const TAU = Math.PI * 2;
+    const tint = (c, k) => FX.art.tint(c, k), fade = (c, a) => FX.art.fade(c, a);
+    // a soft glow at a point (lighter blend), for any colour
+    function haloAt(ctx, x, y, r, color, a = 1) {
+        if (r < 1 || a <= 0.01) return;
+        const ga = ctx.globalAlpha, op = ctx.globalCompositeOperation;
+        ctx.shadowBlur = 0;
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = Math.min(1, ga * a);
+        ctx.drawImage(FX.art.halo(color), x - r, y - r, r * 2, r * 2);
+        ctx.globalAlpha = ga;
+        ctx.globalCompositeOperation = op;
+    }
     // a jagged path from a to b (midpoint displacement), for lightning and cracks
     function jag(a, b, rough = 0.28, depth = 6) {
         let pts = [a, b];
@@ -79,9 +96,21 @@ const Spells = (() => {
         ctx.shadowBlur = width * 4;
         ctx.stroke();
     }
-    // a lightning bolt between two points: it flickers (redrawn jagged every few frames), branches, and fades
+    function strokePlain(ctx, pts, width, color) {
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (const p of pts) ctx.lineTo(p.x, p.y);
+        ctx.lineWidth = width;
+        ctx.strokeStyle = color;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.stroke();
+    }
+    // a lightning bolt between two points: it flickers (redrawn jagged every few frames, its last shape left behind as
+    // a dim afterimage), branches, lights up the air round it, flares where it starts and where it hits (with sparks)
     function bolt(a, b, { color = "#bfe8ff", core = "#ffffff", width = 4, life = 0.55, branches = 3 } = {}) {
-        let pts = jag(a, b), forks = [], frame = 0;
+        let pts = jag(a, b), forks = [], frame = 0, prev = null;
         const makeForks = () => {
             forks = [];
             for (let i = 0; i < branches; i++) {
@@ -90,210 +119,438 @@ const Spells = (() => {
             }
         };
         makeForks();
+        if (!still()) FX.burst({ x: b.x, y: b.y, n: lite() ? 6 : 14, colors: [core, color], shape: "spark", glow: true, speed: [160, 420], gravity: 500, drag: 1.4, life: [0.25, 0.55], size: [1.4, 2.6] });
         add({ life, draw(ctx, k) {
-            if (frame++ % 3 === 0) { pts = jag(a, b); makeForks(); }
+            if (frame++ % 3 === 0) { prev = pts; pts = jag(a, b); makeForks(); }
             const alpha = k < 0.15 ? 1 : (1 - k) * (0.6 + Math.random() * 0.4);
             ctx.globalCompositeOperation = "lighter";
+            ctx.globalAlpha = alpha * 0.14;
+            strokePlain(ctx, pts, width * 8, color);                       // the air lit up round it
+            if (prev) { ctx.globalAlpha = alpha * 0.28; strokePlain(ctx, prev, width * 1.1, color); }
             ctx.globalAlpha = alpha;
             stroke(ctx, pts, width * 2.6, color);
             for (const f of forks) stroke(ctx, f, width, color);
             ctx.globalAlpha = alpha;
             stroke(ctx, pts, width * 0.9, core, color);
+            haloAt(ctx, b.x, b.y, width * 15 * (1 - k * 0.4), color, alpha);
+            haloAt(ctx, b.x, b.y, width * 5, core, alpha);
+            if (k < 0.35) haloAt(ctx, a.x, a.y, width * 7, color, alpha * 0.7);
         } });
     }
-    // a soft glow that pops at a point
+    // a glow that pops at a point: wide soft light, a white-hot middle, and a lens streak across the big ones
     function glow(p, { color = "#fff", r = 90, life = 0.5 } = {}) {
         add({ life, draw(ctx, k) {
-            const rad = r * (0.4 + k * 0.8), grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad);
-            grad.addColorStop(0, color); grad.addColorStop(1, "transparent");
-            ctx.globalCompositeOperation = "lighter";
-            ctx.globalAlpha = 1 - k;
-            ctx.fillStyle = grad;
-            ctx.beginPath(); ctx.arc(p.x, p.y, rad, 0, 6.3); ctx.fill();
+            const rad = r * (0.4 + k * 0.8), a = 1 - k;
+            haloAt(ctx, p.x, p.y, rad * 1.3, color, a * 0.85);
+            haloAt(ctx, p.x, p.y, rad * 0.42, "#ffffff", a * 0.7);
+            if (r >= 80) {
+                ctx.save();
+                ctx.globalCompositeOperation = "lighter";
+                ctx.globalAlpha = a * 0.55;
+                ctx.translate(p.x, p.y);
+                ctx.scale(1, 0.06);
+                ctx.drawImage(FX.art.halo(color), -rad * 2, -rad * 2, rad * 4, rad * 4);
+                ctx.restore();
+            }
         } });
     }
-    // a blob splat (ink, pie, goo, paint) with drips, that stays a moment then fades
+    // a blob splat (ink, pie, goo, paint): a ragged blob with spikes, a wet shine, drips with beads, and splatter
+    // droplets thrown out round it; it stays a moment, then fades
     function splat(p, { color = "#1a1424", r = 40, life = 1.6, drips = 4 } = {}) {
-        const pts = [], n = 14;
-        for (let i = 0; i < n; i++) pts.push(r * rnd(0.6, 1.15));
+        const pts = [], n = 18;
+        for (let i = 0; i < n; i++) pts.push(r * (i % 5 === 2 ? rnd(1.15, 1.4) : rnd(0.62, 1.12)));
         const dl = []; for (let i = 0; i < drips; i++) dl.push({ x: rnd(-r * 0.7, r * 0.7), len: rnd(r * 0.5, r * 1.4), w: rnd(4, 9) });
+        const dots = [];
+        for (let i = 0; i < (lite() ? 5 : 12); i++) { const a = rnd(0, TAU), d = r * rnd(1.2, 2); dots.push({ x: Math.cos(a) * d, y: Math.sin(a) * d, s: rnd(1.5, r * 0.12 + 2) }); }
+        const shine = tint(color, 0.55);
         add({ life, draw(ctx, k) {
-            const grow = Math.min(1, k * 6), fade = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
-            ctx.globalAlpha = fade;
+            const grow = Math.min(1, k * 6), fly = Math.min(1, k * 8), fd = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+            ctx.globalAlpha = fd;
             ctx.fillStyle = color;
             ctx.beginPath();
             for (let i = 0; i <= n; i++) {
-                const a = (i / n) * Math.PI * 2, rr = pts[i % n] * grow;
+                const a = (i / n) * TAU, rr = pts[i % n] * grow;
                 const x = p.x + Math.cos(a) * rr, y = p.y + Math.sin(a) * rr;
                 i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
             }
             ctx.fill();
-            for (const d of dl) { ctx.fillRect(p.x + d.x - d.w / 2, p.y, d.w, d.len * Math.min(1, k * 2)); ctx.beginPath(); ctx.arc(p.x + d.x, p.y + d.len * Math.min(1, k * 2), d.w * 0.8, 0, 6.3); ctx.fill(); }
+            for (const d of dl) {
+                const len = d.len * Math.min(1, k * 2);
+                ctx.fillRect(p.x + d.x - d.w / 2, p.y, d.w, len);
+                ctx.beginPath(); ctx.arc(p.x + d.x, p.y + len, d.w * 0.8, 0, TAU); ctx.fill();
+            }
+            for (const d of dots) { ctx.beginPath(); ctx.arc(p.x + d.x * fly, p.y + d.y * fly, d.s, 0, TAU); ctx.fill(); }
+            ctx.globalAlpha = fd * 0.4;
+            ctx.fillStyle = shine;
+            ctx.beginPath(); ctx.ellipse(p.x - r * 0.28 * grow, p.y - r * 0.32 * grow, r * 0.3 * grow, r * 0.14 * grow, -0.5, 0, TAU); ctx.fill();
+            for (const d of dl) { const len = d.len * Math.min(1, k * 2); ctx.beginPath(); ctx.arc(p.x + d.x - d.w * 0.25, p.y + len - d.w * 0.25, d.w * 0.25, 0, TAU); ctx.fill(); }
         } });
     }
-    // a growing vine from a to b, with leaves
+    // a growing vine from a to b: a stem that's thick at the root and thin at the tip (dark edge, light line), leaves
+    // that unfurl as it passes (lit on one half, with a vein), curly tendrils, little thorns, and a flower at the tip
     function vine(a, b, { color = "#2f9e4f", leaf = "#7be36b", life = 1.8 } = {}) {
         const c1 = { x: a.x + (b.x - a.x) * 0.3 + rnd(-60, 60), y: a.y + (b.y - a.y) * 0.3 + rnd(-60, 60) }, c2 = { x: a.x + (b.x - a.x) * 0.7 + rnd(-50, 50), y: a.y + (b.y - a.y) * 0.7 + rnd(-50, 50) };
         const at = s => { const u = 1 - s; return { x: u * u * u * a.x + 3 * u * u * s * c1.x + 3 * u * s * s * c2.x + s * s * s * b.x, y: u * u * u * a.y + 3 * u * u * s * c1.y + 3 * u * s * s * c2.y + s * s * s * b.y }; };
+        const dark = tint(color, -0.4), light = tint(color, 0.45), leafLight = tint(leaf, 0.4), leafDark = tint(leaf, -0.35);
+        const bloom = U.pick(["#ff8fb8", "#ffd23f", "#c08bff", "#ffffff"]);
+        const path = (ctx, upto) => { ctx.beginPath(); for (let s = 0; s <= upto + 0.001; s += 0.02) { const q = at(Math.min(s, upto)); s ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); } };
         add({ life, draw(ctx, k) {
-            const grow = Math.min(1, k * 2.2), fade = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
-            ctx.globalAlpha = fade;
-            ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.lineCap = "round";
-            ctx.beginPath();
-            for (let s = 0; s <= grow; s += 0.02) { const q = at(s); s ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
-            ctx.stroke();
-            ctx.fillStyle = leaf;
+            const grow = Math.min(1, k * 2.2), fd = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
+            ctx.globalAlpha = fd;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            const steps = [[1, 3.2], [0.66, 5.2], [0.33, 7.4]];
+            for (const [f, w] of steps) { path(ctx, grow * f); ctx.strokeStyle = dark; ctx.lineWidth = w + 2.6; ctx.stroke(); }
+            for (const [f, w] of steps) { path(ctx, grow * f); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke(); }
+            path(ctx, grow * 0.92); ctx.strokeStyle = light; ctx.lineWidth = 1.2; ctx.globalAlpha = fd * 0.55; ctx.stroke(); ctx.globalAlpha = fd;
+            // thorns, tendrils and leaves along it
+            ctx.fillStyle = dark;
+            for (let s = 0.08; s < grow; s += 0.09) {
+                const q = at(s), q2 = at(Math.min(1, s + 0.01)), ang = Math.atan2(q2.y - q.y, q2.x - q.x), side = Math.round(s * 100) % 2 ? 1 : -1;
+                const w = 6 * (1 - s * 0.6);
+                ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(ang + side * 1.25);
+                ctx.beginPath(); ctx.moveTo(w * 0.45, -2); ctx.lineTo(w * 0.45 + 6, 0); ctx.lineTo(w * 0.45, 2); ctx.fill();
+                ctx.restore();
+            }
+            for (let s = 0.22; s < grow; s += 0.31) {
+                const q = at(s), side = Math.round(s * 10) % 2 ? 1 : -1;
+                ctx.strokeStyle = color; ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                for (let j = 0; j <= 14; j++) { const an = j / 14 * 4.2 * side, rr = 9 * (1 - j / 18); const x = q.x + side * 6 + Math.cos(an) * rr, y = q.y - 4 + Math.sin(an) * rr; j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+                ctx.stroke();
+            }
             for (let s = 0.15; s < grow; s += 0.17) {
-                const q = at(s), q2 = at(Math.min(1, s + 0.01)), ang = Math.atan2(q2.y - q.y, q2.x - q.x) + (Math.round(s * 10) % 2 ? 1 : -1) * 1.1;
-                ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(ang); ctx.beginPath(); ctx.ellipse(9, 0, 9, 4, 0, 0, 6.3); ctx.fill(); ctx.restore();
+                const q = at(s), q2 = at(Math.min(1, s + 0.01)), side = Math.round(s * 10) % 2 ? 1 : -1, ang = Math.atan2(q2.y - q.y, q2.x - q.x) + side * 1.1;
+                const open = Math.min(1, (grow - s) * 7);
+                ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(ang); ctx.scale(open, open);
+                ctx.fillStyle = leaf;
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(7, -7, 18, 0); ctx.quadraticCurveTo(7, 7, 0, 0); ctx.fill();
+                ctx.fillStyle = leafLight;
+                ctx.globalAlpha = fd * 0.6;
+                ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(7, -7, 18, 0); ctx.closePath(); ctx.fill();
+                ctx.globalAlpha = fd;
+                ctx.strokeStyle = leafDark; ctx.lineWidth = 0.9;
+                ctx.beginPath(); ctx.moveTo(1, 0); ctx.lineTo(16, 0); ctx.stroke();
+                ctx.restore();
+            }
+            // a flower opens at the tip once it's grown
+            const fl = Math.max(0, Math.min(1, (k - 0.42) * 5));
+            if (fl > 0) {
+                ctx.save(); ctx.translate(b.x, b.y); ctx.scale(fl, fl); ctx.rotate(k * 2);
+                ctx.fillStyle = bloom;
+                for (let i = 0; i < 5; i++) { ctx.rotate(TAU / 5); ctx.beginPath(); ctx.ellipse(0, -6, 4.2, 6.5, 0, 0, TAU); ctx.fill(); }
+                ctx.fillStyle = "#ffcf3a"; ctx.beginPath(); ctx.arc(0, 0, 3.6, 0, TAU); ctx.fill();
+                ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.beginPath(); ctx.arc(-1, -1, 1.2, 0, TAU); ctx.fill();
+                ctx.restore();
             }
         } });
     }
-    // a vortex: spinning arms around a point, getting smaller
+    // a vortex: spinning arms round a point getting smaller, a glow, a tilted bright ring round the dark eye, and
+    // bits of debris spiralling in faster and faster
     function vortex(p, { color = "#6b4dff", r = 120, life = 1.4, arms = 5 } = {}) {
+        const debris = Array.from({ length: lite() ? 14 : 36 }, () => ({ a: rnd(0, TAU), d: Math.random(), sp: rnd(0.6, 1.4), s: rnd(1.2, 3.2), c: Math.random() < 0.45 ? "#ffffff" : tint(color, 0.35) }));
+        const ringC = tint(color, 0.55);
         add({ life, draw(ctx, k, t) {
-            const rad = r * (1 - k * 0.6);
+            const rad = r * (1 - k * 0.6), env = Math.sin(k * Math.PI);
+            haloAt(ctx, p.x, p.y, rad * 1.35, color, env * 0.6);
             ctx.globalCompositeOperation = "lighter";
-            ctx.globalAlpha = Math.sin(k * Math.PI);
+            ctx.globalAlpha = env;
             for (let i = 0; i < arms; i++) {
                 ctx.beginPath();
                 for (let s = 0; s < 1; s += 0.03) {
-                    const a = t * 6 + i * (Math.PI * 2 / arms) + s * 4, rr = rad * (1 - s);
+                    const a = t * 6 + i * (TAU / arms) + s * 4, rr = rad * (1 - s);
                     const x = p.x + Math.cos(a) * rr, y = p.y + Math.sin(a) * rr * 0.75;
                     s ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
                 }
                 ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.shadowColor = color; ctx.shadowBlur = 16; ctx.stroke();
             }
+            ctx.shadowBlur = 0;
+            for (const d of debris) {
+                const u = (d.d + t * 0.45 * d.sp) % 1, rr = rad * (1 - u) * 1.05, an = d.a + t * d.sp * (2 + u * 7);
+                ctx.globalAlpha = env * Math.min(1, (1 - u) * 3);
+                ctx.fillStyle = d.c;
+                ctx.beginPath(); ctx.arc(p.x + Math.cos(an) * rr, p.y + Math.sin(an) * rr * 0.75, d.s * (0.5 + (1 - u) * 0.7), 0, TAU); ctx.fill();
+            }
+            ctx.globalAlpha = env * 0.85;
+            ctx.strokeStyle = ringC;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.ellipse(p.x, p.y, rad * 0.46, rad * 0.16, Math.sin(t * 1.3) * 0.25, 0, TAU); ctx.stroke();
             const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad * 0.35);
-            grad.addColorStop(0, "#000"); grad.addColorStop(1, "transparent");
+            grad.addColorStop(0, "#000"); grad.addColorStop(0.75, "rgba(0,0,0,.85)"); grad.addColorStop(1, "transparent");
             ctx.globalCompositeOperation = "source-over";
-            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, rad * 0.35, 0, 6.3); ctx.fill();
+            ctx.globalAlpha = env;
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(p.x, p.y, rad * 0.35, 0, TAU); ctx.fill();
         } });
     }
-    // frost: crystal lines spreading out from a point across an area
+    // frost: crystal lines spreading out from a point, ice crystals forming at their tips, glints, and a frosty edge
+    // creeping in round the area
     function frost(p, area, { color = "#cfeeff", life = 1.6 } = {}) {
         const lines = [];
         const reach = Math.max(area.width, area.height) * 0.8;
         for (let i = 0; i < 18; i++) {
-            const a = (i / 18) * Math.PI * 2 + rnd(-0.15, 0.15), len = reach * rnd(0.45, 1);
+            const a = (i / 18) * TAU + rnd(-0.15, 0.15), len = reach * rnd(0.45, 1);
             lines.push(jag(p, { x: p.x + Math.cos(a) * len, y: p.y + Math.sin(a) * len }, 0.18, 4));
         }
-        add({ life, draw(ctx, k) {
-            const grow = Math.min(1, k * 2.5), fade = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+        const glints = Array.from({ length: lite() ? 4 : 10 }, () => ({ x: rnd(area.left, area.right), y: rnd(area.top, area.bottom), ph: rnd(0, 6) }));
+        add({ life, draw(ctx, k, t) {
+            const grow = Math.min(1, k * 2.5), fd = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
             ctx.save();
             ctx.beginPath(); ctx.rect(area.left - 6, area.top - 6, area.width + 12, area.height + 12); ctx.clip();
-            ctx.globalAlpha = fade * 0.95;
+            ctx.globalAlpha = fd * 0.95;
             for (const l of lines) {
                 const n = Math.max(2, Math.floor(l.length * grow));
                 stroke(ctx, l.slice(0, n), 2, color, "#8fd8ff");
             }
-            ctx.globalAlpha = fade * 0.35 * grow;
+            ctx.shadowBlur = 0;
+            for (const l of lines) {                                        // a crystal at the tip of each line
+                const n = Math.max(2, Math.floor(l.length * grow)), q = l[n - 1], s = 3 + grow * 4;
+                ctx.globalAlpha = fd;
+                ctx.drawImage(FX.art.flake("#ffffff"), q.x - s * 2, q.y - s * 2, s * 4, s * 4);
+            }
+            ctx.globalAlpha = fd * 0.35 * grow;
             ctx.fillStyle = "#e8f7ff"; ctx.fillRect(area.left, area.top, area.width, area.height);
+            // the frosty edge
+            const e = Math.min(area.width, area.height) * 0.3 * grow;
+            for (const [x0, y0, x1, y1] of [[area.left, 0, area.left + e, 0], [area.right, 0, area.right - e, 0], [0, area.top, 0, area.top + e], [0, area.bottom, 0, area.bottom - e]]) {
+                const gr = x0 ? ctx.createLinearGradient(x0, 0, x1, 0) : ctx.createLinearGradient(0, y0, 0, y1);
+                gr.addColorStop(0, "rgba(240,250,255,.85)"); gr.addColorStop(1, "rgba(240,250,255,0)");
+                ctx.globalAlpha = fd * 0.8;
+                ctx.fillStyle = gr;
+                ctx.fillRect(area.left, area.top, area.width, area.height);
+            }
             ctx.restore();
+            for (const gl of glints) { const tw = Math.sin(t * 7 + gl.ph); if (tw > 0.6) haloAt(ctx, gl.x, gl.y, 10, "#ffffff", fd * (tw - 0.6) * 2.5); }
         } });
     }
-    // a wave of water sweeping across an area (dir 1 = left to right, -1 = up from the bottom)
+    // a wave of water sweeping across an area (or rising up from the bottom): a darker wave behind, a front wave that's
+    // lighter at the top, foam along the crest, bubbles inside and spray flying off the front
     function wave(area, { color = "rgba(60, 150, 230, .75)", foam = "#e8f7ff", life = 1.2, up = false } = {}) {
+        const back = tint(color, -0.3), topC = tint(color, 0.3);
+        const bubbles = Array.from({ length: lite() ? 8 : 22 }, () => ({ x: Math.random(), y: Math.random(), r: rnd(1.5, 4.2), sp: rnd(0.4, 1.1) }));
         add({ life, draw(ctx, k, t) {
             ctx.save();
             ctx.beginPath(); ctx.rect(area.left - 10, area.top - 10, area.width + 20, area.height + 20); ctx.clip();
             const e = Math.sin(k * Math.PI);
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            if (up) {
-                const top = area.bottom - area.height * e * 1.05;
-                ctx.moveTo(area.left - 10, area.bottom + 10);
-                for (let x = area.left - 10; x <= area.right + 10; x += 8) ctx.lineTo(x, top + Math.sin(x / 22 + t * 9) * 9);
-                ctx.lineTo(area.right + 10, area.bottom + 10);
-            } else {
-                const front = area.left - 40 + (area.width + 80) * Math.min(1, k * 1.6);
-                ctx.moveTo(area.left - 10, area.top - 10);
-                for (let y = area.top - 10; y <= area.bottom + 10; y += 8) ctx.lineTo(front + Math.sin(y / 18 + t * 10) * 14, y);
-                ctx.lineTo(area.left - 10, area.bottom + 10);
+            const surf = (x, ph) => Math.sin(x / 22 + t * 9 + ph) * 9 + Math.sin(x / 9 - t * 5 + ph) * 3;
+            const side = (y, ph) => Math.sin(y / 18 + t * 10 + ph) * 14 + Math.sin(y / 7 - t * 6 + ph) * 4;
+            const crest = [];
+            for (const layer of [0, 1]) {
+                ctx.beginPath();
+                if (up) {
+                    const top = area.bottom - area.height * e * 1.05 - (layer ? 0 : 10);
+                    ctx.moveTo(area.left - 10, area.bottom + 10);
+                    for (let x = area.left - 10; x <= area.right + 10; x += 8) { const y = top + surf(x, layer ? 0 : 2); ctx.lineTo(x, y); if (layer) crest.push([x, y]); }
+                    ctx.lineTo(area.right + 10, area.bottom + 10);
+                    if (layer) { const gr = ctx.createLinearGradient(0, top - 10, 0, area.bottom); gr.addColorStop(0, topC); gr.addColorStop(1, color); ctx.fillStyle = gr; } else ctx.fillStyle = back;
+                } else {
+                    const front = area.left - 40 + (area.width + 80) * Math.min(1, k * 1.6) + (layer ? 0 : 16);
+                    ctx.moveTo(area.left - 10, area.top - 10);
+                    for (let y = area.top - 10; y <= area.bottom + 10; y += 8) { const x = front + side(y, layer ? 0 : 2); ctx.lineTo(x, y); if (layer) crest.push([x, y]); }
+                    ctx.lineTo(area.left - 10, area.bottom + 10);
+                    if (layer) { const gr = ctx.createLinearGradient(front, 0, area.left, 0); gr.addColorStop(0, topC); gr.addColorStop(1, color); ctx.fillStyle = gr; } else ctx.fillStyle = back;
+                }
+                ctx.closePath();
+                ctx.globalAlpha = layer ? 1 : 0.75;
+                ctx.fill();
             }
-            ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = foam; ctx.lineWidth = 4; ctx.globalAlpha = 0.8; ctx.stroke();
+            ctx.globalAlpha = 0.85;
+            ctx.strokeStyle = foam; ctx.lineWidth = 4;
+            ctx.beginPath(); crest.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+            ctx.fillStyle = foam;
+            crest.forEach(([x, y], i) => { if (i % 2) return; ctx.beginPath(); ctx.arc(x + Math.sin(i * 7.1 + t * 8) * 3, y + Math.cos(i * 5.3 + t * 7) * 3, 2 + (i * 13 % 5) * 0.5, 0, TAU); ctx.fill(); });
+            // bubbles rising inside the water
+            ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1.2;
+            for (const bb of bubbles) {
+                const x = area.left + bb.x * area.width + Math.sin(t * 6 + bb.x * 20) * 4, y = area.bottom - ((bb.y + t * bb.sp) % 1) * area.height;
+                const inside = up ? y > area.bottom - area.height * e : x < area.left - 40 + (area.width + 80) * Math.min(1, k * 1.6);
+                if (!inside) continue;
+                ctx.globalAlpha = 0.8 * e;
+                ctx.beginPath(); ctx.arc(x, y, bb.r, 0, TAU); ctx.stroke();
+            }
             ctx.restore();
+            // spray off the crest
+            if (!up && k < 0.6) { ctx.fillStyle = foam; for (let i = 0; i < crest.length; i += 3) { const [x, y] = crest[i]; ctx.globalAlpha = 0.7 * (1 - k / 0.6); ctx.beginPath(); ctx.arc(x + 8 + ((i * 37 + t * 300) % 30), y + Math.sin(i + t * 9) * 6, 1.6, 0, TAU); ctx.fill(); } }
         } });
     }
-    // a stream of particles blowing across an area (sand, leaves, pollen, snow, wind)
+    // a stream of particles blowing across an area (sand, leaves, pollen, snow, wind): each one stretched by its speed,
+    // nearer ones bigger, faster and brighter, with gusts of wind lines sweeping through
     function stream(area, { colors = ["#d9a35c"], n = 120, life = 1.3, dir = 1, size = [2, 5], wobble = 1, gravity = 0 } = {}) {
         const ps = [];
-        for (let i = 0; i < (lite() ? n / 2 : n); i++) ps.push({ x: dir > 0 ? area.left - rnd(0, 200) : area.right + rnd(0, 200), y: rnd(area.top - 20, area.bottom + 20), v: rnd(380, 720), s: rnd(...size), c: colors[i % colors.length], ph: rnd(0, 6) });
+        for (let i = 0; i < (lite() ? n / 2 : n); i++) {
+            const z = rnd(0.55, 1.3);
+            ps.push({ x: dir > 0 ? area.left - rnd(0, 200) : area.right + rnd(0, 200), y: rnd(area.top - 20, area.bottom + 20), v: rnd(380, 720) * z, s: rnd(...size) * z, c: colors[i % colors.length], ph: rnd(0, 6), z });
+        }
+        ps.sort((p, q) => p.z - q.z);
+        const gusts = Array.from({ length: lite() ? 2 : 5 }, () => ({ y: rnd(area.top, area.bottom), ph: rnd(0, 6), len: rnd(90, 220), v: rnd(700, 1000), x0: rnd(-200, 0) }));
         add({ life, draw(ctx, k, t) {
-            ctx.globalAlpha = k > 0.75 ? (1 - k) / 0.25 : 1;
+            const fd = k > 0.75 ? (1 - k) / 0.25 : 1;
+            ctx.lineCap = "round";
+            for (const gu of gusts) {
+                const x = (dir > 0 ? area.left + gu.x0 + gu.v * t : area.right - gu.x0 - gu.v * t);
+                ctx.globalAlpha = fd * 0.32;
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = 1.6;
+                ctx.beginPath();
+                for (let j = 0; j <= 10; j++) { const xx = x - dir * gu.len * j / 10, yy = gu.y + Math.sin(j * 0.7 + t * 6 + gu.ph) * 6; j ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
+                ctx.stroke();
+            }
             for (const p of ps) {
                 const x = p.x + dir * p.v * t, y = p.y + Math.sin(t * 8 + p.ph) * 10 * wobble + gravity * t * t;
-                ctx.fillStyle = p.c; ctx.fillRect(x, y, p.s * 2, p.s);
+                const len = p.s * 2 + p.v * 0.012;
+                ctx.globalAlpha = fd * (0.45 + 0.55 * Math.min(1, p.z));
+                ctx.fillStyle = p.c;
+                ctx.fillRect(dir > 0 ? x - len + p.s * 2 : x, y, len, p.s);
+                if (p.s > 3.5) { ctx.fillStyle = "rgba(255,255,255,.4)"; ctx.fillRect(dir > 0 ? x - len + p.s * 2 : x, y, len, Math.max(1, p.s * 0.25)); }
             }
         } });
     }
-    // things falling from the top of the screen onto points (meteors, lava bombs, hail)
+    // things falling from the top of the screen onto points (meteors, lava bombs, hail): a glowing head with a white
+    // core, a tapered fiery tail, flickering embers left behind; on impact a flash, a ring, sparks and smoke
     function meteor(p, { color = "#ff6a00", tail = "#ffd23f", life = 0.55, delay = 0 } = {}) {
         const start = { x: p.x + rnd(-160, 160), y: -40 };
+        const embers = [];
         return new Promise(resolve => setTimeout(() => {
             add({ life, draw(ctx, k) {
                 const x = start.x + (p.x - start.x) * k, y = start.y + (p.y - start.y) * k * k;
-                const grad = ctx.createLinearGradient(start.x, start.y, x, y);
-                grad.addColorStop(0, "transparent"); grad.addColorStop(1, tail);
+                const tx = x - (p.x - start.x) * 0.38, ty = y - (p.y - start.y) * 0.38 * (0.4 + k);
+                if (!lite() && Math.random() < 0.8) embers.push({ x: x + rnd(-6, 6), y: y + rnd(-6, 6), age: 0, s: rnd(1, 2.6) });
                 ctx.globalCompositeOperation = "lighter";
-                ctx.strokeStyle = grad; ctx.lineWidth = 10; ctx.lineCap = "round";
-                ctx.beginPath(); ctx.moveTo(x - (p.x - start.x) * 0.35, y - (p.y - start.y) * 0.35); ctx.lineTo(x, y); ctx.stroke();
-                ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 20;
-                ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.3); ctx.fill();
+                const grad = ctx.createLinearGradient(tx, ty, x, y);
+                grad.addColorStop(0, "transparent"); grad.addColorStop(0.6, fade(color, 0.6)); grad.addColorStop(1, tail);
+                ctx.strokeStyle = grad; ctx.lineCap = "round";
+                ctx.lineWidth = 16; ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(x, y); ctx.stroke();
+                ctx.lineWidth = 6; ctx.strokeStyle = "rgba(255,250,220,.8)"; ctx.beginPath(); ctx.moveTo((tx + x * 2) / 3, (ty + y * 2) / 3); ctx.lineTo(x, y); ctx.stroke();
+                for (const e of embers) {
+                    e.age += 0.016; e.y += 0.6;
+                    const a = 1 - e.age / 0.4;
+                    if (a <= 0) continue;
+                    ctx.globalAlpha = a * (0.6 + Math.random() * 0.4);
+                    ctx.fillStyle = tail;
+                    ctx.fillRect(e.x, e.y, e.s, e.s);
+                }
+                ctx.globalAlpha = 1;
+                haloAt(ctx, x, y, 34, color, 1);
+                ctx.fillStyle = "#fff";
+                ctx.beginPath(); ctx.arc(x, y, 6, 0, TAU); ctx.fill();
             } });
-            setTimeout(() => { glow(p, { color, r: 70, life: 0.45 }); FX.burst({ x: p.x, y: p.y, n: 18, colors: [color, tail, "#2b2233"], shape: "star", speed: [100, 300], gravity: 400, life: [0.3, 0.7], size: [3, 6] }); resolve(); }, still() ? 0 : life * 1000);
+            setTimeout(() => {
+                glow(p, { color, r: 80, life: 0.5 });
+                FX.ring({ x: p.x, y: p.y, color: tail, r1: 70, width: 6, dur: 0.45 });
+                FX.burst({ x: p.x, y: p.y, n: 18, colors: [color, tail, "#2b2233"], shape: "star", speed: [100, 300], gravity: 400, life: [0.3, 0.7], size: [3, 6] });
+                FX.burst({ x: p.x, y: p.y, n: lite() ? 3 : 7, colors: ["rgba(70,60,60,.55)", "rgba(110,95,90,.45)"], shape: "circle", speed: [20, 70], angle: -Math.PI / 2, spread: 1.2, gravity: -60, drag: 1.6, life: [0.8, 1.3], size: [6, 12] });
+                resolve();
+            }, still() ? 0 : life * 1000);
         }, still() ? 0 : delay));
     }
-    // a beam between two points that pulses (taffy strands, lasers, energy)
+    // a beam between two points that pulses (taffy strands, lasers, energy): a wide bloom, wavy strands, a white core,
+    // bright pulses running along it, and flares at both ends
     function beam(a, b, { color = "#ff6fb5", width = 10, life = 1, wobble = 18, strands = 3 } = {}) {
+        const at = (u, t, s) => { const off = Math.sin(u * Math.PI) * Math.sin(t * 7 + s * 2 + u * 9) * wobble; return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u + off }; };
         add({ life, draw(ctx, k, t) {
-            ctx.globalAlpha = Math.sin(k * Math.PI);
+            const env = Math.sin(k * Math.PI);
+            ctx.globalAlpha = env * 0.18;
             ctx.globalCompositeOperation = "lighter";
+            strokePlain(ctx, [a, b], width * 4.5, color);
+            ctx.globalAlpha = env;
             for (let s = 0; s < strands; s++) {
                 ctx.beginPath();
-                for (let i = 0; i <= 30; i++) {
-                    const u = i / 30, off = Math.sin(u * Math.PI) * Math.sin(t * 7 + s * 2 + u * 9) * wobble;
-                    const x = a.x + (b.x - a.x) * u, y = a.y + (b.y - a.y) * u + off;
-                    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-                }
+                for (let i = 0; i <= 30; i++) { const q = at(i / 30, t, s); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
                 ctx.strokeStyle = color; ctx.lineWidth = width / (s + 1); ctx.shadowColor = color; ctx.shadowBlur = 18; ctx.stroke();
             }
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            for (let i = 0; i <= 30; i++) { const q = at(i / 30, t, 0); i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y); }
+            ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = Math.max(1.5, width * 0.22); ctx.stroke();
+            for (let i = 0; i < 3; i++) { const q = at((t * 1.4 + i / 3) % 1, t, 0); haloAt(ctx, q.x, q.y, width * 2, "#ffffff", env * 0.9); haloAt(ctx, q.x, q.y, width * 3.5, color, env * 0.6); }
+            haloAt(ctx, a.x, a.y, width * 4, color, env);
+            haloAt(ctx, b.x, b.y, width * 5, color, env);
         } });
     }
-    // sun rays turning behind an area
+    // sun rays turning behind an area: rays that fade toward their ends, a second wider set turning the other way, and a
+    // glowing middle
     function rays(area, { color = "rgba(255, 210, 63, .55)", life = 1.6, n = 14 } = {}) {
         const c = { x: area.left + area.width / 2, y: area.top + area.height / 2 }, R = Math.max(area.width, area.height);
+        let gr = null;
         add({ life, draw(ctx, k, t) {
-            ctx.globalAlpha = Math.sin(k * Math.PI);
+            const env = Math.sin(k * Math.PI);
             ctx.globalCompositeOperation = "lighter";
-            ctx.translate(c.x, c.y); ctx.rotate(t * 0.8);
-            ctx.fillStyle = color;
-            for (let i = 0; i < n; i++) { ctx.rotate(Math.PI * 2 / n); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R, -R * 0.08); ctx.lineTo(R, R * 0.08); ctx.fill(); }
+            haloAt(ctx, c.x, c.y, R * 0.55, color, env * 0.8);
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            if (!gr) { gr = ctx.createLinearGradient(0, 0, R, 0); gr.addColorStop(0, color); gr.addColorStop(0.55, fade(color, FX.art.rgba(color)[3] * 0.4)); gr.addColorStop(1, fade(color, 0)); }
+            ctx.fillStyle = gr;
+            for (const [count, w, spin, a] of [[n, 0.08, 0.8, 1], [Math.round(n / 2), 0.16, -0.45, 0.45]]) {
+                ctx.save();
+                ctx.rotate(t * spin);
+                ctx.globalAlpha = env * a;
+                for (let i = 0; i < count; i++) { ctx.rotate(TAU / count); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(R, -R * w); ctx.lineTo(R, R * w); ctx.fill(); }
+                ctx.restore();
+            }
+            ctx.restore();
+            haloAt(ctx, c.x, c.y, R * 0.18, "#ffffff", env * 0.6);
         } });
     }
-    // glitch: shifted colour slices over an area
+    // glitch: colour-split slices (magenta and cyan pulled apart), scanlines and blocks of noise over an area
     function glitchBars(area, { life = 0.9 } = {}) {
         add({ life, draw(ctx) {
+            ctx.globalCompositeOperation = "lighter";
             for (let i = 0; i < 9; i++) {
-                const y = rnd(area.top, area.bottom), h = rnd(4, 18);
-                ctx.globalAlpha = rnd(0.3, 0.8);
-                ctx.fillStyle = ["#ff2bd6", "#00f0ff", "#ffffff", "#7bff5c"][i % 4];
-                ctx.fillRect(area.left + rnd(-30, 30), y, area.width, h);
+                const y = rnd(area.top, area.bottom), h = rnd(4, 18), dx = rnd(-30, 30), split = rnd(3, 9);
+                ctx.globalAlpha = rnd(0.3, 0.7);
+                ctx.fillStyle = "#ff2bd6"; ctx.fillRect(area.left + dx - split, y, area.width, h);
+                ctx.fillStyle = "#00f0ff"; ctx.fillRect(area.left + dx + split, y, area.width, h);
+                ctx.globalAlpha = rnd(0.4, 0.9);
+                ctx.fillStyle = i % 3 ? "#ffffff" : "#7bff5c"; ctx.fillRect(area.left + dx, y + h * 0.4, area.width, Math.max(1, h * 0.2));
+            }
+            ctx.globalCompositeOperation = "source-over";
+            ctx.globalAlpha = 0.14;
+            ctx.fillStyle = "#000";
+            for (let y = area.top; y < area.bottom; y += 3) ctx.fillRect(area.left, y, area.width, 1);
+            for (let i = 0; i < (lite() ? 4 : 12); i++) {
+                ctx.globalAlpha = rnd(0.25, 0.7);
+                ctx.fillStyle = ["#ffffff", "#2b2233", "#ff2bd6", "#00f0ff"][i % 4];
+                ctx.fillRect(rnd(area.left, area.right), rnd(area.top, area.bottom), rnd(4, 26), rnd(3, 10));
             }
         } });
     }
-    // a clock face spinning (forwards or backwards) over an area
+    // a clock face spinning (forwards or backwards) over an area: a glassy face, minute and hour ticks, hands that
+    // leave a sweep of light behind them, and a center cap
     function clockFace(area, { back = true, color = "#58d6ff", life = 1.3 } = {}) {
         const c = { x: area.left + area.width / 2, y: area.top + area.height / 2 }, R = Math.min(area.width, area.height) * 0.45;
         add({ life, draw(ctx, k, t) {
-            ctx.globalAlpha = Math.sin(k * Math.PI) * 0.85;
+            const env = Math.sin(k * Math.PI);
+            const face = ctx.createRadialGradient(c.x, c.y - R * 0.3, 0, c.x, c.y, R);
+            face.addColorStop(0, fade(color, 0.28)); face.addColorStop(1, fade(color, 0.08));
+            ctx.globalAlpha = env;
+            ctx.fillStyle = face; ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, TAU); ctx.fill();
+            ctx.globalAlpha = env * 0.85;
             ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.shadowColor = color; ctx.shadowBlur = 14;
-            ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, 6.3); ctx.stroke();
-            for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * R * 0.85, c.y + Math.sin(a) * R * 0.85); ctx.lineTo(c.x + Math.cos(a) * R, c.y + Math.sin(a) * R); ctx.stroke(); }
-            const s = (back ? -1 : 1) * t * 9;
+            ctx.beginPath(); ctx.arc(c.x, c.y, R, 0, TAU); ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(c.x, c.y, R * 0.92, 0, TAU); ctx.stroke();
+            for (let i = 0; i < 60; i++) {
+                const a = i * TAU / 60, big = i % 5 === 0, r0 = big ? R * 0.8 : R * 0.88;
+                ctx.lineWidth = big ? 4 : 1.4;
+                ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * r0, c.y + Math.sin(a) * r0); ctx.lineTo(c.x + Math.cos(a) * R * 0.92, c.y + Math.sin(a) * R * 0.92); ctx.stroke();
+            }
+            const s = (back ? -1 : 1) * t * 9, dirn = back ? 1 : -1;
+            ctx.globalCompositeOperation = "lighter";
+            ctx.globalAlpha = env * 0.3;
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.arc(c.x, c.y, R * 0.8, s, s + dirn * 0.9, back ? false : true); ctx.closePath(); ctx.fill();
+            ctx.globalCompositeOperation = "source-over";
+            ctx.globalAlpha = env * 0.95;
+            ctx.strokeStyle = color; ctx.lineCap = "round";
+            ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + Math.cos(s) * R * 0.8, c.y + Math.sin(s) * R * 0.8); ctx.stroke();
+            ctx.lineWidth = 6;
             ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + Math.cos(s / 12) * R * 0.5, c.y + Math.sin(s / 12) * R * 0.5); ctx.stroke();
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath(); ctx.arc(c.x, c.y, 6, 0, TAU); ctx.fill();
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(c.x, c.y, 3, 0, TAU); ctx.fill();
+            haloAt(ctx, c.x + Math.cos(s) * R * 0.8, c.y + Math.sin(s) * R * 0.8, 14, color, env);
         } });
     }
 
@@ -312,6 +569,21 @@ const Spells = (() => {
             return { ghost, r };
         }).filter(Boolean);
     }
+    // what each way of leaving throws off, as the letter goes (the user, 2026-10-10: "add extra details")
+    const LEAVE_FX = {
+        zap: (x, y, o) => { FX.burst({ x, y, n: 12, colors: ["#fff", o.color, "#bfe8ff"], shape: "spark", glow: true, speed: [120, 300], gravity: 200, drag: 1.4, life: [0.25, 0.55], size: [1.4, 2.4] }); FX.burst({ x, y, n: 5, colors: ["#ffffff", "#bfe8ff"], shape: "star", glow: true, speed: [40, 120], gravity: 0, life: [0.3, 0.5], size: [3, 5] }); },
+        freeze: (x, y) => { FX.burst({ x, y, n: 8, colors: ["#ffffff", "#dff1ff"], shape: "flake", speed: [70, 200], gravity: 260, life: [0.5, 0.9], size: [3, 6], spin: 4 }); FX.burst({ x, y, n: 10, colors: ["#e8f7ff", "#9fdcff"], shape: "rect", speed: [100, 260], gravity: 500, life: [0.4, 0.7], size: [3, 6] }); },
+        pixel: (x, y) => FX.burst({ x, y, n: 14, colors: ["#ff2bd6", "#00f0ff", "#7bff5c"], shape: "pixel", speed: [80, 240], gravity: 200, life: [0.3, 0.7], size: [3, 6] }),
+        burn: (x, y) => {
+            FX.burst({ x, y, n: 10, colors: ["#ffb33a", "#ff6a00", "#ffe08a"], shape: "spark", glow: true, angle: -Math.PI / 2, spread: 0.8, speed: [60, 160], gravity: -120, drag: 1, life: [0.5, 0.9], size: [1.2, 2.2] });
+            FX.burst({ x, y: y - 6, n: 4, colors: ["rgba(60,50,50,.5)", "rgba(100,90,90,.4)"], shape: "circle", angle: -Math.PI / 2, spread: 0.6, speed: [20, 60], gravity: -50, drag: 1.4, life: [0.8, 1.2], size: [5, 9] });
+        },
+        blow: (x, y) => FX.burst({ x, y, n: 5, colors: ["rgba(255,255,255,.7)", "rgba(230,235,245,.6)"], shape: "circle", speed: [30, 90], gravity: 0, drag: 2, life: [0.4, 0.6], size: [3, 6] }),
+        wash: (x, y) => FX.burst({ x, y: y + 8, n: 6, colors: ["#7fb2ff", "#c9e0ff"], shape: "circle", angle: Math.PI / 2, spread: 0.6, speed: [60, 140], gravity: 700, life: [0.4, 0.7], size: [1.6, 3], shrink: true }),
+        suck: (x, y, o) => { if (o.to) FX.burst({ x, y, n: 5, colors: ["#ffffff", o.color], shape: "star", glow: true, angle: Math.atan2(o.to.y - y, o.to.x - x), spread: 0.35, speed: [150, 300], gravity: 0, drag: 1, life: [0.3, 0.5], size: [2, 3.5] }); },
+        smear: (x, y) => FX.burst({ x, y: y + 4, n: 5, colors: ["#e7d9df", "#ffb3c1", "#ffffff"], shape: "circle", speed: [30, 100], gravity: 300, life: [0.4, 0.7], size: [1.5, 3] }),
+        pop: (x, y) => FX.burst({ x, y, n: 7, colors: ["#ffffff", "#ffd23f", "#ff9fb4"], shape: "star", speed: [80, 200], gravity: 300, life: [0.4, 0.7], size: [2, 4] })
+    };
     function leave(ghosts, style, { to, color = "#fff", stagger = 60 } = {}) {
         return Promise.all(ghosts.map(({ ghost, r }, i) => new Promise(resolve => {
             const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
@@ -329,7 +601,7 @@ const Spells = (() => {
             }[style] || [{ opacity: 1 }, { opacity: 0 }];
             const delay = still() ? 0 : i * stagger, dur = still() ? 1 : { zap: 380, blow: 700, wash: 700, suck: 800, smear: 600, pop: 800, burn: 800 }[style] || 600;
             setTimeout(() => {
-                if (style === "zap" || style === "freeze" || style === "pixel") FX.burst({ x: cx, y: cy, n: 12, colors: style === "pixel" ? ["#ff2bd6", "#00f0ff", "#7bff5c"] : ["#fff", color, "#bfe8ff"], shape: style === "pixel" ? "rect" : "star", speed: [80, 240], gravity: 200, life: [0.25, 0.6], size: [2, 5] });
+                LEAVE_FX[style] && LEAVE_FX[style](cx, cy, { color, to, r });
                 const anim = ghost.animate(frames, { duration: dur, easing: "ease-out", fill: "forwards" });
                 anim.onfinish = () => { ghost.remove(); resolve(); };
             }, delay);
@@ -460,14 +732,23 @@ const Spells = (() => {
         // energy flowing from one point into another (charging, healing, giving letters)
         flow: async (c, colors = ["#ffd23f", "#fff"]) => {
             const to = c.to || centerOf(c.area), from = c.from || to;
-            const n = lite() ? 14 : 28;
-            for (let i = 0; i < n; i++) setTimeout(() => {
-                const dot = U.el("div", { class: "spell-dot", style: { background: colors[i % colors.length], boxShadow: `0 0 10px ${colors[i % colors.length]}` } });
-                document.body.appendChild(dot);
-                U.pin(dot);
-                const mx = (from.x + to.x) / 2 + rnd(-140, 140), my = Math.min(from.y, to.y) - rnd(40, 160);
-                dot.animate([{ transform: `translate(${from.x}px, ${from.y}px) scale(.6)` }, { transform: `translate(${mx}px, ${my}px) scale(1.2)` }, { transform: `translate(${to.x}px, ${to.y}px) scale(.4)` }], { duration: 650, easing: "ease-in-out" }).onfinish = () => dot.remove();
-            }, still() ? 0 : i * 22);
+            // little comets of energy, each curving up and over on its own path with a glowing tail
+            const n = lite() ? 14 : 28, dur = 0.65, gap = 0.022;
+            const ps = Array.from({ length: n }, (_, i) => ({ t0: i * gap, mx: (from.x + to.x) / 2 + rnd(-140, 140), my: Math.min(from.y, to.y) - rnd(40, 160), c: colors[i % colors.length], s: rnd(3, 5.5) }));
+            const at = (p, q) => { const v = 1 - q; return { x: v * v * from.x + 2 * v * q * p.mx + q * q * to.x, y: v * v * from.y + 2 * v * q * p.my + q * q * to.y }; };
+            add({ life: n * gap + dur + 0.05, draw(ctx, k, t) {
+                for (const p of ps) {
+                    const u = (t - p.t0) / dur;
+                    if (u <= 0 || u >= 1) continue;
+                    const e = u < 0.5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2, grow = Math.sin(u * Math.PI) * 0.6 + 0.6;
+                    for (let j = 6; j >= 1; j--) { const q = at(p, Math.max(0, e - j * 0.035)); haloAt(ctx, q.x, q.y, p.s * grow * (2.4 - j * 0.22), p.c, (1 - j / 7) * 0.5); }
+                    const q = at(p, e);
+                    haloAt(ctx, q.x, q.y, p.s * grow * 2.8, p.c, 0.9);
+                    ctx.globalAlpha = 1;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath(); ctx.arc(q.x, q.y, p.s * grow * 0.5, 0, TAU); ctx.fill();
+                }
+            } });
             await wait(700);
             glow(to, { color: colors[0], r: 90, life: 0.5 });
             if (c.cells.length) c.cells.forEach(x => x.el && U.restart(x.el, "flip"));
@@ -512,7 +793,7 @@ const Spells = (() => {
     }
     const has = kind => !!PLAYS[kind];
     // for spells-abilities.js: the drawing kit, and a way to give a kind its own effect
-    const kit = { add, wait, rect, mid, rnd, jag, stroke, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays, glitchBars, clockFace, letterGhosts, leave, R,
+    const kit = { add, wait, rect, mid, rnd, jag, stroke, strokePlain, haloAt, tint, fade, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays, glitchBars, clockFace, letterGhosts, leave, R,
         still, lite, get dpr() { return dpr; } };
     const define = (kind, fn) => { PLAYS[kind] = fn; };
     return { play, has, define, kit, bolt, glow, splat, vine, vortex, frost, wave, stream, meteor, beam, rays };

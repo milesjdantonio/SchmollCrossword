@@ -1,6 +1,6 @@
 // The campaign's companions (written by Claude at the user's request, 2026-10-09: "significantly more text for the
 // campaign, like lore stuff, when clicking on them"). Each world's mascot is your companion there, with its own
-// story about its world, its page of the Lost Lexicon and the boss who took it.
+// story about its world, its page of the Lost Everbook and the boss who took it.
 //
 //   Companions.click()          clicking the mascot on the map or in a campaign level: the next piece of its story
 //                               (saved, so it picks up where it left off), then chat once the story's told
@@ -15,12 +15,12 @@ const Companions = (() => {
         paper: {
             intro: "Oh! A solver! I'm Pip. I've been sharpening myself for weeks waiting for someone like you.",
             lore: [
-                "This Notebook is where words get their first draft. Every word in the Lexicon was scribbled here once.",
+                "This Notebook is where words get their first draft. Every word in the Everbook was scribbled here once.",
                 "The Big Eraser used to be the nicest eraser on the desk. It fixed mistakes. Then it decided everything was a mistake.",
-                "It took our page, the very first page of the Lexicon. Without it, new words come out smudged.",
+                "It took our page, the very first page of the Everbook. Without it, new words come out smudged.",
                 "See the margins? The doodles get fainter every night. The Eraser rubs a little more while we sleep.",
                 "I'm only a pencil, but I've got a whole dictionary's worth of lead left in me. Let's use it well.",
-                "Grandpa Graphite said the Lexicon was written by everyone who ever solved a puzzle. That includes you now.",
+                "Grandpa Graphite said the Everbook was written by everyone who ever solved a puzzle. That includes you now.",
                 "Beat the Eraser and our page goes into your book. Fourteen more after that. No pressure!",
                 "Fun fact: I'm a number two pencil. We say that proudly."
             ],
@@ -35,7 +35,7 @@ const Companions = (() => {
             intro: "Bzz! I'm Bumble. The Garden used to hum. Now it barely whispers. Will you help?",
             lore: [
                 "Every flower here grew from a word. Roses from 'remember', sunflowers from 'hello'. I'm not making that up.",
-                "Queen Thistle came over the hedge one spring and planted the Lexicon's page right in the middle bed.",
+                "Queen Thistle came over the hedge one spring and planted the Everbook's page right in the middle bed.",
                 "Now nothing grows there but thorns. She says words are weeds, and weeds should be pulled.",
                 "The other bees left for the orchard. I stayed. Someone has to keep the flowers company.",
                 "Thistle isn't all bad. Thistles feed goldfinches. She's just forgotten that she's part of the garden too.",
@@ -281,18 +281,18 @@ const Companions = (() => {
         space: {
             intro: "Nova reporting. The signal's weak out here. The Void eats everything, even radio.",
             lore: [
-                "This is where it started. The Void tore the Lexicon apart and threw its pages to every world you've visited.",
+                "This is where it started. The Void tore the Everbook apart and threw its pages to every world you've visited.",
                 "The Void isn't a monster, exactly. It's an empty space that wants to stay empty. Words fill things up.",
                 "Every page you've won back is in your book. That's why the Void has been watching you.",
                 "I was sent to map the stars. Every star has a name, and names are words. You can see the problem.",
                 "My suit is rated for the vacuum of space. Not for a vacuum of meaning. Let's be quick.",
                 "Space tip: when everything's dark, find the brightest letter and build from there.",
-                "Beat the Void and the Lexicon is whole again. Every word, back where it belongs.",
+                "Beat the Void and the Everbook is whole again. Every word, back where it belongs.",
                 "I've seen fourteen worlds through your eyes. Thank you for the view."
             ],
             levels: ["Launch! Low orbit, easy start.", "Asteroid field. Dodge the hard clues.",
                 "The stars are going out ahead. The Void is close.", "Final approach. Everything you've learned, use it now."],
-            boss: { before: "The Void. Every word you know against nothing at all. Let's finish the book.", win: "The Lexicon is whole! The stars have their names back!",
+            boss: { before: "The Void. Every word you know against nothing at all. Let's finish the book.", win: "The Everbook is whole! The stars have their names back!",
                 lose: "Lost the signal. Regroup, recharge and try again. It can be beaten.", during: ["Hold the line!", "Every word is light!", "It's shrinking!"] },
             idle: ["Beep. That's me thinking in space.", "Zero gravity makes my thoughts float off. Hold on.", "Space is silent, so I hum to keep us company."],
             done: ["Every star has its name back. I'm making a map.", "The Void's quiet now. Turns out it just needed a dictionary."]

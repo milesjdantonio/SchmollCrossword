@@ -21,3 +21,6 @@ puzzles/
 # boss music copies for listening in VS Code (the game's own files are in static/audio/music)
 boss-music/*
 !boss-music/README.md
+
+# the animation showreel video (made by a test script; too big for the repo)
+showreel/

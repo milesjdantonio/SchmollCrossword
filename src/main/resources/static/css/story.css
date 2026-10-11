@@ -1,4 +1,4 @@
-/* The Lost Lexicon: the campaign's story scenes and the book (story.js). Drawn in CSS: a leather-bound book with
+/* The Lost Everbook: the campaign's story scenes and the book (story.js). Drawn in CSS: a leather-bound book with
    gold corners, parchment pages, and one page per world. */
 .lx-stage { position: fixed; inset: 0; z-index: 9500; overflow: hidden; opacity: 0; transition: opacity .5s;
     background: radial-gradient(ellipse at 50% 40%, #2a1a3a 0%, #140c1e 55%, #05030a 100%); color: #f6ecd2; }
@@ -60,7 +60,7 @@
 .lx-right-inner > .lx-lines { width: 100%; align-self: start; }
 .lx-empty { margin: 0; text-align: center; font: italic 600 clamp(.8rem, 1.7vw, 1rem)/1.5 Georgia, serif; color: #6b4a22; }
 
-/* one page of the Lexicon */
+/* one page of the Everbook */
 .lx-leaf { position: relative; width: 82%; height: 92%; padding: 8% 8% 6%; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 4%;
     background: linear-gradient(160deg, #fffaf0, #f3e6c4); box-shadow: 0 6px 20px rgba(60, 40, 10, .35), inset 0 0 30px rgba(160, 120, 60, .2); transform-style: preserve-3d; color: #3a2a14; }
 .lx-leaf-band { position: absolute; left: 0; right: 0; top: 0; height: 7%; border-radius: 4px 4px 0 0; background: var(--c); }
@@ -95,7 +95,7 @@
 .lx-world { position: relative; display: grid; justify-items: center; gap: 4px; opacity: 0; animation: lx-world-in .6s cubic-bezier(.2, 1.4, .4, 1) forwards; animation-delay: calc(var(--i) * 160ms); }
 @keyframes lx-world-in { from { opacity: 0; transform: translateY(20px) scale(.7); } to { opacity: 1; transform: none; } }
 .lx-world-boss { width: clamp(46px, 9vw, 96px); filter: drop-shadow(0 0 10px var(--c)); }
-.lx-world .lx-mini-leaf.held { position: absolute; left: auto; right: 6%; top: 34%; width: 20px; height: 26px; --c: var(--c); transform: rotate(14deg); animation: lx-held 1.4s ease-in-out infinite alternate; }
+.lx-world .lx-mini-leaf.held { position: absolute; left: auto; right: 6%; top: 34%; width: 20px; height: 26px; transform: rotate(14deg); animation: lx-held 1.4s ease-in-out infinite alternate; }
 @keyframes lx-held { to { transform: rotate(-6deg) translateY(-4px); } }
 .lx-world small { font: 700 clamp(.55rem, 1.2vw, .8rem) Georgia, serif; color: #e0c68a; text-align: center; }
 .lx-titlecard { display: grid; justify-items: center; gap: 12px; text-align: center; opacity: 0; transform: scale(.9); transition: opacity 1s, transform 1.2s cubic-bezier(.2, .8, .3, 1); width: min(760px, 90vw); }
@@ -137,5 +137,10 @@
     .lx-book:not(.open) .lx-cover { left: 0; width: 100%; }
     .lx-worlds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (prefers-reduced-motion: reduce) { .lx-stage *, .lx-modal * { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .lx-stage *, .lx-modal * { animation: none !important; transition: none !important; } .lx-world { opacity: 1; } }
 .lx-modal-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+/* the intro's pages going out to the bosses: each boss's page shows once its flying page lands, and the boss jumps */
+.lx-worlds.measure .lx-world { animation: none; opacity: 0; }
+.lx-worlds.dealing .lx-world:not(.got) .lx-mini-leaf.held { opacity: 0; }
+.lx-world.got .lx-world-boss { animation: lx-grab .45s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes lx-grab { 40% { transform: scale(1.18) translateY(-6px); } }
