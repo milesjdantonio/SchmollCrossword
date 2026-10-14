@@ -133,10 +133,13 @@
 .ba-rays { position: absolute; left: 70%; top: 34%; width: 260vmax; height: 260vmax; transform: translate(-50%, -50%); opacity: .14;
     background: repeating-conic-gradient(from 0deg, #fff 0deg 7deg, transparent 7deg 20deg); animation: ba-turn 60s linear infinite; }
 @keyframes ba-turn { to { transform: translate(-50%, -50%) rotate(360deg); } }
-.ba-giant { position: absolute; right: -6vw; top: -4vh; width: min(78vh, 70vw); opacity: .2; filter: blur(1.5px) saturate(.8); animation: ba-breathe 5s ease-in-out infinite alternate; }
-.ba-giant .boss-art { width: 100%; height: auto; display: block; }
+.ba-giant { position: absolute; right: 2vw; top: 3vh; width: min(70vh, 56vw); transform-origin: 50% 35%; opacity: .2; filter: blur(1.5px) saturate(.8); animation: ba-breathe 5s ease-in-out infinite alternate; }
+.ba-giant .boss-art { width: 100%; height: auto; display: block; overflow: visible; }
 @keyframes ba-breathe { to { transform: scale(1.05) translateY(10px); } }
-.ba-horizon { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42vh; }
+/* the scenery strip draws past its own top edge (it used to be sliced flat: the Big Top's Ferris wheel on a wide
+   screen), and on narrow screens it's shorter so more of it fits across (the user: "the background stuff for bosses
+   gets cut out"). The giant boss above sits fully on screen for the same reason. */
+.ba-horizon { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: min(42vh, 50vw); overflow: visible; }
 .ba-fx { position: absolute; inset: 0; width: 100%; height: 100%; }
 .ba-tint { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 30, 30, .45)); opacity: 0; transition: opacity .8s; }
 .boss-arena.enraged .ba-tint { opacity: 1; animation: ba-pulse 1.1s ease-in-out infinite alternate; }
@@ -358,6 +361,11 @@
 .cm-item:disabled { opacity: .45; cursor: default; }
 .cm-item-icon { font-size: 1.15rem; }
 .cm-item.shop { margin-left: auto; font-size: 1.1rem; }
+/* the items themselves: always one row, the buttons share it (they shrink on a narrow screen instead of wrapping) */
+.cm-item-row { display: flex; align-items: center; gap: 6px; flex: 1 0 100%; min-width: 0; flex-wrap: nowrap; }
+.cm-item-row .cm-item { flex: 1 1 0; min-width: 0; justify-content: center; padding: 5px 4px; }
+.cm-item-row .helper-label { flex: none; }
+@media (max-width: 480px) { .cm-item-row { gap: 4px; } .cm-item-row .cm-item-icon { font-size: 1rem; } .cm-item-row .cm-item { font-size: .78rem; } }
 
 /* ======================= the results card ======================= */
 .res-stars { display: flex; justify-content: center; gap: 10px; margin: 6px 0 4px; }
@@ -811,10 +819,10 @@
 @media (max-width: 600px) { .music-ctl { width: 108px; } }
 .in-level .hud-row .points-today { flex: 1 1 0; min-width: 0; }
 @media (max-width: 960px) { .cm-rail .cm-dot { --dot: clamp(16px, calc((100vh - 150px) / 15 - 4px), 24px); } }
-/* boss fights have no Check or Reveal (the user, 2026-10-09): it's a race, you solve it yourself */
-.in-boss #helpers .helper-row { display: none; }
-/* the Daily Boss keeps Check and Reveal, and has no items (only Give Up) */
-.in-boss.special-boss #helpers .helper-row { display: flex; }
+/* the campaign has no Check or Reveal (the user, 2026-10-09 for bosses, 2026-10-11 for every level): you solve it
+   yourself, with the shop's items as the only help. The Daily and Unlimited Boss keep them (and have no items, only
+   Give Up). One class decides it: no-help, set by syncHelp() in campaign.js */
+.no-help #helpers .helper-row { display: none; }
 /* ...and the bar with only Give Up in it centres it (the user, 2026-10-10) */
 .cm-items.only-giveup { justify-content: center; }
 .cm-items.only-giveup .cm-item.giveup { margin-left: 0; }
@@ -867,6 +875,8 @@
 /* the beta's helpers on the map (+500 Coins, Unlock All): a small strip in the bottom-left corner */
 .cm-beta { position: fixed; left: 14px; bottom: 14px; z-index: 45; display: flex; align-items: center; gap: 6px; padding: 6px 8px 6px 12px; border-radius: 999px;
     background: var(--surface-solid, #fff); border: 2px dashed color-mix(in srgb, var(--accent, #888) 55%, transparent); box-shadow: 0 6px 18px rgba(0, 0, 0, .18); }
+.cm-beta { display: none; }
+.in-map .cm-beta { display: flex; }
 .cm-beta > b { font-size: .72rem; font-weight: 900; color: var(--accent, #c33); margin-right: 2px; }
 .cm-beta .btn { padding: 5px 12px; font-size: .8rem; }
 @media (max-width: 640px) { .cm-beta { left: 8px; bottom: 8px; } }

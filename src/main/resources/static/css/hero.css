@@ -1,0 +1,76 @@
+/* The player's hero (js/hero.js): its animated parts, the editor, the boss sheet's matchup, the map */
+.hero-art .bz-float { animation: bz-float 2.6s ease-in-out infinite alternate; }
+.hero-art .bz-eyes { transform-box: fill-box; transform-origin: center; animation: bz-blink 5.5s infinite; }
+.hero-art .bz-sway { transform-box: view-box; animation: bz-sway 2.3s ease-in-out infinite alternate; }
+.hero-art .bz-glow { animation: bz-glow 1.3s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .hero-art * { animation: none !important; } }
+
+/* ---- the editor ---- */
+.hero-maker { position: fixed; inset: 0; z-index: 800; display: grid; place-items: center; padding: 16px; background: rgba(15, 12, 30, .55);
+    backdrop-filter: blur(6px); opacity: 0; transition: opacity .25s; overflow-y: auto; }
+.hero-maker.in { opacity: 1; }
+.hm-card { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 420px); gap: 22px; width: min(780px, 100%); padding: 22px;
+    border-radius: 22px; background: var(--surface-solid, #fff); color: var(--ink, #2b2233); border: 1.5px solid var(--line, #ddd);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .35); transform: translateY(10px) scale(.98); transition: transform .3s cubic-bezier(.3, 1.4, .5, 1); }
+.hero-maker.in .hm-card { transform: none; }
+.hm-left { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hm-kicker { font: 800 .75rem var(--font-body); color: var(--muted, #777); }
+.hm-left h2 { margin: 2px 0 8px; font-family: var(--font-head); }
+.hm-preview { width: 100%; aspect-ratio: 1; border-radius: 18px; display: grid; place-items: center;
+    background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--accent, #7b8cff) 22%, transparent), transparent 70%), var(--surface-2, #f3f1f7); }
+.hm-art { width: 92%; height: 92%; }
+.hm-name { margin-top: 10px; font: 900 1.25rem var(--font-head); min-height: 1.4em; }
+.hm-right { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.hm-rows { display: flex; flex-direction: column; gap: 9px; }
+.hm-row { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 10px; }
+.hm-row > small { font: 800 .8rem var(--font-body); color: var(--muted, #777); }
+.hm-step { display: flex; align-items: center; gap: 6px; }
+.hm-val { flex: 1; text-align: center; font: 800 .95rem var(--font-body); padding: 7px 4px; border-radius: 10px; background: var(--surface-2, #f3f1f7); }
+.hm-arrow { width: 36px; height: 34px; display: grid; place-items: center; border-radius: 10px; border: 1.5px solid var(--line, #ddd);
+    background: var(--surface-solid, #fff); color: var(--ink, #2b2233); cursor: pointer; transition: transform .12s, border-color .12s; }
+.hm-arrow:hover { transform: translateY(-1px); border-color: var(--accent, #7b8cff); }
+.hm-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.hm-swatch { width: 26px; height: 26px; border-radius: 50%; border: 2.5px solid rgba(0, 0, 0, .25); cursor: pointer; transition: transform .12s; padding: 0; }
+.hm-swatch:hover { transform: scale(1.12); }
+.hm-swatch.on { border-color: var(--ink, #2b2233); box-shadow: 0 0 0 3px var(--surface-solid, #fff), 0 0 0 5px var(--ink, #2b2233); }
+.hm-input { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--line, #ddd); background: var(--surface-solid, #fff);
+    color: var(--ink, #2b2233); font: 800 1rem var(--font-body); }
+.hm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+/* the parts in two columns, each label above its arrows, so every option fits without scrolling */
+.hm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; }
+.hm-grid .hm-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.hm-grid .hm-val { font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hm-swatches { gap: 5px; }
+.hm-swatch { width: 24px; height: 24px; }
+@media (max-width: 680px) {
+    .hm-card { grid-template-columns: 1fr; gap: 14px; padding: 16px; }
+    .hm-preview { width: 180px; }
+    .hm-row { grid-template-columns: 92px minmax(0, 1fr); }
+    .hm-grid .hm-row { grid-template-columns: minmax(0, 1fr); }
+    /* phones: labels above their controls, slimmer arrows, a smaller preview, and the buttons kept in view */
+    .hm-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+    .hm-preview { width: 150px; }
+    .hm-left h2 { font-size: 1.3rem; margin-bottom: 4px; }
+    .hm-name { margin-top: 4px; font-size: 1.05rem; }
+    .hm-grid { gap: 8px 10px; }
+    .hm-arrow { width: 30px; height: 32px; }
+    .hm-step { gap: 4px; }
+    .hm-actions { position: sticky; bottom: -16px; margin: 6px -16px -16px; padding: 10px 16px 14px; background: var(--surface-solid, #fff); border-top: 1px solid var(--line, #ddd); border-radius: 0 0 22px 22px; }
+    .hm-actions { justify-content: center; }
+}
+
+/* ---- the boss sheet: your hero facing the boss ---- */
+.cm-detail-art.cm-vs { display: flex; align-items: flex-end; gap: 2px; align-self: center; flex: none; }
+.cm-vs .hero-art { width: 112px; height: 112px; transform: scaleX(-1); }
+.cm-vs .boss-art { width: 140px; height: 140px; }
+.cm-vs-col { display: flex; flex-direction: column; align-items: center; }
+.cm-vs-col small { font: 800 .72rem var(--font-body); color: var(--muted, #777); max-width: 140px; text-align: center; }
+.cm-vs-chip { align-self: center; margin: 0 2px 18px; padding: 4px 8px; border-radius: 999px; font: 900 .8rem var(--font-body);
+    color: #fff; background: var(--c, #e5484d); box-shadow: 0 3px 10px rgba(0, 0, 0, .25); }
+@media (max-width: 560px) { .cm-vs .hero-art { width: 84px; height: 84px; } .cm-vs .boss-art { width: 100px; height: 100px; } }
+
+/* ---- the map: the hero stands on its level and walks the road ---- */
+.cm-hero { pointer-events: none; }
+.cm-hero .cm-face { transition: transform .2s; }
+.cm-hero.walking .cm-bob { animation: cm-hop .32s ease-in-out infinite alternate; }
+@keyframes cm-hop { from { transform: translateY(0); } to { transform: translateY(-10px); } }

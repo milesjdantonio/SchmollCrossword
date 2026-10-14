@@ -95,6 +95,31 @@ public class LeaderboardController {
         return standings(day.toString(), id);
     }
 
+    // "Remove My Name" (the privacy review, 2026-10-11): every line this player posted, on every day, is deleted.
+    // Only the browser that posted knows its random player id, so knowing it is what proves it's you.
+    public record Forget(String player) {}
+    @PostMapping(value = "/api/leaderboard/forget", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Integer> forget(@RequestBody Forget f, HttpServletRequest request) throws IOException {
+        return Map.of("removed", forget(f == null ? null : f.player(), request.getRemoteAddr(), System.currentTimeMillis()));
+    }
+    synchronized int forget(String player, String person, long nowMillis) throws IOException {
+        if (player == null || !PLAYER.matcher(player).matches()) throw bad("bad player id");
+        if (!limiter.allow(person, nowMillis)) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "too many requests, try again later");
+        if (!Files.isDirectory(folder)) return 0;
+        int removed = 0;
+        List<Path> files;
+        try (var list = Files.list(folder)) { files = list.filter(f -> f.getFileName().toString().endsWith(".tsv")).toList(); }
+        for (Path f : files) {
+            List<String> all = Files.readAllLines(f, StandardCharsets.UTF_8);
+            List<String> keep = all.stream().filter(l -> { String[] c = l.split("\t", -1); return c.length < 2 || !c[1].equals(player); }).toList();
+            if (keep.size() == all.size()) continue;
+            removed += all.size() - keep.size();
+            Files.writeString(f, keep.isEmpty() ? "" : String.join("\n", keep) + "\n", StandardCharsets.UTF_8);
+            days.remove(f.getFileName().toString().replace(".tsv", ""));
+        }
+        return removed;
+    }
+
     // Check an entry, work out its points, and save it (separate so the tests can call it without a web request)
     synchronized Board post(Entry e, String person, LocalDate serverToday, long nowMillis) throws IOException {
         if (e == null) throw bad("missing entry");
@@ -162,7 +187,7 @@ public class LeaderboardController {
     // (the Daily Boss: every lost attempt before the win costs 40)
     static int points(String difficulty, int seconds, int checked, int revealed, int stars, int attempts) {
         int penalties = checked * 5 + revealed * 10;
-        if (difficulty.equals("boss")) return Math.max(0, 250 + 50 * stars - penalties - 40 * (attempts - 1));
+        if (difficulty.equals("boss")) return Math.max(0, 250 + 50 * stars - penalties - 50 * (attempts - 1));
         int base = switch (difficulty) { case "easy" -> 100; case "medium" -> 150; case "hard" -> 200; default -> 300; };
         int speedStart = difficulty.equals("challenge") ? 200 : 100;
         int speed = Math.max(0, speedStart - (seconds / 60) * 10);

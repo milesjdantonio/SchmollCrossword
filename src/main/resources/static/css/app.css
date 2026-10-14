@@ -353,9 +353,11 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     font-weight: 900;
     transition: transform .2s;
 }
-.wk-day[data-n="1"] i { background: color-mix(in srgb, var(--accent) 45%, transparent); border-color: var(--accent); }
-.wk-day[data-n="2"] i { background: color-mix(in srgb, var(--accent) 75%, transparent); border-color: var(--accent); }
-.wk-day[data-n="3"] i { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); }
+.wk-day[data-n="1"] i { background: color-mix(in srgb, var(--accent) 30%, transparent); border-color: var(--accent); }
+.wk-day[data-n="2"] i { background: color-mix(in srgb, var(--accent) 48%, transparent); border-color: var(--accent); }
+.wk-day[data-n="3"] i { background: color-mix(in srgb, var(--accent) 66%, transparent); border-color: var(--accent); }
+.wk-day[data-n="4"] i { background: color-mix(in srgb, var(--accent) 84%, transparent); border-color: var(--accent); }
+.wk-day[data-n="5"] i { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); }
 .wk-day.today i { box-shadow: 0 0 0 3px var(--surface-solid), 0 0 0 5px var(--accent-2); }
 .wk-day.future { opacity: .45; }
 .wk-day:hover i { transform: scale(1.12); }
@@ -424,7 +426,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .world-card[data-wid="space"] .wc-label b { font-family: Orbitron, sans-serif; font-size: .92rem; font-weight: 700; letter-spacing: .04em; }
 .world-card[data-wid="garden"] .wc-label b { font-family: Fredoka, sans-serif; font-size: 1.05rem; font-weight: 600; }
 .world-card[data-wid="arcade"] .wc-label b { font-family: "Press Start 2P", monospace; font-size: .62rem; font-weight: 400; line-height: 1.8; }
-.world-card[data-wid="snow"] .wc-label b { font-family: Sniglet, sans-serif; font-size: 1.05rem; font-weight: 800; }
+.world-card[data-wid="snow"] .wc-label b { font-family: Comfortaa, sans-serif; font-size: 1rem; font-weight: 700; }
 .world-card[data-wid="squirrel"] .wc-label b { font-family: "Patua One", serif; font-size: 1.05rem; font-weight: 400; }
 .world-card[data-wid="ocean"] .wc-label b { font-family: "Baloo 2", sans-serif; font-size: 1.1rem; font-weight: 800; }
 .world-card[data-wid="candy"] .wc-label b { font-family: "Lilita One", sans-serif; font-size: 1.1rem; font-weight: 400; }
@@ -654,6 +656,12 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 }
 .board.solved .cell.locked::before, .board.solved .cell.locked:not(.block) { content: none; box-shadow: none; background-image: none; }
 .cell.lock-in { animation: lock-in .6s cubic-bezier(.2, 1.6, .4, 1); }
+/* the one-shot square animations win over every world's looping ones (Deep Space's and Neon Arcade's pulsing selected
+   square, Coral Reef's shimmer): clicking a square to bring back a letter selects it, and its flip used to be lost */
+#board .cell.flip { animation: flip .55s ease var(--d, 0ms) backwards; }
+#board .cell.shake { animation: shake .45s; }
+#board .cell.ok { animation: ok-flash .7s; }
+#board .cell.lock-in { animation: lock-in .6s cubic-bezier(.2, 1.6, .4, 1); }
 .cell.lock-in::before { animation: lock-badge .5s cubic-bezier(.2, 1.8, .4, 1); }
 @keyframes lock-in { 30% { transform: scale(1.12); box-shadow: inset 0 0 0 6px var(--lock, var(--good)), 0 0 18px color-mix(in srgb, var(--lock, var(--good)) 55%, transparent); } }
 @keyframes lock-badge { from { transform: scale(0) rotate(-40deg); } }
@@ -1121,9 +1129,11 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .hm-month { overflow: visible; color: var(--muted); font-size: .7rem; font-weight: 800; white-space: nowrap; }
 .hm-cell { aspect-ratio: 1; }
 .hm-cell, .hm-key i { border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); animation: pop-in .4s ease backwards; animation-delay: var(--d, 0ms); }
-.hm-cell[data-n="1"], .hm-key i[data-n="1"] { background: color-mix(in srgb, var(--accent) 35%, var(--surface-2)); }
-.hm-cell[data-n="2"], .hm-key i[data-n="2"] { background: color-mix(in srgb, var(--accent) 65%, var(--surface-2)); }
-.hm-cell[data-n="3"], .hm-key i[data-n="3"] { background: var(--accent); }
+.hm-cell[data-n="1"], .hm-key i[data-n="1"] { background: color-mix(in srgb, var(--accent) 25%, var(--surface-2)); }
+.hm-cell[data-n="2"], .hm-key i[data-n="2"] { background: color-mix(in srgb, var(--accent) 45%, var(--surface-2)); }
+.hm-cell[data-n="3"], .hm-key i[data-n="3"] { background: color-mix(in srgb, var(--accent) 65%, var(--surface-2)); }
+.hm-cell[data-n="4"], .hm-key i[data-n="4"] { background: color-mix(in srgb, var(--accent) 82%, var(--surface-2)); }
+.hm-cell[data-n="5"], .hm-key i[data-n="5"] { background: var(--accent); }
 .hm-cell.today { outline: 2px solid var(--accent-2); outline-offset: 1px; }
 .hm-cell.future { opacity: .3; }
 .hm-key { display: inline-flex; align-items: center; gap: 3px; }
@@ -1323,8 +1333,9 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .difficulty button { font-weight: 700; }
 .difficulty button:hover { transform: none; background: var(--hover); }
 .difficulty button.active:hover { background: var(--accent); }
-.daily-chip { transition: transform .25s cubic-bezier(.25, .1, .25, 1), border-color .2s, background .2s, box-shadow .25s; }
-.daily-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .1); }
+.daily-chip, .boss-chip { transition: transform .25s cubic-bezier(.25, .1, .25, 1), border-color .2s, background .2s, box-shadow .25s; }
+.daily-chip:hover, .boss-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .1); }
+.daily-chip:active, .boss-chip:active { transform: scale(.99); }   /* the Boss chip moves like the others (the user) */
 .subtitle { font-weight: 600; }
 
 /* the start screen: the 15 bosses parade along the bottom, above the ticker, and drop away when you press start */
@@ -1365,3 +1376,26 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .lb-line { margin: 4px 0; font-weight: 700; }
 .lb-link { color: var(--accent); font-weight: 800; text-decoration: none; }
 @media (max-width: 370px) { .modes a { padding: 5px 5px; font-size: .74rem; } }
+
+/* Unlimited: the picker it opens on (game.js showPicker). While playing, the difficulty buttons are replaced by
+   New Puzzle, which brings the picker back, so no puzzle is ever loaded by a stray click */
+#game-view.unlimited .difficulty button[data-difficulty], #game-view.unlimited #boss-mode { display: none; }
+#game-view.picking #new-puzzle { display: none; }
+.un-picker { margin: 8px 0 0; }
+.un-title { margin: 0 0 14px; font-size: 1.15rem; }
+.un-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.un-card { display: grid; gap: 4px; justify-items: start; padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 16px;
+    background: var(--surface); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
+.un-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
+.un-card:active { transform: translateY(0) scale(.99); }
+.un-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.un-card b { font-size: 1.1rem; font-weight: 900; }
+.un-card small { color: var(--muted); font-weight: 700; }
+.un-card::before { content: ""; width: 28px; height: 6px; border-radius: 999px; background: var(--surface-2); margin-bottom: 6px; }
+.un-card.easy::before { background: var(--good); }
+.un-card.medium::before { background: #f2c230; }
+.un-card.hard::before { background: #e5484d; }
+.un-card.challenge::before { background: linear-gradient(135deg, #f6c445, #f08a24); }
+.un-card.boss::before { background: linear-gradient(135deg, #8a6bff, #c06bff); }
+.un-card.continue { grid-column: 1 / -1; border-color: var(--accent); }
+.un-card.continue::before { background: var(--accent); }

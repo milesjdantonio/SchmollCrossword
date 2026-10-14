@@ -1,0 +1,12 @@
+/* Arriving in a new world (js/travel.js): a full-screen scene, its particles, and the world's name at the end */
+.tv-stage { position: fixed; inset: 0; z-index: 205; overflow: hidden; background: #000; opacity: 0; transition: opacity .4s; pointer-events: auto; }
+.tv-stage.in { opacity: 1; }
+.tv-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.tv-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.tv-card { position: absolute; left: 50%; top: 14%; transform: translate(-50%, 14px) scale(.96); display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 14px 30px 16px; border-radius: 20px; background: rgba(20, 16, 36, .62); color: #fff; backdrop-filter: blur(6px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, .35); opacity: 0; transition: opacity .45s, transform .55s cubic-bezier(.3, 1.4, .5, 1); text-align: center; }
+.tv-card.in { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.tv-card small { font: 800 .85rem var(--font-body, system-ui); opacity: .8; }
+.tv-card b { font: 900 clamp(1.8rem, 5vw, 3.2rem) / 1.05 var(--font-head, system-ui); letter-spacing: .01em; }
+.tv-skip { position: absolute; right: 18px; bottom: 14px; margin: 0; font: 700 .8rem var(--font-body, system-ui); color: rgba(255, 255, 255, .75); text-shadow: 0 1px 4px rgba(0, 0, 0, .5); }

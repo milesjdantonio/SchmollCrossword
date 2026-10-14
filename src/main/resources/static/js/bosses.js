@@ -611,13 +611,13 @@ const Bosses = (() => {
         return arenaEl;
     }
     // Later phases go wild (chaos.js): level 1 = phase 2 ... level 4 = the Void's phase 5. 0 = calm again.
-    function chaos(world, level) {
+    function chaos(world, level, opts) {
         if (!arenaEl) return;
         arenaEl.dataset.chaos = level || "";
         let cv = arenaEl.querySelector(".ba-chaos");
         if (!level) { if (typeof Chaos !== "undefined") Chaos.stop(); if (cv) cv.remove(); return; }
         if (!cv) { cv = U.el("canvas", { class: "ba-chaos" }); arenaEl.querySelector(".ba-fx").after(cv); }
-        if (typeof Chaos !== "undefined") Chaos.start(cv, world, level);
+        if (typeof Chaos !== "undefined") Chaos.start(cv, world, level, opts);
     }
     function startParticles(kind) {
         cancelAnimationFrame(arenaRAF);
@@ -625,7 +625,7 @@ const Bosses = (() => {
         let parts = [], last = performance.now();
         const N = { rain: 140, wind: 22, sand: 120, stars: 160, dust: 60, snow: 110 }[kind] || 60;
         const loop = now => {
-            if (!arenaEl.isConnected || !document.documentElement.classList.contains("in-boss")) { arenaRAF = 0; return; }
+            if (!arenaEl.isConnected || !(document.documentElement.classList.contains("in-boss") || arenaEl.classList.contains("cr-show"))) { arenaRAF = 0; return; }   // (cr-show: behind the credits)
             arenaRAF = requestAnimationFrame(loop);
             const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));      // a frame can be stamped just before "last": never step back
             last = now;

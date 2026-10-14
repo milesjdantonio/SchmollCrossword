@@ -21,7 +21,7 @@ const SCORING = {
     revealPenaltyPerSquare: 10,   // per square filled in by Reveal
     bossBase: 250,                // the Daily Boss: beating it
     bossPerStar: 50,              // ...and each star (1 to 3)
-    bossPerLostTry: 40            // ...minus this for every attempt lost before the win
+    bossPerLostTry: 50            // ...minus this for every attempt lost before the win
 };
 
 // Points for one solved daily puzzle (never below 0)

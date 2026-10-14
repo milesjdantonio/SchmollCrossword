@@ -14,7 +14,6 @@
 const HowTo = (() => {
     const W = 640, H = 360;
     const STOP = Symbol("stop");
-    const test = { speed: 1, info: null };          // for automated tests: play faster, and see where the player is
     // a demo switched off part way leaves its helpers' promises rejected with STOP: that's expected, not an error
     addEventListener("unhandledrejection", e => { if (e.reason === STOP) e.preventDefault(); });
 
@@ -1075,7 +1074,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "The Boss on Daily", len: 9700, text: "Today's boss and the fifth daily. A win scores 250 plus 50 a star, minus Check and Reveal. Your right words stay locked in for your next attempt. Every earlier attempt takes 40 off, and your best of the day is kept.",
+            title: "The Boss on Daily", len: 9700, text: "Today's boss and the fifth daily. A win scores 250 plus 50 a star, minus Check and Reveal. Your right words stay locked in for your next attempt. Every earlier attempt takes 50 off, and your best of the day is kept.",
             async demo(s) {
                 const sc = scene();
                 const a1 = s.add("ht-attempt lost", { x: 30, y: 22, w: 180 });
@@ -1099,10 +1098,10 @@ const HowTo = (() => {
                 await s.wait(1500);
                 s.sub("A win scores 250 plus 50 a star");
                 const score = s.add("ht-score small", { x: 222, y: 112, w: 196 });
-                const rows = [["Win", "250"], ["★★", "+100"], ["Attempt 2", "−40"], ["Total", "310"]].map(([a, v], i) => { const r = s.add("ht-srow" + (i === 3 ? " total" : ""), {}, score); r.append(U.el("span", { text: a }), U.el("b", { text: v })); r.style.opacity = "0"; return r; });
+                const rows = [["Win", "250"], ["★★", "+100"], ["Attempt 2", "−50"], ["Total", "300"]].map(([a, v], i) => { const r = s.add("ht-srow" + (i === 3 ? " total" : ""), {}, score); r.append(U.el("span", { text: a }), U.el("b", { text: v })); r.style.opacity = "0"; return r; });
                 for (const r of rows.slice(0, 2)) { r.style.opacity = ""; s.pop(r); await s.wait(350); }
                 await s.wait(500);
-                s.sub("Every earlier attempt takes 40 off");
+                s.sub("Every earlier attempt takes 50 off");
                 rows[2].style.opacity = ""; s.pop(rows[2], "ht-flash");
                 await s.wait(800);
                 rows[3].style.opacity = ""; s.pop(rows[3]);
@@ -1114,7 +1113,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "The Boss on Unlimited", len: 8300, text: "A random boss. Rematch keeps the same boss, its puzzle and your right words, and every earlier attempt takes 5 coins off a win. New Boss picks another one and counts as an Unlimited puzzle.",
+            title: "The Boss on Unlimited", len: 8300, text: "A random boss. Rematch keeps the same boss, its puzzle and your right words, and every earlier attempt takes 50 coins off a win. New Boss picks another one and counts as an Unlimited puzzle.",
             async demo(s) {
                 const sc = scene();
                 const card = s.add("ht-losecard", { x: 190, y: 26, w: 260 });
@@ -1132,9 +1131,9 @@ const HowTo = (() => {
                 card.querySelector("b").textContent = "You Won";
                 art.classList.add("ko");
                 await s.wait(400);
-                const coins = s.add("ht-tag good", { x: 236, y: 252, text: "🪙 20 Coins · 5 Fewer for Attempt 2" });
+                const coins = s.add("ht-tag good", { x: 236, y: 252, text: "🪙 50 Coins · 50 Fewer for Attempt 2" });
                 s.pop(coins);
-                s.sub("Each earlier attempt takes 5 coins off a win");
+                s.sub("Each earlier attempt takes 50 coins off a win");
                 await s.wait(2100);
                 coins.remove();
                 card.querySelector("b").textContent = `${sc.boss.name} Wins`;
@@ -1184,7 +1183,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Items", len: 13300, text: "In the campaign, shop items help out: Letter Reveal, Word Reveal, Clear Wrong, Lock Right and Time Stop, which freezes the boss in a fight. Campaign bosses have no Check or Reveal.",
+            title: "Items", len: 13300, text: "In the campaign, shop items help out: Letter Reveal, Word Reveal, Clear Wrong, Lock Right and Time Stop, which freezes the boss in a fight. The campaign has no Check or Reveal.",
             async demo(s) {
                 const sc = scene();
                 const b = s.board({ x: 40, y: 14, cell: 40 });
@@ -1228,7 +1227,7 @@ const HowTo = (() => {
                 s.pop(clock);
                 s.cursor.hide();
                 await s.wait(1500);
-                s.sub("Campaign bosses have no Check or Reveal");
+                s.sub("The campaign has no Check or Reveal");
                 await s.wait(1900);
             }
         }
@@ -1335,8 +1334,7 @@ const HowTo = (() => {
             const dt = Math.min(50, t - (last || t));
             last = t;
             if (run && !paused) {
-                run.step(dt * test.speed);
-                test.info = { tab, idx, t: run.t, done: !!run.done, count: chapters.length };
+                run.step(dt);
                 const k = run.done ? 1 : Math.min(0.97, run.t / run.len);
                 const seg = segs.children[idx], bar = list.children[idx] && list.children[idx].querySelector(".ht-chbar");
                 if (seg) seg.firstChild.style.width = (k * 100).toFixed(1) + "%";
@@ -1370,5 +1368,5 @@ const HowTo = (() => {
     }
 
     document.getElementById("howto-btn").addEventListener("click", e => { e.currentTarget.blur(); open(U.view() === "level" && typeof Campaign !== "undefined" && Campaign.playing && Campaign.playing.level === 5 ? "boss" : "normal"); });
-    return { open, chapters: { normal: NORMAL, boss: BOSS }, test };
+    return { open, chapters: { normal: NORMAL, boss: BOSS } };
 })();

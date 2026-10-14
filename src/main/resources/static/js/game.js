@@ -28,6 +28,7 @@ const Game = (() => {
         surrendered: false,  // "Reveal puzzle" was used: 0 points
         wrong: [], revealed: [],
         squaresChecked: 0, squaresRevealed: 0, checks: 0,
+        typos: 0, itemsUsed: 0,  // wrong letters typed, shop items used (campaign stars)
         celebrating: false,  // the win cinematic is playing
         result: null         // what the result banner says once the puzzle is finished
     };
@@ -70,12 +71,15 @@ const Game = (() => {
     }
     // Saved at most every 400 ms: render() asks after every keystroke, and each save re-writes every saved puzzle.
     // A pending save is written at once when the page is hidden or closed, and before another puzzle takes over.
-    let saveTimer = 0;
+    let saveTimer = 0, savingOff = false;
+    // Settings > Reset: nothing is saved again before the page reloads (the reload's own save used to put the
+    // puzzle you were playing straight back)
+    function stopSaving() { savingOff = true; clearTimeout(saveTimer); saveTimer = 0; }
     function saveProgress() { if (!saveTimer) saveTimer = setTimeout(flushProgress, 400); }
     function flushProgress() {
         clearTimeout(saveTimer);
         saveTimer = 0;
-        if (!game.puzzle) return;
+        if (!game.puzzle || savingOff) return;
         const all = loadProgress();
         all[slotOf(game.puzzle)] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
         try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(all)); } catch (err) { /* storage blocked or full */ }
@@ -106,7 +110,7 @@ const Game = (() => {
         return JSON.parse(JSON.stringify({
             seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked,
             seconds: game.seconds, solved: game.solved, surrendered: game.surrendered, checks: game.checks,
-            squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed,
+            squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed, typos: game.typos, itemsUsed: game.itemsUsed,
             row: game.row, col: game.col, direction: game.direction, result: game.result
         }));
     }
@@ -115,7 +119,7 @@ const Game = (() => {
             letters: saved.letters, wrong: saved.wrong, revealed: saved.revealed, seconds: saved.seconds,
             locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
-            squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0,
+            squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0, typos: saved.typos || 0, itemsUsed: saved.itemsUsed || 0,
             row: saved.row, col: saved.col, direction: saved.direction, celebrating: false
         });
         // games saved before the redesign kept the banner text instead of a result
@@ -157,7 +161,34 @@ const Game = (() => {
         }
     }
 
+    // Unlimited opens on a picker, not a puzzle (the user, 2026-10-11: "have the player select what they want to do",
+    // so no Claude call happens by accident): a new Unlimited puzzle only starts when the player picks one, and an
+    // unfinished one can be picked up again for free.
+    const pickerEl = $("#un-picker");
+    function hidePicker() { pickerEl.hidden = true; gameViewEl.classList.remove("picking"); }
+    function unlimitedUnfinished() {
+        if (!lastPuzzle.unlimited) return false;
+        const st = game.puzzle && slotOf(game.puzzle) === "unlimited" ? game : savedGames.unlimited;
+        return !st || !st.solved;
+    }
+    function showPicker() {
+        loadCounter++;                                         // a load still on its way won't open over the picker
+        statusEl.hidden = true;
+        puzzleEl.hidden = true;
+        gameViewEl.classList.add("picking");
+        pickerEl.innerHTML = "";
+        const grid = U.el("div", { class: "un-cards" });
+        const card = (cls, title, sub, onclick) => grid.appendChild(U.el("button", { type: "button", class: "un-card " + cls, onclick: e => { e.currentTarget.blur(); Sound.play("select"); onclick(); } },
+            U.el("b", { text: title }), sub ? U.el("small", { text: sub }) : null));
+        if (unlimitedUnfinished()) card("continue", "Continue", cap(lastPuzzle.unlimited.difficulty), () => { hidePicker(); difficultyFor.unlimited = lastPuzzle.unlimited.difficulty; showPuzzleFor("unlimited"); });
+        for (const d of ["easy", "medium", "hard", "challenge"]) card(d, cap(d), d === "challenge" ? "6×6 to 9×9" : "5×5", () => { hidePicker(); difficultyFor.unlimited = d; loadPuzzle("unlimited", d); });
+        card("boss", "Boss", "A Random Boss", () => { hidePicker(); Campaign.playSpecial("unlimited"); });
+        pickerEl.append(U.el("h2", { class: "un-title", text: "Pick a Puzzle" }), grid);
+        pickerEl.hidden = false;
+    }
+
     async function loadPuzzle(mode, difficulty) {
+        hidePicker();
         const myLoad = ++loadCounter;
         statusEl.innerHTML = "";
         statusEl.append(U.el("span", { class: "spinner", "aria-hidden": "true" }),
@@ -204,7 +235,7 @@ const Game = (() => {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
                 letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
-                squaresChecked: 0, squaresRevealed: 0, checks: 0, celebrating: false, result: null
+                squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null
             });
         }
         drawTimer();
@@ -659,7 +690,7 @@ const Game = (() => {
             if (next === "boss") actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Fight Today's Boss", onclick: () => { closeResults(); Campaign.playSpecial("daily"); } }));
             else actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: `Play ${cap(next)}`, onclick: () => { closeResults(); switchDifficulty("daily", next); } }));
         } else if (p.mode === "unlimited") {
-            actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New Puzzle", onclick: () => { closeResults(); loadPuzzle("unlimited", difficultyFor.unlimited); } }));
+            actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New Puzzle", onclick: () => { closeResults(); showPicker(); } }));
         }
         if (!info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
         // after a boss fight there's no going back to the board (the user, 2026-10-09): the buttons above move you on
@@ -850,6 +881,7 @@ const Game = (() => {
         const row = game.row, col = game.col, cell = game.cells[row][col];
         const wasFull = isFull(currentEntry());           // correcting a finished word: move one square at a time
         if (!isLocked(row, col)) {                       // locked squares (revealed, or checked right): the cursor just moves on
+            if (letter !== game.puzzle.solution[row][col] && game.letters[row][col] !== letter) game.typos = (game.typos || 0) + 1;
             game.letters[row][col] = letter;
             game.wrong[row][col] = false;
             U.restart(cell, "typed");
@@ -1036,7 +1068,7 @@ const Game = (() => {
     for (const button of document.querySelectorAll(".difficulty button[data-difficulty]")) {
         button.addEventListener("click", () => { button.blur(); Sound.play("select"); switchDifficulty(U.view(), button.dataset.difficulty); });
     }
-    $("#new-puzzle").addEventListener("click", e => { e.currentTarget.blur(); loadPuzzle("unlimited", difficultyFor.unlimited); });
+    $("#new-puzzle").addEventListener("click", e => { e.currentTarget.blur(); Sound.play("select"); showPicker(); });   // back to the picker, not straight into a paid puzzle
     // Daily Boss / Unlimited Boss: a boss race against today's boss, or a random one (campaign.js)
     $("#boss-mode").addEventListener("click", e => { e.currentTarget.blur(); Sound.play("select"); Campaign.playSpecial(U.view() === "unlimited" ? "unlimited" : "daily"); });
 
@@ -1056,7 +1088,9 @@ const Game = (() => {
         if (view === "unlimited") drawUnlimitedLeft();
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
         drawDifficultyMarks();
-        showPuzzleFor(view);
+        gameViewEl.classList.toggle("unlimited", view === "unlimited");
+        if (view === "unlimited") showPicker();
+        else { hidePicker(); showPuzzleFor(view); }
     }
     function showPuzzleFor(view) {
         const slot = slotFor(view, difficultyFor[view]);
@@ -1068,6 +1102,7 @@ const Game = (() => {
             statusEl.hidden = true;
             puzzleEl.hidden = false;
             playTitleCard();
+            Bus.emit("resume", { puzzle: game.puzzle });      // the same puzzle again: a boss fight puts its panel, arena and music back
             return;
         }
         if (lastPuzzle[slot]) {
@@ -1274,7 +1309,7 @@ const Game = (() => {
     document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flushProgress(); });
 
     return {
-        restartSlot, forgetSlot, endLoss, checkWin: checkForWin, markBossChanges, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
+        restartSlot, forgetSlot, endLoss, stopSaving, checkWin: checkForWin, markBossChanges, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
         openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),

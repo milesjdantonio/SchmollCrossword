@@ -3,6 +3,8 @@
 // lightning in Rainy City... Each world has its own set pieces, drawn on a canvas in the boss arena (behind the
 // board), and every phase after that is wilder: more of them, bigger, faster.
 //   Chaos.start(canvas, world, level)   level 1 = phase 2, 2 = phase 3, ... 4 = the Void's phase 5
+//   Chaos.start(canvas, world, level, { showcase: true })   the credits: every set piece goes off in the first few
+//                                       seconds (staggered), so each boss shows all of its effects
 //   Chaos.stop()
 const Chaos = (() => {
     const TAU = Math.PI * 2;
@@ -407,12 +409,14 @@ const Chaos = (() => {
     }
     function wave() {
         const dir = Math.random() < 0.5 ? 1 : -1, hgt = H * rand(0.25, 0.4) * (1 + level * 0.1);
-        return { x: dir > 0 ? -W * 0.6 : W * 1.6, t: 0, life: 5,
-            step(dt) { this.x += dir * W * 0.45 * dt; if (this.t > 1 && (this.x < -W || this.x > W * 2)) this.dead = true; },
+        // (the back of the wave is always behind it, whichever way it rolls: it used to start on the left either way,
+        // so a wave rolling right-to-left folded over itself)
+        return { x: dir > 0 ? -W * 0.6 : W * 1.6, t: 0, life: 7,
+            step(dt) { this.x += dir * W * 0.45 * dt; if (dir > 0 ? this.x - W * 0.6 > W : this.x + W * 0.6 < 0) this.dead = true; },   // gone once its back has left the screen
             draw() { const c = this.x;
                 const g = ctx.createLinearGradient(0, H - hgt, 0, H); g.addColorStop(0, "rgba(120,220,255,.85)"); g.addColorStop(1, "rgba(20,90,170,.85)");
-                ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(c - W * 0.6, H);
-                ctx.bezierCurveTo(c - W * 0.3, H - hgt * 0.2, c - 60 * dir, H - hgt * 1.1, c + 80 * dir, H - hgt * 0.8);
+                ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(c - W * 0.6 * dir, H);
+                ctx.bezierCurveTo(c - W * 0.3 * dir, H - hgt * 0.2, c - 60 * dir, H - hgt * 1.1, c + 80 * dir, H - hgt * 0.8);
                 ctx.quadraticCurveTo(c + 20 * dir, H - hgt * 0.65, c + 60 * dir, H - hgt * 0.5);
                 ctx.bezierCurveTo(c + 200 * dir, H - hgt * 0.2, c + W * 0.3 * dir, H, c + W * 0.6 * dir, H); ctx.fill();
                 for (let i = 0; i < 8; i++) circle(c + 60 * dir + Math.sin(this.t * 6 + i) * 30, H - hgt * 0.85 - i * 4, 6 - i * 0.5, "rgba(255,255,255,.8)"); } };
@@ -552,7 +556,8 @@ const Chaos = (() => {
 
     const dpr = () => Math.min(2, devicePixelRatio || 1);
     function frame(now) {
-        if (!cv || !cv.isConnected || !document.documentElement.classList.contains("in-boss")) { stop(); return; }
+        // (a boss fight, or a boss arena shown behind the credits: credits.js)
+        if (!cv || !cv.isConnected || !(document.documentElement.classList.contains("in-boss") || cv.closest(".boss-arena.cr-show"))) { stop(); return; }
         raf = requestAnimationFrame(frame);
         const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));      // a frame can be stamped just before "last": never step back
         last = now;
@@ -574,11 +579,13 @@ const Chaos = (() => {
         for (const a of actors) { ctx.save(); try { a.draw(); } catch (err) { a.dead = true; } ctx.restore(); }
         if (flash > 0.01) { ctx.setTransform(d, 0, 0, d, 0, 0); ctx.globalAlpha = flash; ctx.fillStyle = flashColor; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1; flash *= 0.86; }
     }
-    function start(canvas, w, lvl) {
+    function start(canvas, w, lvl, { showcase = false } = {}) {
         stop();
         if (!canvas || U.motion() === "still" || !WORLDS[w]) return;
         cv = canvas; ctx = cv.getContext("2d"); world = w; level = Math.max(1, lvl);
-        clocks = WORLDS[w].map(([fn, every]) => ({ fn, every, acc: every * Math.random() }));
+        const rate = 0.7 + 0.45 * level;
+        // showcase: set piece i first goes off at about 0.3 + 0.7i seconds (then on its own clock as usual)
+        clocks = WORLDS[w].map(([fn, every], i) => ({ fn, every, acc: showcase ? Math.max(0, every - (0.3 + i * 0.7) * rate) : every * Math.random() }));
         actors = []; flash = 0; shake = 0;
         last = performance.now();
         raf = requestAnimationFrame(frame);

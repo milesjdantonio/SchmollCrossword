@@ -98,7 +98,16 @@ const U = (() => {
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     // Remove and re-add a class so its CSS animation plays again
+    // Play a one-shot CSS animation again. The classes it adds stay on the element afterwards, so the ones started
+    // before on the same element are taken off first: a square that was once "scorched" kept that class, and its
+    // stronger rule silently replaced every later flip or shake on it (the user: "sometimes the animations for
+    // clicking things goes away")
     function restart(node, cls) {
+        if (!node) return;
+        const shots = node._shots || (node._shots = new Set());
+        for (const c of shots) if (c !== cls) node.classList.remove(c);
+        shots.clear();
+        shots.add(cls);
         node.classList.remove(cls);
         void node.offsetWidth;
         node.classList.add(cls);

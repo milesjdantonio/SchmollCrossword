@@ -31,6 +31,21 @@ class LeaderboardControllerTest {
     }
 
     @Test
+    void aPlayerCanRemoveTheirName() throws Exception {
+        LeaderboardController lb = new LeaderboardController(folder);
+        lb.post(entry(A, "Miles", "D", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
+        lb.post(entry(A, "Miles", "D", "hard", 90, 0, 0, null), "1.1.1.1", DAY, 1);
+        lb.post(entry(B, "Ann", "B", "easy", 90, 0, 0, null), "2.2.2.2", DAY, 2);
+        assertEquals(2, lb.forget(A, "1.1.1.1", 3));
+        var board = lb.standings("2026-10-09", A);
+        assertEquals(1, board.players());
+        assertEquals("Ann B.", board.top().get(0).name());
+        assertEquals(null, board.you());
+        assertEquals(0, lb.forget(A, "1.1.1.1", 4));                      // nothing left to remove
+        assertThrows(ResponseStatusException.class, () -> lb.forget("short", "1.1.1.1", 5));
+    }
+
+    @Test
     void namesAreOnlyLetters() {
         assertEquals("Miles", LeaderboardController.cleanFirst("miles"));
         assertEquals("O'neil", LeaderboardController.cleanFirst(" o'neil "));
@@ -62,7 +77,7 @@ class LeaderboardControllerTest {
         assertEquals(300 + 180, LeaderboardController.points("challenge", 120, 0, 0, 0));
         assertEquals(250 + 150, LeaderboardController.points("boss", 999, 0, 0, 3));
         assertEquals(0, LeaderboardController.points("easy", 5000, 100, 100, 0));
-        assertEquals(250 + 150 - 80, LeaderboardController.points("boss", 999, 0, 0, 3, 3));      // two lost attempts first
+        assertEquals(250 + 150 - 100, LeaderboardController.points("boss", 999, 0, 0, 3, 3));      // two lost attempts first
     }
 
     @Test
@@ -99,15 +114,15 @@ class LeaderboardControllerTest {
     @Test
     void theDailyBossKeepsYourBestAttempt() throws Exception {
         LeaderboardController lb = new LeaderboardController(folder);
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 2, 2), "1.1.1.1", DAY, 0);    // 350 - 40 = 310
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 3), "1.1.1.1", DAY, 1);    // 300 - 80 = 220: lower, ignored
-        assertEquals(310, lb.standings("2026-10-09", A).you().points());
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 3, 3), "1.1.1.1", DAY, 2);    // 400 - 80 = 320: better
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 2), "1.1.1.1", DAY, 0);    // 300 - 50 = 250
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 3), "1.1.1.1", DAY, 1);    // 300 - 100 = 200: lower, ignored
+        assertEquals(250, lb.standings("2026-10-09", A).you().points());
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 3, 3), "1.1.1.1", DAY, 2);    // 400 - 100 = 300: better
         LeaderboardController.Board b = lb.standings("2026-10-09", A);
-        assertEquals(320, b.you().points());
+        assertEquals(300, b.you().points());
         assertEquals(List.of("boss"), b.you().dailies());
         lb.post(entry(A, "Miles", "D", "easy", 50, 0, 0, null), "1.1.1.1", DAY, 3);                                             // + 200
-        assertEquals(520, lb.standings("2026-10-09", A).you().points());
+        assertEquals(500, lb.standings("2026-10-09", A).you().points());
     }
 
     @Test

@@ -1,5 +1,5 @@
 // Schmoll Crossword: the screens around the game (redesign).
-//   Home: today's three dailies, Unlimited, the streak (with fire) and this week, the worlds
+//   Home: today's five dailies, Unlimited, the streak (with fire) and this week, the worlds
 //   Stats: tiles that count up, a calendar heatmap, best/average times, achievements, history
 //   Settings: the world picker (live previews), mode, sound, effects, timer, intro, difficulty
 //   The top bar (How to Play, world and sound buttons, each next to Settings), screen switching (#daily, #stats...),
@@ -19,7 +19,7 @@ const App = (() => {
         if (switching || id === Settings.get("design")) return;
         switching = true;
         const w = Worlds.byId[id];
-        Sound.play("whoosh");
+        Sound.play("worldSwap");
         await FX.transition(w.transition, () => {
             Settings.set("design", id);
             refreshWorldUI();
@@ -111,11 +111,13 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     // Home
     // ---------------------------------------------------------------------------------------------
+    let homeDay = "";                  // the day Home was last drawn for
     function greeting() {
         const h = new Date().getHours();
         return h < 5 ? "Up Late?" : h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : h < 22 ? "Good Evening" : "Night Owl Mode";
     }
     function drawHome() {
+        homeDay = dayKey(new Date());
         $("#greeting").textContent = greeting();
         $("#today-date").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
         const all = Game.scores(), today = dayKey(new Date());
@@ -138,14 +140,14 @@ const App = (() => {
         const holder = $("#home-streak");
         holder.innerHTML = "";
         holder.appendChild(Game.streakBadge(streaks));
-        // this week, Monday to Sunday
+        // this week, Sunday to Saturday (the user's choice, like the heatmap on Stats)
         const week = $("#home-week");
         week.innerHTML = "";
-        const now = new Date(), monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+        const now = new Date(), sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
         for (let i = 0; i < 7; i++) {
-            const d = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i), key = dayKey(d);
+            const d = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + i), key = dayKey(d);
             const n = ["easy", "medium", "hard", "challenge", "boss"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
-            week.appendChild(U.el("div", { class: "wk-day" + (key === today ? " today" : "") + (d > now ? " future" : ""), "data-n": Math.min(3, n), title: d.toDateString() + (n ? ` · ${n} solved` : "") },
+            week.appendChild(U.el("div", { class: "wk-day" + (key === today ? " today" : "") + (d > now ? " future" : ""), "data-n": Math.min(5, n), title: d.toDateString() + (n ? ` · ${n} solved` : "") },
                 U.el("span", { text: d.toLocaleDateString(undefined, { weekday: "narrow" }) }),
                 U.el("i", { text: n ? "✓" : "" })));
         }
@@ -160,7 +162,11 @@ const App = (() => {
         const total = Math.max(0, Math.floor((midnight - now) / 1000));
         const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
         $("#countdown").innerHTML = `New Puzzles in <b>${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s</b>`;
-        if (total === 0) drawHome();
+        // the greeting follows the clock without a reload (Good Morning turns into Good Afternoon at noon), and a new
+        // day redraws everything (checked by date: a tab in the background can miss the exact second of midnight)
+        const g = $("#greeting"), hello = greeting();
+        if (g.textContent !== hello) g.textContent = hello;
+        if (homeDay !== dayKey(now)) drawHome();
     }
     setInterval(drawCountdown, 1000);
     // the heatmap shows as many weeks as fit, so redraw it when the window changes size
@@ -236,17 +242,17 @@ const App = (() => {
             col.appendChild(U.el("span", { class: "hm-month", text: label ? first.toLocaleDateString(undefined, { month: "short" }) : "" }));
             lastMonth = first.getMonth();
             for (let d = 0; d < 7; d++) {
-                const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d), key = dayKey(day), n = Math.min(3, per[key] || 0);
+                const day = new Date(start.getFullYear(), start.getMonth(), start.getDate() + w * 7 + d), key = dayKey(day), n = Math.min(5, per[key] || 0);
                 col.appendChild(U.el("i", { class: "hm-cell" + (day > now ? " future" : "") + (key === dayKey(now) ? " today" : ""), "data-n": n, style: { "--d": (w * 7 + d) * 6 + "ms" }, title: `${day.toDateString()}: ${n} solved` }));
             }
             el.appendChild(col);
         }
     }
-    // best and average times by difficulty, as bars
+    // best and average times by difficulty, as bars (the Daily Boss's wins too: saved as difficulty "boss")
     function drawTimes(all, solved) {
         const el = $("#times-chart");
         el.innerHTML = "";
-        const rows = ["easy", "medium", "hard", "challenge"].map(d => {
+        const rows = ["easy", "medium", "hard", "challenge", "boss"].map(d => {
             const t = solved.filter(k => all[k].difficulty === d && typeof all[k].seconds === "number").map(k => all[k].seconds);
             return { d, n: t.length, best: t.length ? Math.min(...t) : 0, avg: t.length ? t.reduce((a, b) => a + b, 0) / t.length : 0 };
         });
@@ -294,11 +300,37 @@ const App = (() => {
         else location.hash = "#daily";
     });
     $("#replay-intro").addEventListener("click", () => intro(true));
-    $("#reset-data").addEventListener("click", async () => {
-        if (!(await U.ask({ title: "Erase All Data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Erase", no: "Cancel" }))) return;
-        try { for (const k of Object.keys(localStorage)) if (k.startsWith("schmoll.")) localStorage.removeItem(k); } catch (err) { /* nothing saved */ }
+    // Reset: everything, or just the leaderboard or the campaign (the user, 2026-10-13)
+    function eraseAndReload(remove) {
+        Game.stopSaving();
+        try { remove(); } catch (err) { /* nothing saved */ }
         location.hash = "";
         location.reload();
+    }
+    $("#reset-data").addEventListener("click", async () => {
+        if (!(await U.ask({ title: "Erase All Data?", text: "Your saved progress, daily scores, streaks, achievements and settings. This can't be undone.", yes: "Erase", no: "Cancel" }))) return;
+        eraseAndReload(() => { for (const k of Object.keys(localStorage)) if (k.startsWith("schmoll.")) localStorage.removeItem(k); });
+    });
+    $("#reset-campaign").addEventListener("click", async () => {
+        if (!(await U.ask({ title: "Erase Campaign Data?", text: "Your levels, stars, coins, items, abilities, hero and story. Daily scores, streaks and achievements stay. This can't be undone.", yes: "Erase", no: "Cancel" }))) return;
+        eraseAndReload(() => {
+            // today's Boss attempts are kept, so erasing can't hand out fresh attempts
+            const old = U.store.get("campaign", {});
+            if (old.specials) U.store.set("campaign", { specials: old.specials }); else U.store.remove("campaign");
+            U.store.remove("companions");
+            const progress = U.store.get("progress", {});
+            for (const slot of Object.keys(progress)) if (slot.startsWith("campaign-") || slot.startsWith("special-")) delete progress[slot];
+            U.store.set("progress", progress);
+        });
+    });
+    $("#reset-leaderboard").addEventListener("click", async () => {
+        if (!(await U.ask({ title: "Erase Leaderboard Data?", text: "Your name and every score you've posted come off the World Leaderboard, on every day. Your own scores and stats stay on this device.", yes: "Erase", no: "Cancel" }))) return;
+        try {
+            await Leaderboard.eraseAll();
+            FX.toast({ icon: "✓", kicker: "LEADERBOARD", title: "Leaderboard Data Erased", ms: 2600 });
+        } catch (err) {
+            FX.toast({ icon: "⚠️", kicker: "LEADERBOARD", title: "Not Erased", text: err.message, ms: 3200 });
+        }
     });
 
     // ---------------------------------------------------------------------------------------------
@@ -445,7 +477,7 @@ const App = (() => {
     const LOGO = [];
     [..."SCHMOLL"].forEach((ch, i) => LOGO.push({ ch, r: 0, c: i }));
     [..."ROSSWORD"].forEach((ch, i) => LOGO.push({ ch, r: i + 1, c: 1 }));      // CROSSWORD goes down from SCHMOLL's C
-    const TICKER = ["Three New Puzzles Every Day", "15 Worlds to Explore", "15 Bosses to Race", "A Brand New Puzzle Every Time", "Streaks, Stats and Achievements", "Free. No Ads."];
+    const TICKER = ["Five New Puzzles Every Day", "15 Worlds to Explore", "15 Bosses to Race", "A Brand New Puzzle Every Time", "Streaks, Stats and Achievements", "Free. No Ads."];
 
     // floating tiles for the start screen: far ones small and blurry, near ones big and sharp
     function floatingTiles(n) {
@@ -487,7 +519,6 @@ const App = (() => {
             <div class="intro-press">
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <button type="button" class="intro-start">PRESS START</button>
-                <small>Click Anywhere to Start. Sound On.</small>
             </div>
             <div class="intro-bosses" aria-hidden="true">${typeof Bosses !== "undefined" ? Bosses.list.map((w, i) => `<span class="ib" style="--i:${i}">${Bosses.svg(w)}</span>`).join("") : ""}</div>
             <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;

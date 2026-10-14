@@ -81,8 +81,9 @@ const Campaign = (() => {
         switch (lesson && lesson.star) {
             case "brisk": return [`Finish Under ${U.fmtTime(t(0.75))}`, g => g.seconds <= t(0.75)];
             case "fast": return [`Finish Under ${U.fmtTime(t(0.6))} (Speed)`, g => g.seconds <= t(0.6)];
-            case "nocheck": return ["No Check", g => !g.checks];
-            case "clean": return ["A Clean Solve: No Check at All", g => !g.checks && !g.squaresChecked];
+            // the campaign has no Check or Reveal (the user's rule), so these count wrong letters typed instead
+            case "nocheck": return ["4 Wrong Letters or Fewer", g => (g.typos || 0) <= 4];
+            case "clean": return ["A Clean Solve: 1 Wrong Letter at Most", g => (g.typos || 0) <= 1];
             default: return [`Finish Under ${U.fmtTime(p)}`, g => g.seconds <= p];
         }
     }
@@ -196,7 +197,7 @@ const Campaign = (() => {
     // The map: one tall SVG, a band per world from the top down, the path winding through all 75 levels
     // ---------------------------------------------------------------------------------------------
     const mapEl = $("#cm-map");
-    let svg = null, dyn = null;
+    let svg = null, dyn = null, heroLayer = null;
     const LT = [[290, 260], [700, 420], [320, 590], [690, 745], [500, 905]];      // the 5 levels inside a world's band
     function nodePos(si, li) {
         const r = U.rng(si * 31 + li * 7 + 5);
@@ -295,6 +296,7 @@ const Campaign = (() => {
         // second on the map page); now only these few things are repainted
         const top = U.svg("svg", { class: "cm-svg cm-svg-dyn", viewBox: `0 0 ${W} ${total}`, role: "group", "aria-label": "Levels" });
         dyn = U.svg("g", { class: "cm-dyn" }, top);
+        heroLayer = U.svg("g", { class: "cm-hero-layer" }, top);
         mapEl.innerHTML = "";
         mapEl.append(svg, top);
     }
@@ -326,14 +328,99 @@ const Campaign = (() => {
                 out += `<g class="cm-node ${state}${boss ? " boss" : ""}${sel}" data-si="${si}" data-level="${l}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})" tabindex="0" role="button" aria-label="${U.esc(Worlds.byId[s.world].name)}, ${boss ? "boss battle" : "level " + l}, ${state === "locked" ? "locked" : rec ? rec.stars + " stars" : "ready"}">${inner}</g>`;
             }
         });
-        // the player's marker, on the next level to play
-        const [px, py] = nodePos(f.si, f.level - 1);
-        out += `<g class="cm-player" transform="translate(${px.toFixed(1)} ${(py - (f.level === 5 ? 66 : 42)).toFixed(1)})"><g class="cm-bob"><path d="M0 0c-12-16-22-26-22-38a22 22 0 0 1 44 0c0 12-10 22-22 38z" fill="#fff" stroke="${INK}" stroke-width="3.5"/><circle cy="-38" r="11" fill="${biome(map[f.si].world).node}" stroke="${INK}" stroke-width="2.5"/></g></g>`;
         dyn.innerHTML = out;
+        drawHero();
         dyn.querySelectorAll(".cm-node").forEach(n => {
             n.addEventListener("click", () => pickLevel(+n.dataset.si, +n.dataset.level, true));
             n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickLevel(+n.dataset.si, +n.dataset.level, true); } });
         });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Your hero (hero.js; the user, 2026-10-11): made the first time the campaign opens, changed with the Hero button,
+    // standing on the map on the level it's at and walking the road to the next one. data.hero is its look,
+    // data.heroAt the level it stands on ({ si, level }), data.arrived the furthest world it has arrived in (each new
+    // world plays its arrival scene once, see travel.js)
+    // ---------------------------------------------------------------------------------------------
+    const heroLook = () => Hero.fix(data.hero);
+    let heroWalking = false, heroFace = 1, heroArt = "", heroArtFor = "";
+    const heroLift = level => (level === 5 ? 66 : 42);          // how far above a node's middle the hero's feet are
+    function heroSpot() {
+        const at = data.heroAt, f = frontier();
+        if (at && map && map[at.si] && at.level >= 1 && at.level <= 5 && unlocked(at.si, at.level)) return at;
+        return { si: f.si, level: f.level };
+    }
+    function heroMarkup(x, y) {
+        const key = JSON.stringify(heroLook());
+        if (key !== heroArtFor) { heroArtFor = key; heroArt = Hero.inner(heroLook(), { still: true }); }
+        return `<g class="cm-hero${heroWalking ? " walking" : ""}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g class="cm-bob"><g class="cm-face" transform="scale(${heroFace} 1)"><g transform="translate(-50 -90) scale(.42)">${heroArt}</g></g></g></g>`;
+    }
+    function drawHero() {
+        if (!heroLayer || heroWalking || !map) return;
+        const at = heroSpot(), [x, y] = nodePos(at.si, at.level - 1);
+        heroLayer.innerHTML = heroMarkup(x, y - heroLift(at.level));
+    }
+    // walk along the road from where the hero stands to (si, level); far jumps (more than a world away) just hop there
+    function walkHero(si, level) {
+        if (!heroLayer || !map || heroWalking) return Promise.resolve();
+        const from = heroSpot(), a = from.si * 5 + from.level, b = si * 5 + level;      // (allNodes()[0] is the road's start)
+        data.heroAt = { si, level };
+        save();
+        if (a === b) { drawHero(); return Promise.resolve(); }
+        if (U.motion() === "still" || Math.abs(a - b) > 6) { drawHero(); return Promise.resolve(); }
+        const nodes = allNodes(), lo = Math.min(a, b), hi = Math.max(a, b);
+        const path = U.svg("path", { d: curve(nodes, lo, hi), fill: "none", stroke: "none" }, heroLayer);
+        const len = path.getTotalLength(), ms = U.clamp(Math.abs(a - b) * 520, 650, 2800);
+        const lift0 = heroLift(from.level), lift1 = heroLift(level);
+        heroFace = nodes[b][0] >= nodes[a][0] ? 1 : -1;
+        heroWalking = true;
+        heroLayer.insertAdjacentHTML("beforeend", heroMarkup(nodes[a][0], nodes[a][1] - lift0));
+        const g = heroLayer.querySelector(".cm-hero");
+        g.classList.add("walking");
+        const face = g.querySelector(".cm-face");
+        Sound.play("select");
+        return new Promise(done => {
+            const t0 = performance.now();
+            const step = now => {
+                const k = Math.min(1, (now - t0) / ms), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+                const at = path.getPointAtLength((a < b ? e : 1 - e) * len), ahead = path.getPointAtLength(Math.min(len, Math.max(0, (a < b ? e + 0.02 : 1 - e - 0.02) * len)));
+                const dir = ahead.x >= at.x ? 1 : -1;
+                if (Math.abs(ahead.x - at.x) > 0.5 && dir !== heroFace) { heroFace = dir; face.setAttribute("transform", `scale(${dir} 1)`); }
+                g.setAttribute("transform", `translate(${at.x.toFixed(1)} ${(at.y - (lift0 + (lift1 - lift0) * e)).toFixed(1)})`);
+                if (k < 1 && g.isConnected) requestAnimationFrame(step);
+                else { heroWalking = false; path.remove(); drawHero(); done(); }
+            };
+            requestAnimationFrame(step);
+        });
+    }
+    async function editHero(first = false) {
+        const look = await Hero.maker({ look: data.hero || null, first });
+        if (!look) return false;
+        data.hero = look;
+        save();
+        drawHero();
+        if (sheetOpen) drawDetail();
+        return true;
+    }
+    // Coming back to the map: a world reached for the first time plays its arrival scene, then the hero walks on
+    async function heroOnMap() {
+        if (!map || U.view() !== "campaign") return;
+        const f = frontier();
+        if (data.arrived == null) { data.arrived = data.storySeen && data.hero ? f.si : -1; save(); }
+        if (!data.hero) {
+            if (!(await editHero(true))) return;
+        }
+        if (f.si > data.arrived && U.view() === "campaign") {
+            const from = data.arrived >= 0 ? map[data.arrived].world : null, to = map[f.si].world;
+            data.arrived = f.si;
+            data.heroAt = { si: f.si, level: 1 };
+            save();
+            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: map.length }));
+            drawHero();
+            return;
+        }
+        const at = heroSpot();
+        if (at.si === f.si && at.level < f.level && !data.betaUnlock) setTimeout(() => { if (U.view() === "campaign") walkHero(f.si, f.level); }, 650);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -427,7 +514,10 @@ const Campaign = (() => {
         box.classList.toggle("boss", boss);
         box.style.setProperty("--c", boss ? bossOf(s.world).color : biome(s.world).node);
         box.appendChild(U.el("button", { type: "button", class: "cm-sheet-close", "aria-label": "Close", text: "×", onclick: closeSheet }));
-        if (boss) box.appendChild(U.el("div", { class: "cm-detail-art", html: bossSvg(s.world) }));
+        if (boss) box.appendChild(U.el("div", { class: "cm-detail-art cm-vs" },
+            U.el("div", { class: "cm-vs-col" }, U.el("div", { html: Hero.svg(heroLook()) }), U.el("small", { text: heroLook().name })),
+            U.el("span", { class: "cm-vs-chip", text: "VS" }),
+            U.el("div", { class: "cm-vs-col" }, U.el("div", { html: bossSvg(s.world) }), U.el("small", { text: bossOf(s.world).name }))));
         const body = U.el("div", { class: "cm-detail-body" });
         box.appendChild(body);
         body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `WORLD ${si + 1} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
@@ -450,7 +540,7 @@ const Campaign = (() => {
             U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` })));
         body.appendChild(U.el("p", { class: "cm-rules", text: boss
             ? "A race: solve your puzzle before the boss solves its own. Every right word pushes the race bar your way; chain words for combos. When it winds up an attack, finish a word to block it."
-            : `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Reveal · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
+            : `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Items · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
         if (boss) body.appendChild(loadoutBox(map[si].world, () => drawDetail()));
         const prize = abilityPrize(si, l);
         if (prize) body.appendChild(U.el("p", { class: "cm-prize" + (rec ? " got" : ""), text: rec ? `Ability unlocked here: ${prize.icon} ${prize.name}` : `Clear it to unlock an ability: ${prize.icon} ${prize.name}` }));
@@ -475,6 +565,7 @@ const Campaign = (() => {
         if (dyn) drawDynamic();
     }
     function pickLevel(si, l, fromMap = false) {
+        if (fromMap && unlocked(si, l) && data.hero) walkHero(si, l);
         if (fromMap && sheetOpen && data.section === si && data.sel === l && unlocked(si, l)) { play(map[si].world, l); return; }   // a second click plays it
         data.section = si;
         data.sel = l;
@@ -515,9 +606,14 @@ const Campaign = (() => {
         // the first time you open the campaign: the story so far (the 📖 Book button replays it from the book)
         if (!data.storySeen) {
             data.storySeen = true;
+            data.arrived = -1;
             save();
-            setTimeout(() => { if (U.view() === "campaign") FX.cinematic(c => Story.intro(c, storyPages())); }, 400);
-        }
+            setTimeout(async () => {
+                if (U.view() !== "campaign") return;
+                await FX.cinematic(c => Story.intro(c, storyPages()));
+                heroOnMap();
+            }, 400);
+        } else setTimeout(heroOnMap, 450);
         if (!shownOnce) {
             shownOnce = true;
             const w = Worlds.byId[map[f.si].world];
@@ -529,6 +625,7 @@ const Campaign = (() => {
 
     function play(world, level) {
         data.playing = { world, level };
+        if (map && map.some(s => s.world === world)) data.heroAt = { si: map.findIndex(s => s.world === world), level };
         save();
         // a level that was finished (or given up), and every boss fight, starts again from scratch with a new puzzle from
         // its pool; a level you're in the middle of carries on with the one it has
@@ -627,7 +724,16 @@ const Campaign = (() => {
     }
 
     // Called by app.js for every screen: campaign screens wear the campaign's world; the rest wear the player's own
+    // Check and Reveal (the user's rules): never in the campaign (levels and bosses alike), always on the Daily and
+    // Unlimited Boss and everywhere else. ONE class decides it, set whenever the screen or the puzzle changes, so it
+    // can't be left over from an earlier screen or wait for a fight's panel (it used to be three classes set at
+    // different moments, so Check and Reveal sometimes showed and sometimes didn't)
+    function syncHelp() {
+        root.classList.toggle("no-help", U.view() === "level" && !!data.playing && !data.playing.special);
+    }
+    Bus.on("puzzle", syncHelp);
     function onView(view) {
+        root.classList.toggle("no-help", view === "level" && !!data.playing && !data.playing.special);
         root.classList.toggle("in-campaign", view === "campaign" || view === "level");
         root.classList.toggle("in-map", view === "campaign");
         root.classList.toggle("in-level", view === "level");
@@ -667,16 +773,16 @@ const Campaign = (() => {
             if (fight && fight.bestCombo > 1) earned.push([`Best Combo: ×${fight.bestCombo}`, true]);
         } else {
             const lesson = lessonOf(c.si, c.level), [goal, check] = starGoal(lesson, d, puzzle.size);
-            const noReveal = !game.squaresRevealed, met = check(game, puzzle);
-            stars = 1 + (noReveal ? 1 : 0) + (met ? 1 : 0);
-            earned.push(["Solved It", true], ["No Reveal Used", noReveal], [goal, met]);
+            const noItems = !game.itemsUsed && !game.squaresRevealed, met = check(game, puzzle);
+            stars = 1 + (noItems ? 1 : 0) + (met ? 1 : 0);
+            earned.push(["Solved It", true], ["No Items Used", noItems], [goal, met]);
             if (lesson) earned.push([`Skill Practised: ${lesson.name}`, true]);
         }
         skipping = false;
         const key = keyOf(c.world, c.level), old = data.levels[key];
         const firstClear = !old;
-        // coins: more for a first clear, and for bosses
-        const coins = (boss ? 25 : 5) * stars + (firstClear ? (boss ? 100 : 20) : 0);
+        // coins: more for a first clear, and for bosses (levels pay a little more since 2026-10-11, the user's request)
+        const coins = (boss ? 25 : 7) * stars + (firstClear ? (boss ? 100 : 30) : 0);
         data.coins = (data.coins || 0) + coins;
         data.levels[key] = { stars: Math.max(stars, old ? old.stars : 0), seconds: Math.min(game.seconds, old && old.seconds ? old.seconds : Infinity) };
         // a new ability, the first time this level is cleared (level 1, level 3 and the boss each have one)
@@ -715,8 +821,8 @@ const Campaign = (() => {
         data.specials.wins = (data.specials.wins || 0) + 1;
         const priorTries = triesNow();                  // the attempts before this one (Daily: points; Unlimited: coins)
         countAttempt(true);
-        const fullCoins = c.special === "daily" ? (firstToday ? 60 : 10) + stars * 5 : 15 + stars * 5;
-        const coins = c.special === "unlimited" ? Math.max(5, fullCoins - priorTries * UNLIMITED_TRY_COINS) : fullCoins;
+        const fullCoins = c.special === "daily" ? (firstToday ? 60 : 10) + stars * 5 : 60 + stars * 20;
+        const coins = c.special === "unlimited" ? Math.max(10, fullCoins - priorTries * UNLIMITED_TRY_COINS) : fullCoins;
         data.coins = (data.coins || 0) + coins;
         if (firstToday) earned.push(["Today's Boss Beaten", true]);
         save();
@@ -764,7 +870,7 @@ const Campaign = (() => {
         const si = map.findIndex(s => s.world === a.world);
         return si >= 0 && cleared(si, unlockLevel(a));
     }
-    const unlockedAbility = earnedAbility;
+    const unlockedAbility = a => !!data.betaUnlock || earnedAbility(a);     // (the beta's Unlock All opens them all)
     const unlockedAbilities = () => ABILITIES.filter(unlockedAbility);
     const unlockText = a => (unlockLevel(a) === 5 ? `Beat ${bossOf(a.world).name}` : `Clear ${Worlds.byId[a.world] ? Worlds.byId[a.world].name : a.world} ${unlockLevel(a)}`);
 
@@ -808,7 +914,7 @@ const Campaign = (() => {
     }
     function equip(list) { data.loadout = list.filter(Boolean).slice(0, 3); save(); }
     const readyAbilities = (world) => loadout(world).filter(id => abilityOpen(abilityById[id]));
-    const DAILY_USES = 3, DAILY_TRY_COST = 40, UNLIMITED_TRY_COINS = 5;
+    const DAILY_USES = 3, DAILY_TRY_COST = 50, UNLIMITED_TRY_COINS = 50;   // 50 per earlier attempt (the user, 2026-10-13)
     const abilityOpen = a => (ownUses() ? a.world === fight.world : unlockedAbility(a));
     const usesOf = id => (ownUses() ? fight.uses[id] || 0 : data.owned[id] || 0);
     function spendUse(id) { if (ownUses()) fight.uses[id] = Math.max(0, (fight.uses[id] || 0) - 1); else { data.owned[id] = Math.max(0, (data.owned[id] || 0) - 1); save(); } }
@@ -1026,7 +1132,10 @@ const Campaign = (() => {
         itemBar.innerHTML = "";
         const noItems = !!special();                           // the Daily and Unlimited Boss: no items (the user's rule), just Give Up
         itemBar.classList.toggle("only-giveup", noItems);
-        if (!noItems) itemBar.appendChild(U.el("span", { class: "helper-label", text: "Items" }));
+        // every item on one row (the user, 2026-10-11: "make sure all 5 items fit on the top row"), then the shop
+        // and Give Up under it
+        const row = U.el("div", { class: "cm-item-row" });
+        if (!noItems) { row.appendChild(U.el("span", { class: "helper-label", text: "Items" })); itemBar.appendChild(row); }
         const boss = data.playing && data.playing.level === 5;
         for (const it of noItems ? [] : ITEMS) {
             const n = data.items[it.id] || 0;
@@ -1034,7 +1143,7 @@ const Campaign = (() => {
             const b = U.el("button", { type: "button", class: "cm-item", disabled: n <= 0, title: `${it.name}: ${it.desc}` },
                 U.el("span", { class: "cm-item-icon", text: it.icon }), U.el("b", { text: "×" + n }));
             b.addEventListener("click", () => { b.blur(); useItem(it.id); });
-            itemBar.appendChild(b);
+            row.appendChild(b);
         }
         if (!noItems) itemBar.appendChild(U.el("button", { type: "button", class: "cm-item shop", title: "Open the shop", text: "🛒", onclick: () => openShop("items") }));
         itemBar.appendChild(U.el("button", { type: "button", class: "cm-item giveup", title: "Give up this level", text: "Give Up", onclick: e => { e.currentTarget.blur(); giveUp(); } }));
@@ -1065,9 +1174,10 @@ const Campaign = (() => {
             U.el("div", { class: "res-actions" },
                 special() ? U.el("button", { type: "button", class: "btn primary", text: "Rematch", onclick: () => { modal.remove(); playSpecial(special(), { rematch: true }); } })
                     : U.el("button", { type: "button", class: "btn primary", text: level === 5 ? "Rematch" : "Try Again", onclick: () => { modal.remove(); play(world, level); } }),
-                special() === "unlimited" ? U.el("button", { type: "button", class: "btn", text: "New Boss", onclick: () => { modal.remove(); playSpecial("unlimited"); } })
-                    : special() ? null : U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(level === 5 ? "abilities" : "items") }),
-                U.el("button", { type: "button", class: "btn ghost", text: special() ? "Back" : "Map", onclick: () => { modal.remove(); if (special()) backToMode(); else location.hash = "#campaign"; } })));
+                special() ? null : U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(level === 5 ? "abilities" : "items") }),
+                U.el("button", { type: "button", class: special() ? "btn" : "btn ghost", text: special() ? "Return" : "Map", onclick: () => { modal.remove(); if (special()) backToMode(); else location.hash = "#campaign"; } }),
+                // the Unlimited Boss: Rematch, Return or New Boss (the user's three choices)
+                special() === "unlimited" ? U.el("button", { type: "button", class: "btn", text: "New Boss", onclick: () => { modal.remove(); playSpecial("unlimited"); } }) : null));
         modal.appendChild(card);
         document.getElementById("overlay").appendChild(modal);
         requestAnimationFrame(() => modal.classList.add("in"));
@@ -1092,6 +1202,7 @@ const Campaign = (() => {
         }
         if (!n) { FX.toast({ icon: it.icon, kicker: "NOTHING TO DO", title: it.name, text: id === "clear" ? "No wrong letters on the board." : id === "lock" ? "No unlocked right letters yet." : id === "word" ? "That word is already right." : "That square is already right.", ms: 2200 }); return; }
         data.items[id]--;
+        Game.state.itemsUsed = (Game.state.itemsUsed || 0) + 1;
         if (fight && !fight.over) fight.itemsUsed++;
         save();
         Sound.play("sparkle");
@@ -1117,7 +1228,9 @@ const Campaign = (() => {
     const BOT_PACE = { easy: 1.15, medium: 1.05, hard: 0.95, challenge: 1, expert: 0.95 };
     // ...and faster in every world (world 1: x1.15, world 15: x0.72) and every phase (x0.94 each); on top of that every
     // boss solves 15% faster than it used to (the user, 2026-10-09: "make each boss a little harder")
-    const BOSS_SPEEDUP = 0.77;            // (0.85, then 0.72; then a touch slower again at the user's request)
+    // (0.85, then 0.72; then a touch slower again at the user's request: 0.77; then every boss 10% easier, the user,
+    // 2026-10-11: it takes 10% longer to solve, 0.77 x 1.1)
+    const BOSS_SPEEDUP = 0.77 * 1.1;
     // (the boss's pace is set from the par times levels had before they got 15% longer: bosses didn't change)
     const BOSS_PAR = { easy: 120, medium: 180, hard: 240, challenge: 220, expert: 270 };
     const bossPar = (d, size) => Math.round((BOSS_PAR[d] || 180) * Math.max(1, (size * size) / 25) / 10) * 10;
@@ -1231,7 +1344,7 @@ const Campaign = (() => {
 
     async function startFight(fresh) {
         const key = data.playing.special ? "sp-" + data.playing.sid : keyOf(data.playing.world, data.playing.level);
-        if (!fresh && fight && fight.key === key) { showPanel(); return; }
+        if (!fresh && fight && fight.key === key) { resumeFight(); return; }
         await fetchMap().catch(() => null);
         const c = current(), d = c && c.difficulty ? c.difficulty : "medium";
         const th = Powers.threat(c ? c.si : 0, map ? map.length : 15);
@@ -1271,11 +1384,32 @@ const Campaign = (() => {
                 if (kept && fight && fight.key === key) notice("🔒", kept === 1 ? "1 Word Kept" : `${kept} Words Kept`, "Your right words from last time are filled in and locked.", "good", 4200);
             }
             else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
+            if (fight && fight.key === key && special()) setChaos(1);     // the Daily and Unlimited Boss's arena goes wild too (the user's request)
         } catch (err) {
             waiting(false, "Couldn't load the boss's puzzle: " + err.message);
             const l = panel.querySelector(".bp-loading");
             if (l) l.textContent = "Couldn't load the boss's puzzle: " + err.message;
         }
+    }
+    // Back to a fight that's still going (you left for another screen and came back): leaving took down the panel, the
+    // arena's chaos, the rage and the music, so put them all back (the user: "it gets rid of all of the boss stuff like
+    // the background, the music, and abilities")
+    function resumeFight() {
+        const f = fight;
+        if (!f) return;
+        drawPanel(true);                                         // the panel, its board and your abilities
+        if (!f.puzzle && !f.over) waiting(true);                 // its board is still on the way: cover yours again
+        if (f.phase > 1) Bosses.arena(f.world, f.id).classList.add("phase2");
+        if (f.chaos) Bosses.chaos(f.world, f.chaos);
+        if (f.enraged) setEnraged(true);
+        if (fightOn() && !f.intro && !f.switching) Sound.music(f.phase > 1 ? `${f.world}-p${f.phase}` : f.world, { v: 0.4, fade: 1.2, fromLoop: true });
+        drawItemBar();
+    }
+    // how wild the arena is (chaos.js); remembered so a resumed fight gets it back
+    function setChaos(level) {
+        if (!fight) return;
+        fight.chaos = level;
+        Bosses.chaos(fight.world, level);
     }
     // While the boss's puzzle is still coming: a cover over your board, no typing, and your clock waits
     const waitEl = U.el("div", { class: "boss-wait", hidden: true, html: `<span class="spinner" aria-hidden="true"></span><b>The boss is preparing its puzzle…</b><small>The fight starts as soon as it's ready.</small>` });
@@ -1308,6 +1442,7 @@ const Campaign = (() => {
         raceFaceFor = "";
         document.getElementById("puzzle").classList.add("boss-mode");
         root.classList.add("in-boss");
+        syncHelp();
         if (data.playing) Bosses.arena(data.playing.world, fight ? fight.id : data.playing.world);
     }
     function hidePanel() {
@@ -1805,7 +1940,9 @@ const Campaign = (() => {
         if (f.me.toll > 0) { bossGain(2); floatText("+2 letters for the boss ♨️", false); }     // Scorched Earth: your words feed it
         f.lastWordAt = now;
         f.bestCombo = Math.max(f.bestCombo, f.combo);
-        if (f.buff.sun > 0) growLetter(cells);                               // Sunny Hour: a right letter grows somewhere else
+        // Sunny Hour: a right letter grows somewhere else, but only for words YOU finished (a word the sun finished
+        // doesn't grow another letter, or one sunny word sets off the next and they all fill in at once)
+        if (f.buff.sun > 0 && !f.growing) growLetter(cells);
         if (f.buff.hot > 0) { f.boss.freeze = Math.max(f.boss.freeze || 0, 2); Powers.aura(portraitEl(), ["🔥"], "rise", 6, 900); }
         if (f.boss.bubble > 0) { f.boss.bubble = 0; bossTimerEnded("bubble"); speak("My bubble popped!", 1600); }
         // blocked an attack that was winding up?
@@ -1854,13 +1991,25 @@ const Campaign = (() => {
         }
         return picks;
     }
-    // Sunny Hour: a right letter grows in an empty square that isn't in the word you just finished
+    // Sunny Hour: a right letter grows in an empty square that isn't in the word you just finished, and if it can,
+    // one that doesn't finish a word by itself (the letter is a helping hand, not a free word)
     function growLetter(skip) {
         const g = Game.state, not = new Set((skip || []).map(([r, c]) => r + "," + c));
         const empty = scopeAll().filter(([r, c]) => !g.letters[r][c] && !not.has(r + "," + c));
         if (!empty.length) return;
-        const [r, c] = U.pick(empty);
-        setTimeout(() => { if (fightOn()) { Game.fillCells([[r, c]]); Powers.aura(Game.cellEl(r, c), ["🌱", "🌼"], "rise", 4, 900); } }, 350);
+        const finishes = ([r, c]) => [...g.puzzle.across, ...g.puzzle.down].some(e => {
+            const cells = Game.cellsOf(e);
+            return cells.some(([r2, c2]) => r2 === r && c2 === c) && cells.every(([r2, c2]) => (r2 === r && c2 === c) || g.letters[r2][c2]);
+        });
+        const calm = empty.filter(p => !finishes(p));
+        const [r, c] = U.pick(calm.length ? calm : empty);
+        setTimeout(() => {
+            if (!fightOn() || g.letters[r][c]) return;
+            const f = fight;
+            f.growing = true;                       // a word this letter finishes doesn't grow another one
+            try { Game.fillCells([[r, c]]); } finally { f.growing = false; }
+            Powers.aura(Game.cellEl(r, c), ["🌱", "🌼"], "rise", 4, 900);
+        }, 350);
     }
     // the boss writes n letters at once (it can win that way)
     function bossGain(n) {
@@ -1892,6 +2041,7 @@ const Campaign = (() => {
             f.close = close;
             root.classList.toggle("boss-close", close);
             if (close) {
+                if (special() && (f.chaos || 0) < 2) setChaos(2);            // the Daily and Unlimited Boss's arena: wilder near the end
                 Sound.custom(() => { for (const t of [0, 0.24]) Sound.tone({ f: 988, f2: 740, type: "triangle", t, d: 0.2, v: 0.045 }); });
                 FX.shake(5, 300);
                 speak(U.pick(["Almost done...", "Nearly there!", "Too slow!"]), 2200);
@@ -3004,7 +3154,7 @@ const Campaign = (() => {
         const f = fight;
         if (!f || f.over) return;
         // Extra Life: come back once (not when you give up yourself)
-        if (f.extraLife && why !== "surrender") {
+        if (f.extraLife && why === "boss") {
             f.extraLife = false;
             f.lifeUsed = true;
             for (let i = 0; i < 3; i++) { const last = f.done[f.done.length - 1]; if (last) wipe(Game.cellsOf(last), true); }
@@ -3023,7 +3173,8 @@ const Campaign = (() => {
         countAttempt();
         const b = bossOf(f.world);
         const text = { boss: ["The boss finished its puzzle first.", `${b.name} Got There First`, "The boss solved its whole board before you. Block its attacks by finishing words, and save an ability for when it's close."],
-            surrender: ["You gave up this fight.", "Retreat", "Every boss can be beaten. Try a different set of abilities from the shop."] }[why] || [];
+            surrender: ["You gave up this fight.", "Retreat", "Every boss can be beaten. Try a different set of abilities from the shop."],
+            reveal: ["You revealed the puzzle.", "Puzzle Revealed", "Every boss can be beaten. Try a different set of abilities from the shop."] }[why] || [];
         Game.endLoss({ title: why === "boss" ? `${b.name} Wins` : "Gave Up", text: text[0] });
         Sound.play("wrong");
         Sound.music("lose", { loop: false, v: 0.42, fade: 1 });           // game-over music
@@ -3031,8 +3182,8 @@ const Campaign = (() => {
         const sp = special(), tries = triesNow();
         const tryNote = sp === "daily" ? `Attempt ${tries} used. Your right words stay locked in for the next one. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.`
             : sp === "unlimited" ? `Attempt ${tries} used. A Rematch keeps this boss, its puzzle and your right words; each attempt takes ${UNLIMITED_TRY_COINS} coins off a win.` : null;
-        loseCard({ world: f.world, level: 5, kicker: sp ? `BOSS · ATTEMPT ${tries}` : why === "surrender" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
-        speak(why === "surrender" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
+        loseCard({ world: f.world, level: 5, kicker: sp ? `BOSS · ATTEMPT ${tries}` : why !== "boss" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
+        speak(why !== "boss" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
         drawFight();
     }
 
@@ -3041,6 +3192,12 @@ const Campaign = (() => {
         if (isBossLevel(puzzle) && U.view() === "level" && !(Game.state.solved && !fresh)) startFight(fresh);
         else if (isBossLevel(puzzle) && U.view() === "level") showPanel();
         else { hidePanel(); }
+        drawItemBar();
+    });
+    // back on a boss's board without it being loaded again (Home or Stats and back): the same as a restored board
+    Bus.on("resume", ({ puzzle }) => {
+        if (isBossLevel(puzzle) && U.view() === "level" && !Game.state.solved) startFight(false);
+        else if (isBossLevel(puzzle) && U.view() === "level") showPanel();
         drawItemBar();
     });
     Bus.on("word", onWord);
@@ -3058,7 +3215,7 @@ const Campaign = (() => {
         setTimeout(() => FX.toast({ icon: "🎲", kicker: "A FRESH PUZZLE", title: "New Board. New Clues.", ms: 5000 }), c.level === 5 ? 10000 : 300);
     });
     Bus.on("surrender", () => {
-        if (fight && !fight.over && isBossLevel(Game.state.puzzle)) { fight.over = true; fight.pending = null; clearMe(); countAttempt(); drawFight(); }   // Reveal puzzle = a lost attempt
+        if (fight && !fight.over && isBossLevel(Game.state.puzzle)) lose("reveal");     // Reveal Puzzle = a lost attempt, with the same Rematch / Return / New Boss card
     });
 
     // Phase 2 (the user's design): solving the boss's first puzzle doesn't end the fight. The boss powers up full screen,
@@ -3114,7 +3271,7 @@ const Campaign = (() => {
         if (f.enraged) setEnraged(false);
         f.nextMove = Math.max(6, f.th.first * 0.6);
         Bosses.arena(f.world, f.id).classList.add("phase2");
-        Bosses.chaos(f.world, k - 1);                   // the arena goes wilder with every phase
+        setChaos(k - 1);                                // the arena goes wilder with every phase
         if (k < f.phases) setTimeout(() => fight === f && Sound.preloadMusic(f.world + "-p" + (k + 1)), 9000);
         drawPanel(true);
         updateHp();
@@ -3237,7 +3394,8 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     // BETA helpers (the user, 2026-10-10: "add a button for beta: in the campaign there's a give 500 coins button and
     // an unlock button to unlock all the maps"): a small strip on the map. Unlock All opens every world and level
-    // (data.betaUnlock; abilities still unlock by clearing levels) and can be switched back. Set BETA to false to hide it.
+    // (data.betaUnlock), and every ability too (the user, 2026-10-11: "make the unlock button unlock all skills and
+    // levels"), and can be switched back. Set BETA to false to hide it (kept for beta testing).
     const BETA = true;
     if (BETA) {
         const give = U.el("button", { type: "button", class: "btn small", text: "+500 Coins" });
@@ -3252,14 +3410,19 @@ const Campaign = (() => {
         });
         open.addEventListener("click", () => {
             data.betaUnlock = !data.betaUnlock;
+            // every ability opens too (unlockedAbility), each with its free uses if it has none yet
+            if (data.betaUnlock) for (const a of ABILITIES) if (!(data.owned[a.id] > 0)) data.owned[a.id] = FREE_USES;
             save(); label(); redraw(); Sound.play(data.betaUnlock ? "sparkle" : "select");
-            FX.toast({ icon: data.betaUnlock ? "🔓" : "🔒", kicker: "Beta", title: data.betaUnlock ? "Every World Unlocked" : "Locked Again", text: data.betaUnlock ? "Play any level on the map." : "Levels open as you clear them again.", ms: 2400 });
+            FX.toast({ icon: data.betaUnlock ? "🔓" : "🔒", kicker: "Beta", title: data.betaUnlock ? "Everything Unlocked" : "Locked Again", text: data.betaUnlock ? "Every level and ability is open." : "Levels and abilities open as you clear them again.", ms: 2400 });
         });
         label();
-        $("#campaign-view").appendChild(strip);
+        // on the page itself, not inside the map's view: the view is animated (a transform), and a fixed element
+        // inside a transformed one scrolls away with it instead of staying in the corner (the user, 2026-10-11)
+        document.body.appendChild(strip);
     }
     $("#cm-shop").addEventListener("click", () => openShop("items"));
     $("#cm-skills").addEventListener("click", () => openSkills());
+    $("#cm-hero").addEventListener("click", () => { Sound.play("select"); editHero(false); });
     $("#cm-howto").addEventListener("click", () => HowTo.open("normal"));
     $("#cm-book").addEventListener("click", () => { Sound.play("select"); Story.openBook(storyPages(), { onReplay: () => FX.cinematic(c => Story.intro(c, storyPages())) }); });
     // The story (story.js): the Everbook's pages, one per world, won back by beating its boss
@@ -3317,11 +3480,8 @@ const Campaign = (() => {
     });
 
     return {
-        onView, showMap, play, playSpecial, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
+        onView, showMap, play, playSpecial, heroLook, editHero, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
         isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
-        testMove: mv => { if (fightOn()) { fight.pending = mv; attack(); } },          // for automated tests
-        testWindUp: mv => { if (fightOn()) windUp(false, mv); },
-        testEquip: ids => { equip(ids); drawAbilityBar(); },
         get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();

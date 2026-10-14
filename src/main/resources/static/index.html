@@ -13,14 +13,16 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b2b33'/%3E%3Crect x='3' y='3' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Crect x='17' y='3' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Crect x='17' y='17' width='12' height='12' rx='2' fill='%23fffdf7'/%3E%3Ctext x='9' y='13' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3ES%3C/text%3E%3Ctext x='23' y='13' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3EC%3C/text%3E%3Ctext x='23' y='27' font-size='10' text-anchor='middle' font-family='sans-serif' font-weight='700'%3ER%3C/text%3E%3C/svg%3E">
     <!-- Fonts (all SIL Open Font License, free to use on websites; see WORDLISTS.md):
          Nunito, Caveat, Patrick Hand (Notebook) · Orbitron, Exo 2 (Space) · Fredoka (Garden) · Press Start 2P, VT323 (Arcade) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Bungee&family=Caveat:wght@600;700&family=Comfortaa:wght@500;700&family=Courier+Prime:wght@400;700&family=Exo+2:wght@400;600;800&family=Fredoka:wght@400;600;700&family=IM+Fell+English+SC&family=Josefin+Sans:wght@600;700&family=Lilita+One&family=Nunito:wght@400;600;700;800&family=Orbitron:wght@500;700;900&family=Pacifico&family=Patrick+Hand&family=Patua+One&family=Press+Start+2P&family=Quicksand:wght@500;600;700&family=Russo+One&family=Rye&family=Share+Tech+Mono&family=Shrikhand&family=Sniglet:wght@400;800&family=VT323&display=swap">
+    <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/app.css">
     <link rel="stylesheet" href="css/worlds.css">
     <link rel="stylesheet" href="css/campaign.css">
+    <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/travel.css">
     <link rel="stylesheet" href="css/story.css">
     <link rel="stylesheet" href="css/howto.css">
+    <link rel="stylesheet" href="css/credits.css">
+    <link rel="stylesheet" href="css/legal.css">
     <script src="js/boot.js"></script>
 </head>
 <body>
@@ -130,6 +132,7 @@
                 </div>
 
                 <p id="status" class="status"></p>
+                <div class="un-picker" id="un-picker" hidden></div>
 
                 <div class="puzzle" id="puzzle" hidden>
                     <div class="board-area">
@@ -189,6 +192,7 @@
                     <button type="button" class="btn cmv-shop" id="cm-howto" aria-label="How to Play"><span class="ht-lbl">How to Play</span><span class="ht-q" aria-hidden="true">?</span></button>
                     <button type="button" class="btn cmv-shop" id="cm-book" title="The Everbook: the pages you've won back">Book</button>
                     <button type="button" class="btn cmv-shop" id="cm-skills">Skills</button>
+                    <button type="button" class="btn cmv-shop" id="cm-hero">Hero</button>
                     <button type="button" class="btn primary cmv-shop" id="cm-shop">Shop</button>
                 </header>
                 <div class="cm-map" id="cm-map"><p class="status"><span class="spinner" aria-hidden="true"></span>Loading the map&hellip;</p></div>
@@ -204,7 +208,7 @@
                 <div class="stat-tiles" id="stat-tiles"></div>
                 <div class="stats-grid">
                     <article class="card">
-                        <header class="card-head"><h2 id="heatmap-title">Last 18 Weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i> 0&ndash;3 Solved</span></header>
+                        <header class="card-head"><h2 id="heatmap-title">Last 18 Weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i><i data-n="4"></i><i data-n="5"></i> 0&ndash;5 Solved</span></header>
                         <div class="heatmap" id="heatmap"></div>
                     </article>
                     <article class="card">
@@ -271,12 +275,25 @@
                     </fieldset>
                     <fieldset class="card">
                         <legend>Reset</legend>
-                        <button type="button" class="btn danger" id="reset-data">Erase All Data</button>
+                        <div class="hl-buttons">
+                            <button type="button" class="btn danger" id="reset-leaderboard">Erase Leaderboard Data</button>
+                            <button type="button" class="btn danger" id="reset-campaign">Erase Campaign Data</button>
+                            <button type="button" class="btn danger" id="reset-data">Erase All Data</button>
+                        </div>
                         <p class="hint">This can't be undone.</p>
+                    </fieldset>
+                    <fieldset class="card help-legal">
+                        <legend>Help &amp; Legal</legend>
+                        <div class="hl-buttons">
+                            <button type="button" class="btn" data-open="credits">Credits</button>
+                            <button type="button" class="btn" data-open="faq">FAQ</button>
+                            <button type="button" class="btn" data-open="privacy">Privacy</button>
+                            <button type="button" class="btn" data-open="terms">Terms</button>
+                        </div>
                     </fieldset>
                     <fieldset class="card about" id="about">
                         <legend>About</legend>
-                        <p><b>Schmoll Crossword</b> is free, with no ads. Three new mini crosswords every day, plus a bigger Challenge.</p>
+                        <p><b>Schmoll Crossword</b> is free, with no ads. Five new puzzles every day: Easy, Medium, Hard, a bigger Challenge and a Boss.</p>
                         <dl class="credits">
                             <dt>Code</dt>
                             <dd>&copy; Miles D'Antonio. MIT License: anyone may reuse it as long as the copyright notice stays.
@@ -286,16 +303,16 @@
                                 <a href="https://www.spreadthewordlist.com/" target="_blank" rel="noopener">Spread the Word(list)</a> by Brooke Husic and
                                 Enrique Henestroza Anguiano. Adapted (only words in both lists, filtered by difficulty) and shared under
                                 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noopener">CC BY-NC-SA 4.0</a>,
-                                which is why the game stays non-commercial.</dd>
+                                and so are the puzzles and clues made from it, which is why the game stays non-commercial.</dd>
                             <dt>Clues</dt>
                             <dd>Written for each puzzle by Claude, an AI model made by Anthropic, then checked by the game.
                                 Spot a bad one? <button type="button" class="link-btn" id="about-report">Report a problem</button> (or use the link under any puzzle).</dd>
                             <dt>Fonts</dt>
-                            <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Sniglet, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico and Josefin Sans,
-                                from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a>, under the SIL Open Font License.</dd>
+                            <dd>Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico and Josefin Sans,
+                                originally from <a href="https://fonts.google.com/" target="_blank" rel="noopener">Google Fonts</a> and served from this site, under the SIL Open Font License.</dd>
                             <dt>Sounds &amp; Music</dt>
                             <dd>Boss fight sounds by <a href="https://kenney.nl/" target="_blank" rel="noopener">Kenney</a>; each boss's music, and every campaign level's own song, by artists on
-                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Loyalty Freak Music, Zane Little Music, Bobjt, Dizzy Crow, glitchart, Kistol, Pro Sensory, Tozan, cynicmusic, congusbongus and more), plus music composed for the game with the GeneralUser GS SoundFont (the story, the win and losing music, the Sphinx's second song and Thunderhead's chorus). All public domain (CC0); see audio/CREDITS.txt.</dd>
+                                <a href="https://opengameart.org/" target="_blank" rel="noopener">OpenGameArt</a> (vitalezzz, nene, Umplix, HydroGene, Emma_MA, MintoDog, Spring Spring, Zane Little Music, Bobjt, glitchart, Kistol, Pro Sensory, Tozan, cynicmusic, congusbongus and more), plus music composed for the game with the GeneralUser GS SoundFont (the story, the win and losing music, the Sphinx's second song and Thunderhead's chorus). All public domain (CC0); every track and author is in the Credits (Help &amp; Legal, above).</dd>
                             <dt>Art &amp; Sound</dt>
                             <dd>Every scene and animation is drawn in code for this game, and most sounds are made live in code.</dd>
                         </dl>
@@ -338,6 +355,8 @@
     <script src="js/game.js"></script>
     <script src="js/chaos.js"></script>
     <script src="js/bosses.js"></script>
+    <script src="js/hero.js"></script>
+    <script src="js/travel.js"></script>
     <script src="js/powers.js"></script>
     <script src="js/spells.js"></script>
     <script src="js/spells-abilities.js"></script>
@@ -346,6 +365,8 @@
     <script src="js/story.js"></script>
     <script src="js/campaign.js"></script>
     <script src="js/howto.js"></script>
+    <script src="js/credits.js"></script>
+    <script src="js/legal.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

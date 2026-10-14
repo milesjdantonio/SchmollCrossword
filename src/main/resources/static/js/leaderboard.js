@@ -53,6 +53,29 @@ const Leaderboard = (() => {
         return board;
     }
 
+    // Remove My Name (the privacy notice): the server deletes everything this browser posted, on every day, and the
+    // name is forgotten here too, so nothing is posted again until a new name is picked
+    async function forget() {
+        const r = await fetch("/api/leaderboard/forget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ player: playerId() }) });
+        if (!r.ok) throw new Error(r.status === 429 ? "Too many requests. Try again later." : "Couldn't reach the leaderboard. Try again later.");
+        U.store.set("leaderboard", {});
+        return (await r.json()).removed;
+    }
+    // Settings > Erase Leaderboard Data: the same, and this browser gets a new player id. If the server can't be
+    // reached nothing is erased here either, so the id that can still remove those scores isn't lost.
+    async function eraseAll() {
+        await forget();
+        U.store.remove("leaderboard");
+        U.store.remove("player");
+    }
+    async function askForget(after) {
+        const ok = await U.ask({ title: "Remove Your Name?", text: "Your name and every score you've posted are deleted from the leaderboard, on every day. Your own stats stay on this device.", yes: "Remove", no: "Keep" });
+        if (!ok) return;
+        try { await forget(); FX.toast({ icon: "✓", kicker: "LEADERBOARD", title: "Your Name Was Removed", ms: 2600 }); }
+        catch (err) { FX.toast({ icon: "⚠️", kicker: "LEADERBOARD", title: "Not Removed", text: err.message, ms: 3200 }); }
+        if (after) after();
+    }
+
     // a name form: First name + Initial
     function nameForm(onDone, { label = "Post", note = "" } = {}) {
         const n = me();
@@ -148,9 +171,10 @@ const Leaderboard = (() => {
             const edit = U.el("div", { class: "lb-me" });
             edit.appendChild(U.el("span", { text: n.first ? `You post as ${display(n)}` : "Pick a name to post your dailies." }));
             edit.appendChild(nameForm(async () => { await postRest(Game.scores()); drawFull(el); }, { label: n.first ? "Save" : "Join" }));
+            if (n.first) edit.appendChild(U.el("button", { type: "button", class: "link-btn lb-forget", text: "Remove My Name", onclick: () => askForget(() => drawFull(el)) }));
             body.appendChild(edit);
         } catch (err) { body.textContent = "The leaderboard is offline right now."; }
     }
 
-    return { after, drawHome, drawFull, playerId };
+    return { after, drawHome, drawFull, playerId, askForget, eraseAll, hasName: () => !!me().first };
 })();

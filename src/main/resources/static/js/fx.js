@@ -36,7 +36,18 @@ const FX = (() => {
     // particles are moved by the scroll, effects drawn shifted by however far the page moved since they started
     // (fixed: true for a full-screen one)
     let lastSX = scrollX, lastSY = scrollY;
+    // One bad particle (a NaN size, a negative radius...) used to throw out of this loop before the next frame was
+    // asked for: raf stayed set, kick() thought it was still running, and every burst after that never showed for
+    // the rest of the visit (the user: "sometimes the animations for clicking things goes away"). Now a particle
+    // that throws is dropped, and the loop always carries on.
     function loop(now) {
+        try { frame(now); }
+        catch (err) { console.error(err); parts = []; born = []; }
+        if (parts.length || effects.length) raf = requestAnimationFrame(loop);
+        else { raf = 0; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); }
+    }
+    const safeStep = (p, dt) => { try { return stepParticle(p, dt); } catch (err) { return false; } };
+    function frame(now) {
         const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
         const sx = scrollX, sy = scrollY, mx = lastSX - sx, my = lastSY - sy;
@@ -53,13 +64,17 @@ const FX = (() => {
             return alive;
         });
         g.globalCompositeOperation = "source-over";
-        parts = parts.filter(p => stepParticle(p, dt));
+        parts = parts.filter(p => safeStep(p, dt));
         if (born.length) { parts = parts.concat(born); born = []; }
-        for (const p of parts) drawParticle(p);
+        let bad = null;
+        for (const p of parts) {
+            g.save();
+            try { drawParticle(p); } catch (err) { (bad = bad || new Set()).add(p); }
+            g.restore();
+        }
+        if (bad) parts = parts.filter(p => !bad.has(p));
         g.globalAlpha = 1;
         g.globalCompositeOperation = "source-over";
-        if (parts.length || effects.length) raf = requestAnimationFrame(loop);
-        else { raf = 0; g.clearRect(0, 0, W, H); }
     }
 
     // ---- particles ----

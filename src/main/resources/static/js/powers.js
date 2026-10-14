@@ -182,6 +182,13 @@ const Powers = (() => {
         "paper-rub": 0.93, "paper-wall": 0.49, "rain-thunder": 0.53, "robot-firewall": 0.5, "sky-tailwind": 0.48,
         "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53
     };
+    // Still too loud (the user, 2026-10-11: "the fire abilities from the magma wyrm for example"): the measure above
+    // weighs low notes down (K-weighting), so the rumbles (fire, lava, engines, quakes: low noise and the thruster
+    // and rumble recordings) measured quieter than they sound. Those play at half that level, and everything else
+    // at 80% of it.
+    const RUMBLE = new Set(["volcano-hot", "volcano-lava", "volcano-fireup", "space-blackhole", "eruption", "heatwave", "powerup", "heal",
+        "gravity", "vowels", "quake", "avalanche", "collapse", "toll"]);
+    const levelOf = (id, table) => (table[id] ?? 1) * (RUMBLE.has(id) ? 0.5 : 0.8);
     // a boss winding up: a rising alarm, pitched to the boss's world
     const charge = (pitch = 0) => { for (let i = 0; i < 3; i++) T(M(57 + pitch + i * 4), M(60 + pitch + i * 4), "sawtooth", i * 0.18, 0.15, 0.04, { filt: { f: 1600 } }); T(M(45 + pitch), M(57 + pitch), "triangle", 0, 0.6, 0.08); };
 
@@ -512,7 +519,7 @@ const Powers = (() => {
     //   fromEl: your board, bossEl: the boss's portrait, bossBoard: the boss's board
     async function cast(a, { fromEl, bossEl, bossBoard }) {
         const fx = a.fx, color = fx.color;
-        Sound.bossLevel(ABILITY_LEVEL[a.id] ?? 1, 4500);       // its sound, recording and scene, no louder than the music
+        Sound.bossLevel(levelOf(a.id, ABILITY_LEVEL), 4500);       // its sound, recording and scene, no louder than the music
         Sound.custom(a.sound);
         smp(SMP[a.kind]);
         await chargeUp(U.center(fromEl), color);
@@ -522,7 +529,7 @@ const Powers = (() => {
     async function strike(world, move, { fromEl, toEl }) {
         const B = typeof Bosses !== "undefined" ? Bosses.info(world) : null;
         await chargeUp(U.center(fromEl), B ? B.color : "#ff5c6c", 280);
-        Sound.bossLevel(MOVE_LEVEL[move.kind] ?? 1, 4500);     // its sound, recording and scene, no louder than the music
+        Sound.bossLevel(levelOf(move.kind, MOVE_LEVEL), 4500);     // its sound, recording and scene, no louder than the music
         Sound.custom(move.sound);
         smp(BSMP[move.kind]);
     }
