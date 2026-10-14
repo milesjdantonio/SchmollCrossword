@@ -1,7 +1,8 @@
 # Clue bank
 
 Every clue in the shipped campaign pool and dailies (2026-10-11 to 2026-11-29), written by Claude by hand
-(no API calls) on 2026-10-10/11. Original text, under the project's MIT license.
+(no API calls) on 2026-10-10/11. Every row pairs a clue with a word from the word list, so the clue bank is
+shared under CC BY-NC-SA 4.0 like the list (see ../NOTICE.md).
 
 - `base-<difficulty>-NN.tsv`: one plain clue per answer at each difficulty (`WORD<tab>clue`).
 - `st-<difficulty>-<style>-NN.tsv`: clues in a lesson's style (blank, pun, quote, example, double,
@@ -22,3 +23,7 @@ To make more puzzles without the API:
 1. Run `PuzzleBatch grids`, then `export`.
 2. Write clues for any new words.
 3. Run `convert.py`, then `PuzzleBatch assemble`.
+
+## The 2026-10-11/14 rebuild
+
+The campaign pool was rebuilt so every level has its own 25 puzzles, about a quarter easier: boards are seeded by a hash of their name, picked by word difficulty (`target/puzzle-batch/wordscore.tsv`, `ease.json`), and checked for duplicates across levels (a boss's own board may repeat). `convert.py` gives each campaign puzzle a quarter of its plain clues from the next easier difficulty.

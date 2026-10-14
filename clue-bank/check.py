@@ -1,9 +1,11 @@
 # Check hand-written clues: python check.py <set> [--missing]
 #   set: base-easy, base-medium, base-hard, or a styled set like hard-pun (files <set>-*.tsv in this folder)
 # Reports clues that contain their answer (anywhere, even inside another word: the game's checker refuses those),
-# clues over 10 words, duplicates, words not in the plan, and (base sets) the plan's words still without a clue.
-import os, sys, json, glob
+# clues over 10 words, clues with a blocked word, duplicates, words not in the plan, and (base sets) the plan's words still without a clue.
+import os, sys, json, glob, re
 H = os.path.dirname(os.path.abspath(__file__))
+# words a clue may never use, even inside a name like "Moby-Dick" (the game's blocklist; the user, 2026-10-11)
+BLOCKED = {l.strip().upper() for l in open(os.path.join(H, "..", "src", "main", "resources", "blocked-words.txt")) if l.strip()}
 name = sys.argv[1]
 plan = json.load(open(os.path.join(H, "plan.json")))
 st = None
@@ -33,6 +35,7 @@ for f in sorted(glob.glob(os.path.join(H, name + "-*.tsv"))):
         if any(ord(ch) > 126 for ch in c): bad.append(f"NON-ASCII {w}: {c}")
         if w in c.upper().replace("___", ""): bad.append(f"GIVES AWAY {w}: {c}")
         if len(c.split()) > 10: bad.append(f"LONG {w}: {c}")
+        if set(re.findall(r"[A-Z]+", c.upper())) & BLOCKED: bad.append(f"BLOCKED WORD {w}: {c}")
         if w not in want and not st: bad.append(f"not in plan {w}")
 for b in bad: print(b)
 missing = sorted(want - set(clues))

@@ -1,74 +1,28 @@
 {
-"easy|blank": [
-"SLAM"
-],
+"easy|blank": [],
 "easy|definition": [],
-"easy|example": [
-"LAWS",
-"AGENT"
-],
+"easy|example": [],
 "easy|synonym": [],
-"hard|blank": [
-"MAMBO",
-"SNAPS"
-],
-"hard|double": [
-"ORAL",
-"TEEM",
-"TOWEL"
-],
-"hard|example": [
-"SLED",
-"TANGO"
-],
+"hard|double": [],
+"hard|example": [],
 "hard|misdirection": [],
-"hard|pun": [
-"SINE"
-],
-"hard|quote": [
-"TROPE",
-"EXPO",
-"HEM"
-],
+"hard|pun": [],
+"hard|quote": [],
 "hard|synonym": [],
-"hard|theme:circuses and fairs": [
-"LEAP",
-"ELDER"
-],
-"hard|theme:flight and the sky": [
-"YOKE",
-"SONNY",
-"EON",
-"AREA"
-],
-"hard|theme:machines and technology": [
-"WAD",
-"LEST",
-"AEROSOL",
-"EUROS",
-"GLEN",
-"NUT"
-],
-"hard|theme:outer space": [
-"ROBE",
-"AILED",
-"CUP"
-],
+"hard|theme:circuses and fairs": [],
+"hard|theme:flight and the sky": [],
+"hard|theme:machines and technology": [],
+"hard|theme:outer space": [],
 "medium|blank": [],
 "medium|double": [],
-"medium|example": [],
+"medium|example": [
+"WEST"
+],
 "medium|misdirection": [],
 "medium|pun": [],
 "medium|quote": [],
 "medium|synonym": [],
-"medium|theme:flight and the sky": [
-"TUNES",
-"WET",
-"TIN"
-],
-"medium|theme:forests and autumn": [
-"SECRET",
-"BASE"
-],
+"medium|theme:flight and the sky": [],
+"medium|theme:forests and autumn": [],
 "medium|theme:the sea": []
 }

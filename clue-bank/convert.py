@@ -5,8 +5,9 @@
 #   acrossdown: Down answers get the easier difficulty's base clue (the Downs crack the Acrosses)
 #   definition: no "___" or "?" clue is left in (a plain definition from the other sets replaces it)
 #   mix:        one clue of each style where the puzzle has one
+#   campaign:   a quarter of the plain clues come from the next easier difficulty (2026-10-11)
 # Prints a report: puzzles short of a style, answers with no clue (must be 0), clue texts used twice in a puzzle.
-import sys, os, json, collections
+import sys, os, json, collections, re, math, zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cw import *
 
@@ -28,10 +29,13 @@ for g, f, ans in puzzles():
     d, sts = g["difficulty"], styles(g["focus"])
     review = "review of four skills" in g["focus"]
     n = len(ans)
-    clue, style_of = {}, {}
+    clue, style_of, eased = {}, {}, set()
+    campaign = not re.match(r"\d{4}-\d\d-\d\d-", f)
     for w, across in ans:
         if "acrossdown" in sts and not across: clue[w] = B[easier(d)].get(w) or B[d].get(w)
         else: clue[w] = B[d].get(w)
+        # a campaign answer with no clue at its difficulty takes the easier one (it counts toward the easier quarter)
+        if not clue[w] and campaign and B[easier(d)].get(w): clue[w] = B[easier(d)][w]; eased.add(w)
         if not clue[w]: missing.append((f, w))
     free = [w for w, across in ans if not ("acrossdown" in sts and not across)]
     wanted = [s for s in sts if s not in ("acrossdown", "mix", "definition", "synonym")]
@@ -63,6 +67,14 @@ for g, f, ans in puzzles():
             c = plain_def(d, w)
             if c: clue[w] = c; swapped["definition"] += 1
             else: short[(d, "definition")] += 1
+    # the campaign, 25% easier (the user, 2026-10-11: "lower the difficulty of the campaign across the board by
+    # around 25% (the words and clues)"): a quarter of a puzzle's clues come from the next easier difficulty. Only
+    # plain clues are swapped (never one a lesson style chose), picked by a fixed hash so a rebuild picks the same ones
+    if campaign and d != "easy":
+        k = math.ceil(n * 0.25) - len(eased)
+        cands = sorted((w for w in free if w not in style_of and w not in eased and B[easier(d)].get(w)), key=lambda w: zlib.crc32((f + w).encode()))
+        for w in cands[:k]: clue[w] = B[easier(d)][w]; swapped["easier"] += 1
+        if len(cands) < k: short[(d, "easier")] += k - len(cands)
     # the same clue text twice in one puzzle: give the later one another clue
     seen = {}
     for w, across in ans:

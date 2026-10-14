@@ -24,3 +24,8 @@ boss-music/*
 
 # the animation showreel video (made by a test script; too big for the repo)
 showreel/
+level-music-review/
+
+# a zipped copy of the boss-music listening folder (over GitHub's 100 MB file limit)
+boss-music.zip
+__pycache__/

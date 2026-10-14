@@ -25,8 +25,8 @@ import java.util.regex.Pattern;
  * (and every call costs money). So each daily is written by Claude only the FIRST time it's asked for,
  * then saved as a file and served from the file forever after.
  *
- * Design pass: there are THREE dailies every day, one per difficulty, each with its own grid
- * (seed from date + difficulty), its own word list (easier words on easy) and its own clues.
+ * Design pass: there are FIVE dailies every day: one per difficulty (easy, medium, hard), each with its own grid
+ * (seed from date + difficulty), its own word list (easier words on easy) and its own clues, plus the Challenge and the Boss.
  *
  *   puzzles/daily/2026-10-07-easy.json     <- three different
  *   puzzles/daily/2026-10-07-medium.json   <- puzzles
@@ -141,7 +141,7 @@ public class PuzzleStore {
     // Simply banning them doesn't work: the dense 5x5 shape often has no fill without a few "glue" words like
     // REST, and the search for one can take minutes. So it fills up to GRID_TRIES grids (seed, seed+1, ...; each
     // takes a few milliseconds) and keeps the one with the fewest avoided answers.
-    static final int GRID_TRIES = 30;
+    static final int GRID_TRIES = Integer.getInteger("gridTries", 30);     // (-DgridTries=8 for a faster batch build)
     static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
         return buildGrid(seed, wordsByLength, avoid, "");
     }
@@ -265,8 +265,25 @@ public class PuzzleStore {
             int score = Lesson.favorScore(favors, list);
             if (score > bestScore) { filled = f; answers = list; bestScore = score; }
         }
-        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, expert ? "hard" : "medium", focus) : NO_CLUES;
+        // (a Challenge or Expert grid: Sonnet 5.5 writes its clues, see ClueWriter.draftModel)
+        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, expert ? "hard" : "medium", focus, true) : NO_CLUES;
         return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, difficulty).toJson();
+    }
+
+    // A campaign board with no clues from word lists the caller picks (PuzzleBatch's easier campaign, 2026-10-11:
+    // `first` is a level's list with its hardest words taken out, `second` the full list if a pattern needs it)
+    static String generateBigWith(long seed, String mode, String difficulty, int size, Map<Integer, List<String>> first,
+                                  Map<Integer, List<String>> second, Set<String> avoid, String favors) {
+        ChallengeGrid.Filled filled = null;
+        int bestScore = Integer.MIN_VALUE;
+        for (int attempt = 0; attempt < (favors.isEmpty() ? 1 : BIG_LESSON_TRIES); attempt++) {
+            ChallengeGrid.Filled f = buildChallenge(seed + attempt * 1000L, size, first, second, avoid, CAMPAIGN_FIRST_ONLY);
+            List<String> list = new ArrayList<>();
+            for (Slot slot : Slot.findAllSlots(f.blackSquares())) list.add(slot.getPattern(f.grid()));
+            int score = Lesson.favorScore(favors, list);
+            if (score > bestScore) { filled = f; bestScore = score; }
+        }
+        return Puzzle.create(filled.blackSquares(), filled.grid(), NO_CLUES, mode, seed, difficulty).toJson();
     }
 
     // A normal 5x5 puzzle as JSON. COSTS MONEY (one API call).
@@ -279,12 +296,17 @@ public class PuzzleStore {
     }
     static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid,
                                 String favors, String focus, boolean withClues) {
+        return generateSmall(seed, mode, difficulty, wordsByLength, avoid, favors, focus, withClues, false);
+    }
+    // strong = a boss puzzle: Sonnet 5.5 writes its clues (ClueWriter.draftModel)
+    static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid,
+                                String favors, String focus, boolean withClues, boolean strong) {
         char[][] grid = buildGrid(seed, wordsByLength, avoid, favors);
         List<String> answers = new ArrayList<>();
         for (Slot slot : Slot.findAllSlots(SHAPE)) {
             answers.add(slot.getPattern(grid));
         }
-        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, difficulty, focus) : NO_CLUES;
+        ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, difficulty, focus, strong) : NO_CLUES;
         return Puzzle.create(SHAPE, grid, clues, mode, seed, difficulty).toJson();
     }
     // an empty clue set: every entry gets a blank clue (the user, 2026-10-09: don't pay for the boss's clues)
@@ -396,7 +418,7 @@ public class PuzzleStore {
         String favors = Lesson.favors(section.world(), level), focus = Lesson.clueFocus(section.world(), level);
         String json = Campaign.bigGrid(difficulty)
                 ? generateBig(seed, "campaign", difficulty, Campaign.size(section, level), wordsByLength, avoid, favors, focus, !boss)
-                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), avoid, favors, focus, !boss);     // the boss's own board: no clues
+                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), avoid, favors, focus, !boss, level == Campaign.LEVELS);     // the boss's own board: no clues
         Files.createDirectories(folder);
         Files.writeString(file, json);
         return json;
@@ -459,7 +481,7 @@ public class PuzzleStore {
         String difficulty = section.bossDifficulty();
         return Campaign.bigGrid(difficulty)
                 ? generateBig(seed, "campaign", difficulty, section.bossSize(), wordsByLength, new HashSet<>(), "", "", withClues)
-                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), new HashSet<>(), "", "", withClues);
+                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), new HashSet<>(), "", "", withClues, true);
     }
 
     static Path campaignFile(Path folder, Campaign.Section section, int level, boolean boss) {

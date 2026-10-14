@@ -11,7 +11,7 @@ import java.util.Map;
  * a professional. So every level is a LESSON in one crossword skill:
  *   - its clues are written to train that skill (the instructions below go into Claude's prompt, see ClueWriter)
  *   - its grid is picked to suit it where that makes sense (more plurals for the plurals lesson, see favorScore)
- *   - its third star is a goal that fits the skill (a speed lesson wants speed, a clean-solve lesson no Check)
+ *   - its third star is a goal that fits the skill (a speed lesson wants speed, a clean-solve lesson few wrong letters)
  * Skills come back in later worlds, harder each time (Wordplay I, II, III), and each boss is a review of its
  * world's four lessons.
  */
@@ -20,7 +20,7 @@ public class Lesson {
     // A skill: its id, its name, what you practise, a tip, the instructions for the clue writer, what the grid
     // should favor ("" = nothing special) and the goal for the third star:
     //   par = under the par time, brisk = under 3/4 of par, fast = under 60% of par,
-    //   nocheck = no Check used, clean = no Check and no Reveal
+    //   nocheck = 4 wrong letters typed or fewer, clean = 1 at most (the campaign has no Check or Reveal)
     record Skill(String id, String name, String practise, String tip, String clues, String favors, String star) {}
 
     static final Map<String, Skill> SKILLS = new LinkedHashMap<>();
@@ -73,8 +73,8 @@ public class Lesson {
         skill("long", "Long answers", "Cracking the long answers that hold a big grid together.",
             "Get a few letters into a long answer from the short words crossing it. Long words often show themselves early.",
             "Give the long answers (6 letters or more) clear clues: they are the key to the grid.", "long", "par");
-        skill("clean", "Clean solve", "Solving without checking: trusting letters that work both ways.",
-            "Before you check, read each letter across AND down. Only trust letters that make sense in both words.",
+        skill("clean", "Clean solve", "Solving cleanly: trusting letters that work both ways.",
+            "Before you type, read each letter across AND down. Only trust letters that make sense in both words.",
             "Mix every clue type fairly, so a careful solver can finish without help.", "", "clean");
         skill("mixed", "Everything at once", "Using every trick you've learned.",
             "Use every tool: crossings, grammar, '?' puns, quotes, examples and second meanings.",
