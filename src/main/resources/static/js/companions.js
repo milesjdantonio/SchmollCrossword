@@ -296,6 +296,27 @@ const Companions = (() => {
                 lose: "Lost the signal. Regroup, recharge and try again. It can be beaten.", during: ["Hold the line!", "Every word is light!", "It's shrinking!"] },
             idle: ["Beep. That's me thinking in space.", "Zero gravity makes my thoughts float off. Hold on.", "Space is silent, so I hum to keep us company."],
             done: ["Every star has its name back. I'm making a map.", "The Void's quiet now. Turns out it just needed a dictionary."]
+        },
+        // the secret world (2026-10-14): Vigil, the little star that kept the Cursed Angel's prison shut
+        rift: {
+            intro: "Oh. Oh no. You came through the tear. I'm Vigil. I was the light that kept the prison shut, and I... let it go.",
+            lore: [
+                "A thousand years ago the Cursed Angel guarded the Everbook. It was the brightest thing in the sky.",
+                "Then it started reading the book for itself. Every word, over and over. It decided the words should belong to it alone.",
+                "The old light caught it trying to carry the Everbook away. They locked it at the edge of the sky, and they made me its keeper.",
+                "The Void's darkness was the prison's walls. Nothing gets out of nothing. That was the idea, anyway.",
+                "When you beat the Void, the walls fell. I held on as long as I could. I'm only a small star.",
+                "See this key? It's the prison's. It doesn't fit anything any more. I carry it so I don't forget.",
+                "The angel can't touch the book while you're writing in it. Every word you finish is light it can't take.",
+                "Its feathers fall everywhere it goes. The white ones are what it was. The black ones are what it became.",
+                "If we win, I want to stay up here and keep watch again. Over everyone this time, not just one prisoner."
+            ],
+            levels: ["It's watching through the tear. Finish words fast, and swat its tricks away!", "Deeper in. The corruption is thicker here. Keep your light up.",
+                "Last stretch before the angel itself. It's going to try everything."],
+            boss: { before: "There it is. The Cursed Angel. Watch for the rows its rays aim at, and don't let it take the book!", win: "It's over. Its light is out, and the rift is closing. Thank you. Truly.",
+                lose: "It took the board. But it hasn't taken the book. Again, together.", during: ["Its wings are shaking!", "Every word is light!", "Keep writing, it can't stand it!"] },
+            idle: ["Twinkle. That's a star thing, sorry.", "I used to count the feathers. Then I ran out of numbers.", "If you're stuck, start where two words cross. Light gathers there."],
+            done: ["The sky feels lighter without the tear.", "I keep watch now. Nothing bad gets past a star that's paying attention."]
         }
     };
 

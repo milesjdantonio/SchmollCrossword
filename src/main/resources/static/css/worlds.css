@@ -1913,3 +1913,110 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
 @keyframes tcx-in { from { opacity: 0; transform: translateY(8px); } }
 .tc.out .tcx-card { animation: tcx-out .25s ease-in forwards; }
 @keyframes tcx-out { to { opacity: 0; } }
+
+/* =============================================================================================
+   CELESTIAL RIFT (rift.js, the secret world): night = violet space with a golden tear of heaven-light,
+   day = a pale gold dawn over clouds with the tear a dark violet wound
+   ============================================================================================= */
+[data-world="rift"] {
+    --bg: #fbf1e4;
+    --surface: rgba(255, 250, 242, .86);
+    --surface-solid: #fffaf2;
+    --surface-2: #f6e8ff;
+    --ink: #2a1d3f;
+    --muted: #7a6a8e;
+    --line: #e6d2f2;
+    --hover: #f6e8ff;
+    --cell: #fffdf8;
+    --cell-ink: #2a1d3f;
+    --block: radial-gradient(circle at 30% 35%, rgba(255, 230, 160, .9) 0 1px, transparent 1.7px) 0 0 / 15px 15px, linear-gradient(160deg, #4a1f9a, #1a0a40);
+    --grid: #b48a3a;
+    --num: #9b6bff;
+    --accent: #7a3cff;
+    --accent-2: #d9a640;
+    --accent-ink: #ffffff;
+    --word: #f1e2ff;
+    --sel: #ffe2a0;
+    --solved: #fff3d0;
+    --good: #2a9a6a;
+    --wrong: #d6336c;
+    --revealed: #c9902f;
+    --radius: 18px;
+    --radius-sm: 12px;
+    --cell-radius: 4px;
+    --shadow: 0 10px 26px rgba(122, 60, 255, .16);
+    --board-shadow: 0 0 0 3px #e8c66a, 0 0 0 7px #fffaf2, 0 0 0 9px #b48a3a, 0 16px 40px rgba(122, 60, 255, .25);
+    --font-body: "Nunito", system-ui, sans-serif;
+    --font-head: "Cinzel", serif;
+    --font-cell: "Cinzel", serif;
+    --head-scale: .92;
+    --cell-weight: 700;
+}
+[data-world="rift"][data-theme="dark"] {
+    --bg: #07031a;
+    --surface: rgba(24, 12, 54, .78);
+    --surface-solid: #170a36;
+    --surface-2: rgba(122, 60, 255, .2);
+    --ink: #f6eeff;
+    --muted: #b9a6dc;
+    --line: rgba(232, 198, 106, .3);
+    --hover: rgba(122, 60, 255, .2);
+    --cell: rgba(22, 10, 50, .92);
+    --cell-ink: #fff6d8;
+    --block: radial-gradient(circle at 30% 35%, rgba(255, 240, 200, .85) 0 1px, transparent 1.7px) 0 0 / 15px 15px, radial-gradient(circle at 70% 75%, rgba(200, 160, 255, .6) 0 1px, transparent 1.6px) 0 0 / 21px 21px, #04020c;
+    --grid: rgba(232, 198, 106, .55);
+    --num: #e8c66a;
+    --accent: #e8c66a;
+    --accent-2: #9b6bff;
+    --accent-ink: #1a0a36;
+    --word: rgba(122, 60, 255, .32);
+    --sel: rgba(232, 198, 106, .42);
+    --solved: rgba(232, 198, 106, .14);
+    --good: #8ae0b8;
+    --wrong: #ff6a9a;
+    --revealed: #ffb86b;
+    --shadow: 0 0 0 1px rgba(232, 198, 106, .14), 0 10px 30px rgba(0, 0, 0, .5);
+    --board-shadow: 0 0 0 2px #e8c66a, 0 0 0 6px #170a36, 0 0 0 7px rgba(232, 198, 106, .5), 0 0 46px rgba(155, 107, 255, .35);
+    color-scheme: dark;
+}
+[data-world="rift"] .logo-text::before { content: "\1F320\00a0"; }
+[data-world="rift"] .card-head h2, [data-world="rift"] .game-titles h1, [data-world="rift"] .hero-title, [data-world="rift"] .page-head h1,
+[data-world="rift"] .clues h2, [data-world="rift"] .res-title, [data-world="rift"] .settings legend { letter-spacing: .06em; }
+[data-world="rift"][data-theme="dark"] .hero-title, [data-world="rift"][data-theme="dark"] .res-title { text-shadow: 0 0 22px rgba(232, 198, 106, .55); }
+[data-world="rift"] .btn.primary, [data-world="rift"] .modes a.active, [data-world="rift"] .difficulty button.active, [data-world="rift"] .opt input:checked + span {
+    background: linear-gradient(135deg, #7a3cff, #b46bff 55%, #d9a640);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(122, 60, 255, .4);
+}
+[data-world="rift"][data-theme="dark"] .btn.primary, [data-world="rift"][data-theme="dark"] .modes a.active, [data-world="rift"][data-theme="dark"] .difficulty button.active, [data-world="rift"][data-theme="dark"] .opt input:checked + span {
+    background: linear-gradient(135deg, #f2d27a, #e8b84a 55%, #c49bff);
+    color: #1a0a36;
+    box-shadow: 0 0 18px rgba(232, 198, 106, .5);
+}
+[data-world="rift"] .board { overflow: visible; }
+[data-world="rift"] .cell .ltr { text-shadow: 0 0 1px rgba(155, 107, 255, .2); }
+[data-world="rift"][data-theme="dark"] .cell .ltr { text-shadow: 0 0 10px rgba(255, 220, 140, .65); }
+[data-world="rift"] .cell.selected { animation: rf-pulse 1.8s ease-in-out infinite; }
+@keyframes rf-pulse { 50% { box-shadow: inset 0 0 0 2px #e8c66a, 0 0 18px rgba(232, 198, 106, .55); } }
+[data-world="rift"] .cell.typed .ltr { animation: rf-ltr .3s ease-out; }
+@keyframes rf-ltr { 0% { transform: translateY(-6px) scale(1.25); text-shadow: 0 0 22px #fff6d8, 0 0 34px #e8c66a; } }
+.rf-halo { fill: none; stroke: #e8c66a; stroke-width: .03; stroke-linecap: round; stroke-dasharray: 1; }
+.rf-halo-glow { fill: none; stroke: rgba(255, 214, 120, .45); stroke-width: .1; stroke-linecap: round; stroke-dasharray: 1; }
+.deco-word.grow .rf-halo, .deco-word.grow .rf-halo-glow { animation: draw .7s ease-out backwards; }
+.rf-star { fill: #fff6d8; stroke: #e8c66a; stroke-width: .012; transform-box: fill-box; transform-origin: center; animation: twinkle 3s ease-in-out infinite; }
+.deco-word.grow .rf-star { animation: star-pop .55s cubic-bezier(.2, 1.8, .4, 1) backwards, twinkle 3s ease-in-out infinite; }
+.board.rf-solved { box-shadow: 0 0 0 3px #fff6d8, 0 0 0 7px #e8c66a, 0 0 60px rgba(255, 214, 120, .7); }
+/* the title card: a stained-glass rose window */
+.tc-rift { background: radial-gradient(circle, rgba(60, 20, 120, .35), rgba(8, 2, 24, .7)); }
+.tcr-window { position: relative; display: grid; place-items: center; width: min(340px, 72vw); aspect-ratio: 1; animation: tcr-in 1s cubic-bezier(.2, .9, .3, 1) backwards; }
+.tcr-rose { position: absolute; inset: 0; animation: tcr-spin 14s linear infinite; filter: drop-shadow(0 0 24px rgba(155, 107, 255, .6)) drop-shadow(0 0 4px rgba(232, 198, 106, .9)); }
+.tcr-rose svg { width: 100%; height: 100%; }
+.tcr-text { position: relative; display: grid; place-content: center; width: 58%; aspect-ratio: 1; padding: 14px 6px; border-radius: 50%; background: radial-gradient(circle, #fff6d8, #f2d27a 70%, #c9902f); color: #2a1d3f; text-align: center; box-shadow: 0 0 0 3px #2a1d3f, 0 0 30px rgba(255, 220, 140, .8); }
+.tcr-text small { font: 800 .62rem "Nunito", sans-serif; letter-spacing: .14em; color: #6b3fd6; }
+.tcr-text h2 { margin: 2px 0; font: 700 clamp(1rem, 4.4vw, 1.5rem) "Cinzel", serif; line-height: 1.05; }
+.tcr-text p { margin: 0; font: 700 .7rem "Nunito", sans-serif; color: #5a4a6e; }
+@keyframes tcr-in { from { opacity: 0; transform: scale(.4) rotate(-40deg); filter: brightness(3); } }
+@keyframes tcr-spin { to { transform: rotate(360deg); } }
+.tc.out .tcr-window { animation: tcr-out .5s ease-in forwards; }
+@keyframes tcr-out { to { opacity: 0; transform: scale(1.35); filter: brightness(2.5) blur(3px); } }

@@ -2,7 +2,7 @@
 // its own effect, its own animation and its own synthesized sound. The rule (the user's): no two abilities do the
 // same thing, and no ability is just a stronger copy of another one. The same goes for the bosses' moves.
 //
-//   Powers.ABILITIES   45 abilities, 3 per world: { id, world, name, icon, kind, flavor, desc, fx, sound }
+//   Powers.ABILITIES   48 abilities, 3 per world (the secret world too): { id, world, name, icon, kind, flavor, desc, fx, sound }
 //   Powers.MOVES       each boss's moves:         { world: [{ name, icon, kind, d, desc, fx, charge, sound }] }
 //   Powers.cast(...)   the animation for using an ability (or a boss move landing on you)
 //   Powers.threat(si)  how hard a world's boss fights (attacks, wind-ups, time, rage), from 0 (world 1) to 1
@@ -63,7 +63,11 @@ const Powers = (() => {
         fireup: () => { N(300, 3000, 0, 0.6, 0.18, { q: 0.6 }); arp([60, 67, 72, 79], 0.06, "sawtooth", 0.3, 0.03, { filt: { f: 2500 } }); },
         blackhole: () => { T(900, 40, "sine", 0, 1.6, 0.25); T(1800, 60, "triangle", 0, 1.4, 0.05, { echo: 0.4 }); N(2000, 60, 0, 1.4, 0.2, { type: "lowpass" }); },
         reverse: () => { [84, 81, 77, 74, 72, 69, 65].forEach((n, i) => T(M(n), M(n) * 0.97, "triangle", i * 0.07, 0.12, 0.06, { echo: 0.2 })); T(1200, 200, "sine", 0, 0.6, 0.04); },
-        wormhole: () => { for (let i = 0; i < 4; i++) T(200 + i * 100, 1600 - i * 200, "sine", i * 0.15, 0.4, 0.05, { echo: 0.5 }); T(60, 30, "sine", 0.5, 0.8, 0.2); }
+        wormhole: () => { for (let i = 0; i < 4; i++) T(200 + i * 100, 1600 - i * 200, "sine", i * 0.15, 0.4, 0.05, { echo: 0.5 }); T(60, 30, "sine", 0.5, 0.8, 0.2); },
+        // the Celestial Rift: star chimes joining up, a wish's rising shimmer, and fate rewound on a harp
+        constellation: () => { [84, 88, 91, 96, 100].forEach((n, i) => T(M(n), null, "sine", i * 0.11, 0.7, 0.045, { echo: 0.5 })); T(M(60), M(72), "triangle", 0, 0.9, 0.04); },
+        wish: () => { T(400, 2400, "sine", 0, 0.9, 0.05, { echo: 0.5, vib: 8 }); [79, 86, 91, 98].forEach((n, i) => T(M(n), null, "triangle", 0.5 + i * 0.08, 0.5, 0.04, { echo: 0.4 })); },
+        fate: () => { [96, 93, 89, 86, 84, 81, 77, 74].forEach((n, i) => T(M(n), null, "triangle", i * 0.06, 0.35, 0.045, { echo: 0.35 })); Sound.chord(0.55, [62, 66, 69, 74], { type: "sine", d: 1.1, v: 0.03, echo: 0.4 }); }
     };
     // every boss move's sound, when it lands on you (charge sounds are shared by kind of attack)
     const BSND = {
@@ -143,6 +147,18 @@ const Powers = (() => {
         toll: () => { T(M(48), null, "triangle", 0, 1.2, 0.12, { echo: 0.4 }); T(M(55), null, "triangle", 0, 1.2, 0.06, { echo: 0.4 }); },
         snapfinish: () => { T(100, 3000, "sawtooth", 0, 0.4, 0.06, { filt: { f: 3000 } }); T(3000, 200, "sine", 0.4, 0.4, 0.06, { echo: 0.5 }); },
         vowels: () => { T(600, 50, "sine", 0, 1.4, 0.25); N(2500, 80, 0, 1.3, 0.2, { type: "lowpass" }); },
+        // the Cursed Angel: a falling choir chord as the rays drop, wings beating, a holy hum, pages snatched, coins taken
+        judgment: () => { Sound.chord(0, [57, 64, 69, 72, 76], { type: "sine", d: 1.2, v: 0.035, echo: 0.4 }); T(2400, 300, "sine", 0.1, 0.6, 0.06); T(120, 60, "sine", 0.35, 0.6, 0.3); N(3000, 600, 0.3, 0.7, 0.12, { q: 1 }); },
+        wings: () => { for (let i = 0; i < 4; i++) N(300, 1200, i * 0.22, 0.28, 0.14, { q: 0.8 }); T(M(45), M(44), "sawtooth", 0, 1.2, 0.03, { filt: { f: 700 } }); },
+        holylight: () => { Sound.chord(0, [72, 76, 79, 84], { type: "sine", d: 1.6, v: 0.03, echo: 0.5 }); T(1800, 2400, "sine", 0, 1.2, 0.03, { vib: 6 }); },
+        scripture: () => { N(1800, 700, 0, 0.35, 0.16, { q: 2 }); N(1400, 500, 0.18, 0.35, 0.14, { q: 2 }); T(M(62), M(57), "triangle", 0.3, 0.6, 0.06); },
+        tithe: () => { [88, 84, 81].forEach((n, i) => T(M(n), null, "square", i * 0.1, 0.12, 0.03)); T(M(57), M(50), "sine", 0.35, 0.7, 0.08, { echo: 0.4 }); },
+        // its second five (the user, 2026-10-14): a lance of light, a decree, an ascension, a trumpet, penance
+        lance: () => { Sound.chord(0, [52, 59, 64, 71, 76], { type: "sine", d: 1.4, v: 0.03, echo: 0.5 }); T(3200, 200, "sawtooth", 0.2, 0.5, 0.025, { filt: { f: 2600 } }); T(90, 40, "sine", 0.45, 0.8, 0.3); N(4000, 500, 0.45, 0.8, 0.12, { q: 0.6 }); },
+        decree: () => { T(M(40), null, "triangle", 0, 0.5, 0.14); N(400, 120, 0, 0.3, 0.16, { q: 1.5 }); Sound.chord(0.25, [62, 65, 69, 74], { type: "sine", d: 1.4, v: 0.028, echo: 0.4 }); },
+        ascend: () => { [60, 64, 67, 72, 76, 79, 84, 88].forEach((n, i) => T(M(n), null, "triangle", i * 0.05, 0.4, 0.035, { echo: 0.3 })); T(400, 1600, "sine", 0, 1, 0.03, { vib: 4 }); },
+        trumpet: () => { [[67, 0], [67, 0.14], [72, 0.28], [76, 0.5]].forEach(([n, t]) => { T(M(n), null, "sawtooth", t, t === 0.5 ? 0.9 : 0.12, 0.05, { filt: { f: 2200 } }); T(M(n - 12), null, "square", t, t === 0.5 ? 0.9 : 0.12, 0.02, { filt: { f: 900 } }); }); N(200, 1600, 0.5, 0.6, 0.1, { q: 0.7 }); },
+        penance: () => { for (let i = 0; i < 3; i++) N(2400, 1200, i * 0.11, 0.12, 0.14, { q: 4 }); T(M(38), null, "sine", 0.3, 1.4, 0.16, { echo: 0.5 }); T(M(45), null, "sine", 0.3, 1.4, 0.06, { echo: 0.5 }); },
     };
     // recorded sounds (CC0, Kenney.nl, see audio/CREDITS.txt) layered under the synthesized ones: [file, speed]
     const SMP = { junk: ["ink"], erase: ["scratch"], shield: ["field"], stutter: ["pluck"], vines: ["creak"], sun: ["confirm"], knock: ["plank"], bury: ["grass"],
@@ -150,7 +166,8 @@ const Powers = (() => {
         delay: ["snowstep"], armor: ["iceheavy"], wash: ["splash"], counter: ["rumble"], lucky: ["lucky"], scatter: ["cloth"], silver: ["chime"], time: ["rise"],
         sand: ["sand"], quicksand: ["goo", 0.7], check: ["question"], blind: ["punch"], hypno: ["pluck2"], crash: ["crunch"], chomp: ["retro"], cheat: ["retro2"],
         extralife: ["jingle-life"], autofill: ["click"], overclock: ["zap"], firewall: ["field2"], calm: ["back"], haunt: ["creak2"], ghost: ["page"], hot: ["thruster"],
-        lavafloor: ["rumble2"], fireup: ["thruster2"], blackhole: ["engine"], reverse: ["rewind2"], wormhole: ["warp"] };
+        lavafloor: ["rumble2"], fireup: ["thruster2"], blackhole: ["engine"], reverse: ["rewind2"], wormhole: ["warp"],
+        constellation: ["chime"], wish: ["lucky", 1.2], fate: ["rewind2", 1.3] };
     const BSMP = { rubout: ["scratch2"], crumple: ["page2"], thorns: ["knife"], petals: ["cloth4"], acorns: ["plank2"], sour: ["goo", 1.3], sticky: ["goo", 0.6],
         ink: ["punch2"], whirl: ["drop3"], freeze: ["ice2"], whiteout: ["snowstep2"], lightning: ["crunch2"], downpour: ["splash", 0.8], gale: ["sand", 1.3], twister: ["switch"],
         riddle: ["question2"], sandblast: ["step"], mirror: ["glass4"], confetti: ["punch", 1.4], glitch: ["glitch"], lag: ["glitch2"], lock: ["latch"], static: ["noise"],
@@ -161,7 +178,9 @@ const Powers = (() => {
         upside: ["rise"], flicker: ["chime", 0.8], haste: ["thruster2", 1.3], mirageclue: ["chime"], shift: ["sand"], curse: ["knife", 0.8], clueswap: ["switch"],
         bomb: ["latch"], taunt: ["bell", 1.2], comboban: ["glitch"], echo: ["retro2", 0.8], mask: ["noise"], unlock: ["click"], itemlock: ["field2", 0.8],
         numberless: ["noise", 1.3], fakeclue: ["creak2", 0.8], wordthief: ["punch"], oneword: ["page"], powerup: ["thruster", 0.6], heal: ["thruster4", 1.2],
-        toll: ["bell", 0.7], snapfinish: ["warp", 1.4], vowels: ["engine", 0.5] };
+        toll: ["bell", 0.7], snapfinish: ["warp", 1.4], vowels: ["engine", 0.5],
+        judgment: ["laser3", 0.7], wings: ["cloth4", 0.6], holylight: ["chime", 0.5], scripture: ["page2"], tithe: ["coin", 0.7],
+        lance: ["laser3", 0.5], decree: ["bell", 0.6], ascend: ["rise", 1.3], trumpet: ["bong", 0.8], penance: ["latch", 0.7] };
     const smp = ([name, rate = 1] = [], v = 0.55) => name && Sound.sample(name, { v, rate, boss: true });
     // every recorded sound a fight can use, so they're loaded before they're needed
     const ALL_SAMPLES = [...new Set([...Object.values(SMP), ...Object.values(BSMP)].map(x => x[0]).concat(["hit", "bell", "ko", "jingle-block", "jingle-win", "coin"]))];
@@ -174,13 +193,14 @@ const Powers = (() => {
         ambush: 0.5, avalanche: 0.45, bomb: 0.83, confetti: 0.74, curse: 0.67, darkcreep: 0.51, echo: 0.52,
         eruption: 0.97, fakecheck: 0.48, flare: 0.75, gravity: 0.47, ink: 0.87, itemlock: 0.43, lightning: 0.75,
         lights: 0.58, mask: 0.46, mirror: 0.56, nobackspace: 0.91, numberless: 0.37, quake: 0.47, riddle: 0.41,
-        shrink: 0.49, snapfinish: 0.25, static: 0.44, upside: 0.42, vowels: 0.3, ward: 0.44, wordthief: 0.69
+        shrink: 0.49, snapfinish: 0.25, static: 0.44, upside: 0.42, vowels: 0.3, ward: 0.44, wordthief: 0.69,
+        judgment: 0.55, wings: 0.6, holylight: 0.6, scripture: 0.7, tithe: 0.65, lance: 0.5, decree: 0.6, ascend: 0.65, trumpet: 0.55, penance: 0.6
     };
     const ABILITY_LEVEL = {
         "arcade-cheat": 0.56, "arcade-chomp": 0.99, "arcade-extralife": 0.57, "candy-rush": 0.94,
         "carnival-cotton": 0.82, "carnival-pie": 0.77, "desert-mirage": 0.57, "garden-sun": 0.71,
         "paper-rub": 0.93, "paper-wall": 0.49, "rain-thunder": 0.53, "robot-firewall": 0.5, "sky-tailwind": 0.48,
-        "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53
+        "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53, "rift-constellation": 0.75, "rift-wish": 0.7, "rift-fate": 0.7
     };
     // Still too loud (the user, 2026-10-11: "the fire abilities from the magma wyrm for example"): the measure above
     // weighs low notes down (K-weighting), so the rumbles (fire, lava, engines, quakes: low noise and the thruster
@@ -289,7 +309,14 @@ const Powers = (() => {
         A("space", "reverse", "Time Reversal", "⏪", "reverse", "Turn the boss's clock backwards.", "For 6s the boss un-writes instead: it erases one of its own letters every second.",
             { proj: null, aura: ["⏪", "🌀"], motion: "swirl", color: "#58d6ff", on: "boss" }),
         A("space", "wormhole", "Wormhole", "🌀", "wormhole", "Open a wormhole right under the boss's pencil.", "Everything the boss writes in the next 10s falls into the wormhole when it closes.",
-            { proj: "🌀", path: "spiral", aura: ["🌀", "✨"], motion: "swirl", color: "#c06bff", on: "boss" })
+            { proj: "🌀", path: "spiral", aura: ["🌀", "✨"], motion: "swirl", color: "#c06bff", on: "boss" }),
+        // the secret world (2026-10-14): the light the angel was locked away with, on your side now
+        A("rift", "constellation", "Constellation", "✨", "constellation", "Join the stars and the hidden letters shine.", "Lights up the squares where two unfinished words cross: up to 4 right letters.",
+            { proj: null, aura: ["✨", "⭐"], motion: "spark", color: "#ffd06b", on: "me" }),
+        A("rift", "wish", "Wish Upon a Star", "🌠", "wish", "Make a wish on the next word you write.", "The next word you finish knocks as many letters off the boss's board as it has letters.",
+            { proj: null, aura: ["⭐", "✨"], motion: "rise", color: "#fff3c4", on: "me" }),
+        A("rift", "fate", "Rewrite Fate", "📜", "fate", "What was taken is written back.", "Puts back every letter on your board that the boss erased or changed.",
+            { proj: null, aura: ["✨", "💫"], motion: "swirl", color: "#c49bff", on: "me" })
     ];
 
     // ---------------------------------------------------------------------------------------------
@@ -371,9 +398,21 @@ const Powers = (() => {
             B("Solar Flare", "☀️", "flare", 3, "a blinding flash: you can't see anything", { proj: "☀️", aura: ["✴️", "✨"], motion: "spark" }),
             B("Collapse", "💫", "collapse", 6, "pulls one letter out of each of your finished words", { proj: "💫", aura: ["✦", "💫"], motion: "swirl" }),
             B("Warp Speed", "🚀", "snapfinish", 1, "warps ahead: the boss finishes the word it's on", { proj: null, aura: ["🚀", "✨"], motion: "drift" }),
-            B("Event Horizon", "🕳️", "vowels", 10, "swallows every vowel on your board from view", { proj: "🕳️", aura: ["·", "✦"], motion: "swirl" })]
+            B("Event Horizon", "🕳️", "vowels", 10, "swallows every vowel on your board from view", { proj: "🕳️", aura: ["·", "✦"], motion: "swirl" })],
+        // the Cursed Angel (the user, 2026-10-14: "one of its attacks are rays that drop down and clear the whole row")
+        rift: [B("Judgment Rays", "☀️", "judgment", 2, "drops rays of light that clear two whole rows of your board (it shows which ones while it winds up)", { proj: "☀️", aura: ["✨", "⭐"], motion: "fall" }),
+            B("Wings of Night", "🌑", "wings", 14, "folds dark wings over your board from both sides, closing in", { proj: null, aura: ["·", "✦"], motion: "drift" }),
+            B("Holy Light", "💫", "holylight", 12, "hangs a blinding light over your board that drifts as you work", { proj: "☀️", aura: ["✨", "⭐"], motion: "pop" }),
+            B("Stolen Scripture", "📜", "scripture", 14, "snatches all of your Across or Down clues", { proj: "📜", aura: ["📄", "✨"], motion: "swirl" }),
+            B("Tithe of Light", "🪙", "tithe", 12, "takes every third right letter you type for its own board", { proj: null, aura: ["✨", "⭐"], motion: "orbit" }),
+            // five more (the user, 2026-10-14: "5 more abilities ... one of them clears an entire column with an angelic beam")
+            B("Seraph's Lance", "🔱", "lance", 2, "drives a beam of angelic light down a whole column, clearing it (it shows which one first)", { proj: "🔱", aura: ["✨", "⭐"], motion: "fall" }),
+            B("Divine Decree", "⚜️", "decree", 12, "forbids the letter you need most: you can't type it", { proj: "⚜️", aura: ["✨", "📜"], motion: "pop" }),
+            B("Ascension", "🕊️", "ascend", 10, "lifts your letters: every 2 seconds one floats up a square, or off the board", { proj: null, aura: ["🕊️", "✨"], motion: "rise" }),
+            B("Trumpet Blast", "📯", "trumpet", 1, "blows a trumpet that scrambles the letters inside two of your unfinished words", { proj: "📯", aura: ["🎵", "✨"], motion: "spark" }),
+            B("Penance", "⛓️", "penance", 12, "makes every wrong letter you type cost you one of your right ones", { proj: "⛓️", aura: ["⛓️", "✨"], motion: "orbit" })]
     };
-    const WORLD_PITCH = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, robot: -4, library: -6, volcano: -7, space: -8 };
+    const WORLD_PITCH = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, robot: -4, library: -6, volcano: -7, space: -8, rift: 9 };
 
     // ---------------------------------------------------------------------------------------------
     // How hard each boss fights (the user's design: difficulty in the fights too, not just the puzzles).
@@ -414,7 +453,8 @@ const Powers = (() => {
         "👻": ["glow", ["rgba(191,243,228,.8)", "rgba(239,255,250,.8)"]], "🩷": ["heart", ["#ff6fb5", "#ffb3d6"]], "🧁": ["heart", ["#c08bff", "#ff9ccf"]],
         "🟫": ["dot", ["#d9a35c", "#c48a45", "#ecc68e"]], "✂️": ["streak", ["#d0d6de", "#ffffff"]], "🐛": ["dot", ["#7be36b"]], "🍬": ["square", ["#ff5fa2", "#7ad7ff", "#ffd23f"]],
         "🎉": ["square", ["#e2483c", "#ffd23f", "#4fa3e8", "#7dff6b"]], "▒": ["square", ["#c8c8c8", "#ffffff", "#888888"]], "🦂": ["drop", ["#9be36b", "#5fbf2a"]],
-        "☠️": ["glow", ["rgba(150,255,100,.6)"]], "🕳️": ["ring", ["#2b2233", "#5a4a7a"]], "☂️": ["drop", ["#c9e0ff"]], "☀️": ["star", ["#ffe066", "#fff8d0"]]
+        "☠️": ["glow", ["rgba(150,255,100,.6)"]], "🕳️": ["ring", ["#2b2233", "#5a4a7a"]], "☂️": ["drop", ["#c9e0ff"]], "☀️": ["star", ["#ffe066", "#fff8d0"]],
+        "🌑": ["glow", ["rgba(60,20,110,.75)", "rgba(155,107,255,.6)"]], "💫": ["star", ["#fff6d8", "#ffd06b"]], "📜": ["square", ["#f6ecd2", "#e8c66a"]], "🪙": ["star", ["#ffd06b", "#c9902f"]], "🌠": ["star", ["#fff6d8", "#c49bff"]]
     };
     const lookOf = (emojis, color) => {
         const looks = (emojis || []).map(e => LOOK[e]).filter(Boolean);

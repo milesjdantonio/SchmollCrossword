@@ -54,7 +54,13 @@ const Achievements = (() => {
         { id: "cm-phase", icon: "\u{1F300}", name: "Phase Breaker", desc: "Beat a boss with 3 or more phases.", campaign: true },
         { id: "cm-void", icon: "\u{1F30C}", name: "Into the Void", desc: "Beat the Void, the final boss.", campaign: true },
         { id: "cm-coins", icon: "\u{1FA99}", name: "Treasure Hoard", desc: "Have 1,000 coins at once.", campaign: true },
-        { id: "cm-75", icon: "\u{1F3C5}", name: "Completionist", desc: "Clear all 75 campaign levels.", campaign: true }
+        { id: "cm-75", icon: "\u{1F3C5}", name: "Completionist", desc: "Clear all 75 campaign levels.", campaign: true },
+        // the secret world, the Celestial Rift (2026-10-14): hidden until they're unlocked
+        { id: "rf-enter", icon: "\u{1F320}", name: "Through the Rift", desc: "Clear a level in the Celestial Rift.", campaign: true, secret: true },
+        { id: "rf-pure", icon: "\u{1F56F}️", name: "Pure Light", desc: "Clear a Celestial Rift level with the corruption never above 25%.", campaign: true, secret: true },
+        { id: "rf-angel", icon: "\u{1FAB6}", name: "Fallen Angel", desc: "Beat the Cursed Angel.", campaign: true, secret: true },
+        { id: "rf-halo", icon: "\u{1F607}", name: "Halo Breaker", desc: "Beat the Cursed Angel with 3 stars.", campaign: true, secret: true },
+        { id: "rf-perfect", icon: "\u{1F31F}", name: "Starlit", desc: "Get 3 stars on every Celestial Rift level, the angel included.", campaign: true, secret: true }
     ];
     const blank = () => ({ unlocked: {}, counts: {}, worlds: {} });
     const load = () => ({ ...blank(), ...U.store.get("achievements", {}) });
@@ -91,7 +97,7 @@ const Achievements = (() => {
             if (data.counts.unlimited >= 50) unlock("unlimited50");
         }
         data.worlds[worldId] = true;
-        if (Worlds.list.every(w => w.plain || data.worlds[w.id])) unlock("worlds");
+        if (Worlds.list.every(w => w.plain || w.secret || data.worlds[w.id])) unlock("worlds");      // (the secret world doesn't count)
         if ((info.mode === "daily" || info.daily) && info.counted) {
             if (info.mode === "daily" && info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
             if (info.left && !info.left.some(d => ["easy", "medium", "hard"].includes(d))) unlock("hat");   // the three normal dailies
@@ -142,6 +148,12 @@ const Achievements = (() => {
             if (st.phases >= 3 && st.phaseReached === st.phases) unlock("cm-phase");
             if (st.world === "space" && !st.special) unlock("cm-void");
         }
+        if (st.world === "rift" && !st.special) {
+            unlock("rf-enter");
+            if (st.corruptPeak != null && st.corruptPeak <= 25) unlock("rf-pure");
+            if (st.boss) { unlock("rf-angel"); if (st.bossStars === 3) unlock("rf-halo"); }
+            if (st.riftPerfect) unlock("rf-perfect");
+        }
         if (got.length) U.store.set("achievements", data);
         return got;
     }
@@ -158,11 +170,11 @@ const Achievements = (() => {
         const data = load();
         container.innerHTML = "";
         for (const a of LIST) {
-            const when = data.unlocked[a.id];
-            container.appendChild(U.el("div", { class: "ach-tile" + (when ? " got" : ""), title: when ? `Unlocked ${when}` : "Locked" },
+            const when = data.unlocked[a.id], hidden = a.secret && !when;     // a secret one stays a secret until it's yours
+            container.appendChild(U.el("div", { class: "ach-tile" + (when ? " got" : "") + (hidden ? " secret" : ""), title: when ? `Unlocked ${when}` : "Locked" },
                 U.el("span", { class: "ach-icon", text: when ? a.icon : "\u{1F512}" }),
-                U.el("b", { text: a.name }),
-                U.el("small", { text: a.desc })));
+                U.el("b", { text: hidden ? "Secret" : a.name }),
+                U.el("small", { text: hidden ? "Keep playing to find it." : a.desc })));
         }
         return { got: Object.keys(data.unlocked).length, total: LIST.length };
     }

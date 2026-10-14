@@ -433,6 +433,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .world-card[data-wid="library"] .wc-label b { font-family: "IM Fell English SC", serif; font-size: .98rem; font-weight: 400; white-space: nowrap; }
 .world-card[data-wid="volcano"] .wc-label b { font-family: Bungee, sans-serif; font-size: .82rem; font-weight: 400; }
 .world-card[data-wid="sky"] .wc-label b { font-family: Comfortaa, sans-serif; font-size: 1rem; font-weight: 700; }
+.world-card[data-wid="rift"] .wc-label b { font-family: Cinzel, serif; font-size: .98rem; font-weight: 700; letter-spacing: .03em; }
 .world-card[data-wid="desert"] .wc-label b { font-family: Rye, serif; font-size: .95rem; font-weight: 400; }
 .world-card[data-wid="robot"] .wc-label b { font-family: "Russo One", sans-serif; font-size: .95rem; font-weight: 400; }
 .world-card[data-wid="carnival"] .wc-label b { font-family: Shrikhand, serif; font-size: .86rem; font-weight: 400; white-space: nowrap; }

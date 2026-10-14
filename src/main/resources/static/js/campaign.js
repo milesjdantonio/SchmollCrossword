@@ -39,19 +39,44 @@ const Campaign = (() => {
     data.owned = data.owned || {};
     data.items = data.items || {};
 
-    let map = null, loading = null;
+    let map = null, full = null, loading = null;
+    // The secret world (the Celestial Rift, the user's design, 2026-10-14): on the map only once the Void is beaten
+    // (or with the beta's Unlock All). map is what's shown; full has it too.
+    // TEST_SECRET_OPEN (the user, 2026-10-14: "for testing purposes can you leave it unlocked"): the rift is on the map
+    // and its first level is open without beating the Void. Set it false for the public launch, with BETA.
+    const TEST_SECRET_OPEN = true;
+    const secretOpen = () => !!(TEST_SECRET_OPEN || data.betaUnlock || (data.levels && data.levels["space-5"]));
+    const visibleMap = () => full.filter(s => !s.secret || secretOpen());
+    // the map grows (the Void just fell, or Unlock All was pressed): it's drawn again from scratch
+    function refreshMap() {
+        if (!full) return false;
+        const next = visibleMap();
+        if (map && next.length === map.length) return false;
+        map = next;
+        svg = null;
+        const rail = $("#cm-rail");
+        if (rail) rail.innerHTML = "";
+        return true;
+    }
     function fetchMap() {
         if (map) return Promise.resolve(map);
         if (!loading) {
             loading = fetch("/api/campaign/map")
                 .then(r => { if (!r.ok) throw new Error("the server answered " + r.status); return r.json(); })
-                .then(list => { map = list.filter(s => Worlds.byId[s.world]); migrate(); return map; })
+                .then(list => { full = list.filter(s => Worlds.byId[s.world]); map = visibleMap(); migrate(); return map; })
                 .catch(err => { loading = null; throw err; });
         }
         return loading;
     }
 
     const sizeOf = (s, level) => (s.sizes ? s.sizes[level - 1] : 5);
+    // a world's levels: 1-4 and the boss (5); the secret world has only 1-3 and the boss (Campaign.java levelList)
+    const LV = si => (map && map[si] && map[si].levelList) || [1, 2, 3, 4, 5];
+    const prevLevel = (si, l) => { const list = LV(si), i = list.indexOf(l); return i > 0 ? list[i - 1] : null; };
+    const nextLevel = (si, l) => { const list = LV(si), i = list.indexOf(l); return i >= 0 && i < list.length - 1 ? list[i + 1] : null; };
+    const MAIN = 15;                          // the Everbook's 15 worlds: boss difficulty is measured along these
+    const isSecret = si => !!(map && map[si] && map[si].secret);
+    const worldTag = si => (isSecret(si) ? "SECRET WORLD" : `WORLD ${si + 1}`);
     const phase2Of = s => (s && s.phase2 ? s.phase2 : ["challenge", 6]);          // a boss's second puzzle: [difficulty, size]
     // every puzzle after a boss's first: [[difficulty, size], ...] (2 phases for most bosses, 3 for the last three, 5 for the Void)
     const laterPhases = s => (s && s.phases ? s.phases : [phase2Of(s)]);
@@ -92,19 +117,20 @@ const Campaign = (() => {
     function unlocked(si, level) {
         if (data.betaUnlock) return true;                          // the beta's Unlock All button (see BETA below)
         if (si === 0 && level === 1) return true;
-        if (level > 1) return cleared(si, level - 1);
+        if (TEST_SECRET_OPEN && level === 1 && map[si].secret) return true;      // (testing: see TEST_SECRET_OPEN)
+        if (level > 1) return cleared(si, prevLevel(si, level) || level - 1);
         return si > 0 && cleared(si - 1, 5);
     }
     const sectionOpen = si => unlocked(si, 1);
     // where the player is: the first level not cleared yet
     function frontier() {
-        for (let si = 0; si < map.length; si++) for (let l = 1; l <= 5; l++) if (!cleared(si, l)) return { si, level: l };
+        for (let si = 0; si < map.length; si++) for (const l of LV(si)) if (!cleared(si, l)) return { si, level: l };
         return { si: map.length - 1, level: 5 };
     }
     function totals() {
         let levels = 0, stars = 0;
         for (const r of Object.values(data.levels)) { levels++; stars += r.stars || 0; }
-        return { levels, stars, max: (map ? map.length : 15) * 5 };
+        return { levels, stars, max: map ? map.reduce((n, s, si) => n + LV(si).length, 0) : 75 };
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -125,7 +151,8 @@ const Campaign = (() => {
         robot:    { sky: "#55606f", hill: "#3f4855", ground: "#6a7583", path: "#ffc43d", node: "#ff7a1a", prop: "gear", night: true },
         library:  { sky: "#2b1a35", hill: "#3d2546", ground: "#5a3a28", path: "#e8c37a", node: "#7fe0c4", prop: "books", night: true },
         volcano:  { sky: "#5a2320", hill: "#2e1c1c", ground: "#3d2a26", path: "#ff8a2a", node: "#ffcf3f", prop: "cone", night: true },
-        space:    { sky: "#070a1f", hill: "#151b40", ground: "#0e1230", path: "#b18cff", node: "#ffe066", prop: "planet", night: true }
+        space:    { sky: "#070a1f", hill: "#151b40", ground: "#0e1230", path: "#b18cff", node: "#ffe066", prop: "planet", night: true },
+        rift:     { sky: "#0c0420", hill: "#2a1050", ground: "#170a36", path: "#ffd06b", node: "#e8c66a", prop: "ruin", night: true }
     };
     const biome = world => BIOMES[world] || BIOMES.paper;
     const INK = "#2b2233";
@@ -188,6 +215,10 @@ const Campaign = (() => {
         cone: r => r() < 0.55
             ? `<path d="M-34 0L-10-40h20L34 0z" fill="#4a2f2a"/><path d="M-10-40h20l-4 8h-12z" fill="#ff8a2a"/><circle cx="4" cy="-52" r="8" fill="#6d5a58" opacity=".7"/><circle cx="-4" cy="-64" r="10" fill="#6d5a58" opacity=".5"/>`
             : `<path d="M-16 0l4-16 12-6 14 8 2 14z" fill="#2a1d1b"/><ellipse cx="20" cy="2" rx="14" ry="4" fill="#ff7a1f" opacity=".85"/>`,
+        // the Celestial Rift: broken marble columns with gold, and black and white feathers
+        ruin: r => r() < 0.6
+            ? `<rect x="-9" y="-58" width="18" height="58" fill="#cfc4e6"/><path d="M-9 -58 L-3 -66 L3 -60 L9 -68 L9 -58Z" fill="#cfc4e6"/><path d="M-4 -56V-2M2 -56V-2" stroke="#8a7cae" stroke-width="1.4"/><rect x="-13" y="-4" width="26" height="6" fill="#e8c66a"/>`
+            : `<path d="M0 -26 Q9 -12 4 6 L0 10 L-4 6 Q-9 -12 0 -26Z" fill="${pick3(r, ["#ffffff", "#1c1230"])}" stroke="#9b6bff" stroke-width="1.5"/><path d="M0 -22V9" stroke="#9b6bff" stroke-width="1"/>`,
         planet: r => r() < 0.5
             ? `<circle cy="-30" r="16" fill="${pick3(r, ["#ff9f6b", "#6bd0ff", "#b18cff"])}"/><ellipse cy="-30" rx="28" ry="6" fill="none" stroke="#ffe066" stroke-width="2.5" transform="rotate(-15 0 -30)"/>`
             : `<path d="${starPath(0, -20, 9, 3, 4)}" fill="#fff"/>`
@@ -205,7 +236,10 @@ const Campaign = (() => {
         if (si % 2) x = W - x;                     // every other world winds the other way
         return [x + (r() - 0.5) * 60, TOP + si * SH + y + (r() - 0.5) * 30];
     }
-    const allNodes = () => [[500, 50], ...map.flatMap((s, si) => [0, 1, 2, 3, 4].map(li => nodePos(si, li)))];
+    const slotOf = (si, l) => (isSecret(si) ? [null, 0, 1, 2, null, 4][l] : l - 1);
+    const allNodes = () => [[500, 50], ...map.flatMap((s, si) => LV(si).map(l => nodePos(si, slotOf(si, l))))];
+    // a level's place along the road (allNodes()[0] is the road's start)
+    const nodeIndex = (si, l) => 1 + map.slice(0, si).reduce((n, s, i) => n + LV(i).length, 0) + LV(si).indexOf(l);
     const totalH = () => TOP + map.length * SH + BOTTOM;
 
     // a smooth curve through the points (Catmull-Rom), from point "from" to point "to"
@@ -264,6 +298,10 @@ const Campaign = (() => {
                 for (let i = 0; i < 3; i++) { const cx = 80 + r() * (W - 160), cy = y0 + 120 + r() * (SH - 200); sky += `<g transform="translate(${cx.toFixed(0)} ${cy.toFixed(0)})" fill="#fff" opacity=".35"><ellipse rx="70" ry="22"/><circle cx="-20" cy="-14" r="26"/><circle cx="22" cy="-10" r="20"/></g>`; }
             }
             if (s.world === "volcano") sky += `<path d="M${W - 280} ${y0 + 520}L${W - 170} ${y0 + 360}h50L${W - 10} ${y0 + 520}z" fill="#24130f"/><path d="M${W - 170} ${y0 + 360}h50l-10 18h-30z" fill="#ff7a1f"/>`;
+            if (s.world === "rift") {               // the tear across the secret world's sky, light pouring out of it
+                sky += `<path d="M40 ${y0 + 300} L190 ${y0 + 270} L300 ${y0 + 320} L430 ${y0 + 250} L560 ${y0 + 310} L700 ${y0 + 240} L830 ${y0 + 300} L960 ${y0 + 260} L960 ${y0 + 290} L830 ${y0 + 330} L700 ${y0 + 290} L560 ${y0 + 350} L430 ${y0 + 290} L300 ${y0 + 360} L190 ${y0 + 300} L40 ${y0 + 320}Z" fill="#fff3c4" stroke="#ffd06b" stroke-width="5" opacity=".9"/>`;
+                for (let i = 0; i < 7; i++) sky += `<path d="M${120 + i * 130} ${y0 + 300} L${60 + i * 150} ${y0 + 980} L${180 + i * 150} ${y0 + 980}Z" fill="#ffe7a3" opacity=".06"/>`;
+            }
             if (s.world === "space") sky += `<circle cx="140" cy="${y0 + 470}" r="54" fill="#ff9f6b"/><ellipse cx="140" cy="${y0 + 470}" rx="92" ry="14" fill="none" stroke="#ffe066" stroke-width="4" transform="rotate(-12 140 ${y0 + 470})"/>`;
             if (s.world === "arcade") sky += `<g transform="translate(${W - 130} ${y0 + 520})"><circle r="70" fill="#ff5fb0"/>${[0, 1, 2, 3].map(i => `<rect x="-80" y="${8 + i * 14}" width="160" height="${3 + i * 2}" fill="#220a48"/>`).join("")}</g>`;
             // ground textures
@@ -276,7 +314,7 @@ const Campaign = (() => {
             const w = Worlds.byId[s.world];
             signs += `<g class="cm-sign" transform="translate(500 ${y0 + 92})"><rect x="-230" y="-52" width="460" height="104" rx="22" fill="${b.node}" stroke="#fff" stroke-width="6"/>
                 <rect x="-230" y="-52" width="460" height="104" rx="22" fill="none" stroke="${INK}" stroke-width="3" opacity=".35"/>
-                <text class="cm-sign-kick" y="-16">WORLD ${si + 1}</text><text class="cm-sign-name" y="30">${U.esc(w.icon + " " + w.name)}</text></g>`;
+                <text class="cm-sign-kick" y="-16">${worldTag(si)}</text><text class="cm-sign-name" y="30">${U.esc(w.icon + " " + w.name)}</text></g>`;
         });
         svg = U.svg("svg", { class: "cm-svg", viewBox: `0 0 ${W} ${total}`, role: "group", "aria-label": "Campaign map" });
         svg.innerHTML = `<defs>${blend("cm-ground", "ground")}${blend("cm-hill", "hill")}${blend("cm-path", "path")}${blend("cm-sky", "sky")}</defs>
@@ -303,7 +341,7 @@ const Campaign = (() => {
 
     // the parts that change with progress: the travelled path, the nodes, the fog over locked worlds, the player
     function drawDynamic() {
-        const nodes = allNodes(), f = frontier(), fi = f.si * 5 + f.level;
+        const nodes = allNodes(), f = frontier(), fi = nodeIndex(f.si, f.level);
         let out = `<path class="cm-road-done" d="${curve(nodes, 0, fi)}"/>`;
         map.forEach((s, si) => {
             const b = biome(s.world);
@@ -311,8 +349,8 @@ const Campaign = (() => {
                 out += `<g class="cm-fog"><rect x="-100" y="${TOP + si * SH}" width="${W + 200}" height="${SH}"/><text x="500" y="${TOP + si * SH + SH / 2 - 10}" class="cm-fog-lock">&#128274;</text>` +
                     `<text x="500" y="${TOP + si * SH + SH / 2 + 40}" class="cm-fog-text">Beat ${U.esc(bossOf(map[si - 1].world).name)} to open</text></g>`;
             }
-            for (let l = 1; l <= 5; l++) {
-                const [x, y] = nodePos(si, l - 1), rec = record(si, l), open = unlocked(si, l), boss = l === 5;
+            for (const l of LV(si)) {
+                const [x, y] = nodePos(si, slotOf(si, l)), rec = record(si, l), open = unlocked(si, l), boss = l === 5;
                 const state = rec ? "done" : open ? "open" : "locked";
                 const sel = si === data.section && l === data.sel && sheetOpen ? " sel" : "";
                 const R = boss ? 62 : 38;
@@ -347,7 +385,7 @@ const Campaign = (() => {
     const heroLift = level => (level === 5 ? 66 : 42);          // how far above a node's middle the hero's feet are
     function heroSpot() {
         const at = data.heroAt, f = frontier();
-        if (at && map && map[at.si] && at.level >= 1 && at.level <= 5 && unlocked(at.si, at.level)) return at;
+        if (at && map && map[at.si] && LV(at.si).includes(at.level) && unlocked(at.si, at.level)) return at;
         return { si: f.si, level: f.level };
     }
     function heroMarkup(x, y) {
@@ -357,13 +395,13 @@ const Campaign = (() => {
     }
     function drawHero() {
         if (!heroLayer || heroWalking || !map) return;
-        const at = heroSpot(), [x, y] = nodePos(at.si, at.level - 1);
+        const at = heroSpot(), [x, y] = nodePos(at.si, slotOf(at.si, at.level));
         heroLayer.innerHTML = heroMarkup(x, y - heroLift(at.level));
     }
     // walk along the road from where the hero stands to (si, level); far jumps (more than a world away) just hop there
     function walkHero(si, level) {
         if (!heroLayer || !map || heroWalking) return Promise.resolve();
-        const from = heroSpot(), a = from.si * 5 + from.level, b = si * 5 + level;      // (allNodes()[0] is the road's start)
+        const from = heroSpot(), a = nodeIndex(from.si, from.level), b = nodeIndex(si, level);
         data.heroAt = { si, level };
         save();
         if (a === b) { drawHero(); return Promise.resolve(); }
@@ -374,6 +412,7 @@ const Campaign = (() => {
         const lift0 = heroLift(from.level), lift1 = heroLift(level);
         heroFace = nodes[b][0] >= nodes[a][0] ? 1 : -1;
         heroWalking = true;
+        heroLayer.querySelectorAll(".cm-hero").forEach(n => n.remove());       // (the one standing there: it was left behind while its copy walked)
         heroLayer.insertAdjacentHTML("beforeend", heroMarkup(nodes[a][0], nodes[a][1] - lift0));
         const g = heroLayer.querySelector(".cm-hero");
         g.classList.add("walking");
@@ -393,8 +432,10 @@ const Campaign = (() => {
             requestAnimationFrame(step);
         });
     }
+    // the bosses you've beaten: each one gives your hero new parts (hero.js; the user, 2026-10-14)
+    const beatenBosses = () => (data.betaUnlock ? Bosses.list : (full || map || []).map(s => s.world).filter(w => data.levels[keyOf(w, 5)]));
     async function editHero(first = false) {
-        const look = await Hero.maker({ look: data.hero || null, first });
+        const look = await Hero.maker({ look: data.hero || null, first, beaten: beatenBosses() });
         if (!look) return false;
         data.hero = look;
         save();
@@ -415,7 +456,7 @@ const Campaign = (() => {
             data.arrived = f.si;
             data.heroAt = { si: f.si, level: 1 };
             save();
-            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: map.length }));
+            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }));
             drawHero();
             return;
         }
@@ -431,7 +472,7 @@ const Campaign = (() => {
     function scrollToPoint(y, smooth = true) {
         scrollTo({ top: Math.max(0, svgTop() + y * scale() - innerHeight * 0.48), behavior: smooth && U.motion() !== "still" ? "smooth" : "auto" });
     }
-    const scrollToLevel = (si, l, smooth) => scrollToPoint(nodePos(si, l - 1)[1], smooth);
+    const scrollToLevel = (si, l, smooth) => scrollToPoint(nodePos(si, slotOf(si, l))[1], smooth);
     const scrollToWorld = si => scrollToPoint(TOP + si * SH + 420);
     function sectionInView() {
         const y = (scrollY + innerHeight * 0.5 - svgTop()) / scale();
@@ -477,9 +518,9 @@ const Campaign = (() => {
         const si = data.section, s = map[si], w = Worlds.byId[s.world], b = biome(s.world);
         const bar = $(".cmv-bar");
         bar.style.setProperty("--c", b.node);
-        $("#cm-kicker").textContent = `WORLD ${si + 1} OF ${map.length}`;
+        $("#cm-kicker").textContent = isSecret(si) ? "SECRET WORLD" : `WORLD ${si + 1} OF ${MAIN}`;
         $("#cm-name").textContent = `${w.icon} ${w.name}`;
-        const diffs = [...new Set(s.levels.slice(0, 4).map((d, i) => label(d, sizeOf(s, i + 1))))].join(" / ");
+        const diffs = [...new Set(LV(si).filter(l => l < 5).map(l => label(s.levels[l - 1], sizeOf(s, l))))].join(" / ");
         $("#cm-tag").textContent = `${diffs} · Boss: ${bossOf(s.world).name}`;
         const t = totals();
         $("#cm-total").textContent = `★ ${t.stars} / ${t.max * 3}`;
@@ -514,51 +555,61 @@ const Campaign = (() => {
         box.classList.toggle("boss", boss);
         box.style.setProperty("--c", boss ? bossOf(s.world).color : biome(s.world).node);
         box.appendChild(U.el("button", { type: "button", class: "cm-sheet-close", "aria-label": "Close", text: "×", onclick: closeSheet }));
-        if (boss) box.appendChild(U.el("div", { class: "cm-detail-art cm-vs" },
-            U.el("div", { class: "cm-vs-col" }, U.el("div", { html: Hero.svg(heroLook()) }), U.el("small", { text: heroLook().name })),
-            U.el("span", { class: "cm-vs-chip", text: "VS" }),
-            U.el("div", { class: "cm-vs-col" }, U.el("div", { html: bossSvg(s.world) }), U.el("small", { text: bossOf(s.world).name }))));
+        // a boss's sheet fits the screen (the user, 2026-10-14: "make it so you dont have to scroll for the boss page,
+        // every option should be there"): its moves | you vs the boss, with its story under them | the details, and a
+        // footer with your abilities and the buttons that always stays in view
+        if (boss) box.appendChild(U.el("div", { class: "cm-side" },
+            U.el("div", { class: "cm-detail-art cm-vs" },
+                U.el("div", { class: "cm-vs-col" }, U.el("div", { html: Hero.svg(heroLook()) }), U.el("small", { text: heroLook().name })),
+                U.el("span", { class: "cm-vs-chip", text: "VS" }),
+                U.el("div", { class: "cm-vs-col" }, U.el("div", { html: bossSvg(s.world) }), U.el("small", { text: bossOf(s.world).name }))),
+            bossOf(s.world).story ? U.el("p", { class: "cm-story", text: bossOf(s.world).story }) : null));
         const body = U.el("div", { class: "cm-detail-body" });
         box.appendChild(body);
-        body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `WORLD ${si + 1} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
+        body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `${worldTag(si)} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
         body.appendChild(U.el("h2", { text: boss ? bossOf(s.world).name : `${Worlds.byId[s.world].name} ${l}` }));
-        if (boss && bossOf(s.world).story) body.appendChild(U.el("p", { class: "cm-story", text: bossOf(s.world).story }));
         if (boss) body.appendChild(U.el("p", { class: "cm-taunt", text: `"${bossOf(s.world).taunt}"` }));
         if (boss) {
-            const th = Powers.threat(si, map.length), moves = Powers.MOVES[s.world] || [];
+            const th = Powers.threat(si, MAIN), moves = Powers.MOVES[s.world] || [];
             body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)}` }));
             // its moves, in a menu on the left of the sheet
-            box.insertBefore(U.el("div", { class: "cm-moves-menu" }, U.el("small", { text: "ITS MOVES" }),
+            box.classList.toggle("many-moves", moves.length > 6);          // (the Cursed Angel's ten: two columns)
+            box.insertBefore(U.el("div", { class: "cm-moves-menu" + (moves.length > 6 ? " many" : "") }, U.el("small", { text: "ITS MOVES" }),
                 ...moves.map(m => U.el("div", { class: "cm-move" }, U.el("span", { class: "cm-move-icon", text: m.icon }),
                     U.el("div", {}, U.el("b", { text: m.name }), U.el("small", { text: "It " + m.desc }))))), box.children[1] || null);
         }
         const lesson = lessonOf(si, l);
         if (lesson) body.appendChild(U.el("div", { class: "cm-lesson" },
-            U.el("small", { text: boss ? "BOSS REVIEW" : `LESSON ${l} OF 4` + (lesson.round > 1 ? ` · ROUND ${lesson.round}` : "") }),
+            U.el("small", { text: boss ? "BOSS REVIEW" : `LESSON ${l} OF ${LV(si).length - 1}` + (lesson.round > 1 ? ` · ROUND ${lesson.round}` : "") }),
             U.el("b", { text: `📘 ${lesson.name}` }),
             U.el("p", { text: lesson.practise }),
             U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` })));
         body.appendChild(U.el("p", { class: "cm-rules", text: boss
             ? "A race: solve your puzzle before the boss solves its own. Every right word pushes the race bar your way; chain words for combos. When it winds up an attack, finish a word to block it."
-            : `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Items · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
-        if (boss) body.appendChild(loadoutBox(map[si].world, () => drawDetail()));
+            : (isSecret(si) ? "The Cursed Angel watches you solve: a corruption meter rises, and finishing words pushes it back. Fight off its tricks. If the meter fills, the level is lost. " : "")
+                + `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Items · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
+        const foot = boss ? U.el("div", { class: "cm-foot" }) : body;
+        if (boss) foot.appendChild(loadoutBox(map[si].world, () => drawDetail()));
         const prize = abilityPrize(si, l);
         if (prize) body.appendChild(U.el("p", { class: "cm-prize" + (rec ? " got" : ""), text: rec ? `Ability unlocked here: ${prize.icon} ${prize.name}` : `Clear it to unlock an ability: ${prize.icon} ${prize.name}` }));
         if (rec) body.appendChild(U.el("p", { class: "cm-best", text: `Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)} · ${U.fmtTime(rec.seconds || 0)}` }));
-        if (!open) body.appendChild(U.el("p", { class: "cm-rules", text: l > 1 ? `Clear level ${l - 1} first.` : `Beat ${bossOf(map[si - 1].world).name} first.` }));
+        if (!open) body.appendChild(U.el("p", { class: "cm-rules", text: l > 1 ? `Clear level ${prevLevel(si, l)} first.` : `Beat ${bossOf(map[si - 1].world).name} first.` }));
         const btn = U.el("button", { type: "button", class: "btn primary big", text: !open ? "🔒 Locked" : rec ? "Play Again" : boss ? "Fight" : "Play" });
         btn.disabled = !open;
         btn.addEventListener("click", () => play(s.world, l));
-        body.appendChild(U.el("div", { class: "cm-actions" }, btn, U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(boss ? "abilities" : "items") }),
+        foot.appendChild(U.el("div", { class: "cm-actions" }, btn, U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(boss ? "abilities" : "items") }),
             boss ? U.el("button", { type: "button", class: "btn ghost", text: "How It Works", onclick: () => HowTo.open("boss") }) : null));
+        if (boss) box.appendChild(foot);
         box.hidden = false;
         sheetOpen = true;
+        document.documentElement.classList.toggle("cm-boss-sheet", boss);   // (your companion steps aside: its bubble covered an ability slot)
         requestAnimationFrame(() => box.classList.add("in"));
     }
     function catchUpWorld() { if (pendingSwap != null) { const si = pendingSwap; pendingSwap = null; swapWorld(si); } }
     function closeSheet() {
         const box = $("#cm-detail");
         sheetOpen = false;
+        document.documentElement.classList.remove("cm-boss-sheet");
         catchUpWorld();
         box.classList.remove("in");
         setTimeout(() => { if (!sheetOpen) box.hidden = true; }, 250);
@@ -621,7 +672,7 @@ const Campaign = (() => {
         }
     }
     let shownOnce = false;
-    function closeSheetQuiet() { sheetOpen = false; const box = $("#cm-detail"); box.classList.remove("in"); box.hidden = true; catchUpWorld(); }
+    function closeSheetQuiet() { sheetOpen = false; document.documentElement.classList.remove("cm-boss-sheet"); const box = $("#cm-detail"); box.classList.remove("in"); box.hidden = true; catchUpWorld(); }
 
     function play(world, level) {
         data.playing = { world, level };
@@ -707,8 +758,9 @@ const Campaign = (() => {
         const c = current(), w = c && Worlds.byId[c.world];
         if (!w) return { title: "Campaign", sub: "" };
         if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // just "Boss" on Daily and Unlimited (the user)
-        if (c.level === 5) return { title: "Boss: " + bossOf(c.world).name, sub: `World ${c.si + 1} · ${w.name}` };
-        return { title: `${w.name} · Level ${c.level}`, sub: `World ${c.si + 1} of ${map ? map.length : 15}` + (c.difficulty ? ` · ${label(c.difficulty, c.size)}` : "") };
+        const where = isSecret(c.si) ? "Secret World" : `World ${c.si + 1}`;
+        if (c.level === 5) return { title: "Boss: " + bossOf(c.world).name, sub: `${where} · ${w.name}` };
+        return { title: `${w.name} · Level ${c.level}`, sub: (isSecret(c.si) ? where : `${where} of ${MAIN}`) + (c.difficulty ? ` · ${label(c.difficulty, c.size)}` : "") };
     }
     function cardInfo(puzzle) {
         const c = current(), w = c && Worlds.byId[c.world];
@@ -716,7 +768,7 @@ const Campaign = (() => {
         const boss = c.level === 5;
         return {
             mode: "campaign", difficulty: puzzle.difficulty, stage: `WORLD ${c.si + 1}-${c.level}`,
-            kicker: c.special ? "BOSS" : boss ? `WORLD ${c.si + 1} · BOSS BATTLE` : `WORLD ${c.si + 1} · LEVEL ${c.level}`,
+            kicker: c.special ? "BOSS" : boss ? `${worldTag(c.si)} · BOSS BATTLE` : `${worldTag(c.si)} · LEVEL ${c.level}`,
             title: boss ? bossOf(c.world).name : w.name,
             sub: boss ? bossOf(c.world).taunt : (lessonOf(c.si, c.level) ? `Lesson: ${lessonOf(c.si, c.level).name} · ★ ${starGoal(lessonOf(c.si, c.level), puzzle.difficulty, puzzle.size)[0]}` : label(puzzle.difficulty, puzzle.size)),
             stardate: `SECTOR ${c.si + 1}.${c.level}`
@@ -737,7 +789,7 @@ const Campaign = (() => {
         root.classList.toggle("in-campaign", view === "campaign" || view === "level");
         root.classList.toggle("in-map", view === "campaign");
         root.classList.toggle("in-level", view === "level");
-        if (view !== "level") { hidePanel(); Sound.levelSong(null, { fade: 1 }); musicCtl.hidden = true; }
+        if (view !== "level") { hidePanel(); Corruption.pause(); Sound.levelSong(null, { fade: 1 }); musicCtl.hidden = true; }
         if (view === "campaign") showMap();
         else if (view === "level") {
             if (!data.playing) { location.replace("#campaign"); return false; }
@@ -761,7 +813,7 @@ const Campaign = (() => {
         if (c.special) return specialWin(game, c);
         const boss = c.level === 5, d = puzzle.difficulty;
         const earned = [];
-        let stars;
+        let stars, corruptPeak = null;
         if (skipping) {
             stars = 1;
             earned.push(["Cleared With a Level Clear", true]);
@@ -777,6 +829,7 @@ const Campaign = (() => {
             stars = 1 + (noItems ? 1 : 0) + (met ? 1 : 0);
             earned.push(["Solved It", true], ["No Items Used", noItems], [goal, met]);
             if (lesson) earned.push([`Skill Practised: ${lesson.name}`, true]);
+            if (riftLevel(puzzle)) { corruptPeak = Corruption.win(); earned.push([`Corruption Peak: ${corruptPeak}%`, corruptPeak < 50]); }
         }
         skipping = false;
         const key = keyOf(c.world, c.level), old = data.levels[key];
@@ -789,18 +842,22 @@ const Campaign = (() => {
         const prize = abilityPrize(c.si, c.level), newAbility = firstClear && prize ? prize : null;
         if (newAbility) data.owned[prize.id] = (data.owned[prize.id] || 0) + FREE_USES;
         let next = null;
-        if (c.level < 5) next = { world: c.world, level: c.level + 1 };
+        // the Void beaten for the first time: the secret world opens (the map grows, the next world is the Rift)
+        const opened = c.world === "space" && boss && firstClear && refreshMap();
+        if (c.level < 5) next = { world: c.world, level: nextLevel(c.si, c.level) };
         else if (c.si + 1 < map.length) next = { world: map[c.si + 1].world, level: 1 };
         if (next && next.level === 1) { data.section = c.si + 1; data.sel = 1; }
         else if (next) { data.section = c.si; data.sel = next.level; }
         save();
         drawItemBar();
-        const bossesBeaten = map.filter(s => data.levels[keyOf(s.world, 5)]).length;
+        // (the 15 worlds of the Everbook: the secret world has its own achievements)
+        const main = map.filter(s => !s.secret), bossesBeaten = main.filter(s => data.levels[keyOf(s.world, 5)]).length;
         const stats = {
-            levels: Object.keys(data.levels).length, bosses: bossesBeaten, allBosses: map.length, stars: Object.values(data.levels).reduce((n, r) => n + r.stars, 0),
-            perfectWorld: map.some(s => [1, 2, 3, 4, 5].every(l => (data.levels[keyOf(s.world, l)] || {}).stars === 3)),
-            worldDone: map.some(s => [1, 2, 3, 4, 5].every(l => data.levels[keyOf(s.world, l)])), allLevels: map.length * 5, totalCoins: data.coins,
-            boss, difficulty: d, world: c.world
+            levels: Object.keys(data.levels).filter(k => !k.startsWith("rift-")).length, bosses: bossesBeaten, allBosses: main.length, stars: Object.values(data.levels).reduce((n, r) => n + r.stars, 0),
+            perfectWorld: map.some((s, si) => LV(si).every(l => (data.levels[keyOf(s.world, l)] || {}).stars === 3)),
+            worldDone: map.some((s, si) => LV(si).every(l => data.levels[keyOf(s.world, l)])), allLevels: main.length * 5, totalCoins: data.coins,
+            boss, difficulty: d, world: c.world, corruptPeak, secret: isSecret(c.si),
+            riftPerfect: isSecret(c.si) && LV(c.si).every(l => (data.levels[keyOf(c.world, l)] || {}).stars === 3)
         };
         if (boss && fight) Object.assign(stats, { hits: fight.hits, blocks: fight.blocks, combo: fight.bestCombo, kinds: fight.kinds.size, used: fight.used + fight.itemsUsed,
             closest: Math.max(fight.closest, bossPct()), lifeUsed: fight.lifeUsed, phase2: fight.phase >= 2, phases: fight.phases,
@@ -808,7 +865,8 @@ const Campaign = (() => {
         return {
             campaignStats: stats,
             campaign: { stars, best: data.levels[key].stars, earned, boss, firstClear, next, world: c.world, level: c.level, si: c.si, coins, totalCoins: data.coins,
-                newWorld: boss && firstClear && next ? Worlds.byId[next.world] : null, finished: boss && c.si === map.length - 1, newAbility, freeUses: FREE_USES }
+                newWorld: boss && firstClear && next && !opened ? Worlds.byId[next.world] : null, finished: boss && c.world === "space", secret: opened ? Worlds.byId.rift : null,
+                epilogue: boss && c.world === "rift", heroGifts: boss && firstClear && typeof Hero !== "undefined" && Hero.giftNames ? Hero.giftNames(c.world) : null, newAbility, freeUses: FREE_USES }
         };
     }
     // a Daily or Unlimited Boss beaten: stars and coins, nothing else (the daily's first win each day pays the most)
@@ -838,7 +896,7 @@ const Campaign = (() => {
         const c = current();
         if (!c) return "";
         const rec = data.levels[keyOf(c.world, c.level)];
-        const lesson = lessonOf(c.si, c.level), what = lesson && c.level < 5 ? `📘 ${lesson.name}` : `World ${c.si + 1} · ${c.level === 5 ? "Boss" : "Level " + c.level}`;
+        const lesson = lessonOf(c.si, c.level), what = lesson && c.level < 5 ? `📘 ${lesson.name}` : `${isSecret(c.si) ? "Secret World" : "World " + (c.si + 1)} · ${c.level === 5 ? "Boss" : "Level " + c.level}`;
         return rec ? `${what} · Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)}` : what;
     }
     function next(n) {
@@ -851,7 +909,7 @@ const Campaign = (() => {
     // Abilities (boss fights): 3 per world, each one different (no repeats, no stronger copies; the user's rule).
     // What they are, how they look and sound is in powers.js; what each one does is in useAbility below.
     // ---------------------------------------------------------------------------------------------
-    const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space"];   // the map order (Campaign.java)
+    const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];   // the map order (Campaign.java)
     const ABILITIES = Powers.ABILITIES.map(a => ({ ...a, price: 30 + WORLD_ORDER.indexOf(a.world) * 8 }));
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
@@ -1030,6 +1088,7 @@ const Campaign = (() => {
                 scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Boss on Daily and Unlimited always brings its own world's three." }));
                 // (what you bring is shown in the equipped bar at the top of the shop)
                 for (const world of WORLD_ORDER) {
+                    if (world === "rift" && !secretOpen()) continue;        // the secret world stays a secret
                     const w = Worlds.byId[world];
                     if (!w) continue;
                     scroll.appendChild(U.el("h3", { class: "shop-world", style: { "--c": biome(world).node } }, U.el("span", { text: `${w.icon} ${w.name}` }), U.el("small", { text: bossOf(world).name })));
@@ -1159,9 +1218,34 @@ const Campaign = (() => {
         if (boss && fight && !fight.over) { lose("surrender"); return; }
         const { world, level } = data.playing;
         Game.endLoss({ title: "Gave Up", text: "Level not cleared. Try it again whenever you like." });
+        Corruption.stop();
         levelMusic();
         Sound.play("wrong");
         loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · GAVE UP`, title: "Maybe Next Time", note: "Items like Letter Reveal and Clear Wrong (in the shop) can help with a tough one." });
+    }
+    // The Celestial Rift's levels (corruption.js): the angel watches and the corruption meter runs while you solve
+    const riftLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && !data.playing.special && data.playing.world === "rift" && data.playing.level < 5);
+    function riftSync(puzzle) {
+        if (riftLevel(puzzle) && U.view() === "level" && !Game.state.solved && map) {
+            const c = current();
+            Corruption.start({ key: keyOf(c.world, c.level), seed: puzzle.seed, level: Math.max(1, LV(c.si).indexOf(c.level) + 1), par: par(puzzle.difficulty, puzzle.size),
+                entries: puzzle.across.length + puzzle.down.length, onLose: corruptLose });
+        } else Corruption.stop();
+    }
+    Bus.on("puzzle", ({ puzzle }) => riftSync(puzzle));
+    Bus.on("resume", ({ puzzle }) => riftSync(puzzle));
+    // the meter filled: the level is lost (the next try is a new puzzle from its pool)
+    function corruptLose() {
+        const g = Game.state;
+        if (U.view() !== "level" || !g.puzzle || g.solved || !data.playing) return;
+        const { world, level } = data.playing;
+        Game.endLoss({ title: "Corrupted", text: "The rift took over. Try again with a new puzzle." });
+        Corruption.stop();
+        levelMusic();
+        Sound.play("wrong");
+        FX.flash("#7a3cff", 500, 0.35);
+        loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · CORRUPTED`, title: "The Rift Took Over",
+            note: "Finish words to push the corruption back, and fight off the angel's tricks: catch the feather, click away the whisper, break the seal and the chains, and click its eye when it glares.", art: bossSvg(world) });
     }
     // the "you lost" card with Retry / Shop / Map
     function loseCard({ world, level, kicker, title, note, art }) {
@@ -1230,7 +1314,7 @@ const Campaign = (() => {
     // boss solves 15% faster than it used to (the user, 2026-10-09: "make each boss a little harder")
     // (0.85, then 0.72; then a touch slower again at the user's request: 0.77; then every boss 10% easier, the user,
     // 2026-10-11: it takes 10% longer to solve, 0.77 x 1.1)
-    const BOSS_SPEEDUP = 0.77 * 1.1;
+    const BOSS_SPEEDUP = 0.77 * 1.1 / 1.1;            // (2026-10-14, the user: "make the bosses solve 10% faster")
     // (the boss's pace is set from the par times levels had before they got 15% longer: bosses didn't change)
     const BOSS_PAR = { easy: 120, medium: 180, hard: 240, challenge: 220, expert: 270 };
     const bossPar = (d, size) => Math.round((BOSS_PAR[d] || 180) * Math.max(1, (size * size) / 25) / 10) * 10;
@@ -1255,7 +1339,8 @@ const Campaign = (() => {
         avalanche: "🏔️ Avalanche", slowmo: "🧤 Numb fingers", shatter: "🧊 Cracked board", halffog: "🌊 Flooded", quake: "🌩️ Letters falling", upside: "✈️ Upside down",
         flicker: "☁️ Cloud cover", mirageclue: "🌅 Clue bar lies", clueswap: "🥜 Clues shuffled", taunt: "🎩 Stuck on its word", comboban: "💢 No combos", echo: "🔁 Echo",
         mask: "🔣 Corrupted letters", itemlock: "🧱 Items blocked", numberless: "💾 No numbers", fakeclue: "😈 A clue lies", oneword: "📜 Torn clues", toll: "♨️ Words feed it", heatwave: "🥵 Check too hot",
-        vowels: "🕳️ No vowels" };
+        vowels: "🕳️ No vowels", wings: "🌑 Wings closing", holylight: "💫 Blinding light", scripture: "📜 Clues stolen", tithe: "🪙 Tithe of light",
+        decree: "⚜️ A letter forbidden", ascend: "🕊️ Letters rising", penance: "⛓️ Penance" };
 
     let fight = null, lastKeyAt = 0;
     const panel = U.el("aside", { class: "boss-panel", hidden: true, "aria-label": "The boss" });
@@ -1347,7 +1432,7 @@ const Campaign = (() => {
         if (!fresh && fight && fight.key === key) { resumeFight(); return; }
         await fetchMap().catch(() => null);
         const c = current(), d = c && c.difficulty ? c.difficulty : "medium";
-        const th = Powers.threat(c ? c.si : 0, map ? map.length : 15);
+        const th = Powers.threat(c ? c.si : 0, MAIN);
         const botTime = botTimeFor(d, c ? c.size : 5, c ? c.si : 0);
         panel.classList.remove("ko");                    // the last boss you beat stays down; this one starts fresh
         fight = { key, id: Date.now(), world: data.playing.world, th, puzzle: null, letters: null, queue: [], word: null, acc: 0,
@@ -1936,6 +2021,7 @@ const Campaign = (() => {
         f.myWords = (f.myWords || 0) + 1;
         f.lastMyWord = cells;
         if (f.curse) { f.curse = null; bossLose(2); floatText("Cured! The poison flows back into the boss 🦂", true); }
+        if (f.wish) { f.wish = false; bossLose(cells.length); floatText(`Wish granted! The boss loses ${cells.length} letters 🌠`, true); Powers.aura(bossBoardEl(), ["🌠", "✨"], "pop", 10, 900); }
         counterOnWord();
         if (f.me.toll > 0) { bossGain(2); floatText("+2 letters for the boss ♨️", false); }     // Scorched Earth: your words feed it
         f.lastWordAt = now;
@@ -2084,6 +2170,9 @@ const Campaign = (() => {
             case "check": return Game.wrongCells().length ? null : "No wrong letters on your board.";
             case "autofill": return autoFillCells().length ? null : "No word is just one letter from done.";
             case "cheat": { const e = currentMyEntry(); return e && Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]) ? null : "Your selected word is already right."; }
+            case "constellation": return crossings().length ? null : "No crossings left to light up.";
+            case "wish": return f.wish ? "Your wish is already waiting for your next word." : null;
+            case "fate": return Game.hitCount() ? null : "The boss hasn't erased or changed any of your letters.";
             default: return null;
         }
     }
@@ -2202,8 +2291,22 @@ const Campaign = (() => {
             }
             case "reverse": max("reverse", 6); f.revAcc = 0; break;
             case "wormhole": max("worm", 10); f.wormFrom = f.log.length; break;
+            // the Celestial Rift
+            case "constellation": Game.fillCells(crossings().slice(0, 4)); break;
+            case "wish": f.wish = true; break;
+            case "fate": { const n = Game.restoreAllHits(); floatText(n ? `${n} letter${n === 1 ? "" : "s"} written back 📜` : "Nothing to write back", n > 0); break; }
         }
         if (g.solved) return;
+    }
+    // Constellation: squares where two unfinished words cross (and the letter there isn't right yet)
+    function crossings() {
+        const g = Game.state, out = [];
+        const open = e => e && Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]);
+        scopeAll().forEach(([r, c]) => {
+            if (Game.isLocked(r, c) || g.letters[r][c] === g.puzzle.solution[r][c]) return;
+            if (open(g.acrossAt[r][c]) && open(g.downAt[r][c])) out.push([r, c]);
+        });
+        return out.sort(() => Math.random() - 0.5);
     }
     // the squares that changed since a snapshot, with their old letters (for the spells)
     function bossChanges(before) {
@@ -2250,7 +2353,7 @@ const Campaign = (() => {
         }
     }
     // ---- the boss's turn to be mean: first a wind-up (finish a word to block it), then the attack lands ----
-    // Each boss has 5 moves (the user asked for 5, all of them doing something that really hurts); it picks one at
+    // Each boss has 5 moves, the Cursed Angel 10 (the user asked for 5, all of them doing something that really hurts, and later 5 more for the angel); it picks one at
     // random, never the same one twice in a row.
 
     // ---------------------------------------------------------------------------------------------
@@ -2295,13 +2398,36 @@ const Campaign = (() => {
         eruption: "click the target 2× to cool the lava", heatwave: "finish 2 words to cool them down", powerup: "click the vent 3× to let the pressure out",
         heal: "click the lava stream 2× to block it", toll: "click the boss 5× to douse the fire",
         gravity: "click the board 6× to break the gravity well", flare: "click the flare before it bursts", collapse: "click the collapsing star 2×",
-        snapfinish: "close the warp gate (2 clicks)", vowels: "vowels in finished words stay visible"
+        snapfinish: "close the warp gate (2 clicks)", vowels: "vowels in finished words stay visible",
+        judgment: "click the halo 2× to turn the rays on the angel", wings: "every word you finish pushes the wings back a column",
+        holylight: "every word you finish shrinks the light: 3 words put it out", scripture: "click the stolen clues 5× to take them back",
+        tithe: "finish 2 words to end the tithe",
+        lance: "click the lance 2× to turn the beam on the angel", decree: "click the golden tablet 4× to break the decree",
+        ascend: "finish 2 words to bring your letters back down (finished words stay put)", trumpet: "click the trumpet 2× before it sounds",
+        penance: "type 6 right letters in a row to end your penance"
     };
     // the boss gets a taste of its own move
     const bossBlind = s => { fight.boss.blind = Math.max(fight.boss.blind || 0, s); };
     const bossStun = s => { fight.boss.freeze = Math.max(fight.boss.freeze || 0, s); };
     const bossSlow = s => { fight.boss.slow = Math.max(fight.boss.slow || 0, s); };
     const bossLose = n => { wipe(bossFilled().sort(() => Math.random() - 0.5).slice(0, n), true); refreshDone(); };
+    // Judgment Rays turned back: the boss's fullest row(s) go
+    function bossLoseRows(k) {
+        const f = fight, rows = f.letters.map((row, r) => [r, row.filter(ch => ch && ch !== "." && ch !== BLOT).length]).sort((a, b) => b[1] - a[1]).slice(0, k).map(([r]) => r);
+        const cells = bossFilled().filter(([r]) => rows.includes(r));
+        wipe(cells, true);
+        refreshDone();
+        return cells.length;
+    }
+    // Seraph's Lance turned back: the boss's fullest column goes
+    function bossLoseCol() {
+        const f = fight, n = f.letters.length, counts = [];
+        for (let c = 0; c < n; c++) counts.push([c, f.letters.filter(row => row[c] && row[c] !== "." && row[c] !== BLOT).length]);
+        const col = counts.sort((a, b) => b[1] - a[1])[0][0], cells = bossFilled().filter(([, c]) => c === col);
+        wipe(cells, true);
+        refreshDone();
+        return cells.length;
+    }
     const bossLoseWord = () => { const f = fight, e = f.word || f.done[f.done.length - 1]; if (e) wipe(Game.cellsOf(e), true); f.word = null; refreshDone(); };
     // squares in words you've got right (they resist some moves)
     const safeCells = () => (Game.state.puzzle ? doneCells() : new Set());
@@ -2334,11 +2460,14 @@ const Campaign = (() => {
         stream: '<path d="M32 4 Q46 26 46 40 A14 14 0 0 1 18 40 Q18 26 32 4 Z" fill="#ff7a1f" stroke="#7a1f0a" stroke-width="2.5"/><path d="M28 30 Q32 22 36 30" stroke="#ffe066" stroke-width="3" fill="none"/>',
         gate: '<ellipse cx="32" cy="32" rx="18" ry="24" fill="#1a0b3a" stroke="#c06bff" stroke-width="5"/><circle cx="28" cy="26" r="1.5" fill="#fff"/><circle cx="36" cy="38" r="1.5" fill="#fff"/><circle cx="32" cy="32" r="1" fill="#fff"/>',
         star: '<circle cx="32" cy="32" r="10" fill="#fff"/><circle cx="32" cy="32" r="18" fill="none" stroke="#c6b8ff" stroke-width="4" stroke-dasharray="6 5"/><circle cx="32" cy="32" r="26" fill="none" stroke="#8a6bff" stroke-width="2"/>',
-        umbrella: '<path d="M8 30 Q32 2 56 30 Z" fill="#ff5c6c" stroke="#2b2233" stroke-width="2.5"/><path d="M32 30 L32 52 Q32 58 26 56" stroke="#2b2233" stroke-width="3" fill="none"/>'
+        umbrella: '<path d="M8 30 Q32 2 56 30 Z" fill="#ff5c6c" stroke="#2b2233" stroke-width="2.5"/><path d="M32 30 L32 52 Q32 58 26 56" stroke="#2b2233" stroke-width="3" fill="none"/>',
+        lance: '<path d="M32 4 L40 20 L34 20 L34 60 L30 60 L30 20 L24 20 Z" fill="#fff6d8" stroke="#c9902f" stroke-width="2.5" stroke-linejoin="round"/><path d="M22 24 Q32 30 42 24" stroke="#ffd06b" stroke-width="3" fill="none"/><circle cx="32" cy="12" r="3" fill="#ffffff"/>',
+        trumpet: '<path d="M6 30 L30 30 Q44 30 54 16 L58 16 L58 48 L54 48 Q44 34 30 34 L6 34 Z" fill="#ffd06b" stroke="#8a5a1a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="16" cy="32" r="3" fill="#8a5a1a"/><path d="M24 34 L24 42 L34 42" stroke="#8a5a1a" stroke-width="2.5" fill="none"/>',
+        halo: '<ellipse cx="32" cy="30" rx="24" ry="9" fill="none" stroke="#ffd06b" stroke-width="7"/><ellipse cx="32" cy="30" rx="24" ry="9" fill="none" stroke="#fff6d8" stroke-width="2.5"/><path d="M50 24 l4 -4 m-2 8 l6 0" stroke="#2a0f5a" stroke-width="2"/><path d="M22 44 L32 58 L42 44" fill="#ffe7a3" opacity=".7"/>'
     };
     const LOOK_NAME = { sun: "flare", eraser: "eraser", cap: "marker cap", branch: "branch", feather: "feather", paw: "paw", spiral: "whirlpool", icicle: "icicle",
         spark: "spark", swirl: "gust", wings: "wings", jet: "sand jet", wheel: "loading wheel", hand: "ghost hand", bar: "reboot bar", target: "target", gauge: "pressure gauge",
-        stream: "lava stream", gate: "warp gate", star: "collapsing star", umbrella: "umbrella" };
+        stream: "lava stream", gate: "warp gate", star: "collapsing star", umbrella: "umbrella", halo: "halo", lance: "lance", trumpet: "trumpet" };
     const INTERCEPT = {
         rubout: { look: "eraser", hits: 2, back: () => { bossLose(3); return "You snatched the eraser: the boss's board loses 3 letters"; } },
         nobackspace: { look: "cap", hits: 1, back: () => { fight.boss.junk = (fight.boss.junk || 0) + 3; return "Capped! Its next 3 letters come out as ink blots"; } },
@@ -2360,7 +2489,10 @@ const Campaign = (() => {
         flare: { look: "sun", hits: 1, back: () => { bossBlind(4); return "The flare is turned back: the Void is blinded for 4s"; } },
         collapse: { look: "star", hits: 2, back: () => { bossLose(3); return "Stabilised! The collapse pulls 3 letters out of the boss instead"; } },
         snapfinish: { look: "gate", hits: 2, back: () => { bossLoseWord(); return "Warp gate closed: the word it was on is lost"; } },
-        ward: { look: "umbrella", hits: 2, back: () => { bossStun(1.5); return "You knocked the umbrella out of its hands"; } }
+        ward: { look: "umbrella", hits: 2, back: () => { bossStun(1.5); return "You knocked the umbrella out of its hands"; } },
+        judgment: { look: "halo", hits: 2, back: () => { const n = bossLoseRows(1); fight.rays = null; return `The rays turn on the angel: its own board loses a row (${n} letters)`; } },
+        lance: { look: "lance", hits: 2, back: () => { const n = bossLoseCol(); fight.lanceCol = null; return `The lance turns on the angel: its own board loses a column (${n} letters)`; } },
+        trumpet: { look: "trumpet", hits: 2, back: () => { bossLoseWord(); bossStun(1.5); return "You muffled the trumpet: the blast blows away the angel's own word"; } }
     };
     let interceptEl = null;
     // the target turns up somewhere random on the screen, drifts about, and jumps somewhere new after every hit
@@ -2482,6 +2614,16 @@ const Campaign = (() => {
     function clueClick(e) {
         if (!fightOn()) return;
         const f = fight, li = e.target.closest(".clues li");
+        if (f.me.scripture > 0 && e.target.closest(".clue-col.stolen")) {
+            e.preventDefault(); e.stopPropagation();
+            f.taps = f.taps || {};
+            const col = e.target.closest(".clue-col.stolen");
+            U.restart(col, "shake");
+            Sound.tone({ f: 420 + (f.taps.scripture || 0) * 90, f2: 300, d: 0.08, v: 0.1, type: "triangle" });
+            if ((f.taps.scripture = (f.taps.scripture || 0) + 1) >= 5) { f.me.scripture = 0; f.taps.scripture = 0; bossStun(2); floatText("Scripture taken back! The angel is stunned 2s 📜"); }
+            applyMe(); drawFight();
+            return;
+        }
         if (f.me.petals > 0) { f.taps = f.taps || {}; if ((f.taps.petals = (f.taps.petals || 0) + 1) >= 6) { f.me.petals = 0; f.taps.petals = 0; floatText("Petals swept away! 🌸"); } }
         if (!li) { applyMe(); return; }
         const items = [...document.querySelectorAll(".clues li")], i = items.indexOf(li);
@@ -2517,7 +2659,9 @@ const Campaign = (() => {
     function counterOnWord() {
         const f = fight, now = performance.now();
         f.taps = f.taps || {};
-        for (const [k, msg] of [["drain", "Board watered! 🌱"], ["heatwave", "Cooled down! ❄️"], ["numberless", "Numbers back! 💾"]]) if (f.me[k] > 0) {
+        if (f.me.wings > 0) { f.wingsBack = (f.wingsBack || 0) + 1; floatText("The wings pull back 🌑"); }
+        if (f.me.holylight > 0 && (f.holyShrink = (f.holyShrink || 0) + 1) >= 3) { f.me.holylight = 0; floatText("The light went out! 💫"); }
+        for (const [k, msg] of [["drain", "Board watered! 🌱"], ["heatwave", "Cooled down! ❄️"], ["numberless", "Numbers back! 💾"], ["tithe", "Tithe broken! 🪙"], ["ascend", "Your letters came back down 🕊️"]]) if (f.me[k] > 0) {
             if ((f.taps["w-" + k] = (f.taps["w-" + k] || 0) + 1) >= 2) { f.me[k] = 0; f.taps["w-" + k] = 0; floatText(msg); }   // two words
             else floatText("1 more word!");
         }
@@ -2538,6 +2682,8 @@ const Campaign = (() => {
         f.windup = f.ambush ? 0.4 : f.th.windup * (chained ? 0.7 : 1) * (f.buff.firewall > 0 ? 2 : 1);
         f.ambush = false;
         f.windupMax = f.windup;
+        f.rays = f.pending.kind === "judgment" ? rayRows() : null;       // Judgment Rays: the rows it aims at light up
+        f.lanceCol = f.pending.kind === "lance" ? lanceCol() : null;    // Seraph's Lance: so does the column
         const portrait = portraitEl();
         if (portrait) U.restart(portrait, "charge");
         Powers.chargeSound(f.world);
@@ -2738,6 +2884,54 @@ const Campaign = (() => {
                 break;
             }
             case "comboban": f.combo = 0; f.me.comboban = dur; break;
+            // the Cursed Angel
+            case "judgment": {                                                   // Judgment Rays: whole rows cleared (one with Frost Armor)
+                const rows = (f.rays && f.rays.length ? f.rays : rayRows()).slice(0, armor ? 1 : 2);
+                f.raysHit = rows;
+                Game.setLetters(scopeAll().filter(([r, c]) => rows.includes(r) && g.letters[r][c] && !Game.isLocked(r, c)).map(([r, c]) => [r, c, ""]));
+                f.rays = null;
+                break;
+            }
+            case "wings": f.me.wings = dur; f.wingsMax = dur; f.wingsBack = 0; break;                 // Wings of Night: they close in from both sides
+            case "holylight": f.me.holylight = dur; f.holyShrink = 0; f.holy = { x: 0.3 + Math.random() * 0.4, y: 0.3 + Math.random() * 0.4, a: Math.random() * 6.283 }; break;
+            case "scripture": {                                                  // Stolen Scripture: the direction with more left to solve
+                const left = dir => g.puzzle[dir].filter(e => Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c])).length;
+                f.stolenDir = left("down") > left("across") ? "down" : "across";
+                f.me.scripture = dur;
+                break;
+            }
+            case "tithe": f.me.tithe = dur; f.titheN = 0; break;
+            case "lance": {                                                      // Seraph's Lance: a whole column (finished words hold with Frost Armor)
+                const col = f.lanceCol != null ? f.lanceCol : lanceCol(), keep = armor ? safeCells() : new Set();
+                f.lanceHit = col;
+                Game.setLetters(scopeAll().filter(([r, c]) => c === col && g.letters[r][c] && !Game.isLocked(r, c) && !keep.has(r + "," + c)).map(([r, c]) => [r, c, ""]));
+                f.lanceCol = null;
+                break;
+            }
+            case "decree": {                                                     // Divine Decree: the letter you still need most
+                const need = {};
+                scopeAll().forEach(([r, c]) => { const ch = g.puzzle.solution[r][c]; if (g.letters[r][c] !== ch && !Game.isLocked(r, c)) need[ch] = (need[ch] || 0) + 1; });
+                const best = Object.entries(need).sort((a, b) => b[1] - a[1])[0];
+                if (best) { f.decree = best[0]; f.me.decree = dur; }
+                break;
+            }
+            case "ascend": f.me.ascend = dur; f.ascAcc = 0; break;               // Ascension: see the fight's tick
+            case "trumpet": {                                                    // Trumpet Blast: the letters inside two words, out of order
+                const safe = safeCells(), loose = ([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c), used = new Set(), sets = [];
+                let n = 0;
+                for (const w of shuffle(wordsOf())) {
+                    const cells = Game.cellsOf(w).filter(x => loose(x) && !used.has(x[0] + "," + x[1]));
+                    const was = cells.map(([r, c]) => g.letters[r][c]);
+                    if (new Set(was).size < 2) continue;
+                    let mixed = shuffle([...was]);
+                    if (mixed.every((ch, i) => ch === was[i])) mixed = was.slice(1).concat(was[0]);
+                    cells.forEach(([r, c], i) => { used.add(r + "," + c); if (mixed[i] !== was[i]) sets.push([r, c, mixed[i]]); });
+                    if (++n >= (armor ? 1 : 2)) break;
+                }
+                Game.setLetters(sets);
+                break;
+            }
+            case "penance": f.me.penance = dur; f.penStreak = 0; break;          // Penance: see the typing handler
             case "unlock": {
                 const freed = Game.unlockLetters();
                 Game.setLetters(shuffle(freed).slice(0, armor ? 1 : 2).map(([r, c]) => [r, c, ""]));
@@ -2772,6 +2966,67 @@ const Campaign = (() => {
         }
         if (["hoot", "riddle", "clueswap", "oneword", "fakeclue"].includes(mv.kind)) rewriteClues();
     }
+    // the rows Judgment Rays aims at: the two with the most of your letters in them (that it can take)
+    function rayRows() {
+        const g = Game.state, n = g.puzzle ? g.puzzle.size : 0, score = [];
+        for (let r = 0; r < n; r++) score.push([r, scopeAll().filter(([r2, c]) => r2 === r && g.letters[r2][c] && !Game.isLocked(r2, c)).length + Math.random() * 0.5]);
+        return score.sort((a, b) => b[1] - a[1]).slice(0, 2).map(([r]) => r);
+    }
+    // the column Seraph's Lance aims at: the one with the most of your letters in it (that it can take)
+    function lanceCol() {
+        const g = Game.state, n = g.puzzle ? g.puzzle.size : 0, score = [];
+        for (let c = 0; c < n; c++) score.push([c, scopeAll().filter(([r, c2]) => c2 === c && g.letters[r][c2] && !Game.isLocked(r, c2)).length + Math.random() * 0.5]);
+        return score.sort((a, b) => b[1] - a[1])[0][0];
+    }
+    // Ascension: one of your loose letters floats up into the empty square above it, or off the top of its column
+    function ascendOne(f, g) {
+        const safe = safeCells(), open = (r, c) => r >= 0 && g.puzzle.solution[r][c] !== ".";
+        const loose = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c));
+        if (!loose.length) return;
+        // letters with an empty square above them go first: they look like they're drifting up
+        const up = loose.filter(([r, c]) => open(r - 1, c) && !g.letters[r - 1][c] && !Game.isLocked(r - 1, c));
+        const [r, c] = U.pick(up.length ? up : loose), ch = g.letters[r][c], before = g.letters.map(x => [...x]);
+        const to = up.length ? [r - 1, c] : null, from = U.center(Game.cellEl(r, c));
+        Game.setLetters(to ? [[r, c, ""], [to[0], to[1], ch]] : [[r, c, ""]]);
+        Game.markBossChanges(before);
+        const el = Game.cellEl(r, c);
+        if (el) U.restart(el, "ascended");
+        if (to) { const t = Game.cellEl(to[0], to[1]); if (t) U.restart(t, "ascended-in"); }
+        FX.burst({ x: from.x, y: from.y, n: 7, colors: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "petal", angle: -Math.PI / 2, spread: 0.8, speed: [60, 160], gravity: -60, life: [0.6, 1], size: [4, 7], spin: 2 });
+        Sound.tone({ f: 900, f2: 1700, d: 0.25, v: 0.035, type: "sine", boss: true });
+    }
+    // Divine Decree: a golden tablet over your board names the forbidden letter; 4 clicks break it
+    let decreeEl = null;
+    function drawDecree(letter, f) {
+        const area = document.querySelector(".board-wrap");                // on the board's top edge
+        if (!letter) { if (decreeEl) decreeEl.hidden = true; return; }
+        if (!decreeEl) {
+            decreeEl = U.el("button", { type: "button", class: "decree-tablet", "aria-label": "The angel's decree: click it 4 times to break it",
+                html: `<small>Forbidden</small><b></b><i class="dt-cracks"></i>` });
+            decreeEl.addEventListener("pointerdown", e => {
+                e.preventDefault(); e.stopPropagation();
+                const fx = fight;
+                if (!fightOn() || !(fx.me.decree > 0)) return;
+                fx.taps = fx.taps || {};
+                const n = fx.taps.decree = (fx.taps.decree || 0) + 1;
+                U.restart(decreeEl, "shake");
+                decreeEl.dataset.hits = n;
+                Sound.tone({ f: 260 + n * 70, f2: 180, d: 0.1, v: 0.12, type: "triangle" });
+                const p = U.center(decreeEl);
+                FX.burst({ x: p.x, y: p.y, n: 8, colors: ["#e8c66a", "#fff6d8", "#8a5a1a"], shape: "rect", speed: [80, 220], gravity: 400, life: [0.4, 0.7], size: [3, 6], spin: 5 });
+                if (n >= 4) { fx.me.decree = 0; fx.taps.decree = 0; bossStun(2); floatText("Decree broken! The angel is stunned 2s ⚜️"); }
+                applyMe(); drawFight();
+            });
+        }
+        if (area && decreeEl.parentNode !== area) area.appendChild(decreeEl);
+        decreeEl.hidden = false;
+        decreeEl.dataset.hits = (f.taps && f.taps.decree) || 0;
+        const b = decreeEl.querySelector("b");
+        if (b.textContent !== letter) b.textContent = letter;
+    }
+    // a boss effect on a timer wiping your letters: they get the ✕ mark like any hit, so clicking puts them back
+    // (the user, 2026-10-14: the Aphid "does not mark words as deleted when they eat them")
+    const bossWipe = list => { const before = Game.state.letters.map(r => [...r]); Game.setLetters(list); Game.markBossChanges(before); };
     const scopeAll = () => { const g = Game.state, out = []; g.puzzle.solution.forEach((row, r) => [...row].forEach((ch, c) => { if (ch !== ".") out.push([r, c]); })); return out; };
     const wrongLetter = right => String.fromCharCode(65 + ((right.charCodeAt(0) - 65 + 1 + Math.floor(Math.random() * 24)) % 26));
     const bossNextEmpty = () => { const f = fight; for (const e of f.queue) { if (f.done.includes(e)) continue; const empty = Game.cellsOf(e).find(([r, c]) => !f.letters[r][c]); if (empty) return empty; } return null; };
@@ -2804,7 +3059,7 @@ const Campaign = (() => {
         const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
         minionEl.style.left = (a.left - w.left + a.width / 2) + "px";
         minionEl.style.top = (a.top - w.top + a.height / 2) + "px";
-        if (g.letters[r][c] && !Game.isLocked(r, c)) setTimeout(() => { if (minionEl && fight && fight.me.minion > 0) { Game.setLetters([[r, c, ""]]); U.restart(cell, "scorched"); } }, 600);
+        if (g.letters[r][c] && !Game.isLocked(r, c)) setTimeout(() => { if (minionEl && fight && fight.me.minion > 0 && g.letters[r][c] && !Game.isLocked(r, c)) { bossWipe([[r, c, ""]]); U.restart(cell, "scorched"); } }, 600);
     }
 
     // ---- the boss's effects on you, shown on the page ----
@@ -2839,7 +3094,7 @@ const Campaign = (() => {
         } else if (savedClues && list[i]) bar.textContent = list[i].textContent;
     }
     const CLUE_TRICKS = ["hoot", "riddle", "clueswap", "oneword", "fakeclue"];
-    const AREA_FX = ["crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock", "taunt",
+    const AREA_FX = ["wings", "holylight", "ascend", "decree", "penance", "crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock", "taunt",
         "inkblot", "nobackspace", "jitter", "tidal", "shrink", "shatter", "halffog", "upside", "flicker", "darkcreep", "numberless", "slowmo", "fumble", "backwards", "echo", "mask", "vowels"];
     const FLOOD_HOLD = 5;                                   // seconds Flash Flood stays at its full height
     function applyMe() {
@@ -2872,6 +3127,20 @@ const Campaign = (() => {
         clues.classList.toggle("fx-petals", on("petals"));
         flareEl.classList.toggle("on", on("flare"));
         if (on("darkcreep")) setVar(area, "--dark", Math.min(0.97, 1 - m.darkcreep / Math.max(1, f.darkMax || m.darkcreep)).toFixed(2));
+        // the Cursed Angel: wings closing over the sides, the drifting light, the stolen clues, the rows its rays aim at
+        if (on("wings")) {
+            const n = Game.state.puzzle ? Game.state.puzzle.size : 5, closed = Math.min(Math.floor((n - 1) / 2), 1 + Math.floor((f.wingsMax - m.wings) / 3.5));
+            setVar(area, "--wing", (Math.max(0, closed - (f.wingsBack || 0)) / n * 100).toFixed(1) + "%");
+        }
+        if (on("holylight") && f.holy) {
+            setVar(area, "--hx", (f.holy.x * 100).toFixed(1) + "%");
+            setVar(area, "--hy", (f.holy.y * 100).toFixed(1) + "%");
+            setVar(area, "--hr", (46 * (1 - (f.holyShrink || 0) / 3) + 8).toFixed(1) + "%");
+        }
+        drawDecree(on("decree") ? f.decree : null, f);
+        document.querySelectorAll(".clues .clue-col").forEach((col, i) => col.classList.toggle("stolen", on("scripture") && f.stolenDir === (i === 0 ? "across" : "down")));
+        const cb = document.getElementById("clue-bar");
+        if (cb) cb.classList.toggle("fx-stolen", on("scripture") && Game.state.direction === f.stolenDir);
         // the clue text tricks end: put the clues back
         if (savedClues && !CLUE_TRICKS.some(on)) {
             if (f) f.fixedClues = null;
@@ -2893,6 +3162,8 @@ const Campaign = (() => {
             cell.classList.toggle("piled", on("confetti") && !!f.piles && f.piles.has(id));
             cell.classList.toggle("gummed", !!(f && f.gum && f.gum.cells.has(id)));
             cell.classList.toggle("bombed", !!(f && f.bombAt && f.bombAt.r === r && f.bombAt.c === c));
+            cell.classList.toggle("ray-target", !!(f && f.pending && f.pending.kind === "judgment" && f.rays && f.rays.includes(r)));
+            cell.classList.toggle("lance-target", !!(f && f.pending && f.pending.kind === "lance" && f.lanceCol === c));
             setVar(cell, "--sx", on("shatter") ? ((r % 2 ? 1 : -1) * (6 + (c % 3) * 3)) + "px" : "0px");
             // Haunting: fake letters in empty squares that look exactly like real ones
             const ghost = cell.querySelector(".ghost-ltr");
@@ -2928,9 +3199,13 @@ const Campaign = (() => {
         const area = boardArea(), board = document.getElementById("board"), clues = document.querySelector(".clues");
         if (area) area.className = area.className.split(" ").filter(c => !c.startsWith("fx-")).join(" ");
         if (clues) clues.classList.remove("fx-blind", "fx-petals", "fx-numberless");
+        document.querySelectorAll(".clues .clue-col.stolen").forEach(n => n.classList.remove("stolen"));
+        const cbar = document.getElementById("clue-bar");
+        if (cbar) cbar.classList.remove("fx-stolen");
+        if (fight) fight.rays = null;
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
         document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
@@ -2944,6 +3219,7 @@ const Campaign = (() => {
     function letterBlocked(letter) {
         const f = fight, g = Game.state, now = performance.now(), here = g.row + "," + g.col;
         if (f.me.freeze > 0) return "freeze";
+        if (f.me.decree > 0 && f.decree === letter) return "decree";
         if (f.thorns && f.thorns.cells.has(here)) return "thorns";
         if (f.gum && f.gum.cells.has(here)) return "gum";
         if (f.me.sandblast > 0 && Math.random() < 0.35) return "sand";
@@ -2964,6 +3240,7 @@ const Campaign = (() => {
         if (why === "thorns") Powers.aura(cell, ["🌹"], "pop", 2, 600);
         if (why === "gum") Powers.aura(cell, ["🩷"], "pop", 2, 600);
         if (why === "slow") Powers.aura(cell, ["🧤"], "pop", 1, 500);
+        if (why === "decree") { if (decreeEl) U.restart(decreeEl, "shake"); floatText(`The angel forbids ${fight.decree}`, false); }
     }
     const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0);
     addEventListener("keydown", e => {
@@ -3036,6 +3313,39 @@ const Campaign = (() => {
                 Powers.fly(from, toCell ? U.center(toCell) : U.center(panel), "⚡", "line", 300).then(() => { if (fight === f && !f.over) { wipe([target], true); drawFight(); } });
             }
         }
+        if (f.me.penance > 0 && letter && !Game.isLocked(row, col)) {             // Penance: a wrong letter costs a right one; 6 right in a row end it
+            if (letter === g.puzzle.solution[row][col]) {
+                if ((f.penStreak = (f.penStreak || 0) + 1) >= 6) { f.me.penance = 0; f.penStreak = 0; floatText("Penance paid! ⛓️"); Powers.aura(Game.cellEl(row, col), ["✨"], "pop", 6, 600); }
+            } else {
+                f.penStreak = 0;
+                const safe = safeCells(), right = scopeAll().filter(([r, c]) => (r !== row || c !== col) && g.letters[r][c] && g.letters[r][c] === g.puzzle.solution[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c));
+                if (right.length) {
+                    const [r, c] = U.pick(right), before = g.letters.map(x => [...x]);
+                    Powers.fly(U.center(Game.cellEl(row, col)), U.center(Game.cellEl(r, c)), "⛓️", "line", 260, "#e8c66a").then(() => {
+                        if (fight !== f || f.over || g.letters[r][c] !== g.puzzle.solution[r][c]) return;
+                        Game.setLetters([[r, c, ""]]);
+                        Game.markBossChanges(before);
+                        const el = Game.cellEl(r, c);
+                        if (el) { U.restart(el, "shake"); const p = U.center(el); FX.burst({ x: p.x, y: p.y, n: 8, colors: ["#e8c66a", "#8a5a1a", "#fff6d8"], shape: "spark", speed: [60, 180], gravity: 200, life: [0.3, 0.6], size: [2, 4] }); }
+                        Sound.tone({ f: 1800, f2: 900, d: 0.12, v: 0.05, type: "square", boss: true });
+                        drawFight();
+                    });
+                    floatText("Penance: a right letter pays for that one ⛓️", false);
+                }
+            }
+        }
+        if (f.me.tithe > 0 && letter && letter === g.puzzle.solution[row][col] && !Game.isLocked(row, col) && (f.titheN = (f.titheN || 0) + 1) % 3 === 0) {
+            const from = U.center(Game.cellEl(row, col));
+            setTimeout(() => {
+                if (!fightOn() || g.letters[row][col] !== letter || Game.isLocked(row, col)) return;
+                const before = g.letters.map(r => [...r]);
+                Game.setLetters([[row, col, ""]]);
+                Game.markBossChanges(before);
+                const empty = bossNextEmpty();
+                Powers.fly(from, U.center(portraitEl() || panel), "🪙", "arc", 420, "#ffd06b").then(() => { if (fight === f && !f.over) { if (empty) write(empty); refreshDone(); drawFight(); } });
+                floatText("Tithe: the angel took that letter 🪙", false);
+            }, 60);
+        }
         if (f.bombAt && f.bombAt.r === row && f.bombAt.c === col && letter === g.puzzle.solution[row][col]) {
             Powers.aura(Game.cellEl(row, col), ["✂️", "✨"], "pop", 6, 700);
             floatText("Defused and thrown back! The boss can't see (3s) 💣", true);
@@ -3076,7 +3386,7 @@ const Campaign = (() => {
             for (const d of f.drips) d.t -= dt;
             const gone = f.drips.filter(d => d.t <= 0 && g.letters[d.r][d.c] && !Game.isLocked(d.r, d.c) && !done.has(d.r + "," + d.c));
             f.drips = f.drips.filter(d => d.t > 0);
-            if (gone.length) { gone.forEach(d => { const el = Game.cellEl(d.r, d.c); if (el) U.restart(el, "drip"); }); Game.setLetters(gone.map(d => [d.r, d.c, ""])); }
+            if (gone.length) { gone.forEach(d => { const el = Game.cellEl(d.r, d.c); if (el) U.restart(el, "drip"); }); bossWipe(gone.map(d => [d.r, d.c, ""])); }
         }
         if (f.me.gale > 0 && (f.galeAcc = (f.galeAcc || 0) + dt) >= 2.5) {  // Gale: the cursor is blown somewhere else
             f.galeAcc = 0;
@@ -3114,16 +3424,24 @@ const Campaign = (() => {
         if (f.me.quake > 0 && (f.qkAcc = (f.qkAcc || 0) + dt) >= 2) {      // Thunder Roll: a letter falls out every 2 seconds
             f.qkAcc = 0;
             const safe = safeCells(), loose = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c));   // finished words hold on
-            if (loose.length) { const [r, c] = U.pick(loose); Game.setLetters([[r, c, ""]]); FX.shake(6, 300); }
+            if (loose.length) { const [r, c] = U.pick(loose); bossWipe([[r, c, ""]]); FX.shake(6, 300); }
         }
         if (f.me.minion > 0 && (f.minionAcc = (f.minionAcc || 0) + dt) >= 2.5) { f.minionAcc = 0; moveMinion(); }
+        if (f.me.ascend > 0 && (f.ascAcc = (f.ascAcc || 0) + dt) >= 2) { f.ascAcc = 0; ascendOne(f, g); }   // Ascension: a letter floats up every 2s
+        if (f.me.holylight > 0 && f.holy) {                                  // Holy Light wanders over your board
+            const h = f.holy;
+            h.a += (Math.random() - 0.5) * 2.4 * dt;
+            h.x += Math.cos(h.a) * 0.09 * dt; h.y += Math.sin(h.a) * 0.09 * dt;
+            if (h.x < 0.15 || h.x > 0.85) { h.a = Math.PI - h.a; h.x = U.clamp(h.x, 0.15, 0.85); }
+            if (h.y < 0.15 || h.y > 0.85) { h.a = -h.a; h.y = U.clamp(h.y, 0.15, 0.85); }
+        }
         if (f.bombAt && (f.bombAt.t -= dt) <= 0) {                           // the Cannonball goes off
             const { r, c } = f.bombAt, n = g.puzzle.size;
             f.bombAt = null;
             const hit = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]].map(([dr, dc]) => [r + dr, c + dc])
                 .filter(([r2, c2]) => r2 >= 0 && c2 >= 0 && r2 < n && c2 < n && g.puzzle.solution[r2][c2] !== "." && g.letters[r2][c2] && !Game.isLocked(r2, c2));
             hit.forEach(([r2, c2]) => { const el = Game.cellEl(r2, c2); if (el) U.restart(el, "scorched"); });
-            Game.setLetters(hit.map(([r2, c2]) => [r2, c2, ""]));
+            bossWipe(hit.map(([r2, c2]) => [r2, c2, ""]));
             const at = Game.cellEl(r, c);
             if (at) { const p = U.center(at); FX.burst({ x: p.x, y: p.y, n: 50, colors: ["#ff9f1c", "#ff3d00", "#ffd23f", "#2b2233"], shape: "star", speed: [150, 500], gravity: 300, life: [0.5, 1], size: [4, 9] }); }
             Sound.custom(Powers.MOVES.carnival.find(m => m.kind === "bomb").sound);
@@ -3133,7 +3451,7 @@ const Campaign = (() => {
             f.curse = null;
             const cells = Game.cellsOf(currentMyEntry()).filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c));
             cells.forEach(([r, c]) => { const el = Game.cellEl(r, c); if (el) U.restart(el, "scorched"); });
-            Game.setLetters(cells.map(([r, c]) => [r, c, ""]));
+            bossWipe(cells.map(([r, c]) => [r, c, ""]));
             floatText("The poison wiped your word 🦂", false);
         }
         if (f.combo > 1 && !(f.buff.lucky > 0) && now - f.lastWordAt > COMBO_GAP) f.combo = 0;
@@ -3318,7 +3636,11 @@ const Campaign = (() => {
     function mascotLine(event, info) {
         const v = U.view();
         if (v === "campaign") {
-            if (event === "start" || event === "hello") { const f = map ? frontier() : null; return f ? `${Worlds.byId[map[f.si].world].name}'s page of the Everbook is waiting. Next up: ${f.level === 5 ? bossOf(map[f.si].world).name : "Level " + f.level}.` : null; }
+            if (event === "start" || event === "hello") {
+                const f = map ? frontier() : null;
+                if (f && isSecret(f.si)) return `The Cursed Angel is waiting in the rift. Next up: ${f.level === 5 ? bossOf(map[f.si].world).name : "Level " + f.level}.`;
+                return f ? `${Worlds.byId[map[f.si].world].name}'s page of the Everbook is waiting. Next up: ${f.level === 5 ? bossOf(map[f.si].world).name : "Level " + f.level}.` : null;
+            }
             return null;
         }
         if (v !== "level" || !data.playing) return null;
@@ -3328,7 +3650,9 @@ const Campaign = (() => {
         switch (event) {
             case "start": {
                 const own = typeof Companions !== "undefined" ? (boss ? Companions.boss(c.world, "before") : Companions.level(c.world, c.level)) : null;
-                const rule = boss ? `${b.name} has the ${Worlds.byId[c.world].name} page. Solve your board before it solves its own, and finish a word fast when it winds up an attack!`
+                const rule = boss && c.world === "rift" ? `${b.name} wants the whole Everbook. Solve your board before it solves its own, and watch for the rows its rays are aiming at!`
+                    : riftLevel(Game.state.puzzle) ? "The angel is watching. Finish words to push the corruption back, and click away its tricks!"
+                    : boss ? `${b.name} has the ${Worlds.byId[c.world].name} page. Solve your board before it solves its own, and finish a word fast when it winds up an attack!`
                     : lesson ? `Lesson: ${lesson.name}. ${lesson.tip}` : null;
                 return c.special ? rule : [own, rule];
             }
@@ -3343,7 +3667,7 @@ const Campaign = (() => {
                 if (cm.boss && cm.special) return cm.special === "daily" ? U.pick(["Today's boss is down! Nice racing.", "That's today's boss beaten. See you tomorrow!"]) : U.pick(["Boss beaten! Want another?", "Down it goes! Pick a new one?"]);
                 if (cm.boss) {
                     const own = typeof Companions !== "undefined" ? Companions.boss(c.world, "win") : null;
-                    return [own, cm.finished ? "The Everbook is whole again! Every word is back. You did it!" : `You won back the ${Worlds.byId[c.world].name} page! ${cm.newWorld ? `On to ${cm.newWorld.name}.` : ""}`];
+                    return [own, cm.epilogue ? "The angel is beaten and the rift is closing. The Everbook is safe. For good." : cm.finished ? `The Everbook is whole again! Every word is back. You did it!${cm.secret ? " ...but what's that light in the sky?" : ""}` : `You won back the ${Worlds.byId[c.world].name} page! ${cm.newWorld ? `On to ${cm.newWorld.name}.` : ""}`];
                 }
                 const next = cm.next && cm.next.world === c.world && cm.next.level < 5 ? lessonOf(c.si, cm.next.level) : null;
                 const stars = cm.stars === 3 ? "Three stars: lesson mastered!" : `${cm.stars} star${cm.stars > 1 ? "s" : ""}. Replay it for the rest.`;
@@ -3412,7 +3736,9 @@ const Campaign = (() => {
             data.betaUnlock = !data.betaUnlock;
             // every ability opens too (unlockedAbility), each with its free uses if it has none yet
             if (data.betaUnlock) for (const a of ABILITIES) if (!(data.owned[a.id] > 0)) data.owned[a.id] = FREE_USES;
-            save(); label(); redraw(); Sound.play(data.betaUnlock ? "sparkle" : "select");
+            save(); label();
+            if (full) { map = visibleMap(); svg = null; $("#cm-rail").innerHTML = ""; if (U.view() === "campaign") showMap(); }
+            redraw(); Sound.play(data.betaUnlock ? "sparkle" : "select");
             FX.toast({ icon: data.betaUnlock ? "🔓" : "🔒", kicker: "Beta", title: data.betaUnlock ? "Everything Unlocked" : "Locked Again", text: data.betaUnlock ? "Every level and ability is open." : "Levels and abilities open as you clear them again.", ms: 2400 });
         });
         label();
@@ -3427,13 +3753,14 @@ const Campaign = (() => {
     $("#cm-book").addEventListener("click", () => { Sound.play("select"); Story.openBook(storyPages(), { onReplay: () => FX.cinematic(c => Story.intro(c, storyPages())) }); });
     // The story (story.js): the Everbook's pages, one per world, won back by beating its boss
     function storyPages() {
-        return (map || []).map(s => ({ world: s.world, name: Worlds.byId[s.world] ? Worlds.byId[s.world].name : s.world, boss: bossOf(s.world).name,
+        return (map || []).filter(s => !s.secret).map(s => ({ world: s.world, name: Worlds.byId[s.world] ? Worlds.byId[s.world].name : s.world, boss: bossOf(s.world).name,
             color: bossOf(s.world).color, won: !!data.levels[keyOf(s.world, 5)] }));
     }
     // after a boss's first defeat: its page flies into the book (and the finale, once every page is back)
     async function storyAfterBoss(c, info) {
         const cm = info && info.campaign;
         if (!cm || !cm.boss || !cm.firstClear || !map) return;
+        if (cm.epilogue) { await Story.epilogue(c, storyPages(), heroLook()); return; }       // the Cursed Angel: the end of the story
         const pages = storyPages();
         await Story.page(c, pages, cm.world);
         if (!c.skipped && pages.every(p => p.won)) { await c.wait(300); await Story.finale(c, pages); }
@@ -3480,7 +3807,7 @@ const Campaign = (() => {
     });
 
     return {
-        onView, showMap, play, playSpecial, heroLook, editHero, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
+        onView, showMap, play, playSpecial, heroLook, editHero, secretOpen, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
         isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };

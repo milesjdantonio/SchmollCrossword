@@ -626,7 +626,7 @@ const FX = (() => {
     // sweeps across), "autumn" (the same in fall colors), "blizzard" (a snowstorm blows in to a white-out),
     // "tide" (water rises with bubbles), "frosting" (pink frosting drips down over the screen),
     // "pages" (book pages pile up), "lava" (lava rises, then cools), "clouds" (clouds billow in, then part),
-    // "sandstorm", "shutter" (blast doors), "curtain" (velvet stage curtains), "downpour" (rain, then a wiper),
+    // "sandstorm", "shutter" (blast doors), "curtain" (velvet stage curtains), "downpour" (rain, then a wiper), "rift" (a golden tear opens and seals),
     // "pixels" (blocks fill in), "iris" (a closing circle). onCovered runs while all is hidden.
     function transition(style, onCovered) {
         if (U.motion() === "still") { onCovered && onCovered(); return Promise.resolve(); }
@@ -974,6 +974,54 @@ const FX = (() => {
                         c.globalCompositeOperation = "source-over";
                         const white = Math.max(0, (k - 0.75) / 0.25);
                         if (white > 0) { c.fillStyle = `rgba(235,245,255,${white})`; c.fillRect(0, 0, W, H); }
+                    } else if (style === "rift") {
+                        // the Celestial Rift (2026-10-14): a jagged golden crack tears across the screen, splits wide
+                        // open into a sky of violet light and stars, then seals itself shut again
+                        const N = 26, ang = Math.atan2(H * 0.7, W * 1.1), nx = -Math.sin(ang), ny = Math.cos(ang);
+                        const half = Math.pow(k, 1.6) * Math.hypot(W, H) * 0.75 + k * 6;
+                        const top = [], bot = [];
+                        for (let i = 0; i <= N; i++) {
+                            const u = i / N, s = streaks[i], j = (s.d - 0.5) * 0.9;
+                            const x = U.lerp(-0.08 * W, 1.08 * W, u), y = U.lerp(0.15 * H, 0.85 * H, u) + Math.sin(u * 9 + 1) * H * 0.03;
+                            const w = half * (0.55 + 0.45 * Math.sin(u * Math.PI)) * (1 + j * 0.35) + (i % 2 ? 4 : -4) * k;
+                            top.push([x + nx * w + (s.sp - 1.1) * 14, y + ny * -w + j * 10]);
+                            bot.push([x - nx * w * 0.85 - (s.sp - 1.1) * 10, y - ny * -w * 0.85 - j * 8]);
+                        }
+                        const shape = () => { c.beginPath(); top.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); for (let i = bot.length - 1; i >= 0; i--) c.lineTo(bot[i][0], bot[i][1]); c.closePath(); };
+                        // the dark sky around the tear dims as it opens
+                        c.fillStyle = `rgba(12,4,30,${(0.55 * k).toFixed(3)})`;
+                        c.fillRect(0, 0, W, H);
+                        // inside the tear: gold at the heart, violet out to the edges, stars drifting
+                        c.save();
+                        shape();
+                        c.clip();
+                        const ig = c.createLinearGradient(W * 0.5 + nx * half, H * 0.5 - ny * half, W * 0.5 - nx * half, H * 0.5 + ny * half);
+                        ig.addColorStop(0, "#2a0f5a"); ig.addColorStop(0.42, "#9b6bff"); ig.addColorStop(0.5, "#fff3c4"); ig.addColorStop(0.58, "#ffb86b"); ig.addColorStop(1, "#1a0a40");
+                        c.fillStyle = ig;
+                        c.fillRect(0, 0, W, H);
+                        c.globalCompositeOperation = "lighter";
+                        for (const f of flakes) {
+                            const x = ((f.x + t * 0.03 * f.sp) % 1) * W, y = ((f.y + t * 0.02 * f.sp) % 1) * H, tw = 0.5 + 0.5 * Math.sin(t * 6 + f.ph);
+                            c.fillStyle = `rgba(255,245,220,${(0.35 + 0.6 * tw).toFixed(2)})`;
+                            c.beginPath(); c.arc(x, y, f.r * 0.6, 0, Math.PI * 2); c.fill();
+                        }
+                        c.restore();
+                        // the burning edges of the tear, and sparks shed from them
+                        c.globalCompositeOperation = "lighter";
+                        for (const [edge, w, a] of [[top, 10, 0.35], [top, 3, 0.95], [bot, 10, 0.35], [bot, 3, 0.95]]) {
+                            c.strokeStyle = `rgba(255,214,120,${(a * Math.min(1, k * 3)).toFixed(3)})`;
+                            c.lineWidth = w; c.lineJoin = "round";
+                            c.beginPath(); edge.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.stroke();
+                        }
+                        for (let i = 0; i < 70; i++) {
+                            const s = streaks[i], e = (i % 2 ? top : bot)[i % (N + 1)], life = (t * s.sp * 1.8 + s.d) % 1;
+                            const x = e[0] + Math.cos(s.a) * life * 60, y = e[1] + Math.sin(s.a) * life * 60 + life * life * 40;
+                            c.fillStyle = `rgba(255,${200 + Math.round(55 * (1 - life))},150,${((1 - life) * Math.min(1, k * 2)).toFixed(2)})`;
+                            c.fillRect(x, y, 2.2, 2.2);
+                        }
+                        c.globalCompositeOperation = "source-over";
+                        const white = Math.max(0, (k - 0.8) / 0.2);
+                        if (white > 0) { c.fillStyle = `rgba(255,246,222,${(white * 0.9).toFixed(3)})`; c.fillRect(0, 0, W, H); }
                     } else {                                            // iris
                         const R = Math.hypot(W, H) / 2 * (1 - k);
                         c.fillStyle = C.bg;

@@ -950,4 +950,333 @@
         vowels.forEach((p, i) => setTimeout(() => { const ang = Math.atan2(p.y - o.y, p.x - o.x); burst([{ x: p.x, y: p.y, vx: Math.cos(ang) * 300, vy: Math.sin(ang) * 300, life: 0.6, size: 14, color: "rgba(255,255,255,.8)", shape: "text", text: "•", vr: 0 }]); spray(p, 4, { color: "#c6b8ff", shape: "streak", speed: [100, 200], size: [1.5, 2.5], g: 0, life: [0.3, 0.5], add: true }); }, K.still() ? 0 : 500 + i * 40));
         await wait(1600);
     });
+
+    // =========================================================================================
+    // The Celestial Rift: The Cursed Angel (2026-10-14)
+    // =========================================================================================
+    // Judgment Rays: a column of holy light drops out of the sky onto every square of each row it aimed at, one
+    // after another; the row flashes white along its length and the letters burn away upward as light
+    D("m-judgment", async c => {
+        const ghosts = letterGhosts(c.cells);
+        const rows = (Campaign.fight && Campaign.fight.raysHit) || [];
+        const n = Game.state.puzzle ? Game.state.puzzle.size : 5;
+        const targets = [];
+        rows.forEach(r => { for (let col = 0; col < n; col++) { const el = Game.cellEl(r, col); if (el && !el.classList.contains("block")) targets.push({ r, el }); } });
+        if (!targets.length) targets.push(...pts(c).map(p => ({ r: 0, p })));
+        targets.forEach((t, i) => {
+            const p = t.p || mid(t.el), w = t.el ? rect(t.el).width : 30, delay = K.still() ? 0 : i * 45 + (rows.indexOf(t.r) > 0 ? 220 : 0);
+            setTimeout(() => {
+                add({ life: 0.9, draw(ctx, k) {
+                    const drop = Math.min(1, k / 0.18), fade = k > 0.35 ? Math.max(0, 1 - (k - 0.35) / 0.65) : 1, bw = w * (0.32 + 0.18 * Math.sin(k * 30)) * fade;
+                    ctx.globalCompositeOperation = "lighter";
+                    const g = ctx.createLinearGradient(p.x - bw, 0, p.x + bw, 0);
+                    g.addColorStop(0, "rgba(255,214,120,0)"); g.addColorStop(0.3, `rgba(255,214,120,${0.6 * fade})`); g.addColorStop(0.5, `rgba(255,252,236,${fade})`); g.addColorStop(0.7, `rgba(255,214,120,${0.6 * fade})`); g.addColorStop(1, "rgba(255,214,120,0)");
+                    ctx.fillStyle = g; ctx.fillRect(p.x - bw, 0, bw * 2, p.y * drop);
+                    K.haloAt(ctx, p.x, p.y * drop, w * 0.8, "#fff6d8", fade);
+                    if (k > 0.16) K.haloAt(ctx, p.x, p.y, w * 1.5, "#ffd06b", fade * 0.8);
+                } });
+                setTimeout(() => {
+                    spray(p, 10, { color: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "star", speed: [80, 240], size: [2, 4], g: -60, life: [0.4, 0.8], add: true });
+                    tone({ f: 1600 + (i % 6) * 120, f2: 900, type: "sine", d: 0.12, v: 0.025 });
+                }, K.still() ? 0 : 160);
+            }, delay);
+        });
+        // each row flashes along its whole length as its rays land
+        rows.forEach((r, j) => setTimeout(() => {
+            const cells = targets.filter(t => t.r === r && t.el).map(t => rect(t.el));
+            if (!cells.length) return;
+            const left = Math.min(...cells.map(b => b.left)), right = Math.max(...cells.map(b => b.right)), top = cells[0].top, h = cells[0].height;
+            add({ life: 0.6, draw(ctx, k) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1 - k; ctx.fillStyle = "rgba(255,246,216,.85)"; ctx.fillRect(left - 10 * k, top + h * 0.1, right - left + 20 * k, h * 0.8); } });
+            flash("#fff6d8", 220, 0.25);
+        }, K.still() ? 0 : 260 + j * 260 + n * 45));
+        await wait(320);
+        await leave(ghosts, "zap", { color: "#ffd06b", stagger: 35 });
+        await wait(400);
+    });
+    // Wings of Night: two vast dark wings sweep in from the edges of the screen and fold over your board, shedding black feathers
+    D("m-wings", async c => {
+        const b = board(), o = boardMid();
+        const wing = (ctx, side, k) => {
+            const reach = lerp(innerWidth * 0.75, b.width * 0.32, ease(Math.min(1, k * 1.4))), x0 = o.x + side * reach, sway = Math.sin(k * 12) * 6;
+            ctx.save(); ctx.translate(x0, o.y); ctx.scale(-side, 1);
+            for (let i = 0; i < 7; i++) {
+                const y = -b.height * 0.55 + i * b.height * 0.18, len = b.width * (0.55 - Math.abs(i - 3) * 0.05);
+                ctx.fillStyle = i % 2 ? "#1c1230" : "#2a1850"; ctx.strokeStyle = "#9b6bff"; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.quadraticCurveTo(len * 0.6, y - 24 + sway, len, y + 10); ctx.quadraticCurveTo(len * 0.55, y + 30, 0, y + b.height * 0.2); ctx.closePath(); ctx.fill(); ctx.stroke();
+            }
+            ctx.restore();
+        };
+        add({ life: 1.5, draw(ctx, k) {
+            ctx.globalAlpha = k > 0.75 ? (1 - k) / 0.25 : 1;
+            wing(ctx, -1, k); wing(ctx, 1, k);
+            K.haloAt(ctx, o.x - b.width * 0.5, o.y, 90, "#7a3cff", 0.4); K.haloAt(ctx, o.x + b.width * 0.5, o.y, 90, "#7a3cff", 0.4);
+        } });
+        for (const side of [-1, 1]) setTimeout(() => burst(Array.from({ length: K.lite() ? 10 : 22 }, () => ({ x: o.x + side * b.width * rnd(0.4, 0.7), y: o.y + rnd(-b.height / 2, b.height / 2), vx: -side * rnd(60, 220), vy: rnd(-80, 40), life: rnd(1, 1.6), size: rnd(8, 13), color: pick(["#1c1230", "#2a1850", "#ffffff"]), shape: "petal", g: 90, vr: rnd(-4, 4), drag: 0.6 }))), K.still() ? 0 : 700);
+        tone({ f: 120, f2: 70, type: "sine", d: 0.9, v: 0.1 });
+        await wait(1500);
+    });
+    // Holy Light: a pillar of light comes down onto the middle of your board and spreads into a blinding disc
+    D("m-holylight", async c => {
+        const o = boardMid(), b = board();
+        add({ life: 1.6, draw(ctx, k) {
+            const drop = Math.min(1, k / 0.3), fade = k > 0.7 ? (1 - k) / 0.3 : 1, w = 30 + 60 * Math.min(1, k * 2);
+            ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = fade;
+            const g = ctx.createLinearGradient(o.x - w, 0, o.x + w, 0);
+            g.addColorStop(0, "rgba(255,236,170,0)"); g.addColorStop(0.5, "rgba(255,252,236,.95)"); g.addColorStop(1, "rgba(255,236,170,0)");
+            ctx.fillStyle = g; ctx.fillRect(o.x - w, 0, w * 2, o.y * drop);
+            if (k > 0.3) { const r = Math.max(b.width, b.height) * 0.5 * ease(Math.min(1, (k - 0.3) / 0.4)); K.haloAt(ctx, o.x, o.y, r, "#fff6d8", fade); K.haloAt(ctx, o.x, o.y, r * 0.5, "#ffffff", fade); }
+            for (let i = 0; i < 8; i++) { const a = k * 6 + i * 0.785, rr = 120 * (1 - k); K.haloAt(ctx, o.x + Math.cos(a) * rr, o.y + Math.sin(a) * rr * 0.6, 8, "#ffd06b", fade); }
+        } });
+        await wait(500);
+        flash("#fff6d8", 300, 0.45);
+        await wait(1100);
+    });
+    // Stolen Scripture: the pages of one clue list tear free and fly up to the angel, chained shut behind them
+    D("m-scripture", async c => {
+        const f = Campaign.fight, col = [...document.querySelectorAll(".clues .clue-col")][f && f.stolenDir === "down" ? 1 : 0] || clues(), r = rect(col), to = from(c);
+        sim(1.6, (ctx, dt, t, k) => {
+            ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+            for (let i = 0; i < 9; i++) {
+                const kk = Math.max(0, Math.min(1, (k - i * 0.05) * 1.6)), sx = r.left + r.width * (0.2 + (i % 3) * 0.3), sy = r.top + r.height * (0.2 + Math.floor(i / 3) * 0.3);
+                const x = lerp(sx, to.x, ease(kk)), y = lerp(sy, to.y, ease(kk)) - Math.sin(kk * Math.PI) * 120;
+                ctx.save(); ctx.translate(x, y); ctx.rotate(kk * 6 + i); ctx.scale(1 - kk * 0.6, (1 - kk * 0.6) * Math.cos(t * 8 + i));
+                ctx.fillStyle = "#f6ecd2"; ctx.strokeStyle = "#c9902f"; ctx.lineWidth = 1.5; ctx.fillRect(-14, -18, 28, 36); ctx.strokeRect(-14, -18, 28, 36);
+                ctx.fillStyle = "rgba(42,29,63,.4)"; for (let l = 0; l < 5; l++) ctx.fillRect(-10, -12 + l * 6, 20, 1.5);
+                ctx.restore();
+            }
+        });
+        setTimeout(() => add({ life: 0.9, draw(ctx, k) { ctx.globalAlpha = Math.sin(k * Math.PI); ctx.strokeStyle = "#e8c66a"; ctx.lineWidth = 5; ctx.shadowColor = "#ffd06b"; ctx.shadowBlur = 14;
+            ctx.beginPath(); ctx.moveTo(r.left, r.top); ctx.lineTo(r.right, r.bottom); ctx.moveTo(r.right, r.top); ctx.lineTo(r.left, r.bottom); ctx.stroke(); } }), K.still() ? 0 : 900);
+        await wait(1700);
+    });
+    // Tithe of Light: golden coins of light rise off your board, circle it once, and stream away to the angel
+    D("m-tithe", async c => {
+        const o = boardMid(), b = board(), to = from(c);
+        add({ life: 1.8, draw(ctx, k, t) {
+            ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+            for (let i = 0; i < 10; i++) {
+                const a = i / 10 * TAU + t * 3, ring = Math.min(1, k * 2.2), away = Math.max(0, (k - 0.55) / 0.45);
+                let x = o.x + Math.cos(a) * b.width * 0.55 * ring, y = o.y + Math.sin(a) * b.height * 0.2 * ring - k * 30;
+                x = lerp(x, to.x, ease(away)); y = lerp(y, to.y, ease(away));
+                ctx.save(); ctx.translate(x, y); ctx.scale(Math.cos(t * 7 + i), 1);
+                ctx.fillStyle = "#ffd06b"; ctx.strokeStyle = "#8a5a1a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#fff6d8"; ctx.beginPath(); ctx.arc(-2, -2, 3, 0, TAU); ctx.fill();
+                ctx.restore();
+                K.haloAt(ctx, x, y, 16, "#ffd06b", 0.5);
+            }
+        } });
+        await wait(1800);
+    });
+    // ---- its second five (the user, 2026-10-14: "5 more abilities ... one of them clears an entire column with an
+    //      angelic beam") ----
+    // Seraph's Lance: a spear of light with little wings on its head falls out of the sky straight down the column;
+    // each square it passes flashes and burns away. Then a pillar of light stands on the column, rings of light
+    // running down it and feathers spiralling round it, before it narrows to a thread and goes out
+    D("m-lance", async c => {
+        const ghosts = letterGhosts(c.cells);
+        const f = Campaign.fight, n = Game.state.puzzle ? Game.state.puzzle.size : 5, col = f && f.lanceHit != null ? f.lanceHit : 0;
+        const cells = [];
+        for (let r = 0; r < n; r++) { const el = Game.cellEl(r, col); if (el) cells.push({ r, el, b: rect(el) }); }
+        const b = board(), first = cells[0] ? cells[0].b : b, x = first.left + first.width / 2, w = first.width;
+        const top = b.top - 40, bottom = b.bottom + 30, fall = K.still() ? 0.05 : 0.42;
+        // the lance falls
+        add({ life: fall + 0.15, draw(ctx, k) {
+            const q = Math.min(1, k * (fall + 0.15) / fall), y = lerp(-120, bottom, q * q);
+            ctx.globalCompositeOperation = "lighter";
+            // its trail of light above it
+            const tg = ctx.createLinearGradient(0, y - innerHeight * 0.6, 0, y);
+            tg.addColorStop(0, "rgba(255,214,120,0)"); tg.addColorStop(1, "rgba(255,246,216,.9)");
+            ctx.fillStyle = tg; ctx.fillRect(x - w * 0.12, y - innerHeight * 0.6, w * 0.24, innerHeight * 0.6);
+            // the shaft, the winged spearhead
+            ctx.globalCompositeOperation = "source-over";
+            ctx.save(); ctx.translate(x, y);
+            ctx.fillStyle = "#fff6d8"; ctx.strokeStyle = "#c9902f"; ctx.lineWidth = 2;
+            ctx.fillRect(-3, -w * 2.6, 6, w * 2.2); ctx.strokeRect(-3, -w * 2.6, 6, w * 2.2);
+            for (const s of [-1, 1]) {                                 // little wings where the head meets the shaft
+                ctx.beginPath(); ctx.moveTo(0, -w * 0.55);
+                ctx.quadraticCurveTo(s * w * 0.55, -w * 0.95, s * w * 0.62, -w * 0.5);
+                ctx.quadraticCurveTo(s * w * 0.35, -w * 0.5, s * w * 0.3, -w * 0.32);
+                ctx.quadraticCurveTo(s * w * 0.15, -w * 0.42, 0, -w * 0.38); ctx.closePath();
+                ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(w * 0.18, -w * 0.42); ctx.lineTo(0, -w * 0.6); ctx.lineTo(-w * 0.18, -w * 0.42); ctx.closePath();
+            const hg = ctx.createLinearGradient(0, -w * 0.6, 0, 0); hg.addColorStop(0, "#ffd06b"); hg.addColorStop(1, "#ffffff");
+            ctx.fillStyle = hg; ctx.fill(); ctx.stroke();
+            ctx.restore();
+            K.haloAt(ctx, x, y - w * 0.3, w * 1.4, "#fff6d8", 0.9);
+        } });
+        // each square flashes as the head goes by
+        cells.forEach(({ b: cb }, i) => setTimeout(() => {
+            const p = { x: cb.left + cb.width / 2, y: cb.top + cb.height / 2 };
+            add({ life: 0.5, draw(ctx, k) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1 - k; ctx.fillStyle = "rgba(255,246,216,.9)"; ctx.fillRect(cb.left - 4 * k, cb.top - 4 * k, cb.width + 8 * k, cb.height + 8 * k); } });
+            spray(p, 10, { color: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "star", angle: i % 2 ? 0 : Math.PI, spread: 0.6, speed: [120, 320], size: [2, 4], g: 120, life: [0.35, 0.7], add: true });
+            tone({ f: 1400 + i * 110, f2: 2200 + i * 110, type: "sine", d: 0.1, v: 0.022 });
+        }, K.still() ? 0 : Math.max(0, (Math.sqrt(Math.max(0, (cb.top + cb.height / 2 + 120) / (bottom + 120))) * fall) * 1000)));
+        await wait(fall * 1000);
+        // it lands: the pillar of light
+        flash("#fff6d8", 260, 0.4);
+        FX.shake(10, 380);
+        spray({ x, y: bottom - 20 }, 26, { color: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "glow", angle: -Math.PI / 2, spread: 1.4, speed: [160, 420], size: [3, 6], g: 260, life: [0.5, 1], add: true });
+        add({ life: 1.7, draw(ctx, k, t) {
+            const grow = Math.min(1, k * 6), fadeK = k > 0.55 ? (1 - k) / 0.45 : 1, bw = w * (0.62 + 0.06 * Math.sin(t * 40)) * grow * (0.35 + 0.65 * fadeK);
+            ctx.globalCompositeOperation = "lighter";
+            const g = ctx.createLinearGradient(x - bw, 0, x + bw, 0);
+            g.addColorStop(0, "rgba(255,214,120,0)"); g.addColorStop(0.25, `rgba(255,214,120,${0.45 * fadeK})`); g.addColorStop(0.5, `rgba(255,255,248,${0.95 * fadeK})`);
+            g.addColorStop(0.75, `rgba(255,214,120,${0.45 * fadeK})`); g.addColorStop(1, "rgba(255,214,120,0)");
+            ctx.fillStyle = g; ctx.fillRect(x - bw, 0, bw * 2, bottom);
+            // rings of light running down the pillar
+            for (let i = 0; i < 4; i++) {
+                const yy = top + (((t * 1.4 + i / 4) % 1)) * (bottom - top);
+                ctx.globalAlpha = fadeK * 0.8; ctx.strokeStyle = "#fff6d8"; ctx.lineWidth = 2.5;
+                ctx.beginPath(); ctx.ellipse(x, yy, bw * 1.25, bw * 0.3, 0, 0, TAU); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            // feathers spiralling round it, and glints up and down its length
+            for (let i = 0; i < 10; i++) {
+                const a = t * 3 + i * 0.63, yy = top + ((i * 0.13 + t * 0.35) % 1) * (bottom - top), xx = x + Math.cos(a) * w * 0.95;
+                if (Math.sin(a) < 0) continue;                          // round the back of the pillar
+                K.haloAt(ctx, xx, yy, 7, "#ffd06b", fadeK * 0.8);
+                ctx.save(); ctx.translate(xx, yy); ctx.rotate(a); ctx.globalAlpha = fadeK; ctx.globalCompositeOperation = "source-over";
+                ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "#c9a0ff"; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.ellipse(0, 0, 9, 3, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore();
+                ctx.globalCompositeOperation = "lighter";
+            }
+            K.haloAt(ctx, x, bottom - 10, w * 2.2, "#fff6d8", fadeK * 0.7);
+        } });
+        await leave(ghosts, "zap", { color: "#ffd06b", stagger: 30 });
+        await wait(900);
+    });
+
+    // Divine Decree: a golden stone tablet comes down from the angel and slams over your board, the forbidden letter
+    // carved into it with light, a ring of dust and gold flakes where it lands
+    D("m-decree", async c => {
+        const f = Campaign.fight, letter = (f && f.decree) || "?", b = board(), to = { x: b.left + b.width / 2, y: b.top + 6 }, src = from(c);
+        const W = 92, H = 112;
+        const tablet = (ctx, x, y, s, glowK) => {
+            ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+            ctx.shadowColor = "rgba(0,0,0,.4)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8;
+            ctx.beginPath(); ctx.moveTo(-W / 2, H / 2); ctx.lineTo(-W / 2, -H / 2 + 26); ctx.arc(-W / 4, -H / 2 + 26, W / 4, Math.PI, 0); ctx.arc(W / 4, -H / 2 + 26, W / 4, Math.PI, 0); ctx.lineTo(W / 2, H / 2); ctx.closePath();
+            const g = ctx.createLinearGradient(0, -H / 2, 0, H / 2); g.addColorStop(0, "#fff0c0"); g.addColorStop(0.5, "#e8c66a"); g.addColorStop(1, "#b88a2e");
+            ctx.fillStyle = g; ctx.fill(); ctx.shadowColor = "transparent"; ctx.lineWidth = 4; ctx.strokeStyle = "#8a5a1a"; ctx.stroke();
+            ctx.strokeStyle = "rgba(138,90,26,.5)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, -H / 2 + 6); ctx.lineTo(0, H / 2 - 4); ctx.stroke();
+            ctx.font = "700 58px Cinzel, Georgia, serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.shadowColor = "#fff6d8"; ctx.shadowBlur = 20 * glowK; ctx.fillStyle = "#4a2a08"; ctx.fillText(letter, 0, 12);
+            ctx.strokeStyle = "#c62d3a"; ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.globalAlpha = glowK;
+            ctx.beginPath(); ctx.moveTo(-28, -16); ctx.lineTo(28, 40); ctx.stroke();               // the line through it: forbidden
+            ctx.restore();
+        };
+        add({ life: 1.1, draw(ctx, k) {
+            const fly = Math.min(1, k / 0.55), q = fly * fly, x = lerp(src.x, to.x, ease(fly)), y = lerp(src.y, to.y + H * 0.2, q) - Math.sin(fly * Math.PI) * 120;
+            ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+            K.haloAt(ctx, x, y, 110, "#ffd06b", 0.45);
+            tablet(ctx, x, y, 0.6 + 0.4 * fly, Math.max(0, (k - 0.5) * 2));
+        } });
+        await wait(600);
+        FX.shake(8, 300);
+        ring({ x: to.x, y: to.y + H * 0.35 }, { color: "#e8c66a", r: 170, life: 0.7, width: 10 });
+        spray({ x: to.x, y: to.y + H * 0.45 }, 24, { color: ["#e8c66a", "#fff6d8", "#b88a2e"], shape: "square", angle: -Math.PI / 2, spread: 1.5, speed: [100, 320], size: [2, 5], g: 500, life: [0.5, 0.9] });
+        spray({ x: to.x, y: to.y + H * 0.2 }, 16, { color: ["#fff6d8", "#ffffff"], shape: "star", speed: [60, 200], size: [2, 4], g: -40, life: [0.5, 0.9], add: true });
+        tone({ f: 70, f2: 45, type: "sine", d: 0.5, v: 0.2 });
+        await wait(600);
+    });
+
+    // Ascension: light rises from under your board, and white feathers and motes stream upward out of it
+    D("m-ascend", async c => {
+        const b = board(), o = boardMid();
+        add({ life: 2, draw(ctx, k, t) {
+            const a = Math.sin(Math.min(1, k * 1.2) * Math.PI);
+            ctx.globalCompositeOperation = "lighter";
+            for (let i = 0; i < 6; i++) {                                // shafts of light, rising
+                const x = b.left + b.width * (0.1 + i * 0.16) + Math.sin(t * 2 + i) * 6, wid = b.width * 0.06;
+                const g = ctx.createLinearGradient(0, b.bottom + 30, 0, b.top - 160);
+                g.addColorStop(0, `rgba(255,236,170,${0.55 * a})`); g.addColorStop(1, "rgba(255,236,170,0)");
+                ctx.fillStyle = g; ctx.fillRect(x - wid, b.top - 160, wid * 2, b.height + 190);
+            }
+            K.haloAt(ctx, o.x, b.bottom, b.width * 0.7, "#fff6d8", a * 0.6);
+        } });
+        for (let i = 0; i < (K.lite() ? 3 : 6); i++) setTimeout(() => {
+            spray({ x: b.left + Math.random() * b.width, y: b.bottom }, 8, { color: ["#ffffff", "#f6f0ff"], shape: "petal", angle: -Math.PI / 2, spread: 0.35, speed: [140, 300], size: [5, 9], g: -60, drag: 0.4, life: [1.2, 1.8], spin: 2, wob: 1 });
+            spray({ x: b.left + Math.random() * b.width, y: b.bottom }, 8, { color: ["#ffd06b", "#fff6d8"], shape: "glow", angle: -Math.PI / 2, spread: 0.3, speed: [180, 360], size: [2, 4], g: -80, life: [0.8, 1.4], add: true });
+        }, K.still() ? 0 : i * 180);
+        await wait(2000);
+    });
+
+    // Trumpet Blast: a golden trumpet swings up beside the angel and blows; rings of sound roll across to your board,
+    // notes tumble out of the bell, and the squares it scrambled spin round as their letters swap places
+    D("m-trumpet", async c => {
+        const src = from(c), o = boardMid(), b = board(), ang = Math.atan2(o.y - src.y, o.x - src.x), bell = { x: src.x + Math.cos(ang) * 70, y: src.y + Math.sin(ang) * 70 };
+        add({ life: 1.5, draw(ctx, k, t) {
+            const lift = ease(Math.min(1, k / 0.25)), blow = Math.max(0, (k - 0.25) / 0.75), a = k > 0.85 ? (1 - k) / 0.15 : 1;
+            ctx.save(); ctx.globalAlpha = a; ctx.translate(src.x + Math.cos(ang) * 30, src.y + Math.sin(ang) * 30 + (1 - lift) * 30); ctx.rotate(ang);
+            ctx.scale(lift * (1 + Math.sin(t * 50) * 0.02 * (blow > 0 ? 1 : 0)), lift);
+            const g = ctx.createLinearGradient(0, -20, 0, 20); g.addColorStop(0, "#fff0b0"); g.addColorStop(0.5, "#ffd06b"); g.addColorStop(1, "#b07a1e");
+            ctx.fillStyle = g; ctx.strokeStyle = "#7a4a10"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(-30, -4); ctx.lineTo(18, -4); ctx.quadraticCurveTo(34, -6, 44, -22); ctx.lineTo(48, -22); ctx.lineTo(48, 22); ctx.lineTo(44, 22); ctx.quadraticCurveTo(34, 6, 18, 4); ctx.lineTo(-30, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = "#7a4a10"; ctx.fillRect(-4, 4, 3, 9); ctx.fillRect(4, 4, 3, 9); ctx.fillRect(12, 4, 3, 9);
+            // a banner of light hanging from it
+            ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.moveTo(-14, 4); ctx.lineTo(16, 4); ctx.lineTo(12, 26 + Math.sin(t * 9) * 3); ctx.lineTo(1, 20); ctx.lineTo(-10, 26 + Math.sin(t * 9 + 1) * 3); ctx.closePath(); ctx.fill();
+            ctx.restore();
+            if (blow > 0) {                                                       // rings of sound rolling toward your board
+                ctx.globalCompositeOperation = "lighter";
+                const dist = Math.hypot(o.x - bell.x, o.y - bell.y);
+                for (let i = 0; i < 5; i++) {
+                    const p = (blow * 1.6 - i * 0.18); if (p < 0 || p > 1) continue;
+                    const cx = lerp(bell.x, o.x, p), cy = lerp(bell.y, o.y, p), r = 18 + p * Math.max(b.width, b.height) * 0.45;
+                    ctx.globalAlpha = (1 - p) * a; ctx.strokeStyle = "#ffd06b"; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.arc(cx - Math.cos(ang) * r * 0.6, cy - Math.sin(ang) * r * 0.6, r, ang - 0.7, ang + 0.7); ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+                if (dist) K.haloAt(ctx, bell.x, bell.y, 40, "#fff6d8", a * 0.8);
+            }
+        } });
+        await wait(420);
+        spray(bell, 14, { color: ["#ffd06b", "#fff6d8"], shape: "text", text: ["♪", "♫", "♩"], angle: ang, spread: 0.7, speed: [140, 320], size: [14, 22], g: 80, life: [0.8, 1.3], spin: 2 });
+        await wait(380);
+        FX.shake(10, 500);
+        pts(c).forEach((p, i) => setTimeout(() => {
+            ring(p, { color: "#ffd06b", r: 34, life: 0.45, width: 4 });
+            spray(p, 8, { color: ["#fff6d8", "#ffd06b"], shape: "star", speed: [60, 160], size: [2, 4], g: 40, life: [0.3, 0.6], add: true });
+        }, K.still() ? 0 : i * 40));
+        c.cells.forEach(x => x.el && x.el.animate([{ transform: "rotate(0)" }, { transform: "rotate(360deg) scale(.85)" }, { transform: "rotate(720deg)" }], { duration: K.still() ? 1 : 600, easing: "ease-in-out" }));
+        await wait(700);
+    });
+
+    // Penance: golden chains whip out from the angel and wrap your board on all four sides, a padlock snaps shut at
+    // the bottom, and the links glow for a moment before they fade into the board's edge
+    D("m-penance", async c => {
+        const src = from(c), b = board(), pad = 10;
+        const path = [[b.left - pad, b.top - pad], [b.right + pad, b.top - pad], [b.right + pad, b.bottom + pad], [b.left - pad, b.bottom + pad], [b.left - pad, b.top - pad]];
+        const lens = path.slice(1).map((p, i) => Math.hypot(p[0] - path[i][0], p[1] - path[i][1])), total = lens.reduce((s, l) => s + l, 0);
+        const at = d => { for (let i = 0; i < lens.length; i++) { if (d <= lens[i]) { const k = d / lens[i]; return [lerp(path[i][0], path[i + 1][0], k), lerp(path[i][1], path[i + 1][1], k), i % 2 === 0]; } d -= lens[i]; } return [...path[path.length - 1], true]; };
+        const link = (ctx, x, y, flat, i) => {
+            ctx.save(); ctx.translate(x, y); if (!flat) ctx.rotate(Math.PI / 2);
+            ctx.strokeStyle = i % 2 ? "#b88a2e" : "#ffd06b"; ctx.lineWidth = 3.5;
+            ctx.beginPath(); ctx.ellipse(0, 0, 8, i % 2 ? 2.5 : 5, 0, 0, TAU); ctx.stroke(); ctx.restore();
+        };
+        add({ life: 2, draw(ctx, k, t) {
+            const wrap = ease(Math.min(1, k / 0.45)), a = k > 0.8 ? (1 - k) / 0.2 : 1, step = 12;
+            ctx.globalAlpha = a;
+            // the chain flying in from the angel
+            const start = at(0);
+            if (k < 0.3) { const q = k / 0.3; for (let i = 0; i < 12; i++) { const kk = i / 12 * q; link(ctx, lerp(src.x, start[0], kk), lerp(src.y, start[1], kk) - Math.sin(kk * Math.PI) * 60, true, i); } }
+            for (let d = 0, i = 0; d < total * wrap; d += step, i++) { const [x, y, flat] = at(d); link(ctx, x, y, flat, i); }
+            ctx.globalCompositeOperation = "lighter";
+            const head = at(total * wrap); K.haloAt(ctx, head[0], head[1], 30, "#ffd06b", a);
+            if (k > 0.45) {                                                    // the padlock at the bottom
+                const lk = Math.min(1, (k - 0.45) / 0.12), x = (b.left + b.right) / 2, y = b.bottom + pad;
+                ctx.globalCompositeOperation = "source-over";
+                ctx.save(); ctx.translate(x, y); ctx.scale(lk, lk);
+                ctx.strokeStyle = "#8a5a1a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, -8, 9, Math.PI, 0); ctx.stroke();
+                ctx.fillStyle = "#e8c66a"; ctx.strokeStyle = "#8a5a1a"; ctx.lineWidth = 2; ctx.fillRect(-13, -8, 26, 22); ctx.strokeRect(-13, -8, 26, 22);
+                ctx.fillStyle = "#4a2a08"; ctx.beginPath(); ctx.arc(0, 1, 3, 0, TAU); ctx.fill(); ctx.fillRect(-1.2, 1, 2.4, 7);
+                ctx.restore();
+                ctx.globalCompositeOperation = "lighter"; K.haloAt(ctx, x, y, 50, "#fff6d8", a * (1 - lk * 0.5));
+            }
+        } });
+        await wait(980);
+        FX.shake(6, 250);
+        spray({ x: (b.left + b.right) / 2, y: b.bottom + pad }, 14, { color: ["#ffd06b", "#fff6d8"], shape: "star", speed: [80, 220], size: [2, 4], g: 120, life: [0.4, 0.8], add: true });
+        tone({ f: 2600, f2: 1800, type: "square", d: 0.06, v: 0.03 });
+        await wait(1000);
+    });
 })();

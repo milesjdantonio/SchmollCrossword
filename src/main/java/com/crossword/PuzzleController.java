@@ -183,7 +183,7 @@ public class PuzzleController {
     public String campaign(@RequestParam String world, @RequestParam int level, @RequestParam(defaultValue = "false") boolean boss,
                            @RequestParam(defaultValue = "1") int phase, @RequestParam(defaultValue = "0") int v) throws IOException {
         Campaign.Section section = Campaign.section(world);
-        if (section == null || level < 1 || level > Campaign.LEVELS || (boss && level != Campaign.LEVELS)
+        if (section == null || !Campaign.hasLevel(section, level) || (boss && level != Campaign.LEVELS)
                 || phase < 1 || phase > Campaign.phases(section) || (phase > 1 && (level != Campaign.LEVELS || boss)) || v < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no such campaign level: " + world + " " + level);
         }

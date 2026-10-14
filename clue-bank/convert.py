@@ -70,7 +70,8 @@ for g, f, ans in puzzles():
     # the campaign, 25% easier (the user, 2026-10-11: "lower the difficulty of the campaign across the board by
     # around 25% (the words and clues)"): a quarter of a puzzle's clues come from the next easier difficulty. Only
     # plain clues are swapped (never one a lesson style chose), picked by a fixed hash so a rebuild picks the same ones
-    if campaign and d != "easy":
+    # (not the secret world, the Celestial Rift: "hardest in the game", the user, 2026-10-14)
+    if campaign and d != "easy" and not f.startswith("rift-"):
         k = math.ceil(n * 0.25) - len(eased)
         cands = sorted((w for w in free if w not in style_of and w not in eased and B[easier(d)].get(w)), key=lambda w: zlib.crc32((f + w).encode()))
         for w in cands[:k]: clue[w] = B[easier(d)][w]; swapped["easier"] += 1

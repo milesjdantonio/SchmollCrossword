@@ -143,6 +143,18 @@
   "loopStart": 4.5,
   "loopEnd": 45.5
  },
+ "level-rift-1": {
+  "loopStart": 0.5,
+  "loopEnd": 34.1525
+ },
+ "level-rift-2": {
+  "loopStart": 28.25,
+  "loopEnd": 103.6819
+ },
+ "level-rift-3": {
+  "loopStart": 35.5,
+  "loopEnd": 128.0091
+ },
  "level-robot-1": {
   "loopStart": 0.5,
   "loopEnd": 94.4313

@@ -184,11 +184,12 @@ public class PuzzleBatch {
         // (the 5x5 solver is shared inside one process, so one process builds one board at a time)
         String levelsProp = System.getProperty("levels");
         Set<Integer> onlyLevels = levelsProp == null ? null : java.util.Arrays.stream(levelsProp.split(",")).map(String::trim).map(Integer::parseInt).collect(java.util.stream.Collectors.toSet());
-        for (Campaign.Section s : Campaign.SECTIONS) {
+        for (Campaign.Section s : Campaign.ALL) {
             if (worlds != null && !worlds.contains(s.world())) continue;
-            // levels 1-4: one chain each (each puzzle avoids the answers of the ones before it)
+            // levels 1-4 (the rift: 1-3): one chain each (each puzzle avoids the answers of the ones before it)
             for (int level = 1; level < Campaign.LEVELS; level++) {
                 final int l = level;
+                if (!Campaign.hasLevel(s, l)) continue;
                 if (build && onlyLevels != null && !onlyLevels.contains(l)) continue;
                 String d = Campaign.difficulty(s, l);
                 List<Job> mine = new ArrayList<>();
@@ -334,6 +335,18 @@ public class PuzzleBatch {
                     if (json != null && complete(json)) { cands.add(json); FILLED.merge(i, 1, Integer::sum); } else FAILED.merge(i, 1, Integer::sum);
                 }
             }
+        } else if (Campaign.secret(s)) {
+            // the secret world, "hardest in the game" (the user, 2026-10-14): Hard's words, not eased, only words that
+            // already have a hand-written hard clue (so no clue has to be written for a new word), aiming at how hard
+            // the Void's levels were before the campaign was made easier (ease.json targets for rift-*)
+            Map<Integer, List<String>> clued = onlyClued(hard, CLUED.get("hard"));
+            int[] want = usual(size);
+            for (int t = 0; t < 14 && cands.size() < 4; t++) {
+                String json = PuzzleStore.generateBigWith(base + t * 104_729L, "campaign", d, size, clued, clued, avoid, favors);
+                int[] st = stats(json);
+                if (Math.abs(st[0] - want[0]) <= 1 && Math.abs(st[1] - want[1]) <= 1 && st[2] == want[2] && complete(json)) cands.add(json);
+            }
+            if (cands.isEmpty()) cands.add(board(s, d, size, base, avoid, favors, clued, clued, clued));
         } else {
             boolean expert = d.equals("expert");
             Map<Integer, List<String>> first = expert ? medium : easy;
@@ -361,12 +374,22 @@ public class PuzzleBatch {
         }
         return uniqueBoard(s, d, size, base + 1, avoid, easy, medium, hard);      // (every candidate was taken)
     }
+    static Map<Integer, List<String>> onlyClued(Map<Integer, List<String>> words, Set<String> clued) {
+        Map<Integer, List<String>> out = new java.util.HashMap<>();
+        words.forEach((len, list) -> out.put(len, list.stream().filter(clued::contains).toList()));
+        return out;
+    }
     // a boss's own board (nobody reads its clues): it only has to be new
     static String uniqueBoard(Campaign.Section s, String d, int size, long seed, Set<String> avoid,
                               Map<Integer, List<String>> easy, Map<Integer, List<String>> medium, Map<Integer, List<String>> hard) throws IOException {
         for (int t = 0; ; t++) {
             // after the first try, from a random three quarters of the words (the same popular grids kept coming back)
             long salt = seed + t * 31L;
+            if (Campaign.secret(s)) {                             // the rift's bot boards: Hard's words, new grids
+                String json = board(s, d, size, seedOf("boss-board", seed) + t * 15_485_863L, avoid, "", hard, hard, t == 0 ? hard : upTo(hard, -1, 0.75, salt));
+                synchronized (USED) { if (claim(json, false)) return json; }
+                continue;
+            }
             String json = board(s, d, size, seedOf("boss-board", seed) + t * 15_485_863L, avoid, "",
                     // -DuniqueWide=true: the bot's board may use Medium's words (nobody solves it; the Easy list had run out of new grids)
                     Boolean.getBoolean("uniqueWide") ? medium : t == 0 ? easy : upTo(easy, -1, 0.75, salt), t == 0 ? medium : upTo(medium, -1, 0.75, salt), hard);

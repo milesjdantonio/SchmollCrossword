@@ -4,6 +4,8 @@
 //   Story.intro(c, pages)            the opening: the Everbook, the Void tearing it apart, its pages flying to the 15 bosses
 //   Story.page(c, pages, world)      after a boss's first defeat: its page flies into the book
 //   Story.finale(c, pages)           the last page: the book is whole, the words pour back into the worlds
+//   Story.epilogue(c, pages, hero)   the Cursed Angel beaten (the secret world, 2026-10-14): it falls, the rift closes,
+//                                    the Everbook is clasped shut for good, and your hero keeps it
 //   Story.openBook(pages)            the book itself (from the 📖 button on the map): the pages you've won
 // pages = [{ world, name (the world), boss, color, won }] in map order (Campaign.storyPages()).
 // c comes from FX.cinematic (skippable).
@@ -247,6 +249,55 @@ const Story = (() => {
         await c.wait(500);
     }
 
+    // The epilogue: the Cursed Angel falls, its rift heals, and the Everbook is closed for good
+    async function epilogue(c, pages, hero) {
+        const el = stage("lx-epilogue"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true, color: "#ffe7a3" });
+        c.cleanup(() => { stop(); el.remove(); });
+        await storyMusic(c, "story-finale");
+        scene.innerHTML = `<div class="lx-sky"><div class="lx-tear"></div><div class="lx-angel">${typeof Bosses !== "undefined" ? Bosses.svg("rift") : ""}</div><i class="lx-vigil"></i></div>`;
+        say(el, "The Cursed Angel wanted every word for itself.");
+        await c.wait(2400);
+        if (c.skipped) return;
+        scene.querySelector(".lx-angel").classList.add("fall");
+        sfx(() => chime([76, 72, 69, 64, 60, 57], 0.13, "sine", 0.06));
+        FX.shake(8, 600);
+        const a = scene.querySelector(".lx-angel").getBoundingClientRect(), ao = { x: a.left + a.width / 2, y: a.top + a.height / 2 };
+        for (let k = 0; k < 4; k++) setTimeout(() => FX.burst({ x: ao.x, y: ao.y + k * 40, n: 30, colors: ["#ffffff", "#1c1230", "#ffe7a3", "#9b6bff"], shape: "petal", speed: [120, 380], gravity: 160, life: [1, 1.8], size: [6, 11], spin: 3 }), still() ? 0 : k * 260);
+        say(el, "Now its light goes out, feather by feather.");
+        await c.wait(2600);
+        if (c.skipped) return;
+        scene.querySelector(".lx-tear").classList.add("heal");
+        FX.flash("#fff6d8", 600, 0.6);
+        say(el, "The rift in the sky closes. Vigil shines in its place, keeping watch again, over everyone this time.");
+        sfx(() => chime([72, 76, 79, 84, 88], 0.15, "sine", 0.06));
+        scene.querySelector(".lx-vigil").classList.add("in");
+        await c.wait(3800);
+        if (c.skipped) return;
+        scene.querySelector(".lx-sky").classList.add("out");
+        scene.insertAdjacentHTML("beforeend", `<div class="lx-hero lx-keeper">${bookHtml(pages)}<i class="lx-clasp"></i>${hero && typeof Hero !== "undefined" ? `<div class="lx-keeper-hero">${Hero.svg(hero)}</div>` : ""}</div>`);
+        const book = scene.querySelector(".lx-keeper .lx-book");
+        book.classList.remove("open"); book.classList.add("whole");
+        await c.wait(600);
+        scene.querySelector(".lx-clasp").classList.add("lock");
+        sfx(() => chime([60, 67, 72, 79], 0.1, "triangle", 0.07));
+        const r = book.getBoundingClientRect(), o = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        FX.ring({ x: o.x, y: o.y, color: "#ffd06b", r1: Math.max(innerWidth, innerHeight) * 0.5, width: 12, dur: 1.2 });
+        FX.burst({ x: o.x, y: o.y, n: 60, colors: ["#fff6d8", "#ffd06b", "#c49bff"], shape: "star", speed: [150, 500], gravity: 60, life: [1, 1.8], size: [2, 6] });
+        say(el, `The Everbook is clasped shut, and ${hero && hero.name ? hero.name : "you"} will keep it safe. No one will ever tear it again.`);
+        await c.wait(4200);
+        if (c.skipped) return;
+        scene.querySelector(".lx-keeper").classList.add("out");
+        const end = U.el("div", { class: "lx-titlecard end", html: `<small>THE LOST EVERBOOK · EPILOGUE</small><b>The End</b><em>You saved every word, twice. Thank you for playing Schmoll Crossword.</em>` });
+        scene.appendChild(end);
+        requestAnimationFrame(() => end.classList.add("in"));
+        el.querySelector(".lx-caption").classList.remove("in");
+        sfx(() => chime([67, 72, 76, 79, 84, 88, 91], 0.15, "sine", 0.07));
+        for (let k = 0; k < 5; k++) setTimeout(() => FX.burst({ x: innerWidth * (0.15 + Math.random() * 0.7), y: innerHeight * (0.15 + Math.random() * 0.35), n: 50, colors: ["#ffe7a3", "#c49bff", "#ffffff", "#ffd06b"], shape: "star", speed: [150, 450], gravity: 160, life: [0.8, 1.5], size: [2, 5] }), still() ? 0 : 500 + k * 480);
+        await c.wait(5200);
+        el.classList.add("out");
+        await c.wait(500);
+    }
+
     // =============================================================================================
     // The book itself: the pages you've won (click one to read it)
     // =============================================================================================
@@ -270,5 +321,5 @@ const Story = (() => {
         modal.querySelector(".lx-close").focus();
     }
 
-    return { intro, page, finale, openBook };
+    return { intro, page, finale, epilogue, openBook };
 })();

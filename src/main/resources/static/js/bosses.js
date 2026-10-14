@@ -460,6 +460,59 @@ const Bosses = (() => {
             ${bits([[84, 30, `<path d="M0 -14 L8 0 L0 14 L-8 0Z" fill="#6b4fd6" ${st(2.5)}/><path d="M0 -14 L8 0 L0 0Z" fill="#b18cff"/>`], [120, 14, `<path d="M0 -16 L9 0 L0 16 L-9 0Z" fill="#6b4fd6" ${st(2.5)}/><path d="M0 -16 L9 0 L0 0Z" fill="#b18cff"/>`], [156, 30, `<path d="M0 -14 L8 0 L0 14 L-8 0Z" fill="#6b4fd6" ${st(2.5)}/><path d="M0 -14 L8 0 L0 0Z" fill="#b18cff"/>`], [24, 60, sparkle()], [218, 196, sparkle("#ffe066")]])}</g>`;
         } };
 
+
+    // ---------- The secret world, the Celestial Rift: The Cursed Angel ----------
+    // (2026-10-14) once the Everbook's guardian; it tried to keep the book for itself and was locked away, and the
+    // Void's fall broke its prison open. A cracked halo, white wings above and corrupted black ones below, a robe the
+    // corruption is climbing, a broken shackle on one wrist and a glowing book-sigil in its open hand.
+    B.rift = { name: "The Cursed Angel", color: "#e8c66a", taunt: "Kneel, little writer. The Everbook is mine.", arena: ["#3a1a6a", "#07031a"], fx: "feathers",
+        art: u => {
+            const upper = "M104 112 C80 70 50 40 14 26 C26 44 22 52 30 60 C20 62 18 70 26 78 C16 82 18 92 28 96 C22 102 26 110 36 110 C34 118 44 124 54 120 C64 126 80 128 96 124 Z";
+            const upperVeins = "M96 116 Q60 80 26 44 M92 120 Q56 92 28 80 M88 122 Q56 106 36 104";
+            const lower = "M102 132 C80 140 50 150 18 186 C30 182 36 186 34 194 C44 186 52 190 52 200 C60 190 68 194 70 204 C76 192 86 190 92 196 C94 176 100 156 106 140 Z";
+            const lowerVeins = "M100 138 Q70 154 34 186 M100 144 Q76 164 54 196 M102 150 Q88 172 72 200";
+            const tips = [[18, 186], [34, 194], [52, 200], [70, 204]];
+            const wing = (d, veins, fill, side, vein = INK) => `<g class="bz-sway" style="transform-origin:${side < 0 ? 104 : 136}px 120px;animation-delay:${side < 0 ? 0 : -1.2}s"><path d="${side < 0 ? d : mirror(d)}" fill="${fill}" ${st(3.5)}/><path d="${side < 0 ? veins : mirror(veins)}" fill="none" stroke="${vein}" stroke-width="1.6" opacity=".45"/></g>`;
+            return `<defs>${lin(u("robe"), [[0, "#fffaff"], [0.55, "#e6d8ff"], [1, "#9b7ad6"]])}${lin(u("hair"), [[0, "#f6f0ff"], [0.6, "#d6c8f2"], [1, "#8a6bd6"]])}${lin(u("dark"), [[0, "#3a2a5a"], [1, "#120a24"]])}
+                ${lin(u("wing"), [[0, "#ffffff"], [0.7, "#f4ecff"], [1, "#d8c8f6"]])}${rad(u("sig"), [[0, "#ffffff"], [0.5, "#fff3c4"], [1, "#e8c66a"]], 0.5, 0.5, 0.6)}${glowFilter(u("gl"), 3)}${glowFilter(u("gl2"), 6)}</defs>
+            <g class="bz-float">
+            ${wing(lower, lowerVeins, `url(#${u("dark")})`, -1, "#9b6bff")}${wing(lower, lowerVeins, `url(#${u("dark")})`, 1, "#9b6bff")}
+            ${tips.map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="5" ry="3.5" fill="#b48cff" filter="url(#${u("gl")})" class="bz-glow"/><ellipse cx="${f1(240 - x)}" cy="${y}" rx="5" ry="3.5" fill="#b48cff" filter="url(#${u("gl")})" class="bz-glow"/>`).join("")}
+            ${wing(upper, upperVeins, `url(#${u("wing")})`, -1)}${wing(upper, upperVeins, `url(#${u("wing")})`, 1)}
+            <path d="M96 72 Q86 110 92 134 Q100 122 104 130 L136 130 Q140 122 148 134 Q154 110 144 72 Z" fill="url(#${u("hair")})" ${st(3)}/>
+            <path d="M94 104 Q92 120 96 130 M146 104 Q148 120 144 130" stroke="#9b6bff" stroke-width="2.5" fill="none" opacity=".7"/>
+            <path d="M96 120 Q88 150 76 214 Q120 224 164 214 Q152 150 144 120 Q120 110 96 120 Z" fill="url(#${u("robe")})" ${st()}/>
+            <path d="M104 150 Q100 180 96 212 M136 150 Q140 180 144 212" stroke="#b9a6dc" stroke-width="2" fill="none" opacity=".6"/>
+            <path d="M78 198 L86 186 L92 198 L100 180 L108 200 L118 184 L126 202 L134 186 L142 200 L150 188 L158 198 L162 214 Q120 224 78 214 Z" fill="#2a0f5a" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M100 182 Q104 168 98 156 M134 186 Q130 170 138 158 M118 184 Q120 172 116 164" stroke="#b48cff" stroke-width="2" fill="none" filter="url(#${u("gl")})"/>
+            <path d="M100 122 L120 146 L140 122" fill="none" stroke="#e8c66a" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M90 162 Q120 172 150 162" fill="none" stroke="#e8c66a" stroke-width="5" stroke-linecap="round"/><circle cx="120" cy="168" r="5" fill="#e8c66a" ${st(2)}/>
+            <path d="M100 124 Q80 140 72 166 L83 171 Q92 150 106 138 Z" fill="url(#${u("robe")})" ${st(3)}/>
+            <circle cx="77" cy="174" r="6.5" fill="#fff3e6" ${st(2.5)}/>
+            <rect x="69" y="162" width="17" height="7" rx="2" fill="#c9902f" ${st(2)} transform="rotate(22 77 165)"/>
+            <g class="bz-sway" style="transform-origin:72px 176px"><g fill="none" stroke="#e8c66a" stroke-width="2.6"><ellipse cx="72" cy="182" rx="3" ry="5" transform="rotate(20 72 182)"/><ellipse cx="68" cy="191" rx="3" ry="5" transform="rotate(-20 68 191)"/><ellipse cx="66" cy="200" rx="3" ry="5" transform="rotate(25 66 200)"/></g>
+                <path d="M64 205 l-3 4 m3 -4 l4 3" stroke="#e8c66a" stroke-width="2" fill="none"/></g>
+            <path d="M140 124 Q166 126 184 140 L178 151 Q160 142 136 140 Z" fill="url(#${u("robe")})" ${st(3)}/>
+            <circle cx="184" cy="147" r="6.5" fill="#fff3e6" ${st(2.5)}/>
+            <g class="bz-glow"><circle cx="198" cy="128" r="22" fill="#ffe7a3" opacity=".25" filter="url(#${u("gl2")})"/>
+                <path d="M184 124 Q196 118 198 126 Q200 118 212 124 L212 138 Q200 132 198 140 Q196 132 184 138 Z" fill="url(#${u("sig")})" stroke="#c9902f" stroke-width="2" stroke-linejoin="round" filter="url(#${u("gl")})"/>
+                <path d="M188 128 h7 M188 132 h7 M201 128 h7 M201 132 h7" stroke="#c9902f" stroke-width="1.2"/></g>
+            <g class="bz-spin" style="transform-origin:198px 130px"><circle cx="198" cy="130" r="19" fill="none" stroke="#ffe7a3" stroke-width="1.6" stroke-dasharray="3 6" opacity=".8"/></g>
+            <rect x="113" y="112" width="14" height="12" fill="#fff3e6" ${st(2.5)}/>
+            <ellipse cx="120" cy="92" rx="22" ry="25" fill="#fff3e6" ${st(3.5)}/>
+            <path d="M98 86 Q102 62 120 60 Q140 62 142 88 Q134 74 122 77 Q108 72 98 86 Z" fill="url(#${u("hair")})" ${st(3)}/>
+            <path d="M110 66 Q114 72 112 80 M128 66 Q126 72 130 78" stroke="#9b6bff" stroke-width="1.6" fill="none" opacity=".6"/>
+            ${eyes({ x: 120, y: 94, gap: 10.5, r: 6.5, iris: "#ffd06b", brow: "sly", glow: u("gl") })}
+            <path d="M104 100 L100 106 L103 110 L101 115" stroke="#b48cff" stroke-width="1.8" fill="none" filter="url(#${u("gl")})"/>
+            <path d="M112 108 Q121 113 129 105" stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+            <ellipse cx="108" cy="104" rx="3.5" ry="2" fill="#ffb3c6" opacity=".55"/><ellipse cx="132" cy="104" rx="3.5" ry="2" fill="#ffb3c6" opacity=".55"/>
+            <g class="bz-glow" transform="rotate(-10 120 50)"><path d="M90 50 A30 8 0 0 1 146 46" fill="none" stroke="#ffd06b" stroke-width="6" stroke-linecap="round" filter="url(#${u("gl")})"/>
+                <path d="M150 50 A30 8 0 0 1 96 56" fill="none" stroke="#ffd06b" stroke-width="6" stroke-linecap="round" filter="url(#${u("gl")})"/>
+                <path d="M146 46 l4 -3 m-2 6 l5 1" stroke="#2a0f5a" stroke-width="1.8"/><path d="M118 58 l2 -4 l3 4" stroke="#2a0f5a" stroke-width="1.6" fill="none"/></g>
+            ${bits([[30, 132, `<path d="M0 -9 Q5 -3 2 7 L0 9 L-2 7 Q-5 -3 0 -9Z" fill="#ffffff" ${st(1.5)}/>`], [214, 70, `<path d="M0 -9 Q5 -3 2 7 L0 9 L-2 7 Q-5 -3 0 -9Z" fill="#1c1230" stroke="#9b6bff" stroke-width="1.5"/>`],
+                [214, 196, sparkle("#ffe7a3")], [26, 210, `<path d="M0 -8 Q4 -3 2 6 L0 8 L-2 6 Q-4 -3 0 -8Z" fill="#1c1230" stroke="#9b6bff" stroke-width="1.2"/>`], [158, 20, sparkle("#ffffff")]])}</g>`;
+        } };
+
     // =============================================================================================
     // Rendering
     // =============================================================================================
@@ -481,6 +534,7 @@ const Bosses = (() => {
         robot: { story: "Mega Unit X decided words are inefficient and fed the factory's page into its shredder, one line at a time. Its machines now speak only in beeps.", stakes: "Shut down Mega Unit X before it shreds the last line." },
         library: { story: "The Phantom Librarian haunts the stacks and has bound the library's page into a book that reads itself backwards. Anyone who solves a clue out loud gets shushed into silence.", stakes: "Break the Phantom's spell and take the page back from the haunted shelves." },
         volcano: { story: "Magma Wyrm swallowed its page of the Everbook and sleeps on it in the heart of the volcano. Every time it snores, the island shakes and another word melts.", stakes: "Wake the Wyrm and pull the page out of the fire before it melts." },
+        rift: { story: "Long before the Void, the Cursed Angel was the Everbook's guardian. Then it tried to keep every word for itself, and the old light locked it away at the edge of the sky. The Void kept that prison shut for a thousand years. When the Void fell, the prison cracked, and the angel came out reaching for the book you just put back together.", stakes: "Keep the Everbook out of the angel's hands and close the rift for good." },
         space: { story: "The Void tore the Everbook apart in the first place. It wants every word in the universe to fall into it and disappear. The last page, and all the pieces you've won back, are what stand in its way.", stakes: "This is it. Put the Everbook back together and close the Void forever." }
     };
     for (const k of Object.keys(LORE)) if (B[k]) Object.assign(B[k], LORE[k]);
@@ -554,6 +608,13 @@ const Bosses = (() => {
                 front = hills(320, 40, 60, near);
                 for (let i = 0; i < 8; i++) { const x = rnd(0, W); front += `<path d="M${x - 40} ${H}L${x - 10} ${H - rnd(80, 150)}L${x + 30} ${H}Z" fill="${near}"/>`; }
                 front += `<path d="M0 ${H - 10}Q400 ${H - 40} 800 ${H - 12}T1600 ${H - 16}" stroke="#ff7a1f" stroke-width="6" fill="none" opacity=".8"/>`; break;
+            case "rift":
+                // the tear across the sky, the old prison's broken pillars floating, and ruined columns standing in the mist
+                back = `<path d="M-40 150 L220 120 L380 170 L560 110 L760 160 L960 100 L1180 150 L1400 110 L1640 150 L1640 186 L1400 150 L1180 190 L960 140 L760 200 L560 150 L380 210 L220 160 L-40 190Z" fill="${far}"/>`;
+                for (let i = 0; i < 7; i++) { const x = 120 + i * 230 + rnd(-40, 40), y = rnd(210, 300), s = rnd(0.7, 1.2); back += `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)}) scale(${s.toFixed(2)})"><path d="M-60 0 L60 0 L30 50 L-10 34 L-40 60Z" fill="${far}"/><rect x="-14" y="-90" width="28" height="90" fill="${far}"/><path d="M-20 -90 L-8 -104 L4 -92 L20 -100 L20 -90Z" fill="${far}"/></g>`; }
+                front = `<path d="M0 ${H}L0 330Q200 300 400 330T800 320T1200 330T1600 320L1600 ${H}Z" fill="${near}"/>`;
+                for (let i = 0; i < 5; i++) { const x = rnd(80, 1520), h = rnd(120, 220); front += `<g transform="translate(${x.toFixed(0)} ${H})"><rect x="-22" y="${(-h).toFixed(0)}" width="44" height="${h.toFixed(0)}" fill="${near}"/><path d="M-30 ${(-h).toFixed(0)} h60 v-14 h-60z" fill="${near}"/><path d="M-22 ${(-h - 14).toFixed(0)} L-6 ${(-h - 40).toFixed(0)} L10 ${(-h - 18).toFixed(0)} L22 ${(-h - 30).toFixed(0)} L22 ${(-h - 14).toFixed(0)}Z" fill="${near}"/></g>`; }
+                break;
             case "space":
                 back = `<circle cx="1260" cy="120" r="70" fill="${far}"/><ellipse cx="1260" cy="120" rx="130" ry="22" fill="none" stroke="${far}" stroke-width="8" transform="rotate(-14 1260 120)"/><circle cx="260" cy="90" r="30" fill="${far}"/>`;
                 front = `<path d="M-200 ${H}Q800 160 1800 ${H}Z" fill="${near}"/>` + Array.from({ length: 9 }, () => `<ellipse cx="${rnd(200, 1400).toFixed(0)}" cy="${rnd(330, 390).toFixed(0)}" rx="${rnd(20, 50).toFixed(0)}" ry="${rnd(6, 12).toFixed(0)}" fill="${far}"/>`).join(""); break;
@@ -580,6 +641,7 @@ const Bosses = (() => {
             case "sparks": Object.assign(p, { vy: 100 + Math.random() * 200, vx: -60 + Math.random() * 120, s: 6 + Math.random() * 6, shape: "streak", c: pick(["#ffcf3f", "#ff9f2e", "#fff3a0"]) }); break;
             case "dust": Object.assign(p, { vy: -5 + Math.random() * 10, vx: -8 + Math.random() * 16, s: 1.5 + Math.random() * 3, c: pick(["rgba(191,243,228,.8)", "rgba(255,240,200,.7)"]), y: Math.random() * h }); break;
             case "embers": Object.assign(p, { y: initial ? Math.random() * h : h + 10, vy: -60 - Math.random() * 80, vx: -20 + Math.random() * 40, s: 2 + Math.random() * 3, c: pick(["#ffb21e", "#ff7a1f", "#ffe066"]), glow: true }); break;
+            case "feathers": Object.assign(p, { vy: 30 + Math.random() * 40, vx: -20 + Math.random() * 40, s: 7 + Math.random() * 5, shape: "feather", c: pick(["#ffffff", "#ffffff", "#1c1230", "#ffe7a3"]), vr: 1.6 }); break;
             case "stars": { const a = Math.random() * Math.PI * 2, d = Math.max(w, h) * (initial ? Math.random() * 0.6 + 0.1 : 0.7); Object.assign(p, { x: w / 2 + Math.cos(a) * d, y: h / 2 + Math.sin(a) * d, a, d, s: 1 + Math.random() * 2, shape: "star", c: "#fff" }); break; }
         }
         return p;
@@ -662,6 +724,7 @@ const Bosses = (() => {
                     case "ring": ctx.rotate(-p.rot); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, p.s, 0, 7); ctx.stroke(); break;
                     case "streak": ctx.rotate(-p.rot + Math.atan2(p.vy, p.vx) - Math.PI / 2); ctx.fillRect(-1, -p.s, 2, p.s); break;
                     case "hline": ctx.rotate(-p.rot); ctx.fillRect(-p.s, -1, p.s, 2); break;
+                    case "feather": ctx.rotate(Math.sin(p.rot) * 0.9); ctx.beginPath(); ctx.moveTo(0, -p.s); ctx.quadraticCurveTo(p.s * 0.5, -p.s * 0.3, p.s * 0.28, p.s * 0.8); ctx.lineTo(0, p.s); ctx.lineTo(-p.s * 0.28, p.s * 0.8); ctx.quadraticCurveTo(-p.s * 0.5, -p.s * 0.3, 0, -p.s); ctx.fill(); ctx.strokeStyle = p.c === "#1c1230" ? "#9b6bff" : "rgba(170,140,100,.7)"; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(0, -p.s * 0.9); ctx.lineTo(0, p.s * 1.1); ctx.stroke(); break;
                     case "star": ctx.rotate(-p.rot); ctx.globalAlpha = Math.min(1, p.d / 120); ctx.beginPath(); ctx.arc(0, 0, p.s, 0, 7); ctx.fill(); break;
                     default: ctx.beginPath(); ctx.arc(0, 0, p.s, 0, 7); ctx.fill();
                 }

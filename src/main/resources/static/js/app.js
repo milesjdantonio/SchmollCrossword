@@ -44,6 +44,7 @@ const App = (() => {
         container.innerHTML = "";
         for (const w of Worlds.list) {
             if (w.plain) continue;                    // Classic isn't a card: it's the plain bar underneath
+            if (w.secret && !Campaign.secretOpen()) continue;   // the Celestial Rift: only once the Void is beaten
             const card = U.el("button", { type: "button", class: "world-card" + (w.id === Settings.get("design") ? " on" : "") + (compact ? " compact" : ""), "data-wid": w.id, "aria-label": "Switch to the " + w.name + " world" },
                 U.el("canvas", { class: "wc-preview", "aria-hidden": "true" }),
                 U.el("span", { class: "wc-label" }, U.el("b", {}, U.el("i", { text: w.icon }), " " + w.name), null));

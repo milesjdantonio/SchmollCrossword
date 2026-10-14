@@ -375,6 +375,14 @@ const Game = (() => {
         Bus.emit("restore", { row, col, letter: hit.was });
         return true;
     }
+    // Rewrite Fate (the Celestial Rift's ability, 2026-10-14): every marked square gets your letter back at once
+    function restoreAllHits() {
+        let n = 0;
+        for (const k of [...hits.keys()]) { const [r, c] = k.split(",").map(Number); if (restoreHit(r, c)) n++; }
+        if (n) { render(); checkForWin(); }
+        return n;
+    }
+    const hitCount = () => [...hits.entries()].filter(([k, h]) => { const [r, c] = k.split(",").map(Number); return !isLocked(r, c) && game.letters[r] && game.letters[r][c] === h.ch; }).length;
     // A square is locked once it's revealed, or checked and found right: it can't be typed over or erased
     const isLocked = (row, col) => game.revealed[row][col] || game.locked[row][col];
     function render() {
@@ -628,7 +636,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `WORLD ${info.campaign.si + 1} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
+            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         if (info.best != null) {
@@ -683,7 +691,7 @@ const Game = (() => {
             actions.appendChild(U.el("button", { type: "button", class: "btn", text: k === "daily" ? "Back to Daily" : "Back to Unlimited", onclick: () => { closeResults(); Campaign.backToMode(); } }));
         } else if (info.campaign) {
             const n = info.campaign.next;
-            if (n) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: n.level === 1 ? `On to ${Worlds.byId[n.world].name}` : `Level ${n.level}`, onclick: () => { closeResults(); Campaign.next(n); } }));
+            if (n) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: n.level === 1 ? `On to ${Worlds.byId[n.world].name}` : n.level === 5 ? "Boss" : `Level ${n.level}`, onclick: () => { closeResults(); Campaign.next(n); } }));
             actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Map", onclick: () => { closeResults(); location.hash = "#campaign"; } }));
         } else if (p.mode === "daily" && info.left && info.left.length) {
             const next = info.left[0];
@@ -721,8 +729,16 @@ const Game = (() => {
                 U.el("span", {}, U.el("small", { text: "NEW ABILITY UNLOCKED" }), U.el("b", { text: `${c.newAbility.name} · ${c.freeUses} Free Uses` }))));
             setTimeout(() => { if (card.isConnected) Sound.play("sparkle"); }, 1400);
         }
+        // a boss beaten for the first time gives your hero new parts (hero.js; the user, 2026-10-14: "mention that in the unlock screen")
+        if (c.heroGifts && c.heroGifts.length) {
+            card.appendChild(U.el("div", { class: "res-ability res-hero" }, U.el("span", { class: "ra-icon", text: "🎁" }),
+                U.el("span", {}, U.el("small", { text: "NEW FOR YOUR HERO" }), U.el("b", { text: c.heroGifts.join(" · ") }))));
+            setTimeout(() => { if (card.isConnected) Sound.play("sparkle"); }, 1900);
+        }
         if (c.newWorld) card.appendChild(U.el("p", { class: "res-unlock", text: `New World Unlocked: ${c.newWorld.icon} ${c.newWorld.name}` }));
         if (c.finished) card.appendChild(U.el("p", { class: "res-unlock", text: "You Beat the Whole Campaign 🏆" }));
+        if (c.secret) card.appendChild(U.el("p", { class: "res-unlock secret", text: `A Secret World Has Opened: ${c.secret.icon} ${c.secret.name}` }));
+        if (c.epilogue) card.appendChild(U.el("p", { class: "res-unlock secret", text: "The Cursed Angel Is Beaten. The Everbook Is Safe." }));
     }
 
     function closeResults() {
@@ -1309,7 +1325,7 @@ const Game = (() => {
     document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) flushProgress(); });
 
     return {
-        restartSlot, forgetSlot, endLoss, stopSaving, checkWin: checkForWin, markBossChanges, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
+        restartSlot, forgetSlot, endLoss, stopSaving, checkWin: checkForWin, markBossChanges, restoreAllHits, hitCount, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
         openReport,
         state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),

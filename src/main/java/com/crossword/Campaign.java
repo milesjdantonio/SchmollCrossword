@@ -1,5 +1,6 @@
 package com.crossword;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -41,9 +42,35 @@ public class Campaign {
 
     static final int LEVELS = 5;      // per world; the last one is the boss
 
+    // The secret world (the user, 2026-10-14): the Celestial Rift, which only shows up on the map after the Void is
+    // beaten. The Void's fall broke open the prison of the Cursed Angel, who wants the Everbook for itself. "Hardest
+    // in the game": Expert words and clues on 7x7 and 9x9 boards, only 3 levels (each with a corruption meter, see
+    // static/js/corruption.js), then the angel: a 5-phase boss (level 5, like every boss). It isn't one of the 15
+    // pages of the Everbook, and it isn't in the Daily Boss rotation (dailyBossSection uses SECTIONS only).
+    static final List<Section> SECRET = List.of(
+        new Section("rift", "expert", 9, "expert", 9)
+    );
+    // every section, the 15 worlds then the secret one
+    static final List<Section> ALL = all();
+    private static List<Section> all() {
+        List<Section> list = new ArrayList<>(SECTIONS);
+        list.addAll(SECRET);
+        return List.copyOf(list);
+    }
+    static boolean secret(Section section) {
+        return SECRET.contains(section);
+    }
+    // the levels a world has: 1-4 and the boss (5), or for the secret world 1-3 and the boss (5)
+    static List<Integer> levels(Section section) {
+        return secret(section) ? List.of(1, 2, 3, 5) : List.of(1, 2, 3, 4, 5);
+    }
+    static boolean hasLevel(Section section, int level) {
+        return levels(section).contains(level);
+    }
+
     // The section for a world id, or null if there isn't one
     static Section section(String world) {
-        for (Section s : SECTIONS) {
+        for (Section s : ALL) {
             if (s.world().equals(world)) return s;
         }
         return null;
@@ -56,6 +83,7 @@ public class Campaign {
 
     // A level's board size (5 = the normal 5x5 shape)
     static int size(Section section, int level) {
+        if (secret(section) && level == 1) return 7;             // the rift starts on a 7x7, then it's all 9x9
         return level == LEVELS ? section.bossSize() : section.size();
     }
 
@@ -79,6 +107,7 @@ public class Campaign {
     // finish a board.
     static final int SINGLE_PHASE_BOSSES = 5;
     static int phases(Section section) {
+        if (secret(section)) return 5;                           // the Cursed Angel: 5 phases, like the Void
         int i = SECTIONS.indexOf(section), last = SECTIONS.size() - 1;
         if (i == last) return 5;
         if (i >= last - 2) return 3;
@@ -107,7 +136,7 @@ public class Campaign {
     // A fixed seed for each level, far away from the daily seeds (those look like 202610081):
     // world 1 level 1 -> 7000000011, world 15 level 5 -> 7000000155 (6 = the boss's own board, 7-10 = boss phases 2-5)
     static long seed(Section section, int level) {
-        return 7_000_000_000L + (SECTIONS.indexOf(section) + 1) * 10L + level;
+        return 7_000_000_000L + (ALL.indexOf(section) + 1) * 10L + level;
     }
     // a reroll's seed: the same, 1000 further along for each try
     static long seed(Section section, int level, int variant) {
@@ -116,12 +145,16 @@ public class Campaign {
 
     // The map as JSON for the website:
     // [{"world":"paper","levels":["easy","easy","easy","easy","easy"],"sizes":[5,5,5,5,5],"phase2":["challenge",6]}, ...]
+    // The secret world comes last with "secret":true and "levelList":[1,2,3,5] (the website hides it until the Void is beaten)
     static String mapJson() {
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < SECTIONS.size(); i++) {
-            Section s = SECTIONS.get(i);
+        for (int i = 0; i < ALL.size(); i++) {
+            Section s = ALL.get(i);
             if (i > 0) sb.append(",");
-            sb.append("{\"world\":\"").append(s.world()).append("\",\"levels\":[");
+            sb.append("{\"world\":\"").append(s.world()).append("\"");
+            if (secret(s)) sb.append(",\"secret\":true");
+            sb.append(",\"levelList\":").append(levels(s).toString().replace(" ", ""));
+            sb.append(",\"levels\":[");
             for (int level = 1; level <= LEVELS; level++) {
                 if (level > 1) sb.append(",");
                 sb.append("\"").append(difficulty(s, level)).append("\"");

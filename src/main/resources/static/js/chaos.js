@@ -230,8 +230,85 @@ const Chaos = (() => {
             [() => add(gear()), 1.3],
             [() => add(laser("#ff3b3b", true)), 2.6],
             [arc, 1.5]
+        ],
+        // Celestial Rift (the Cursed Angel): pillars of judgment light, storms of black and white feathers, cracks
+        // spreading across the sky, broken halos tumbling down, corruption orbs rising and bursting
+        rift: [
+            [() => add(judgment()), 1.6],
+            [() => { const dir = Math.random() < 0.5 ? 1 : -1, y = rand(0.1, 0.8) * H; for (let i = 0; i < 16; i++) add(featherFly(y + rand(-90, 90), dir, i * 0.05)); }, 1.1],
+            [() => add(skyCrack()), 4.5],
+            [() => add(haloFall()), 2.2],
+            [() => { const x = rand(0.1, 0.9) * W; for (let i = 0; i < 5; i++) add(corruptOrb(x + rand(-60, 60), H + rand(10, 120))); }, 2.6]
         ]
     };
+
+    // ---- the Celestial Rift's pieces ----
+    function judgment() {
+        // a column of holy light drops from the sky onto the ground: a thin warning line first, then the beam slams down
+        const x = rand(0.06, 0.94) * W, w = rand(26, 54) * (1 + level * 0.1), ground = H * rand(0.78, 0.96);
+        let hit = false;
+        return { t: 0, life: 1.6, step() { if (!hit && this.t > 0.45) { hit = true; ring(x, ground, "#ffe7a3", 140 + level * 30, 0.7, 7); debris(x, ground, 18, ["#fff6d8", "#ffd06b", "#c49bff"], [120, 380], [2, 4], 300); flash = Math.max(flash, 0.12); flashColor = "#fff3c4"; shake = Math.max(shake, 5); } },
+            draw() {
+                const k = this.t;
+                if (k < 0.45) { ctx.globalAlpha = 0.25 + k; ctx.fillStyle = "#ffe7a3"; ctx.fillRect(x - 1, 0, 2, ground); ctx.globalAlpha = 1; return; }
+                const e = Math.min(1, (k - 0.45) / 0.12), fade = 1 - Math.max(0, (k - 0.75) / 0.85), bw = w * (0.6 + 0.4 * e) * fade;
+                ctx.globalCompositeOperation = "lighter";
+                const g = ctx.createLinearGradient(x - bw, 0, x + bw, 0);
+                g.addColorStop(0, "rgba(255,214,120,0)"); g.addColorStop(0.35, `rgba(255,214,120,${0.55 * fade})`); g.addColorStop(0.5, `rgba(255,252,236,${0.95 * fade})`); g.addColorStop(0.65, `rgba(255,214,120,${0.55 * fade})`); g.addColorStop(1, "rgba(255,214,120,0)");
+                ctx.fillStyle = g; ctx.fillRect(x - bw, 0, bw * 2, ground * e);
+                halo(x, ground, bw * 2.4, "#ffd06b", fade);
+                for (let i = 0; i < 4; i++) { const yy = (this.t * 900 + i * ground / 4) % ground; halo(x + Math.sin(i * 7 + this.t * 9) * bw * 0.3, yy, 8, "#ffffff", 0.7 * fade); }
+                ctx.globalCompositeOperation = "source-over";
+            } };
+    }
+    function featherFly(y, dir, delay) {
+        const dark = Math.random() < 0.5, s = rand(0.8, 1.6), v = rand(380, 620) * (1 + level * 0.1);
+        return { x: dir > 0 ? -60 : W + 60, y, vx: dir * v, ph: rand(0, TAU), rot: rand(0, TAU), t: -delay, life: 5,
+            step(dt) { if (this.t < 0) return; this.x += this.vx * dt; this.y += Math.sin(this.t * 6 + this.ph) * 80 * dt; this.rot += dt * 4 * dir; if (this.x < -80 || this.x > W + 80) this.dead = true; },
+            draw() {
+                if (this.t < 0) return;
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rot); ctx.scale(s, s * Math.abs(Math.cos(this.t * 5 + this.ph)) * 0.6 + s * 0.4);
+                ctx.fillStyle = dark ? "#1c1230" : "#ffffff";
+                ctx.beginPath(); ctx.moveTo(0, -16); ctx.quadraticCurveTo(8, -6, 4, 12); ctx.lineTo(0, 16); ctx.lineTo(-4, 12); ctx.quadraticCurveTo(-8, -6, 0, -16); ctx.fill();
+                ctx.strokeStyle = dark ? "#9b6bff" : "#d9c4a0"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(0, 18); ctx.stroke();
+                ctx.restore();
+                if (dark) halo(this.x, this.y, 14, "#7a3cff", 0.35);
+            } };
+    }
+    function skyCrack() {
+        // a crack races across the sky in jagged steps, glowing gold with violet light leaking out, then seals
+        const pts = [[rand(0, 0.2) * W, rand(0.05, 0.5) * H]], branches = [];
+        while (pts[pts.length - 1][0] < W * rand(0.7, 1.05)) { const [x, y] = pts[pts.length - 1]; pts.push([x + rand(40, 110), y + rand(-50, 50)]); if (Math.random() < 0.3) branches.push([[x, y], [x + rand(-40, 60), y + rand(30, 90)], [x + rand(-60, 80), y + rand(80, 160)]]); }
+        return { t: 0, life: 2.6, draw() {
+            const k = Math.min(1, this.t / 0.6), fade = 1 - Math.max(0, (this.t - 1.6) / 1), n = Math.max(2, Math.ceil(pts.length * k));
+            ctx.globalCompositeOperation = "lighter"; ctx.lineJoin = "round"; ctx.lineCap = "round";
+            for (const [w, c, a] of [[16, "#7a3cff", 0.35], [7, "#ffd06b", 0.6], [2.5, "#ffffff", 1]]) {
+                ctx.strokeStyle = c; ctx.lineWidth = w; ctx.globalAlpha = a * fade;
+                ctx.beginPath(); pts.slice(0, n).forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+                for (const b of branches) if (pts.indexOf(b[0]) < n) { ctx.lineWidth = w * 0.5; ctx.beginPath(); b.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); }
+            }
+            ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over";
+            const tip = pts[n - 1]; if (k < 1) halo(tip[0], tip[1], 30, "#fff3c4", 1);
+        } };
+    }
+    function haloFall() {
+        // a broken halo tumbles down out of the sky, spinning, and shatters into gold
+        const r = rand(26, 46) * (1 + level * 0.1), ground = H * rand(0.75, 0.95);
+        return { x: rand(0.1, 0.9) * W, y: -60, vy: rand(160, 260), vx: rand(-60, 60), rot: rand(0, TAU), vr: rand(-3, 3), t: 0, life: 7, gap: rand(0.6, 1.3),
+            step(dt) { this.vy += 260 * dt; this.x += this.vx * dt; this.y += this.vy * dt; this.rot += this.vr * dt; if (this.y > ground) { this.dead = true; debris(this.x, this.y, 22, ["#ffd06b", "#fff6d8", "#c9902f"], [140, 420], [2, 4.5], 380); ring(this.x, this.y, "#ffd06b", 110, 0.6, 5); } },
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rot); ctx.scale(1, 0.35);
+                glow("#ffd06b", 20); ctx.strokeStyle = "#f2c25a"; ctx.lineWidth = 7; ctx.beginPath(); ctx.arc(0, 0, r, this.gap, TAU - 0.3); ctx.stroke();
+                ctx.strokeStyle = "#fff6d8"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r, this.gap + 0.2, TAU - 0.5); ctx.stroke(); noGlow();
+                ctx.restore();
+            } };
+    }
+    function corruptOrb(x, y) {
+        const r = rand(8, 18), top = H * rand(0.1, 0.5);
+        return { x, y, vy: -rand(120, 220), t: 0, life: 8, ph: rand(0, TAU),
+            step(dt) { this.y += this.vy * dt; this.x += Math.sin(this.t * 3 + this.ph) * 40 * dt; if (this.y < top) { this.dead = true; debris(this.x, this.y, 14, ["#9b6bff", "#c49bff", "#2a0f5a"], [80, 260], [2, 4], 60, [0.5, 1]); ring(this.x, this.y, "#9b6bff", 70, 0.5, 4); } },
+            draw() { halo(this.x, this.y, r * 3.2, "#7a3cff", 0.8); circle(this.x, this.y, r, radial(this.x - r * 0.3, this.y - r * 0.3, r * 1.4, [[0, "#e3c8ff"], [0.5, "#7a3cff"], [1, "#1a0640"]])); } };
+    }
 
     // ---- the pieces ----
     function shootingStar() {

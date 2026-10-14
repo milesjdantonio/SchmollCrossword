@@ -107,9 +107,9 @@ class CampaignTest {
     @Test
     void mapJsonListsEveryLevel() {
         String json = Campaign.mapJson();
-        assertTrue(json.startsWith("[{\"world\":\"paper\",\"levels\":[\"easy\",\"easy\",\"easy\",\"easy\",\"easy\"],\"sizes\":[5,5,5,5,5],\"lessons\":["));
-        assertTrue(json.contains("{\"world\":\"space\",\"levels\":[\"expert\",\"expert\",\"expert\",\"expert\",\"expert\"],\"sizes\":[9,9,9,9,9],\"lessons\":["));
-        assertTrue(json.endsWith("\"phase2\":[\"expert\",9],\"phases\":[[\"expert\",9],[\"expert\",9],[\"expert\",9],[\"expert\",9]]}]"), "the Void: 5 phases");
+        assertTrue(json.startsWith("[{\"world\":\"paper\",\"levelList\":[1,2,3,4,5],\"levels\":[\"easy\",\"easy\",\"easy\",\"easy\",\"easy\"],\"sizes\":[5,5,5,5,5],\"lessons\":["));
+        assertTrue(json.contains("{\"world\":\"space\",\"levelList\":[1,2,3,4,5],\"levels\":[\"expert\",\"expert\",\"expert\",\"expert\",\"expert\"],\"sizes\":[9,9,9,9,9],\"lessons\":["));
+        assertTrue(json.endsWith("\"phase2\":[\"expert\",9],\"phases\":[[\"expert\",9],[\"expert\",9],[\"expert\",9],[\"expert\",9]]}]"), "the last world (the secret Celestial Rift, after the Void) has 5 phases");
     }
 
     @Test

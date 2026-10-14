@@ -988,4 +988,59 @@
         burst(Array.from({ length: 40 }, () => { const s = Math.random() < 0.5 ? p1 : p2, ang = rnd(0, TAU), r = rnd(80, 160); return { x: s.x + Math.cos(ang) * r, y: s.y + Math.sin(ang) * r, vx: -Math.cos(ang) * r * 1.2, vy: -Math.sin(ang) * r * 1.2, life: 0.9, size: rnd(1.5, 3), color: pick(["#c06bff", "#4fd2ff", "#ffffff"]), shape: "streak", add: true, delay: rnd(0.3, 1) }; }));
         await wait(1500);
     });
+
+    // =========================================================================================
+    // The Celestial Rift (2026-10-14)
+    // =========================================================================================
+    // Constellation: a star lights on each crossing it fills, the stars join up with lines of gold, and they flare
+    D("constellation", async c => {
+        const ps = pts(c).length ? pts(c) : [mid(myBoard())];
+        const order = ps.slice().sort((a, b) => a.x - b.x);
+        add({ life: 2, draw(ctx, k, t) {
+            const fade = k > 0.8 ? (1 - k) / 0.2 : 1, n = Math.min(order.length, Math.floor(k * 1.6 * order.length) + 1);
+            ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = fade;
+            ctx.strokeStyle = "rgba(255,214,120,.85)"; ctx.lineWidth = 2.5; ctx.shadowColor = "#ffd06b"; ctx.shadowBlur = 12;
+            ctx.beginPath(); order.slice(0, n).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.stroke();
+            ctx.shadowBlur = 0;
+            order.slice(0, n).forEach((p, i) => { const tw = 0.6 + 0.4 * Math.sin(t * 9 + i); K.haloAt(ctx, p.x, p.y, 26 * tw, "#fff6d8", fade); ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, TAU); ctx.fill(); });
+        } });
+        order.forEach((p, i) => setTimeout(() => { glow(p, { color: "#ffd06b", r: 50, life: 0.5 }); Sound.tone({ f: Sound.midi(84 + i * 4), type: "sine", d: 0.6, v: 0.03, echo: 0.4 }); }, K.still() ? 0 : i * 260));
+        await wait(1600);
+        order.forEach(p => burst(Array.from({ length: 10 }, () => { const a = rnd(0, TAU), v = rnd(60, 200); return { x: p.x, y: p.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: rnd(0.4, 0.8), size: rnd(2, 4), color: pick(["#fff6d8", "#ffd06b", "#ffffff"]), shape: "star", add: true }; })));
+        await wait(400);
+    });
+    // Wish Upon a Star: a shooting star streaks down across the screen onto your board and stays there, glowing,
+    // until your next word makes the wish come true
+    D("wish", async c => {
+        const o = mid(myBoard()), s0 = { x: o.x - innerWidth * 0.5, y: -40 }, path = [];
+        add({ life: 1, draw(ctx, k) {
+            const q = ease(Math.min(1, k * 1.15)), x = lerp(s0.x, o.x, q), y = lerp(s0.y, o.y, q);
+            path.push([x, y]); if (path.length > 26) path.shift();
+            ctx.globalCompositeOperation = "lighter";
+            path.forEach(([px, py], i) => K.haloAt(ctx, px, py, 4 + i * 0.9, i % 3 ? "#c49bff" : "#fff6d8", i / path.length));
+            K.haloAt(ctx, x, y, 34, "#fff6d8", 1); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(x, y, 6, 0, TAU); ctx.fill();
+            if (Math.random() < 0.6) spray({ x, y }, 1, { color: ["#fff6d8", "#c49bff"], shape: "star", speed: [20, 90], size: [2, 4], g: 120, life: [0.4, 0.8] });
+        } });
+        await wait(900);
+        K.ring(o, { color: "#fff6d8", r: 140, width: 6, life: 0.6 });
+        spray(o, 30, { color: ["#fff6d8", "#c49bff", "#ffd06b"], shape: "star", speed: [100, 320], size: [2, 5], g: 80, life: [0.5, 1], add: true });
+        await wait(600);
+    });
+    // Rewrite Fate: a golden quill writes across your board; every letter the boss took comes back in ink and light
+    D("fate", async c => {
+        const ps = pts(c), b = rect(myBoard());
+        const order = ps.length ? ps.slice().sort((a, p) => a.y - p.y || a.x - p.x) : [{ x: b.left + b.width * 0.2, y: b.top + b.height * 0.5 }, { x: b.right - b.width * 0.2, y: b.top + b.height * 0.5 }];
+        add({ life: 0.5 + order.length * 0.16, draw(ctx, k) {
+            const pos = k * (order.length - 1), i = Math.min(order.length - 2, Math.floor(pos)), a = order[Math.max(0, i)], bb = order[Math.min(order.length - 1, i + 1)], f = pos - Math.max(0, i);
+            const x = order.length > 1 ? lerp(a.x, bb.x, f) : a.x, y = order.length > 1 ? lerp(a.y, bb.y, f) : a.y;
+            ctx.save(); ctx.translate(x + 10, y - 26); ctx.rotate(0.7);
+            ctx.fillStyle = "#fff6d8"; ctx.strokeStyle = "#c9902f"; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(0, 30); ctx.quadraticCurveTo(-10, 0, 0, -26); ctx.quadraticCurveTo(10, 0, 0, 30); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = "#e8c66a"; ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(0, 40); ctx.stroke();
+            ctx.restore();
+            K.haloAt(ctx, x, y, 30, "#ffd06b", 0.6);
+        } });
+        order.forEach((p, i) => setTimeout(() => { glow(p, { color: "#c49bff", r: 46, life: 0.5 }); spray(p, 8, { color: ["#c49bff", "#ffd06b", "#ffffff"], shape: "star", speed: [40, 140], size: [1.5, 3], g: 60, life: [0.3, 0.6], add: true }); }, K.still() ? 0 : 250 + i * 160));
+        await wait(600 + order.length * 160);
+    });
 })();

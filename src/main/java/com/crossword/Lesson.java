@@ -87,7 +87,8 @@ public class Lesson {
         Map.entry("candy", "sweets and treats"), Map.entry("ocean", "the sea"), Map.entry("snow", "winter and snow"),
         Map.entry("rain", "rainy weather and the city"), Map.entry("sky", "flight and the sky"), Map.entry("desert", "deserts and travel"),
         Map.entry("carnival", "circuses and fairs"), Map.entry("arcade", "video games"), Map.entry("robot", "machines and technology"),
-        Map.entry("library", "books and ghost stories"), Map.entry("volcano", "fire and the earth"), Map.entry("space", "outer space"));
+        Map.entry("library", "books and ghost stories"), Map.entry("volcano", "fire and the earth"), Map.entry("space", "outer space"),
+        Map.entry("rift", "angels, heaven and the stars"));
 
     // The course: each world's four lessons (levels 1-4), easiest skills first. Skills come back later, harder,
     // in bigger grids with tougher words. Level 5 (the boss) reviews the world's four.
@@ -106,7 +107,9 @@ public class Lesson {
         Map.entry("library",  List.of("long", "crossings", "wordplay", "clean")),       // world 12 (swapped with the robot)
         Map.entry("robot",    List.of("theme", "misdirection", "double", "mixed")),     // world 13
         Map.entry("volcano",  List.of("long", "wordplay", "speed", "clean")),
-        Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")));
+        Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")),
+        // the secret world (2026-10-14): only 3 levels, the hardest of the course, and the angel reviews them
+        Map.entry("rift",     List.of("double", "misdirection", "mixed")));
 
     // A level's lesson. Level 5 is the boss's review: null skill, and the four lessons in `review`.
     record Level(Skill skill, int round, List<Skill> review) {
@@ -120,6 +123,8 @@ public class Lesson {
     static Level of(String world, int level) {
         List<String> course = COURSE.get(world);
         if (course == null) return null;
+        Campaign.Section section = Campaign.section(world);
+        if (section != null && !Campaign.hasLevel(section, level)) return null;     // the rift has no level 4
         if (level >= Campaign.LEVELS) {
             List<Skill> review = new ArrayList<>();
             for (String id : course) review.add(SKILLS.get(id));
@@ -133,9 +138,9 @@ public class Lesson {
     static int round(String world, int level) {
         String id = COURSE.get(world).get(level - 1);
         int n = 0;
-        for (Campaign.Section s : Campaign.SECTIONS) {
+        for (Campaign.Section s : Campaign.ALL) {
             List<String> course = COURSE.get(s.world());
-            for (int l = 1; l < Campaign.LEVELS; l++) {
+            for (int l = 1; l <= course.size(); l++) {
                 if (course.get(l - 1).equals(id)) n++;
                 if (s.world().equals(world) && l == level) return n;
             }
@@ -185,7 +190,7 @@ public class Lesson {
             StringBuilder names = new StringBuilder();
             for (Skill s : lesson.review()) names.append(names.length() > 0 ? ", " : "").append(s.name());
             return "{\"id\":\"review\",\"name\":\"Boss review\",\"practise\":" + quote("Everything from this world: " + names + ".")
-                + ",\"tip\":" + quote("Each word you finish hits the boss. Use the skills from this world's four levels.") + ",\"star\":\"boss\"}";
+                + ",\"tip\":" + quote("Each word you finish hits the boss. Use the skills from this world's " + (lesson.review().size() == 3 ? "three" : "four") + " levels.") + ",\"star\":\"boss\"}";
         }
         Skill s = lesson.skill();
         return "{\"id\":" + quote(s.id()) + ",\"name\":" + quote(lesson.name()) + ",\"round\":" + lesson.round() + ",\"practise\":" + quote(s.practise())
