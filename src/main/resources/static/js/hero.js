@@ -5,7 +5,9 @@
 //
 //   Hero.svg(look, cls, { still })   an <svg> of the hero (each copy gets its own gradient ids)
 //   Hero.inner(look, { still })      the same without the <svg> wrapper, to place inside another SVG (the map)
-//   Hero.maker({ look, first })      the editor: resolves with the new look (or null if it was closed)
+//   Hero.maker({ look, first, beaten })  the editor: resolves with the new look (or null if it was closed); beaten =
+//                                    the bosses you've beaten (each one's hat, outfit and item are yours to pick)
+//   Hero.giftNames(world)            the names of the three parts that world's boss gives
 //   Hero.random()                    a random look; Hero.fix(look) fills in anything missing
 //
 // look = { name, body, color, eyes, mouth, face, top, topColor, outfit, outfitColor, item } (numbers pick a part)
@@ -28,15 +30,196 @@ const Hero = (() => {
     const EYES = ["Dots", "Big", "Happy", "Starry", "Glasses", "Sleepy", "Wink", "Shades", "Determined", "Hearts", "Dizzy", "One Eye"];
     const MOUTHS = ["Smile", "Grin", "Surprised", "Cheeky", "Cat", "Fangs", "Tongue", "Big Smile", "Whistle", "Flat", "Buck Teeth", "Worried", "Zigzag"];
     const FACES = ["Blush", "Nothing", "Freckles", "Mustache", "Bandage", "Star Cheeks", "Whiskers", "Sweat Drop", "Face Paint"];
-    const TOPS = ["Nothing", "Tuft", "Beanie", "Cap", "Crown", "Bow", "Wizard Hat", "Headphones", "Sprout", "Spiky", "Top Hat", "Pirate Hat", "Flower", "Horns", "Halo", "Bandana", "Cowboy Hat", "Chef Hat", "Viking Helmet"];
-    const OUTFITS = ["Nothing", "Scarf", "Cape", "Bow Tie", "Backpack", "Medal", "Belt", "Wings", "Overalls", "Necklace", "Tie", "Apron", "Sash"];
-    const ITEMS = ["Nothing", "Pencil", "Book", "Star Wand", "Lantern", "Magnifier", "Sword", "Shield", "Balloon", "Umbrella", "Key", "Flag", "Ice Cream", "Fishing Rod", "Trophy"];
+    const TOPS = ["Nothing", "Tuft", "Beanie", "Cap", "Crown", "Bow", "Wizard Hat", "Headphones", "Sprout", "Spiky", "Top Hat", "Pirate Hat", "Flower", "Horns", "Halo", "Bandana", "Cowboy Hat", "Chef Hat", "Viking Helmet",
+        // the bosses' gifts (GIFT below)
+        "Pencil Crown", "Thistle Crown", "Acorn Cap", "Gumdrop Crown", "Octopus Hat", "Fur Hat", "Storm Cloud", "Aviator Cap", "Pharaoh Headdress", "Jester Hat", "Pixel Crown", "Candle Crown", "Antenna", "Flame Crown", "Space Helmet", "Cursed Halo"];
+    const OUTFITS = ["Nothing", "Scarf", "Cape", "Bow Tie", "Backpack", "Medal", "Belt", "Wings", "Overalls", "Necklace", "Tie", "Apron", "Sash",
+        "Paper Ruff", "Vine Sash", "Leaf Scarf", "Candy Sash", "Life Ring", "Fur Collar", "Raincoat", "Jetpack", "Broad Collar", "Striped Vest", "Pixel Armor", "Ghost Shroud", "Robo Armor", "Scale Armor", "Planet Ring", "Fallen Wings"];
+    const ITEMS = ["Nothing", "Pencil", "Book", "Star Wand", "Lantern", "Magnifier", "Sword", "Shield", "Balloon", "Umbrella", "Key", "Flag", "Ice Cream", "Fishing Rod", "Trophy",
+        "Giant Eraser", "Watering Can", "Owl Plush", "Lollipop", "Trident", "Ice Axe", "Lightning Bolt", "Kite", "Ankh Staff", "Popcorn", "Game Controller", "Ghost Friend", "Wrench", "Torch", "Telescope", "Feather Quill"];
     const PARTS = { body: BODIES, eyes: EYES, mouth: MOUTHS, face: FACES, top: TOPS, outfit: OUTFITS, item: ITEMS };
 
+
+    // ---------------------------------------------------------------------------------------------
+    // The bosses' gifts (the user, 2026-10-14: "make it for defeated every boss gives more stuff for your hero"):
+    // each boss you beat unlocks a hat, an outfit and something to hold, in its world's style. They're the last 16 of
+    // each list (so saved heroes keep their parts), in the map's order; the editor only offers the ones you've won.
+    // ---------------------------------------------------------------------------------------------
+    const GIFT_WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];
+    const GIFT_TOPS = [
+        // The Big Eraser: a crown of pencils
+        (t, c) => [-28, 0, 28].map(a => `<g transform="rotate(${a} 120 ${t + 12})"><rect x="113" y="${t - 26}" width="14" height="34" fill="${c}" ${st(3)}/><path d="M113 ${t - 26} L120 ${t - 38} L127 ${t - 26}Z" fill="#f2d2a2" ${st(3)}/><path d="M118 ${t - 34} L120 ${t - 38} L122 ${t - 34}Z" fill="${INK}"/><rect x="112" y="${t + 4}" width="16" height="8" rx="2" fill="#ff8fa8" ${st(3)}/></g>`).join(""),
+        // Queen Thistle: a crown of thistles
+        (t, c, S) => [-1, 0, 1].map(k => { const x = 120 + k * S.hw * 0.62, y = t + 2 - (k ? 0 : 6); return `<path d="M${x} ${y + 14} V${y + 4}" stroke="#3f8a34" stroke-width="4"/><ellipse cx="${x}" cy="${y + 2}" rx="9" ry="8" fill="#5fae4a" ${st(3)}/><path d="M${x - 6} ${y - 1} l4 4 M${x + 6} ${y - 1} l-4 4 M${x} ${y - 4} v5" stroke="#2f6a2a" stroke-width="1.5"/>` +
+            Array.from({ length: 7 }, (_, i) => { const a = -Math.PI * (0.15 + i * 0.7 / 6); return `<path d="M${x} ${y - 4} L${f1(x + Math.cos(a) * 15)} ${f1(y - 4 + Math.sin(a) * 15)}" stroke="${INK}" stroke-width="5" stroke-linecap="round"/><path d="M${x} ${y - 4} L${f1(x + Math.cos(a) * 15)} ${f1(y - 4 + Math.sin(a) * 15)}" stroke="${c}" stroke-width="2.5" stroke-linecap="round"/>`; }).join(""); }).join("") +
+            `<path d="M${120 - S.hw * 0.75} ${t + 14} Q120 ${t + 4} ${120 + S.hw * 0.75} ${t + 14}" fill="none" stroke="#3f8a34" stroke-width="5" stroke-linecap="round"/>`,
+        // Old Grumbleowl: an acorn cap
+        (t, c, S) => { const w = Math.min(S.hw + 8, 60); return `<path d="M${120 - w} ${t + 18} Q${120 - w} ${t - 18} 120 ${t - 20} Q${120 + w} ${t - 18} ${120 + w} ${t + 18} Q120 ${t + 28} ${120 - w} ${t + 18}Z" fill="#8a5a2b" ${st(4)}/>` +
+            Array.from({ length: 5 }, (_, i) => `<path d="M${120 - w + 10 + i * (w - 5) / 2} ${t + 16} Q${120 - w + 18 + i * (w - 5) / 2} ${t - 2} ${120 - w + 26 + i * (w - 5) / 2} ${t + 16}" fill="none" stroke="#5e3a1a" stroke-width="2"/>`).join("") +
+            `<path d="M${120 - w + 6} ${t + 2} Q120 ${t - 14} ${120 + w - 6} ${t + 2}" fill="none" stroke="#5e3a1a" stroke-width="2"/><path d="M120 ${t - 20} Q124 ${t - 32} 132 ${t - 34}" fill="none" ${st(6)}/><path d="M120 ${t - 20} Q124 ${t - 32} 132 ${t - 34}" fill="none" stroke="#6b4219" stroke-width="3" stroke-linecap="round"/>`; },
+        // King Sourgum: a crown of gumdrops
+        (t, c, S) => { const w = Math.min(S.hw + 4, 56); return `<rect x="${120 - w}" y="${t + 4}" width="${w * 2}" height="14" rx="7" fill="${c}" ${st(3.5)}/>` +
+            ["#ff5fa2", "#7ad7ff", "#ffd23f", "#7dff6b", "#c08bff"].map((g, i) => { const x = 120 - w * 0.8 + i * w * 0.4; return `<path d="M${x - 10} ${t + 6} Q${x - 10} ${t - 14} ${x} ${t - 14} Q${x + 10} ${t - 14} ${x + 10} ${t + 6}Z" fill="${g}" ${st(3)}/><circle cx="${x - 3}" cy="${t - 6}" r="1.4" fill="#fff"/><circle cx="${x + 3}" cy="${t - 1}" r="1.2" fill="#fff"/><circle cx="${x - 1}" cy="${t + 2}" r="1" fill="#fff"/>`; }).join(""); },
+        // The Kraken: a little octopus sitting on its head
+        (t, c) => `<g>${[-1, 1].map(k => `<path d="M${120 + k * 14} ${t + 6} Q${120 + k * 40} ${t + 4} ${120 + k * 44} ${t + 24} Q${120 + k * 46} ${t + 34} ${120 + k * 38} ${t + 32}" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M${120 + k * 14} ${t + 6} Q${120 + k * 40} ${t + 4} ${120 + k * 44} ${t + 24} Q${120 + k * 46} ${t + 34} ${120 + k * 38} ${t + 32}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`).join("")}
+            <path d="M96 ${t + 8} C96 ${t - 26} 144 ${t - 26} 144 ${t + 8} Q120 ${t + 14} 96 ${t + 8}Z" fill="${c}" ${st(4)}/><circle cx="110" cy="${t - 6}" r="5" fill="#fff" ${st(2)}/><circle cx="130" cy="${t - 6}" r="5" fill="#fff" ${st(2)}/><circle cx="111" cy="${t - 5}" r="2.4" fill="${INK}"/><circle cx="131" cy="${t - 5}" r="2.4" fill="${INK}"/><circle cx="106" cy="${t - 16}" r="3" fill="#fff" opacity=".5"/></g>`,
+        // The Yeti: a fur hat with ear flaps
+        (t, c, S) => { const w = Math.min(S.hw + 6, 58); return [-1, 1].map(k => `<path d="M${120 + k * (w - 6)} ${t + 14} Q${120 + k * (w + 4)} ${t + 30} ${120 + k * (w - 2)} ${t + 52} Q${120 + k * (w - 16)} ${t + 46} ${120 + k * (w - 18)} ${t + 18}Z" fill="#f5efe3" ${st(3.5)}/>`).join("") +
+            `<path d="M${120 - w + 6} ${t + 10} C${120 - w + 6} ${t - 24} ${120 + w - 6} ${t - 24} ${120 + w - 6} ${t + 10}Z" fill="${c}" ${st(4)}/><path d="${fuzzy(120, t + 12, w, 11, 26)}" fill="#ffffff" ${st(3.5)}/>`; },
+        // Thunderhead: a little storm cloud floating over its head
+        (t) => `<g class="bz-float"><g fill="#8a95a3" ${st(3.5)}><circle cx="102" cy="${t - 14}" r="13"/><circle cx="120" cy="${t - 22}" r="16"/><circle cx="140" cy="${t - 14}" r="13"/><rect x="96" y="${t - 18}" width="48" height="16" rx="8"/></g><g fill="#a6b0bd"><circle cx="117" cy="${t - 26}" r="7"/></g>
+            <path d="M118 ${t - 4} L112 ${t + 8} H120 L114 ${t + 20} L128 ${t + 2} H120 L124 ${t - 4}Z" fill="#ffe066" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M100 ${t} v6 M140 ${t} v6" stroke="#7fb2ff" stroke-width="3" stroke-linecap="round"/></g>`,
+        // Sir Squall: an aviator's cap with goggles
+        (t, c, S) => { const w = Math.min(S.hw + 6, 60); return `<path d="M${120 - w} ${t + 26} C${120 - w} ${t - 18} ${120 + w} ${t - 18} ${120 + w} ${t + 26} L${120 + w - 8} ${t + 40} L${120 + w - 14} ${t + 26} Q120 ${t + 10} ${120 - w + 14} ${t + 26} L${120 - w + 8} ${t + 40}Z" fill="#8a5a3c" ${st(4)}/>` +
+            `<path d="M120 ${t - 12} V${t + 14}" stroke="#6b4429" stroke-width="2"/>` + [-1, 1].map(k => `<circle cx="${120 + k * 17}" cy="${t + 14}" r="11" fill="#bfe6ff" stroke="${c}" stroke-width="5"/><circle cx="${120 + k * 17}" cy="${t + 14}" r="11" fill="none" ${st(2)}/><path d="M${120 + k * 17 - 5} ${t + 10} q3 -3 7 -2" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>`).join("") +
+            `<path d="M114 ${t + 14} H126" stroke="${c}" stroke-width="5"/>`; },
+        // The Sphinx: a pharaoh's striped headdress with a cobra
+        (t, c, S) => { const w = Math.min(S.hw + 10, 62); return `<path d="M${120 - w + 10} ${t + 20} C${120 - w + 10} ${t - 20} ${120 + w - 10} ${t - 20} ${120 + w - 10} ${t + 20} L${120 + w} ${t + 66} L${120 + w - 18} ${t + 66} L${120 + w - 22} ${t + 24} Q120 ${t + 14} ${120 - w + 22} ${t + 24} L${120 - w + 18} ${t + 66} L${120 - w} ${t + 66}Z" fill="#ffd23f" ${st(4)}/>` +
+            [0, 1, 2, 3].map(i => `<path d="M${120 - w + 8 + i * 0} ${t + 30 + i * 9} L${120 - w + 2} ${t + 34 + i * 9} M${120 + w - 8} ${t + 30 + i * 9} L${120 + w - 2} ${t + 34 + i * 9}" stroke="${c}" stroke-width="5"/>`).join("") +
+            `<path d="M${120 - w + 16} ${t + 4} Q120 ${t - 10} ${120 + w - 16} ${t + 4}" fill="none" stroke="${c}" stroke-width="5"/><path d="M120 ${t + 18} C110 ${t + 6} 112 ${t - 8} 120 ${t - 8} C128 ${t - 8} 130 ${t + 6} 120 ${t + 18}Z" fill="#3fbf5f" ${st(2.5)}/><circle cx="118" cy="${t - 2}" r="1.5" fill="${INK}"/>`; },
+        // The Ringmaster: a jester's hat with bells
+        (t, c) => { const dk = shade(c, -0.35); return `<path d="M82 ${t + 16} Q76 ${t - 12} 56 ${t - 18} Q78 ${t - 34} 100 ${t - 6} Z" fill="${c}" ${st(3.5)}/><path d="M158 ${t + 16} Q164 ${t - 12} 184 ${t - 18} Q162 ${t - 34} 140 ${t - 6} Z" fill="${dk}" ${st(3.5)}/>` +
+            `<path d="M96 ${t + 10} Q104 ${t - 30} 120 ${Math.max(8, t - 40)} Q136 ${t - 30} 144 ${t + 10}Z" fill="#ffd23f" ${st(3.5)}/><path d="M80 ${t + 12} Q120 ${t - 2} 160 ${t + 12} L160 ${t + 22} Q120 ${t + 8} 80 ${t + 22}Z" fill="${INK}"/>` +
+            [[56, t - 18], [184, t - 18], [120, Math.max(8, t - 40)]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="6" fill="#ffd23f" ${st(2.5)}/><path d="M${x - 3} ${y + 1} H${x + 3}" stroke="${INK}" stroke-width="1.5"/>`).join(""); },
+        // Glitch: an 8-bit crown
+        (t, c) => `<g ${st(3)}><path d="M88 ${t + 14} V${t - 10} H96 V${t - 2} H104 V${t - 18} H112 V${t - 2} H128 V${t - 18} H136 V${t - 2} H144 V${t - 10} H152 V${t + 14}Z" fill="#ffd23f"/></g>
+            <rect x="94" y="${t + 2}" width="8" height="8" fill="${c}"/><rect x="116" y="${t + 2}" width="8" height="8" fill="#2bf0ff"/><rect x="138" y="${t + 2}" width="8" height="8" fill="${c}"/><rect x="88" y="${t - 10}" width="8" height="4" fill="#fff6a0"/>`,
+        // The Phantom Librarian: a ring of three dripping candles
+        (t, c, S) => { const w = Math.min(S.hw, 50); return `<path d="M${120 - w} ${t + 12} Q120 ${t + 2} ${120 + w} ${t + 12}" fill="none" stroke="#c9902f" stroke-width="6" stroke-linecap="round"/>` +
+            [-1, 0, 1].map(k => { const x = 120 + k * w * 0.62, h = k ? 20 : 26, y = t + 8 - (k ? 0 : 4); return `<rect x="${x - 6}" y="${y - h}" width="12" height="${h}" rx="2" fill="#f6ecd2" ${st(3)}/><path d="M${x - 6} ${y - h + 4} q3 6 0 10" fill="none" stroke="#e6d8b8" stroke-width="3"/><path d="M${x} ${y - h - 2} Q${x - 6} ${y - h - 10} ${x} ${y - h - 20} Q${x + 6} ${y - h - 10} ${x} ${y - h - 2}Z" fill="${c === "#2b2233" ? "#7fe0c4" : "#ffcf3f"}" class="bz-glow" stroke="${INK}" stroke-width="1.5"/>`; }).join(""); },
+        // Mega Unit X: a springy antenna with a blinking light
+        (t, c, S) => `<path d="M${120 - S.hw * 0.6} ${t + 12} Q120 ${t - 4} ${120 + S.hw * 0.6} ${t + 12}" fill="none" stroke="#8a95a3" stroke-width="7" stroke-linecap="round"/><path d="M${120 - S.hw * 0.6} ${t + 12} Q120 ${t - 4} ${120 + S.hw * 0.6} ${t + 12}" fill="none" ${st(2)}/>
+            <path d="M120 ${t + 4} q-8 -6 0 -10 q8 -4 0 -10 q-8 -4 0 -10 q8 -4 0 -8" fill="none" stroke="#5a6470" stroke-width="3"/><circle cx="120" cy="${t - 36}" r="8" fill="${c}" ${st(3)} class="bz-glow"/><circle cx="117" cy="${t - 39}" r="2.5" fill="#fff"/>`,
+        // Magma Wyrm: a crown of flames
+        (t, c, S) => { const w = Math.min(S.hw + 2, 54); return `<g class="bz-glow">` + [-2, -1, 0, 1, 2].map(k => { const x = 120 + k * w * 0.42, h = 28 - Math.abs(k) * 6; return `<path d="M${x - 9} ${t + 8} Q${x - 12} ${t - h * 0.4} ${x} ${t - h} Q${x + 12} ${t - h * 0.4} ${x + 9} ${t + 8}Z" fill="#ff7a1f" ${st(3)}/><path d="M${x - 4} ${t + 6} Q${x - 5} ${t - h * 0.2} ${x} ${t - h * 0.55} Q${x + 5} ${t - h * 0.2} ${x + 4} ${t + 6}Z" fill="#ffe066"/>`; }).join("") + `</g><rect x="${120 - w}" y="${t + 4}" width="${w * 2}" height="10" rx="5" fill="${c}" ${st(3)}/>`; },
+        // The Void: a glass space helmet with an antenna
+        (t, c, S) => { const rx = Math.min(S.w + 14, 92), ry = S.eyeY - t + 30, cy = S.eyeY - 2; return `<ellipse cx="120" cy="${cy}" rx="${rx}" ry="${ry}" fill="#bfe6ff" fill-opacity=".18" ${st(4)}/><path d="M${120 - rx * 0.62} ${cy - ry * 0.55} Q${120 - rx * 0.4} ${cy - ry * 0.85} ${120 - rx * 0.1} ${cy - ry * 0.92}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>` +
+            `<path d="M${120 - rx} ${cy + 4} Q120 ${cy + ry * 0.4} ${120 + rx} ${cy + 4}" fill="none" stroke="${c}" stroke-width="7"/><path d="M${120 + rx * 0.5} ${cy - ry * 0.86} L${120 + rx * 0.66} ${Math.max(10, cy - ry - 16)}" ${st(3)}/><circle cx="${120 + rx * 0.66}" cy="${Math.max(10, cy - ry - 16)}" r="5" fill="#ffe066" ${st(2)} class="bz-glow"/>`; },
+        // The Cursed Angel: a cracked halo, glowing violet through the cracks
+        (t) => `<g class="bz-glow"><ellipse cx="120" cy="${t - 16}" rx="32" ry="8.5" fill="none" stroke="#b48cff" stroke-width="12" opacity=".35"/>
+            <path d="M88 ${t - 16} A32 8.5 0 0 1 142 ${t - 23}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="M146 ${t - 20} A32 8.5 0 0 1 96 ${t - 9}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/>
+            <path d="M88 ${t - 16} A32 8.5 0 0 1 142 ${t - 23}" fill="none" stroke="#ffd06b" stroke-width="5" stroke-linecap="round"/><path d="M146 ${t - 20} A32 8.5 0 0 1 96 ${t - 9}" fill="none" stroke="#ffd06b" stroke-width="5" stroke-linecap="round"/>
+            <path d="M152 ${t - 30} l6 -2 l-2 6Z" fill="#ffd06b" stroke="${INK}" stroke-width="1.5"/><path d="M118 ${t - 26} l3 4 l-4 3" stroke="#7a3cff" stroke-width="2" fill="none"/></g>`
+    ];
+    // outfits: { back, front } (either may be missing)
+    const GIFT_OUTFITS = [
+        // a crumpled paper ruff
+        { front: (c, S) => { const y = S.mouthY + 22, w = S.w - 4; return `<path d="${Array.from({ length: 13 }, (_, i) => { const x = 120 - w + i * w / 6; return `${i ? "L" : "M"}${f1(x)} ${f1(y + (i % 2 ? 14 : 0) + Math.sin(i / 12 * Math.PI) * 10)}`; }).join("")} L${120 + w} ${y + 22} Q120 ${y + 40} ${120 - w} ${y + 22}Z" fill="#ffffff" ${st(3.5)}/>` +
+            [0, 1, 2].map(i => `<path d="M${120 - w + 6} ${y + 18 + i * 6} Q120 ${y + 34 + i * 6} ${120 + w - 6} ${y + 18 + i * 6}" fill="none" stroke="#9ab4e0" stroke-width="1.6"/>`).join("") + `<path d="M${120 - w + 14} ${y + 4} V${y + 34}" stroke="#f0a0a0" stroke-width="2"/>`; } },
+        // a sash of vines and little flowers
+        { front: (c, S) => { const x1 = 120 - S.w * 0.72, y1 = S.eyeY + 24, x2 = 120 + S.w * 0.62, y2 = Math.min(200, S.mouthY + 44);
+            return `<path d="M${x1} ${y1} Q${(x1 + x2) / 2 + 10} ${(y1 + y2) / 2 - 14} ${x2} ${y2}" fill="none" stroke="${INK}" stroke-width="9" stroke-linecap="round"/><path d="M${x1} ${y1} Q${(x1 + x2) / 2 + 10} ${(y1 + y2) / 2 - 14} ${x2} ${y2}" fill="none" stroke="#3f8a34" stroke-width="5" stroke-linecap="round"/>` +
+                [0.2, 0.45, 0.7, 0.9].map((u, i) => { const x = x1 + (x2 - x1) * u, y = y1 + (y2 - y1) * u - Math.sin(u * Math.PI) * 10; return i % 2 ? `<path d="M${f1(x)} ${f1(y)} q8 -10 14 -4 q-6 10 -14 4Z" fill="#5fae4a" ${st(2)}/>` : `<circle cx="${f1(x)}" cy="${f1(y)}" r="6" fill="${c}" ${st(2.5)}/><circle cx="${f1(x)}" cy="${f1(y)}" r="2.2" fill="#ffd23f"/>`; }).join(""); } },
+        // a scarf of autumn leaves
+        { front: (c, S) => { const y = S.mouthY + 20, w = S.w - 8; return Array.from({ length: 9 }, (_, i) => { const u = i / 8, x = 120 - w + u * 2 * w, yy = y + Math.sin(u * Math.PI) * 16, col = ["#e8792b", "#d9542a", "#f2b13a", "#c9642d"][i % 4];
+            return `<path d="M${f1(x - 10)} ${f1(yy)} Q${f1(x)} ${f1(yy - 9)} ${f1(x + 10)} ${f1(yy)} Q${f1(x)} ${f1(yy + 9)} ${f1(x - 10)} ${f1(yy)}Z" fill="${col}" ${st(2.5)} transform="rotate(${f1((u - 0.5) * 60)} ${f1(x)} ${f1(yy)})"/>`; }).join("") +
+            `<path d="M140 ${y + 14} Q146 ${y + 36} 138 ${y + 50}" fill="none" stroke="${INK}" stroke-width="2"/><path d="M134 ${y + 50} q4 -8 10 -4 q-4 8 -10 4Z" fill="#d9542a" ${st(2)}/>`; } },
+        // a candy-cane sash with a wrapped sweet
+        { front: (c, S) => { const x1 = 120 - S.w * 0.72, y1 = S.eyeY + 24, x2 = 120 + S.w * 0.62, y2 = Math.min(200, S.mouthY + 44);
+            return `<path d="M${x1} ${y1} L${x1 + 14} ${y1 - 10} L${x2 + 6} ${y2 - 12} L${x2 - 8} ${y2}Z" fill="#ffffff" ${st(3.5)}/>` + [0.15, 0.35, 0.55, 0.75].map(u => { const x = x1 + 4 + (x2 - x1) * u, y = y1 - 4 + (y2 - y1) * u; return `<path d="M${f1(x - 4)} ${f1(y + 8)} L${f1(x + 8)} ${f1(y - 6)} L${f1(x + 14)} ${f1(y - 2)} L${f1(x + 2)} ${f1(y + 12)}Z" fill="#e5484d"/>`; }).join("") +
+                `<g transform="translate(${f1((x1 + x2) / 2 + 4)} ${f1((y1 + y2) / 2 - 4)})"><ellipse rx="9" ry="7" fill="${c}" ${st(2.5)}/><path d="M-9 0 L-17 -6 L-17 6Z M9 0 L17 -6 L17 6Z" fill="${c}" ${st(2.5)}/></g>`; } },
+        // a life ring round the middle
+        { front: (c, S) => { const y = Math.min(178, S.mouthY + 38), rx = S.w + 8; return `<ellipse cx="120" cy="${y}" rx="${rx}" ry="16" fill="none" stroke="${INK}" stroke-width="18"/><ellipse cx="120" cy="${y}" rx="${rx}" ry="16" fill="none" stroke="#ffffff" stroke-width="12"/>` +
+            [-0.6, 0, 0.6].map(u => `<path d="M${f1(120 + u * rx - 8)} ${f1(y + 15 - Math.abs(u) * 5)} L${f1(120 + u * rx + 8)} ${f1(y + 15 - Math.abs(u) * 5)}" stroke="#e5484d" stroke-width="12"/>`).join("") + `<path d="M${120 - rx} ${y} Q${120 - rx - 10} ${y - 20} ${120 - rx + 6} ${y - 30}" fill="none" stroke="#c9a46a" stroke-width="3"/>`; } },
+        // a fluffy fur collar
+        { front: (c, S) => { const y = S.mouthY + 26, w = S.w - 2; return `<path d="${fuzzy(120, y, w, 15, 30, 1.08, 0.9)}" fill="#ffffff" ${st(3.5)}/><path d="${fuzzy(120, y - 2, w - 10, 8, 22, 1.08, 0.9)}" fill="#f2ece2"/><circle cx="120" cy="${y + 6}" r="5" fill="${c}" ${st(2.5)}/>`; } },
+        // a raincoat
+        { front: (c, S) => { const y0 = S.mouthY + 16, half = Math.min(S.bw || S.w - 4, 62), dk = shade(c, -0.3);
+            return `<path d="M${120 - half} ${y0 + 6} Q120 ${y0 + 20} ${120 + half} ${y0 + 6} L${120 + half - 4} 200 L${126} 200 L120 ${y0 + 22} L114 200 L${120 - half + 4} 200Z" fill="${c}" ${st(3.5)}/>` +
+                `<path d="M${120 - 20} ${y0 + 6} L120 ${y0 + 22} L${120 + 20} ${y0 + 6} L${120 + 12} ${y0 - 2} L120 ${y0 + 8} L${120 - 12} ${y0 - 2}Z" fill="${dk}" ${st(3)}/>` + [0, 1, 2].filter(i => y0 + 32 + i * 14 < 194).map(i => `<circle cx="${110}" cy="${y0 + 32 + i * 14}" r="3.5" fill="#fff" ${st(2)}/>`).join(""); } },
+        // a jetpack
+        { back: (c, S) => { const x = 120 + S.w - 14, y = S.eyeY + 10; return [0, 1].map(i => `<rect x="${x - 4 + i * 22}" y="${y}" width="20" height="56" rx="9" fill="${i ? shade(c, -0.25) : c}" ${st(3.5)}/><path d="M${x + 6 + i * 22} ${y + 56} Q${x - 2 + i * 22} ${y + 76} ${x + 6 + i * 22} ${y + 90} Q${x + 14 + i * 22} ${y + 76} ${x + 6 + i * 22} ${y + 56}Z" fill="#ff9f1c" class="bz-glow"/><path d="M${x + 6 + i * 22} ${y + 58} Q${x + 2 + i * 22} ${y + 70} ${x + 6 + i * 22} ${y + 78} Q${x + 10 + i * 22} ${y + 70} ${x + 6 + i * 22} ${y + 58}Z" fill="#ffe066"/>`).join(""); } },
+        // a gold and lapis broad collar
+        { front: (c, S) => { const y = S.mouthY + 16, w = S.w - 6; return [0, 1, 2].map(i => `<path d="M${120 - w + i * 6} ${y + i * 2} Q120 ${y + 26 + i * 10} ${120 + w - i * 6} ${y + i * 2}" fill="none" stroke="${INK}" stroke-width="10"/><path d="M${120 - w + i * 6} ${y + i * 2} Q120 ${y + 26 + i * 10} ${120 + w - i * 6} ${y + i * 2}" fill="none" stroke="${["#ffd23f", "#2f8fe0", c][i]}" stroke-width="6" stroke-dasharray="${i === 1 ? "4 3" : "none"}"/>`).join(""); } },
+        // a striped ringmaster's vest
+        { front: (c, S) => { const y0 = S.mouthY + 18, half = Math.min(S.bw || S.w - 6, 56); return `<path d="M${120 - half} ${y0} Q${120 - half - 4} 170 ${120 - half + 10} 198 L114 198 L120 ${y0 + 10} L126 198 L${120 + half - 10} 198 Q${120 + half + 4} 170 ${120 + half} ${y0} Q120 ${y0 + 14} ${120 - half} ${y0}Z" fill="#e5484d" ${st(3.5)}/>` +
+            [-0.6, -0.3, 0.3, 0.6].map(u => `<path d="M${f1(120 + u * half)} ${y0 + 6} V196" stroke="#ffffff" stroke-width="5" opacity=".9"/>`).join("") + [0, 1, 2].map(i => `<circle cx="130" cy="${y0 + 24 + i * 14}" r="3.5" fill="#ffd23f" ${st(2)}/>`).join(""); } },
+        // blocky pixel armour with a heart
+        { front: (c, S) => { const y0 = S.mouthY + 18, w = Math.min(S.bw || S.w - 8, 48); return `<path d="M${120 - w} ${y0} H${120 + w} V${y0 + 36} H${120 + w - 8} V${y0 + 44} H${120 - w + 8} V${y0 + 36} H${120 - w}Z" fill="${c}" ${st(3)}/><path d="M${120 - w} ${y0} H${120 + w} V${y0 + 6} H${120 - w}Z" fill="#fff" opacity=".35"/>` +
+            `<path d="M112 ${y0 + 14} H116 V${y0 + 12} H120 V${y0 + 14} H124 V${y0 + 12} H128 V${y0 + 14} H132 V${y0 + 22} H128 V${y0 + 26} H124 V${y0 + 30} H116 V${y0 + 26} H112 V${y0 + 22} H108 V${y0 + 14}Z" fill="#ff2b6d" stroke="${INK}" stroke-width="2"/>`; } },
+        // a ghostly shroud over the shoulders
+        { back: (c, S) => `<path d="M${120 - S.w - 6} ${S.eyeY + 20} Q${120 - S.w - 22} ${S.eyeY + 90} ${120 - S.w - 4} 208 Q${120 - S.w + 4} 198 ${120 - S.w + 12} 210 Q${120 - S.w + 18} 196 ${120 - S.w + 26} 208 L${120 + S.w - 26} 208 Q${120 + S.w - 18} 196 ${120 + S.w - 12} 210 Q${120 + S.w - 4} 198 ${120 + S.w + 4} 208 Q${120 + S.w + 22} ${S.eyeY + 90} ${120 + S.w + 6} ${S.eyeY + 20}Z" fill="#e9fff8" fill-opacity=".8" ${st(3.5)}/>`,
+          front: (c, S) => `<path d="M${120 - S.w + 4} ${S.mouthY + 22} Q120 ${S.mouthY + 40} ${120 + S.w - 4} ${S.mouthY + 22}" fill="none" stroke="#bff3e4" stroke-width="7" stroke-linecap="round" opacity=".85"/>` },
+        // robot armour with a glowing core
+        { front: (c, S) => { const y0 = S.mouthY + 18, w = Math.min(S.bw || S.w - 8, 46); return `<rect x="${120 - w}" y="${y0}" width="${w * 2}" height="${Math.min(44, 202 - y0)}" rx="8" fill="#a7b2c0" ${st(3.5)}/><rect x="${120 - w + 6}" y="${y0 + 6}" width="${w * 2 - 12}" height="6" rx="3" fill="#dfe6ee"/>` +
+            [[-1, 1], [1, 1]].map(([k]) => `<circle cx="${120 + k * (w - 7)}" cy="${y0 + 7}" r="2.4" fill="#5a6470"/>`).join("") + `<circle cx="120" cy="${y0 + 26}" r="9" fill="${c}" ${st(3)} class="bz-glow"/><circle cx="117" cy="${y0 + 23}" r="2.6" fill="#fff"/>`; } },
+        // dragon-scale armour
+        { front: (c, S) => { const y0 = S.mouthY + 20, w = Math.min(S.bw || S.w - 8, 46); let out = ""; for (let r = 0; r < 3; r++) for (let i = 0; i < 4 - (r % 2); i++) { const x = 120 - w + 12 + i * (w * 2 - 24) / (3 - (r % 2)) + (r % 2 ? (w - 12) / 3 : 0), y = y0 + r * 12; out += `<path d="M${f1(x - 10)} ${y} Q${f1(x)} ${y + 18} ${f1(x + 10)} ${y} Q${f1(x)} ${y + 6} ${f1(x - 10)} ${y}Z" fill="${r % 2 ? "#ff7a1f" : c}" ${st(2.5)}/>`; } return out; } },
+        // a ring round it like a planet's
+        { back: (c, S) => `<path d="M${120 - S.w - 30} ${S.mouthY + 14} A${S.w + 30} 18 0 0 1 ${120 + S.w + 30} ${S.mouthY + 14}" fill="none" stroke="${INK}" stroke-width="12"/><path d="M${120 - S.w - 30} ${S.mouthY + 14} A${S.w + 30} 18 0 0 1 ${120 + S.w + 30} ${S.mouthY + 14}" fill="none" stroke="${c}" stroke-width="6"/>`,
+          front: (c, S) => `<path d="M${120 + S.w + 30} ${S.mouthY + 14} A${S.w + 30} 18 0 0 1 ${120 - S.w - 30} ${S.mouthY + 14}" fill="none" stroke="${INK}" stroke-width="12"/><path d="M${120 + S.w + 30} ${S.mouthY + 14} A${S.w + 30} 18 0 0 1 ${120 - S.w - 30} ${S.mouthY + 14}" fill="none" stroke="${c}" stroke-width="6"/><path d="M${120 + S.w + 18} ${S.mouthY + 20} A${S.w + 18} 10 0 0 1 ${120 - S.w - 18} ${S.mouthY + 20}" fill="none" stroke="#ffe066" stroke-width="2" opacity=".7"/>` },
+        // the Cursed Angel's fallen wings: one white, one black
+        { back: (c, S) => { const y = S.eyeY + 26; return [-1, 1].map(k => { const x = 120 + k * (S.w - 12), dark = k > 0, e = Math.min(48, 120 - S.w - 4);
+            return `<path d="M${x} ${y} C${x + k * e * 0.4} ${y - 52} ${x + k * (e + 6)} ${y - 54} ${x + k * (e + 10)} ${y - 22} C${x + k * (e + 2)} ${y - 18} ${x + k * (e + 8)} ${y} ${x + k * (e + 2)} ${y + 6} C${x + k * (e - 4)} ${y + 10} ${x + k * (e - 2)} ${y + 26} ${x + k * (e - 10)} ${y + 28} C${x + k * (e * 0.5)} ${y + 40} ${x + k * 12} ${y + 40} ${x} ${y + 30}Z" fill="${dark ? "#1c1230" : "#ffffff"}" ${st(4)}/>` +
+                `<path d="M${x + k * 10} ${y + 2} Q${x + k * (e * 0.6)} ${y - 22} ${x + k * (e + 4)} ${y - 18} M${x + k * 10} ${y + 16} Q${x + k * (e * 0.55)} ${y + 6} ${x + k * (e - 2)} ${y + 8}" fill="none" stroke="${dark ? "#9b6bff" : INK}" stroke-width="2" opacity="${dark ? 0.8 : 0.3}"/>` +
+                (dark ? `<circle cx="${x + k * (e + 8)}" cy="${y - 20}" r="3" fill="#b48cff" class="bz-glow"/>` : ""); }).join(""); } }
+    ];
+    const GIFT_ITEMS = [
+        // a giant eraser
+        () => `<g transform="translate(206 112) rotate(-14)"><rect x="-22" y="-26" width="28" height="30" rx="5" fill="#ff9fb4" ${st(3.5)}/><rect x="4" y="-26" width="18" height="30" rx="3" fill="#4f86d9" ${st(3.5)}/><path d="M-18 -18 h18" stroke="#fff" stroke-width="3" opacity=".6"/></g>`,
+        // a watering can
+        () => `<g transform="translate(200 112)"><path d="M-20 -20 H12 V12 Q12 18 6 18 H-14 Q-20 18 -20 12Z" fill="#3fbf5f" ${st(3.5)}/><path d="M12 -12 L26 -26 L30 -22 L14 -4" fill="#3fbf5f" ${st(3)}/><path d="M-20 -14 Q-34 -14 -34 0 Q-34 10 -20 8" fill="none" ${st(4)}/><path d="M28 -30 l3 -4 m-1 7 l4 -2" stroke="#7fb2ff" stroke-width="2.5" stroke-linecap="round"/></g>`,
+        // a little owl plush
+        () => `<g transform="translate(206 104)"><ellipse cx="0" cy="0" rx="17" ry="20" fill="#8a5a3b" ${st(3.5)}/><ellipse cx="0" cy="6" rx="10" ry="11" fill="#d9b48a"/><path d="M-14 -16 L-10 -26 L-4 -18 M14 -16 L10 -26 L4 -18" fill="#8a5a3b" ${st(3)}/>` +
+            [-1, 1].map(k => `<circle cx="${k * 7}" cy="-8" r="6" fill="#fff" ${st(2)}/><circle cx="${k * 7}" cy="-7" r="3" fill="${INK}"/>`).join("") + `<path d="M-3 -2 L0 3 L3 -2Z" fill="#ffb21e" ${st(1.5)}/></g>`,
+        // a swirl lollipop
+        () => `<g transform="translate(206 128) rotate(-8)"><rect x="-2.5" y="-54" width="5" height="56" fill="#fff" ${st(2.5)}/><circle cy="-70" r="20" fill="#ff5fa2" ${st(3.5)}/><path d="M0 -70 m-2 0 a2 2 0 1 1 4 0 a6 6 0 1 1 -12 0 a10 10 0 1 1 20 0 a14 14 0 1 1 -28 0" fill="none" stroke="#fff" stroke-width="3.5"/></g>`,
+        // a golden trident
+        () => `<g transform="translate(206 130) rotate(-10)"><rect x="-3" y="-88" width="6" height="96" rx="2" fill="#c9902f" ${st(3)}/><path d="M-20 -86 V-104 M0 -90 V-112 M20 -86 V-104" ${st(6)}/><path d="M-20 -86 V-104 M0 -90 V-112 M20 -86 V-104" stroke="#ffd23f" stroke-width="3" stroke-linecap="round"/><path d="M-20 -86 Q0 -74 20 -86" fill="none" ${st(6)}/><path d="M-20 -86 Q0 -74 20 -86" fill="none" stroke="#ffd23f" stroke-width="3"/></g>`,
+        // an ice axe
+        () => `<g transform="translate(206 128) rotate(-18)"><rect x="-3.5" y="-80" width="7" height="84" rx="3" fill="#8a5a3c" ${st(3)}/><path d="M-26 -78 Q-6 -86 0 -82 Q6 -86 20 -80 L18 -72 Q6 -76 0 -74 Q-8 -76 -26 -70Z" fill="#cfeeff" ${st(3)}/><path d="M-22 -74 Q-10 -78 -4 -78" stroke="#fff" stroke-width="2" fill="none"/></g>`,
+        // a bolt of lightning
+        () => `<g transform="translate(206 124) rotate(-10)" class="bz-glow"><path d="M6 -96 L-16 -48 L-2 -48 L-14 -2 L18 -60 L4 -60 L16 -96Z" fill="#ffe066" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M8 -88 L-6 -56" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></g>`,
+        // a diamond kite
+        () => `<g transform="translate(206 128)"><path d="M0 0 Q-10 -40 -14 -66" fill="none" stroke="${INK}" stroke-width="1.6"/><g transform="translate(-14 -88) rotate(-12)"><path d="M0 -24 L18 0 L0 26 L-18 0Z" fill="#4fa3e8" ${st(3)}/><path d="M0 -24 L0 26 M-18 0 L18 0" stroke="${INK}" stroke-width="2"/><path d="M0 -24 L18 0 L0 0Z" fill="#ffd23f"/><path d="M0 26 Q8 36 0 44 Q-8 52 2 60" fill="none" stroke="#e5484d" stroke-width="2.5"/></g></g>`,
+        // an ankh staff
+        () => `<g transform="translate(206 130) rotate(-6)"><rect x="-3.5" y="-78" width="7" height="86" rx="3" fill="#ffd23f" ${st(3)}/><path d="M-16 -78 H16" ${st(8)}/><path d="M-16 -78 H16" stroke="#ffd23f" stroke-width="4" stroke-linecap="round"/><ellipse cx="0" cy="-94" rx="10" ry="14" fill="none" ${st(8)}/><ellipse cx="0" cy="-94" rx="10" ry="14" fill="none" stroke="#ffd23f" stroke-width="4"/></g>`,
+        // a box of popcorn
+        () => `<g transform="translate(206 116)"><path d="M-16 -18 L16 -18 L12 16 L-12 16Z" fill="#ffffff" ${st(3.5)}/><path d="M-9 -18 L-7 16 M0 -18 V16 M9 -18 L7 16" stroke="#e5484d" stroke-width="5"/>` +
+            [[-12, -22], [-4, -27], [5, -24], [13, -21], [0, -32], [-9, -30], [9, -31]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5.5" fill="#fff4c8" ${st(2)}/>`).join("") + `</g>`,
+        // a game controller
+        () => `<g transform="translate(204 112) rotate(-8)"><path d="M-26 -10 Q-26 -20 -14 -20 H14 Q26 -20 26 -10 L30 10 Q32 20 22 18 L12 8 H-12 L-22 18 Q-32 20 -30 10Z" fill="#5a5f6e" ${st(3.5)}/><path d="M-16 -10 V0 M-21 -5 H-11" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/><circle cx="12" cy="-10" r="3.5" fill="#ff2bd6"/><circle cx="19" cy="-4" r="3.5" fill="#2bf0ff"/></g>`,
+        // a little ghost friend floating by the hand
+        () => `<g transform="translate(212 92)" class="bz-float"><path d="M-16 6 C-16 -22 16 -22 16 6 L16 20 L10 15 L4 21 L-2 15 L-8 21 L-16 16Z" fill="#effffa" stroke="#7fd8c0" stroke-width="3"/><circle cx="-6" cy="-2" r="3" fill="${INK}"/><circle cx="6" cy="-2" r="3" fill="${INK}"/><ellipse cx="0" cy="7" rx="3" ry="4" fill="${INK}"/></g>`,
+        // a wrench
+        () => `<g transform="translate(206 128) rotate(-24)"><rect x="-4" y="-66" width="8" height="66" rx="4" fill="#a7b2c0" ${st(3)}/><path d="M-14 -66 Q-16 -86 0 -88 Q16 -86 14 -66 L6 -66 L6 -78 L-6 -78 L-6 -66Z" fill="#a7b2c0" ${st(3)}/></g>`,
+        // a burning torch
+        () => `<g transform="translate(206 128) rotate(-10)"><path d="M-5 -2 L-8 -58 H8 L5 -2Z" fill="#8a5a3c" ${st(3)}/><rect x="-10" y="-60" width="20" height="8" rx="2" fill="#5a5f6e" ${st(2.5)}/><g class="bz-glow"><path d="M0 -60 Q-16 -76 -2 -100 Q2 -84 10 -86 Q16 -72 0 -60Z" fill="#ff7a1f" ${st(2.5)}/><path d="M0 -62 Q-7 -72 0 -86 Q6 -74 0 -62Z" fill="#ffe066"/></g></g>`,
+        // a brass telescope
+        () => `<g transform="translate(206 120) rotate(-32)"><rect x="-6" y="-14" width="12" height="28" rx="3" fill="#7a4a2a" ${st(3)}/><rect x="-8" y="-46" width="16" height="34" rx="3" fill="#e0b020" ${st(3)}/><rect x="-11" y="-74" width="22" height="30" rx="3" fill="#ffd23f" ${st(3)}/><ellipse cx="0" cy="-74" rx="11" ry="4" fill="#bfe6ff" ${st(2)}/></g>`,
+        // the angel's feather quill
+        () => `<g transform="translate(206 128) rotate(-16)"><path d="M0 4 L-3 -10 L3 -10Z" fill="#e8c66a" ${st(2)}/><path d="M0 -10 C-22 -40 -14 -84 6 -104 C10 -76 16 -40 0 -10Z" fill="#ffffff" ${st(3)}/><path d="M0 -10 Q-2 -60 6 -104" fill="none" stroke="#9b6bff" stroke-width="2"/>` +
+            [0, 1, 2, 3].map(i => `<path d="M${-1 + i * 0.8} ${-26 - i * 18} l-9 -6" stroke="#c49bff" stroke-width="1.6"/>`).join("") + `<circle cx="7" cy="-102" r="3" fill="#ffd06b" class="bz-glow"/></g>`
+    ];
+    const GIFT = {};
+    GIFT_WORLDS.forEach((w, i) => { GIFT[w] = { top: 19 + i, outfit: 13 + i, item: 15 + i }; });
+    // which parts are still locked: { top: Set, outfit: Set, item: Set } for the bosses you haven't beaten
+    function locked(beaten) {
+        const out = { top: new Set(), outfit: new Set(), item: new Set() };
+        if (!beaten) return out;
+        for (const w of GIFT_WORLDS) if (!beaten.includes(w)) for (const k of ["top", "outfit", "item"]) out[k].add(GIFT[w][k]);
+        return out;
+    }
+    const giftNames = world => (GIFT[world] ? [TOPS[GIFT[world].top], OUTFITS[GIFT[world].outfit], ITEMS[GIFT[world].item]] : null);
+
+    // a fuzzy outline around an ellipse (fur), like the bosses'
+    function fuzzy(cx, cy, rx, ry, n = 36, out = 1.06, inn = 0.95) {
+        let d = "";
+        for (let i = 0; i <= n; i++) {
+            const a = (i / n) * Math.PI * 2, b = ((i + 0.5) / n) * Math.PI * 2;
+            const p = [cx + Math.cos(a) * rx * inn, cy + Math.sin(a) * ry * inn], q = [cx + Math.cos(b - Math.PI / n) * rx * out, cy + Math.sin(b - Math.PI / n) * ry * out];
+            d += i === 0 ? `M${f1(p[0])} ${f1(p[1])}` : `Q${f1(q[0])} ${f1(q[1])} ${f1(p[0])} ${f1(p[1])}`;
+        }
+        return d + "Z";
+    }
+
     const pick = a => Math.floor(Math.random() * a.length);
-    function random(name = "Hero") {
-        return { name, body: pick(BODIES), color: COLORS[pick(COLORS)], eyes: pick(EYES), mouth: pick(MOUTHS), face: pick(FACES), top: pick(TOPS), topColor: ACCENTS[pick(ACCENTS)],
-            outfit: pick(OUTFITS), outfitColor: ACCENTS[pick(ACCENTS)], item: 1 + pick(ITEMS.slice(1)) };
+    // a random part that isn't locked (lock: a Set of locked indexes)
+    const pickOpen = (list, lock, from = 0) => { const ok = list.map((_, i) => i).filter(i => i >= from && !(lock && lock.has(i))); return ok[Math.floor(Math.random() * ok.length)]; };
+    function random(name = "Hero", beaten = null) {
+        const L = locked(beaten);
+        return { name, body: pick(BODIES), color: COLORS[pick(COLORS)], eyes: pick(EYES), mouth: pick(MOUTHS), face: pick(FACES), top: pickOpen(TOPS, L.top), topColor: ACCENTS[pick(ACCENTS)],
+            outfit: pickOpen(OUTFITS, L.outfit), outfitColor: ACCENTS[pick(ACCENTS)], item: pickOpen(ITEMS, L.item, 1) };
     }
     const DEFAULT = { name: "Hero", body: 0, color: COLORS[0], eyes: 1, mouth: 0, face: 0, top: 1, topColor: ACCENTS[0], outfit: 1, outfitColor: ACCENTS[4], item: 1 };
     const hex = c => /^#[0-9a-f]{6}$/i.test(c || "");
@@ -182,6 +365,7 @@ const Hero = (() => {
         if (kind === 18) return `<path d="M86 ${t + 4} C70 ${t - 4} 62 ${t - 22} 70 ${t - 36} C74 ${t - 20} 84 ${t - 10} 96 ${t - 4}Z" fill="#f5efe3" ${st(3.5)}/><path d="M154 ${t + 4} C170 ${t - 4} 178 ${t - 22} 170 ${t - 36} C166 ${t - 20} 156 ${t - 10} 144 ${t - 4}Z" fill="#f5efe3" ${st(3.5)}/>` +
             `<path d="M78 ${t + 22} C78 ${t - 22} 162 ${t - 22} 162 ${t + 22}Z" fill="${c}" ${st(4)}/><rect x="74" y="${t + 14}" width="92" height="12" rx="5" fill="${dk}" ${st(3.5)}/><path d="M120 ${t - 12} V${t + 14}" stroke="${dk}" stroke-width="5"/>` +
             [88, 104, 136, 152].map(x => `<circle cx="${x}" cy="${t + 20}" r="2.2" fill="${lt}"/>`).join("");
+        if (kind >= 19 && GIFT_TOPS[kind - 19]) return GIFT_TOPS[kind - 19](t, c, S);
         if (kind === 8) return `<path d="M120 ${t + 4} V${t - 18}" ${st(5)}/><path d="M120 ${t - 16} C104 ${t - 34} 90 ${t - 22} 96 ${t - 12} C104 ${t - 6} 116 ${t - 10} 120 ${t - 16}Z" fill="#5fc35a" ${st(3.5)}/><path d="M120 ${t - 18} C134 ${t - 40} 152 ${t - 30} 146 ${t - 18} C140 ${t - 10} 126 ${t - 12} 120 ${t - 18}Z" fill="#7ad86b" ${st(3.5)}/>`;
         return "";
     }
@@ -195,6 +379,7 @@ const Hero = (() => {
             return [-1, 1].map(k => { const x = 120 + k * (S.w - 10); return `<path d="M${x} ${y} C${x + k * (e * 0.4)} ${y - 40} ${x + k * (e + 8)} ${y - 34} ${x + k * (e + 10)} ${y - 6} C${x + k * (e + 2)} ${y + 10} ${x + k * (e * 0.5)} ${y + 34} ${x} ${y + 30}Z" fill="${lt}" ${st(4)}/>` +
                 `<path d="M${x + k * 8} ${y + 4} Q${x + k * (e * 0.6)} ${y - 12} ${x + k * (e + 2)} ${y - 6} M${x + k * 8} ${y + 16} Q${x + k * (e * 0.5)} ${y + 8} ${x + k * (e - 4)} ${y + 8}" fill="none" stroke="${INK}" stroke-width="2" opacity=".3"/>`; }).join("");
         }
+        if (kind >= 13) { const g = GIFT_OUTFITS[kind - 13]; return g && g.back ? g.back(c, S) : ""; }
         return "";
     }
     function outfitFront(kind, c, S) {
@@ -229,6 +414,7 @@ const Hero = (() => {
             const y0 = S.mouthY + 16, sx = S.w * 0.55;
             return Array.from({ length: 9 }, (_, i) => { const u = i / 8, x = 120 - sx + u * 2 * sx, y = y0 + Math.sin(u * Math.PI) * 18; return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${i === 4 ? 7 : 4.5}" fill="${i === 4 ? c : shade(c, 0.35)}" ${st(2.5)}/>`; }).join("");
         }
+        if (kind >= 13) { const g = GIFT_OUTFITS[kind - 13]; return g && g.front ? g.front(c, S) : ""; }
         return "";
     }
     // the item in your right hand (it sways with the arm)
@@ -248,6 +434,7 @@ const Hero = (() => {
             `<path d="M-34 -104 Q-44 -70 -40 -40" fill="none" stroke="${INK}" stroke-width="1.5"/><circle cx="-40" cy="-36" r="5" fill="#e5484d" ${st(2)}/><path d="M-45 -36 H-35" stroke="#fff" stroke-width="2.5"/></g>`;
         if (kind === 14) return `<g transform="translate(204 108)"><path d="M-16 -20 Q-28 -20 -26 -8 Q-24 0 -14 0 M16 -20 Q28 -20 26 -8 Q24 0 14 0" fill="none" stroke="${INK}" stroke-width="6"/><path d="M-16 -20 Q-28 -20 -26 -8 Q-24 0 -14 0 M16 -20 Q28 -20 26 -8 Q24 0 14 0" fill="none" stroke="#ffd23f" stroke-width="2.5"/>` +
             `<path d="M-16 -26 H16 V-8 Q16 10 0 12 Q-16 10 -16 -8Z" fill="#ffd23f" ${st(3)}/><rect x="-4" y="12" width="8" height="9" fill="#e0b020" ${st(2.5)}/><rect x="-13" y="21" width="26" height="8" rx="2" fill="#7a4a2a" ${st(2.5)}/><path d="M-8 -20 V-4" stroke="#fff" stroke-width="3" opacity=".6" stroke-linecap="round"/></g>`;
+        if (kind >= 15 && GIFT_ITEMS[kind - 15]) return GIFT_ITEMS[kind - 15]();
         if (kind === 5) return `<g transform="translate(206 120) rotate(-30)"><rect x="-4" y="0" width="8" height="34" rx="3" fill="#8a5a3c" ${st(3)}/><circle cy="-16" r="18" fill="#cdeeff" fill-opacity=".6" ${st(5)}/><path d="M-8 -24 q4 -6 10 -6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/></g>`;
         return "";
     }
@@ -280,9 +467,10 @@ const Hero = (() => {
     // be closed without a hero; later it's Settings-like (Escape or Close keeps the old one).
     // ---------------------------------------------------------------------------------------------
     const chev = d => `<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="${d > 0 ? "M9 5l7 7-7 7" : "M15 5l-7 7 7 7"}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    function maker({ look, first = false } = {}) {
+    function maker({ look, first = false, beaten = null } = {}) {
         return new Promise(done => {
-            let cur = fix(look || random());
+            const L = locked(beaten), lockOf = key => L[key] || null;
+            let cur = fix(look || random("Hero", beaten));
             const modal = U.el("div", { class: "hero-maker", role: "dialog", "aria-modal": "true", "aria-label": first ? "Make Your Hero" : "Your Hero" });
             const card = U.el("div", { class: "hm-card" });
             const preview = U.el("div", { class: "hm-preview" }), nameShow = U.el("b", { class: "hm-name" });
@@ -293,10 +481,13 @@ const Hero = (() => {
                 const val = U.el("span", { class: "hm-val", text: list[cur[key]] });
                 return U.el("div", { class: "hm-row" }, U.el("small", { text: label }),
                     U.el("div", { class: "hm-step" },
-                        U.el("button", { type: "button", class: "hm-arrow", "aria-label": `Previous ${label}`, html: chev(-1), onclick: () => set(key, (cur[key] + list.length - 1) % list.length) }),
+                        U.el("button", { type: "button", class: "hm-arrow", "aria-label": `Previous ${label}`, html: chev(-1), onclick: () => set(key, step(key, list, -1)) }),
                         val,
-                        U.el("button", { type: "button", class: "hm-arrow", "aria-label": `Next ${label}`, html: chev(1), onclick: () => set(key, (cur[key] + 1) % list.length) })));
+                        U.el("button", { type: "button", class: "hm-arrow", "aria-label": `Next ${label}`, html: chev(1), onclick: () => set(key, step(key, list, 1)) })));
             };
+            // the next part along that isn't locked (bosses not beaten yet keep theirs)
+            const step = (key, list, d) => { const lock = lockOf(key); let v = cur[key]; for (let i = 0; i < list.length; i++) { v = (v + d + list.length) % list.length; if (!lock || !lock.has(v)) return v; } return cur[key]; };
+            const left = L.top.size + L.outfit.size + L.item.size;
             const swatches = (label, key, list) => U.el("div", { class: "hm-row" }, U.el("small", { text: label }),
                 U.el("div", { class: "hm-swatches" }, ...list.map(c => U.el("button", { type: "button", class: "hm-swatch" + (cur[key] === c ? " on" : ""), style: { background: c }, "aria-label": `${label} ${c}`, onclick: () => set(key, c) }))));
             const nameIn = U.el("input", { type: "text", class: "hm-input", maxlength: "12", value: cur.name, "aria-label": "Name", autocomplete: "off", spellcheck: "false" });
@@ -313,13 +504,14 @@ const Hero = (() => {
                         stepper("Hair and Hats", "top", TOPS), stepper("Outfit", "outfit", OUTFITS),
                         stepper("Holding", "item", ITEMS)),
                     cur.top ? swatches("Hat Colour", "topColor", ACCENTS) : "",
-                    cur.outfit ? swatches("Outfit Colour", "outfitColor", ACCENTS) : "");
+                    cur.outfit ? swatches("Outfit Colour", "outfitColor", ACCENTS) : "",
+                    beaten && left ? U.el("p", { class: "hm-locked", text: `🎁 ${left} more parts to win: every boss you beat gives your hero a hat, an outfit and something to hold.` }) : "");
             }
             const close = value => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); setTimeout(() => modal.remove(), 250); done(value); };
             const onKey = e => { if (e.key === "Escape" && !first) { e.preventDefault(); close(null); } };
             addEventListener("keydown", onKey, true);
             const actions = U.el("div", { class: "hm-actions" },
-                U.el("button", { type: "button", class: "btn", text: "Surprise Me", onclick: () => { cur = fix({ ...random(cur.name), name: cur.name }); Sound.play("pop"); draw(); } }),
+                U.el("button", { type: "button", class: "btn", text: "Surprise Me", onclick: () => { cur = fix({ ...random(cur.name, beaten), name: cur.name }); Sound.play("pop"); draw(); } }),
                 first ? "" : U.el("button", { type: "button", class: "btn", text: "Cancel", onclick: () => close(null) }),
                 U.el("button", { type: "button", class: "btn primary", text: first ? "Let's Go" : "Save", onclick: () => { Sound.play("sparkle"); close(cur); } }));
             card.append(
@@ -332,5 +524,5 @@ const Hero = (() => {
         });
     }
 
-    return { svg, inner, maker, random, fix, cleanName, COLORS, ACCENTS };
+    return { svg, inner, maker, random, fix, cleanName, giftNames, GIFT_WORLDS, COLORS, ACCENTS };
 })();

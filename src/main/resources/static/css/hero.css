@@ -74,3 +74,6 @@
 .cm-hero .cm-face { transition: transform .2s; }
 .cm-hero.walking .cm-bob { animation: cm-hop .32s ease-in-out infinite alternate; }
 @keyframes cm-hop { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+.hm-locked { margin: 4px 0 0; color: var(--muted); font-size: .82rem; font-weight: 700; }
+.res-hero .ra-icon { filter: drop-shadow(0 0 8px rgba(255, 210, 120, .7)); }
+.res-unlock.secret { color: #9b6bff; font-weight: 900; text-shadow: 0 0 12px rgba(155, 107, 255, .45); }
