@@ -1,0 +1,47 @@
+/* The credits (credits.js): a full-screen roll that scrolls up over the world backgrounds */
+
+/* while the credits play, only the world's background shows behind them */
+html.credits-on #app, html.credits-on .mascot { visibility: hidden; }
+html.credits-on, html.credits-on body { overflow: hidden; }
+
+.cr-stage { position: fixed; inset: 0; z-index: 9600; opacity: 0; transition: opacity .6s; }
+.cr-stage.in { opacity: 1; }
+.cr-veil { position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(8, 8, 14, .78) 0%, rgba(8, 8, 14, .35) 22%, rgba(8, 8, 14, .35) 78%, rgba(8, 8, 14, .78) 100%); }
+.cr-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-anchor: none; scrollbar-width: none; outline: none;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+            mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%); }
+.cr-scroll::-webkit-scrollbar { display: none; }
+.cr-roll { max-width: 640px; margin: 0 auto; padding: 100vh 16px 0; text-align: center; color: #fff;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .65), 0 1px 2px rgba(0, 0, 0, .5); font-family: "Nunito", system-ui, sans-serif; }
+.cr-logo { display: flex; justify-content: center; gap: 6px; margin-bottom: 18px; }
+.cr-logo i { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 8px; background: rgba(255, 255, 255, .94);
+    color: #1b1b22; font: 900 1.5rem "Nunito", system-ui, sans-serif; font-style: normal; text-shadow: none; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.cr-logo i:nth-child(3), .cr-logo i:nth-child(6) { background: #1b1b22; color: #fff; }
+.cr-title { margin: 0 0 22vh; font: 900 clamp(2rem, 6vw, 3.2rem) "Nunito", system-ui, sans-serif; letter-spacing: .01em; }
+.cr-sec { margin: 0 0 16vh; }
+.cr-sec h2 { margin: 0 0 22px; font: 800 .9rem "Nunito", system-ui, sans-serif; letter-spacing: .18em; text-transform: uppercase; color: #ffe39a; }
+.cr-line { margin: 0 0 14px; display: grid; gap: 2px; }
+.cr-role { font-size: .85rem; font-weight: 700; opacity: .8; }
+.cr-line b { font-size: 1.35rem; font-weight: 900; }
+.cr-note { max-width: 520px; margin: 0 auto 12px; font-size: 1rem; font-weight: 600; line-height: 1.5; opacity: .92; }
+.cr-roll a { color: inherit; text-decoration-color: rgba(255, 255, 255, .45); text-underline-offset: 3px; }
+.cr-roll a:hover { text-decoration-color: #ffe39a; }
+.cr-songs { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.cr-songs li { display: grid; gap: 1px; }
+.cr-songs b { font-size: 1.12rem; font-weight: 900; }
+.cr-songs span { font-size: .9rem; font-weight: 700; opacity: .8; }
+.cr-end { height: 70vh; }
+
+.cr-bar { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
+.cr-bar > * { pointer-events: auto; }
+.cr-world { color: #fff; font: 800 .9rem "Nunito", system-ui, sans-serif; text-shadow: 0 2px 8px rgba(0, 0, 0, .6); opacity: 0; }
+.cr-world.in { animation: cr-world 6.5s ease both; }
+@keyframes cr-world { 0% { opacity: 0; transform: translateY(6px); } 12%, 80% { opacity: .9; transform: none; } 100% { opacity: 0; } }
+.cr-close { pointer-events: auto; }
+
+@media (prefers-reduced-motion: reduce) { .cr-world.in { animation: none; opacity: .9; } }
+
+/* a boss arena behind the credits (credits.js): the same backdrop and chaos as a boss's later phases */
+html.credits-on .boss-arena.cr-show { display: block; }
+html.credits-on:has(.boss-arena.cr-show) #world-bg { opacity: 0 !important; }

@@ -37,8 +37,8 @@ public class SecurityHeaders implements Filter {
     static final String CSP = String.join("; ",
             "default-src 'self'",
             "script-src 'self'",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",   // inline style="" attributes drive the animations
-            "font-src 'self' https://fonts.gstatic.com",
+            "style-src 'self' 'unsafe-inline'",   // inline style="" attributes drive the animations
+            "font-src 'self'",                                              // the fonts are served from this site (fonts.css)
             "img-src 'self' data: blob:",
             "media-src 'self' blob:",
             "connect-src 'self'",
