@@ -6,10 +6,12 @@
 //   Notebook     sketched onto a page of the notebook in pencil (the spiral, doodles, a coffee ring), then coloured in
 //   Garden       loops the loop on a paper plane over a windmill and flower beds, and hops off into the flowers
 //   Acorn Woods  walks the path into the autumn woods (sun rays through the trees, a squirrel), and jumps into a leaf pile
-//   Candy Hills  rides a giant acorn down the hill; the hill turns to candy behind it, and the acorn cracks open
+//   Candy Hills  boards the Candy Express in the woods; it goes into a hollow log and comes out in Candy Hills, over a
+//                candy-cane bridge and a chocolate river, to a gingerbread station
 //   Coral Reef   slides down a candy cane into the sea and sinks past kelp, coral, fish, a turtle and jellyfish
 //   Snow Day     floats up in a bubble from the reef and pops out onto the ice under an aurora (igloo, penguins)
-//   Rainy City   sleds down the snowy hill into the rainy city at night, skids into the street, opens an umbrella
+//   Rainy City   floats down the river on a melting ice floe; the snow turns to rain as the city's lights come up; under
+//                a stone bridge, past neon reflections, onto a dock, and opens an umbrella
 //   Sky Kingdom  the umbrella catches the wind over the rooftops and lifts it up through the clouds to the castle
 //   Desert       comes down over the dunes and pyramids in a hot-air balloon (a camel caravan, vultures, an oasis)
 //   Carnival     walks over the dunes at night into the fair: Ferris wheel, big top, spotlights, fireworks
@@ -18,6 +20,8 @@
 //   Robot        falls through the pages of a giant book into a factory: arms, gears, steam, a conveyor
 //   Volcano      launches from the factory on a rocket over the sea, and crash-lands on the island's beach
 //   Deep Space   launched by the eruption into space, past planets, a comet and asteroids, onto a little moon
+//   Celestial Rift  the Void collapses; the prison it held shut cracks, its chains snap, the Cursed Angel breaks out
+//                and tears the sky open; the hero leaps through after it and floats down onto a ruin in the rift
 //
 //   Travel.arrive(c, fromWorld, toWorld, look, { index, total })   c comes from FX.cinematic (skippable)
 //   Travel.WORLDS   the worlds that have a scene, in campaign order
@@ -38,7 +42,7 @@ const Travel = (() => {
     const seg = (t, a, b, e = smooth) => e(clamp((t - a) / (b - a)));
     const rnd = (a, b) => a + Math.random() * (b - a);
     const f = v => (Math.round(v * 10) / 10).toString();
-    const WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space"];
+    const WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];
     // a seeded random for building the scenery (the same scene every time)
     const seeded = seed => { let s = (seed * 2654435761) >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
     function shade(c, k) {
@@ -51,7 +55,7 @@ const Travel = (() => {
         paper: ["#fbf8ef", "#ece4cf"], garden: ["#7cc8ff", "#e6f8ff"], squirrel: ["#ffb36b", "#ffe6bf"], candy: ["#ffb3dc", "#fff0d1"],
         ocean: ["#1f84cf", "#06264d"], snow: ["#1d2b5c", "#7d8fc9"], rain: ["#232a40", "#4b5672"], sky: ["#5cb4ff", "#f1f9ff"],
         desert: ["#ff9a47", "#ffe2a0"], carnival: ["#140c2e", "#5b2463"], arcade: ["#0b0320", "#3b0a5c"], library: ["#120d26", "#2f2148"],
-        robot: ["#232a34", "#4d5664"], volcano: ["#ff8a4a", "#ffd6a0"], space: ["#02030f", "#160f45"]
+        robot: ["#232a34", "#4d5664"], volcano: ["#ff8a4a", "#ffd6a0"], space: ["#02030f", "#160f45"], rift: ["#0c0420", "#3a1a6a"]
     };
 
     // ---------------------------------------------------------------------------------------------
@@ -336,55 +340,179 @@ const Travel = (() => {
         }
     };
 
-    // ---- Candy Hills: an acorn ride; the hill turns to candy behind it ----
+    // ---- Candy Hills: the Candy Express (the user, 2026-10-14: "change the acorn to candy world animation"). A
+    //      chocolate steam train with peppermint wheels waits at a little wooden stop in the autumn woods (a squirrel
+    //      waves); the hero hops onto the gumdrop car, the train puffs into a hollow log and comes out of the far end,
+    //      which is a chocolate swiss roll, into Candy Hills: over a candy-cane bridge and a chocolate river, past
+    //      lollipop trees, to a gingerbread station, where the hero hops off into a burst of sprinkles ----
+    // a strip of rolling hills from x0 to x1 (for scenes that scroll sideways)
+    function wideHills(x0, x1, y, amp, fill, seed, line = 5) {
+        let d = "";
+        for (let x = x0; x <= x1; x += 40) d += `${x === x0 ? "M" : "L"}${x} ${f(y + Math.sin(x / 170 + seed) * amp + Math.sin(x / 61 + seed * 2) * amp * 0.3)} `;
+        return `<path d="${d}L${x1} ${H + 400} L${x0} ${H + 400}Z" fill="${fill}" ${st(line)}/>`;
+    }
+    // a peppermint wheel (it turns with data-k)
+    const mint = (x, y, r, k) => `<g transform="translate(${x} ${y})"><g data-k="${k}"><circle r="${r}" fill="#fff" ${st(5)}/>` +
+        [0, 1, 2, 3, 4, 5].map(i => `<path d="M0 0 L${f(Math.cos(i * 1.047) * r * 0.9)} ${f(Math.sin(i * 1.047) * r * 0.9)} A${r * 0.9} ${r * 0.9} 0 0 1 ${f(Math.cos(i * 1.047 + 0.52) * r * 0.9)} ${f(Math.sin(i * 1.047 + 0.52) * r * 0.9)}Z" fill="#e5484d"/>`).join("") +
+        `<circle r="${f(r * 0.28)}" fill="#fff" ${st(3)}/><circle r="${f(r * 0.1)}" fill="#c43a3f"/></g></g>`;
+    // a lollipop tree
+    const lolly = (x, y, s, c) => `<g transform="translate(${f(x)} ${f(y)}) scale(${s})"><path d="M0 0 V-120" stroke="${INK}" stroke-width="16" stroke-linecap="round"/><path d="M0 0 V-120" stroke="#fff" stroke-width="9" stroke-linecap="round"/>` +
+        `<circle cy="-165" r="58" fill="${c}" ${st(5)}/><path d="M-38 -165 a38 38 0 0 1 76 0 a24 24 0 0 1 -48 0 a12 12 0 0 1 22 0" fill="none" stroke="#fff" stroke-width="7"/><circle cx="-24" cy="-190" r="10" fill="#fff" opacity=".5"/></g>`;
+    // a gumdrop
+    const gumdrop = (x, y, s, c) => `<g transform="translate(${f(x)} ${f(y)}) scale(${s})"><path d="M-40 0 Q-40 -64 0 -68 Q40 -64 40 0Z" fill="${c}" ${st(5)}/><circle cx="-14" cy="-42" r="8" fill="#fff" opacity=".5"/>${[[-22, -16], [-6, -30], [12, -14], [22, -38], [0, -52]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="2.6" fill="#fff" opacity=".75"/>`).join("")}</g>`;
     S.candy = {
-        T: 7.2,
+        T: 7.6,
         build: (D, R) => {
-            const hillD = `M-100 330 Q800 330 1700 900 L1700 1100 L-100 1100Z`;
-            let b = `<g data-k="cotton">${[[260, 150, 1], [900, 110, 0.8], [1400, 200, 1.1]].map(([x, y, sc]) => cloud(x, y, sc, "#ffe0f0", "#ffc2e0")).join("")}</g>`;
-            // candy mountains far away, with frosting caps
-            b += [[260, 520, 300], [700, 460, 380], [1200, 500, 340], [1550, 540, 260]].map(([x, y, w], i) => `<path d="M${x - w} ${y + 200} L${x} ${y - 160} L${x + w} ${y + 200}Z" fill="${["#c9a0ff", "#ffb3d1", "#a0e7ff", "#ffd8a0"][i]}" ${st(5)}/><path d="M${x - w * 0.42} ${y - 92} L${x} ${y - 160} L${x + w * 0.42} ${y - 92} Q${x + w * 0.25} ${y - 70} ${x + w * 0.12} ${y - 92} Q${x} ${y - 60} ${x - w * 0.12} ${y - 92} Q${x - w * 0.27} ${y - 66} ${x - w * 0.42} ${y - 92}Z" fill="#fff" ${st(4)}/>`).join("");
-            // the autumn hill (before)
-            b += `<path d="${hillD}" fill="#c8a46a" ${st(5)}/>` + [[200, 420], [520, 480], [980, 640]].map(([x, y]) => tree(x, y, 0.55, "#e8792b", "#7a4a2c")).join("");
-            // the candy hill (after), revealed behind the acorn
-            let c = `<path d="${hillD}" fill="#fff4fa" ${st(5)}/><path d="M-100 330 Q800 330 1700 900 L1700 940 Q800 380 -100 380Z" fill="#ff9ecb" opacity=".55"/>`;
-            D.raw(`<clipPath id="tvc-hill"><path d="${hillD}"/></clipPath>`);
-            c += `<g clip-path="url(#tvc-hill)">`;
-            for (let i = -4; i < 30; i++) c += `<path d="M${i * 90} 1000 L${i * 90 + 400} 300 L${i * 90 + 445} 300 L${i * 90 + 45} 1000Z" fill="#ff7fb0" opacity=".28"/>`;
-            c += `</g>`;
-            for (let i = 0; i < 90; i++) { const x = R() * W, y = 340 + R() * 560, ok = y > 330 + Math.pow((x + 100) / 1800, 2) * 570 + 20; if (ok) c += `<rect x="${f(x)}" y="${f(y)}" width="14" height="5" rx="2.5" fill="${["#ff5c7a", "#ffd23f", "#5fd4c4", "#7b8cff", "#fff"][i % 5]}" transform="rotate(${f(R() * 180)} ${f(x)} ${f(y)})"/>`; }
-            c += [[200, 410, "#ff5c7a"], [520, 470, "#7fd1ff"], [980, 630, "#ffd23f"]].map(([x, y, col]) => `<g transform="translate(${x} ${y})"><path d="M0 0 V-110" stroke="${INK}" stroke-width="16" stroke-linecap="round"/><path d="M0 0 V-110" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cy="-150" r="56" fill="${col}" ${st(5)}/><path d="M-36 -150 a36 36 0 0 1 72 0 a22 22 0 0 1 -44 0 a10 10 0 0 1 20 0" fill="none" stroke="#fff" stroke-width="7"/><circle cx="-22" cy="-174" r="10" fill="#fff" opacity=".5"/></g>`).join("");
-            c += [[1380, 840, "#5fd4c4"], [1500, 870, "#ff8a5c"], [1240, 870, "#b48cff"]].map(([x, y, col]) => `<g transform="translate(${x} ${y})"><path d="M-46 0 Q-46 -70 0 -74 Q46 -70 46 0Z" fill="${col}" ${st(5)}/><circle cx="-16" cy="-46" r="9" fill="#fff" opacity=".5"/>${Array.from({ length: 6 }, (_, j) => `<circle cx="${-30 + j * 12}" cy="${-20 - (j % 2) * 18}" r="3" fill="#fff" opacity=".7"/>`).join("")}</g>`).join("");
-            c += `<g transform="translate(1440 700)"><path d="M-80 0 V-90 L0 -150 L80 -90 V0Z" fill="#c98a4b" ${st(5)}/><path d="M-96 -86 L0 -166 L96 -86" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/><path d="M-96 -86 L0 -166 L96 -86" fill="none" ${st(4)}/><rect x="-22" y="-60" width="44" height="60" rx="20" fill="#ff7fb0" ${st(4)}/><circle cx="-50" cy="-60" r="14" fill="#7fd1ff" ${st(3)}/><circle cx="50" cy="-60" r="14" fill="#7fd1ff" ${st(3)}/></g>`;
-            D.raw(`<clipPath id="tvc-wipe"><rect data-k="wipe" x="-200" y="-200" width="0" height="1400"/></clipPath>`);
-            b += `<g clip-path="url(#tvc-wipe)">${c}</g>`;
-            const acorn = `<g data-k="acornA"><g data-k="shellA"><path d="M-74 0 A74 84 0 0 0 74 0Z" fill="#c98a4b" ${st(6)}/><ellipse cx="-30" cy="24" rx="12" ry="20" fill="#fff" opacity=".22"/></g>` +
-                `<g data-k="shellB"><path d="M-74 0 A74 84 0 0 1 74 0Z" fill="#d49a5c" ${st(6)}/><path d="M-80 -26 Q0 -112 80 -26 Q0 -52 -80 -26Z" fill="#7a4a2c" ${st(6)}/>${Array.from({ length: 7 }, (_, j) => `<path d="M${-60 + j * 20} -38 l10 -16 l10 16" fill="none" stroke="#5a3420" stroke-width="2.5"/>`).join("")}<path d="M0 -94 Q4 -114 14 -124" fill="none" ${st(8)}/></g></g>`;
-            return { back: b, under: acorn, front: "" };
+            const TRACK = 770;
+            D.raw(`<pattern id="tvc-cane" width="26" height="26" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="26" height="26" fill="#fff"/><rect width="12" height="26" fill="#e5484d"/></pattern>`);
+            const cane = "url(#tvc-cane)";
+            // the skies: an autumn afternoon, and Candy Hills' pink one fading in over it
+            let b = `<rect x="-100" y="-100" width="${W + 200}" height="${H + 200}" fill="${D.lin("skyA", [[0, "#ffb36b"], [1, "#ffe6bf"]])}"/>` + glow(D, "sunA", 1180, 230, 360, "#fff0c0", 0.9) + `<circle cx="1180" cy="230" r="78" fill="#ffe9a8"/>`;
+            b += `<g data-k="skyB" opacity="0"><rect x="-100" y="-100" width="${W + 200}" height="${H + 200}" fill="${D.lin("skyB", [[0, "#ffb3dc"], [1, "#fff0d1"]])}"/>` + glow(D, "sunB", 1180, 210, 330, "#fffaf2", 0.95) +
+                `<circle cx="1180" cy="210" r="74" fill="#fff6e8" ${st(5)}/><circle cx="1160" cy="195" r="20" fill="#fff" opacity=".7"/>` +
+                `<g data-k="cotton">${[[220, 150, 1], [760, 100, 0.75], [1420, 170, 1.05], [1900, 120, 0.8]].map(([x, y, sc]) => cloud(x, y, sc, "#ffe0f0", "#ffc2e0")).join("")}</g></g>`;
+            // far away (they move a fifth as fast): autumn hills and woods, or candy mountains with frosting caps
+            let farA = wideHills(-100, 2400, 600, 26, "#e9b77a", 1, 4) + Array.from({ length: 18 }, (_, i) => tree(i * 140 - 60 + R() * 40, 612, 0.5 + R() * 0.2, ["#f2b07a", "#e8946a", "#f5c48a"][i % 3], "#b8846a")).join("");
+            let farB = [[160, 560, 300], [600, 500, 380], [1100, 540, 340], [1560, 520, 320], [2000, 560, 300], [2350, 520, 280]].map(([x, y, w], i) =>
+                `<path d="M${x - w} ${y + 220} L${x} ${y - 160} L${x + w} ${y + 220}Z" fill="${["#c9a0ff", "#ffb3d1", "#a0e7ff", "#ffd8a0"][i % 4]}" ${st(5)}/>` +
+                `<path d="M${f(x - w * 0.42)} ${y - 92} L${x} ${y - 160} L${f(x + w * 0.42)} ${y - 92} Q${f(x + w * 0.25)} ${y - 66} ${f(x + w * 0.12)} ${y - 92} Q${x} ${y - 56} ${f(x - w * 0.12)} ${y - 92} Q${f(x - w * 0.27)} ${y - 62} ${f(x - w * 0.42)} ${y - 92}Z" fill="#fff" ${st(4)}/>`).join("") +
+                wideHills(-100, 2400, 640, 22, "#ffc8e4", 3, 4);
+            b += `<g data-k="farA">${farA}</g><g data-k="farB" opacity="0">${farB}</g>`;
+            // the middle distance (half as fast): autumn trees, or lollipop trees and gumdrops
+            let midA = wideHills(-100, 3200, 700, 14, "#d9b06a", 2, 4) + Array.from({ length: 13 }, (_, i) => tree(i * 250 + R() * 60, 712, 0.85 + R() * 0.25, ["#e8792b", "#d9542a", "#f2a93b", "#c9642d"][i % 4], "#7a4a2c")).join("");
+            let midB = wideHills(-100, 3200, 700, 14, "#ffe0ef", 4, 4) + Array.from({ length: 14 }, (_, i) => i % 3 === 2
+                ? gumdrop(i * 240 + R() * 50, 712, 0.9 + R() * 0.4, ["#5fd4c4", "#ff8a5c", "#b48cff", "#ffd23f"][i % 4])
+                : lolly(i * 240 + R() * 50, 712, 0.65 + R() * 0.25, ["#ff5c7a", "#7fd1ff", "#ffd23f", "#b48cff", "#5fd4c4"][i % 5])).join("");
+            b += `<g data-k="midA">${midA}</g><g data-k="midB" opacity="0">${midB}</g>`;
+            // ---- the world itself (it scrolls past at full speed) ----
+            let w = "";
+            // the ground: autumn earth and grass, then pink frosting with sprinkles, a gap for the chocolate river
+            w += `<path d="M-300 ${TRACK + 6} H2360 V${H + 300} H-300Z" fill="#a9824e" ${st(5)}/><path d="M-300 ${TRACK + 6} H2360" stroke="#8fae4a" stroke-width="14"/>`;
+            for (let i = 0; i < 70; i++) { const x = -260 + R() * 2580; w += `<path d="M${f(x)} ${TRACK + 2} l-5 -16 M${f(x)} ${TRACK + 2} l3 -20 M${f(x)} ${TRACK + 2} l8 -12" stroke="#6f8f3a" stroke-width="3" stroke-linecap="round"/>`; }
+            for (let i = 0; i < 30; i++) { const x = -260 + R() * 2580, y = TRACK + 40 + R() * 120; w += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="12" ry="6" fill="${["#d9542a", "#f2a93b", "#c9642d"][i % 3]}" transform="rotate(${f(R() * 180)} ${f(x)} ${f(y)})"/>`; }
+            const candyGround = (x0, x1) => {
+                let g = `<path d="M${x0} ${TRACK + 6} H${x1} V${H + 300} H${x0}Z" fill="#ffd1e8" ${st(5)}/><path d="M${x0} ${TRACK + 10} H${x1}" stroke="#fff" stroke-width="10"/>`;
+                for (let x = x0 + 10; x < x1; x += 60) g += `<path d="M${x} ${TRACK + 14} q14 ${f(20 + R() * 24)} 28 0" fill="#fff" ${st(3)}/>`;
+                for (let i = 0; i < (x1 - x0) / 18; i++) { const x = x0 + R() * (x1 - x0), y = TRACK + 50 + R() * 140; g += `<rect x="${f(x)}" y="${f(y)}" width="14" height="5" rx="2.5" fill="${["#ff5c7a", "#ffd23f", "#5fd4c4", "#7b8cff", "#fff"][i % 5]}" transform="rotate(${f(R() * 180)} ${f(x)} ${f(y)})"/>`; }
+                return g;
+            };
+            w += candyGround(2340, 2800) + candyGround(3560, 5200);
+            // the chocolate river under the bridge, flowing
+            D.raw(`<clipPath id="tvc-river"><rect x="2790" y="${TRACK + 20}" width="780" height="400"/></clipPath>`);
+            w += `<rect x="2790" y="${TRACK + 20}" width="780" height="400" fill="${D.lin("choc", [[0, "#8a4a26"], [1, "#4a2412"]])}" ${st(5)}/>` +
+                `<g clip-path="url(#tvc-river)"><g data-k="flow">${Array.from({ length: 22 }, (_, i) => `<path d="M${2700 + i * 50} ${TRACK + 60 + (i % 4) * 34} q25 -12 50 0 q25 12 50 0" fill="none" stroke="#b8784a" stroke-width="5" stroke-linecap="round" opacity=".7"/>`).join("")}</g></g>`;
+            // the track: rails on wooden sleepers in the woods, on candy-coloured ones in Candy Hills
+            for (let x = -260; x < 4000; x += 42) w += `<rect x="${x}" y="${TRACK - 4}" width="24" height="14" rx="3" fill="${x < 2300 ? "#7a4a2c" : ["#ff7fb0", "#7fd1ff", "#ffd23f", "#b48cff"][Math.abs(Math.round(x / 42)) % 4]}" ${st(2.5)}/>`;
+            w += `<rect x="-300" y="${TRACK - 10}" width="4300" height="9" rx="3" fill="#9aa3b2" ${st(3)}/>`;
+            // the bridge over the river: a frosting deck on candy-cane posts
+            w += `<rect x="2740" y="${TRACK + 2}" width="880" height="26" rx="6" fill="#fff4fa" ${st(5)}/>` + Array.from({ length: 9 }, (_, i) => `<rect x="${2790 + i * 96}" y="${TRACK + 28}" width="24" height="320" fill="${cane}" ${st(4)}/>`).join("") +
+                Array.from({ length: 10 }, (_, i) => `<path d="M${2750 + i * 96} ${TRACK - 40} V${TRACK} M${2750 + i * 96} ${TRACK - 40} q14 -16 28 0" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M${2750 + i * 96} ${TRACK - 40} V${TRACK} M${2750 + i * 96} ${TRACK - 40} q14 -16 28 0" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>`).join("") +
+                `<path d="M2740 ${TRACK - 26} H3620" stroke="${INK}" stroke-width="10"/><path d="M2740 ${TRACK - 26} H3620" stroke="#ff7fb0" stroke-width="5"/>`;
+            // the stop in the woods: a wooden platform, a sign with an acorn, a lantern, the squirrel waving goodbye
+            w += `<rect x="100" y="${TRACK + 12}" width="460" height="34" fill="#9a6a3c" ${st(5)}/>${[0, 1, 2, 3, 4, 5].map(i => `<path d="M${130 + i * 76} ${TRACK + 12} V${TRACK + 46}" stroke="#6b4226" stroke-width="3"/>`).join("")}<rect x="110" y="${TRACK + 46}" width="16" height="70" fill="#6b4226" ${st(3)}/><rect x="534" y="${TRACK + 46}" width="16" height="70" fill="#6b4226" ${st(3)}/>` +
+                `<g transform="translate(250 ${TRACK + 12})"><rect x="-6" y="-150" width="12" height="150" fill="#6b4226" ${st(4)}/><rect x="-60" y="-200" width="120" height="64" rx="10" fill="#f2dcb0" ${st(5)}/><g transform="translate(0 -168)"><ellipse cy="6" rx="14" ry="17" fill="#c98a4b" ${st(3)}/><path d="M-17 0 Q0 -20 17 0Z" fill="#7a4a2c" ${st(3)}/></g></g>` +
+                `<g transform="translate(500 ${TRACK + 12})"><rect x="-5" y="-170" width="10" height="170" fill="#3a3326"/><rect x="-18" y="-206" width="36" height="40" rx="6" fill="#ffd56b" ${st(4)}/>${glow(D, "lant", 0, -186, 70, "#ffe9a8", 0.6)}</g>` +
+                `<g transform="translate(170 ${TRACK + 12})"><path d="M10 0 C-40 0 -60 -70 -10 -90 C30 -104 40 -60 10 -50" fill="#c9772d" ${st(4)}/><ellipse cx="34" cy="-22" rx="24" ry="22" fill="#d98a3d" ${st(4)}/><circle cx="52" cy="-50" r="16" fill="#d98a3d" ${st(4)}/><path d="M46 -64 l4 -12 l6 10" fill="#d98a3d" ${st(3)}/><circle cx="58" cy="-52" r="3" fill="${INK}"/><ellipse cx="34" cy="-18" rx="12" ry="12" fill="#ffe0b0"/>` +
+                `<g transform="translate(46 -30)"><g data-k="wave"><path d="M0 0 L18 -30" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M0 0 L18 -30" stroke="#d98a3d" stroke-width="7" stroke-linecap="round"/></g></g></g>`;
+            // the gingerbread station: icing on the edges, gumdrops on the roof, a candy-cane porch, a lollipop lamp
+            w += `<rect x="3960" y="${TRACK + 12}" width="900" height="34" fill="#c98a4b" ${st(5)}/><path d="M3960 ${TRACK + 12} H4860" stroke="#fff" stroke-width="8"/>${Array.from({ length: 14 }, (_, i) => `<path d="M${3970 + i * 64} ${TRACK + 16} q12 ${f(14 + R() * 12)} 24 0" fill="#fff" ${st(2)}/>`).join("")}` +
+                `<g transform="translate(4250 ${TRACK})"><rect x="-230" y="-260" width="460" height="262" fill="#c98a4b" ${st(6)}/>${[-150, 0, 150].map(x => `<rect x="${x - 34}" y="-210" width="68" height="74" rx="8" fill="#ffe08a" ${st(4)}/><path d="M${x - 34} -210 q17 16 34 0 q17 16 34 0" fill="none" stroke="#fff" stroke-width="7"/><path d="M${x} -210 V-136 M${x - 34} -173 H${x + 34}" stroke="#a8743e" stroke-width="3"/>`).join("")}` +
+                `<rect x="-40" y="-110" width="80" height="112" rx="36" fill="#ff7fb0" ${st(5)}/><circle cx="24" cy="-54" r="6" fill="#ffd23f" ${st(2)}/>` +
+                `<path d="M-270 -250 L0 -400 L270 -250Z" fill="#8a5a3c" ${st(6)}/><path d="M-280 -246 L0 -404 L280 -246" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round"/>${[-200, -120, -40, 40, 120, 200].map((x, i) => `<path d="M${x} ${-252 + Math.abs(x) * 0} q10 ${14 + (i % 3) * 8} 20 0" fill="#fff" ${st(2)}/>`).join("")}` +
+                [[-150, -300, "#ff5c7a"], [-60, -350, "#5fd4c4"], [60, -350, "#ffd23f"], [150, -300, "#b48cff"]].map(([x, y, c]) => gumdrop(x, y, 0.45, c)).join("") +
+                `<rect x="-250" y="-120" width="22" height="122" fill="${cane}" ${st(4)}/><rect x="228" y="-120" width="22" height="122" fill="${cane}" ${st(4)}/></g>` +
+                `<g transform="translate(4620 ${TRACK + 12})">${lolly(0, 0, 0.8, "#ffd23f")}${glow(D, "lamp", 0, -132, 90, "#fff3b0", 0.55)}</g>` +
+                `<rect x="3990" y="${TRACK - 40}" width="26" height="46" rx="6" fill="#ff5c7a" ${st(4)}/><rect x="3986" y="${TRACK - 46}" width="34" height="14" rx="5" fill="#ffd23f" ${st(3)}/>`;
+            // things on the near side of the track in Candy Hills
+            w += [[2420, "#5fd4c4"], [3700, "#ff8a5c"], [4760, "#b48cff"]].map(([x, c]) => gumdrop(x, H - 20, 1.1, c)).join("");
+            b += `<g data-k="wB">${w}</g>`;
+            // ---- in front of the train: the hollow log tunnel (bark at the start, a chocolate roll at the far end), bushes ----
+            let fr = `<g transform="translate(1950 0)"><rect x="0" y="${TRACK - 300}" width="720" height="${H - TRACK + 340}" fill="${D.lin("logbody", [[0, "#7a4a2c"], [0.48, "#8a5a3c"], [0.52, "#5a2e18"], [1, "#4a2412"]], 0, 0, 1, 0)}" ${st(6)}/>`;
+            for (let i = 0; i < 9; i++) fr += `<path d="M${30 + i * 36} ${TRACK - 290} Q${40 + i * 36} ${TRACK - 150} ${26 + i * 36} ${TRACK}" stroke="#5a3826" stroke-width="5" fill="none" opacity=".7"/>`;
+            fr += `<path d="M380 ${TRACK - 300} H720 V${TRACK - 270} Q690 ${TRACK - 236} 660 ${TRACK - 270} Q620 ${TRACK - 220} 580 ${TRACK - 270} Q540 ${TRACK - 240} 500 ${TRACK - 270} Q450 ${TRACK - 226} 410 ${TRACK - 270} Q395 ${TRACK - 250} 380 ${TRACK - 270}Z" fill="#ff9ecb" ${st(4)}/>`;
+            for (let i = 0; i < 16; i++) fr += `<rect x="${f(400 + R() * 300)}" y="${f(TRACK - 296 + R() * 20)}" width="12" height="4" rx="2" fill="${["#ffd23f", "#5fd4c4", "#fff", "#7b8cff"][i % 4]}"/>`;
+            fr += `<path d="M0 ${TRACK - 300} Q60 ${TRACK - 330} 130 ${TRACK - 304} Q200 ${TRACK - 336} 260 ${TRACK - 300}" fill="#6f8f3a" ${st(4)}/>${[40, 120, 200].map(x => `<ellipse cx="${x}" cy="${TRACK - 316}" rx="16" ry="8" fill="#d9542a" ${st(2)}/>`).join("")}`;
+            // the log's mouth (dark, with growth rings) and its far end (a swiss roll with a cream spiral)
+            fr += `<ellipse cx="0" cy="${TRACK - 130}" rx="70" ry="182" fill="#c9a06a" ${st(6)}/><ellipse cx="4" cy="${TRACK - 130}" rx="50" ry="150" fill="#1e120a"/>`;
+            fr += `<ellipse cx="720" cy="${TRACK - 130}" rx="70" ry="182" fill="#5a2e18" ${st(6)}/><path d="M720 ${TRACK - 130} m-8 0 a12 26 0 1 1 24 0 a26 56 0 1 1 -50 0 a40 86 0 1 1 78 0 a52 114 0 1 1 -104 0" fill="none" stroke="#fff4e6" stroke-width="12"/>`;
+            fr += `</g>`;
+            fr += Array.from({ length: 9 }, (_, i) => `<path d="M${i * 240 - 100} 912 q-24 -48 -70 -58 q36 -6 70 34 q-6 -54 24 -84 q10 46 -8 92 q46 -34 80 -24 q-34 24 -80 40Z" fill="${["#4f7a3a", "#6b8f3a"][i % 2]}" ${st(3)}/>`).join("");
+            fr += [[2900, H - 6], [3300, H - 10]].map(([x, y]) => `<g transform="translate(${x} ${y})"><path d="M0 0 V-140 q0 -40 36 -40 q36 0 36 30" fill="none" stroke="${INK}" stroke-width="26" stroke-linecap="round"/><path d="M0 0 V-140 q0 -40 36 -40 q36 0 36 30" fill="none" stroke="${cane}" stroke-width="16" stroke-linecap="round"/></g>`).join("");
+            // ---- the Candy Express (its origin is the engine's middle, on the rails) ----
+            const train = `<g data-k="train">` +
+                // the ice-cream car
+                `<g><rect x="-800" y="-122" width="290" height="80" rx="16" fill="#ffe08a" ${st(5)}/>${Array.from({ length: 6 }, (_, i) => `<path d="M${-790 + i * 48} -120 l40 76 M${-750 + i * 48} -120 l-40 76" stroke="#d9a640" stroke-width="3" opacity=".7"/>`).join("")}` +
+                `<ellipse cx="-655" cy="-130" rx="120" ry="34" fill="#fff" ${st(5)}/><ellipse cx="-655" cy="-165" rx="86" ry="30" fill="#ffd1e8" ${st(5)}/><ellipse cx="-655" cy="-196" rx="52" ry="24" fill="#fff" ${st(5)}/><circle cx="-650" cy="-226" r="16" fill="#e5484d" ${st(4)}/><path d="M-646 -240 q8 -18 20 -20" fill="none" ${st(4)}/></g>` +
+                // the gumdrop car (the hero rides on it)
+                `<g><rect x="-480" y="-132" width="300" height="90" rx="14" fill="#7fd1ff" ${st(5)}/><path d="M-480 -104 H-180 M-480 -74 H-180" stroke="#fff" stroke-width="6"/>` +
+                [[-450, "#ff5c7a"], [-400, "#ffd23f"], [-350, "#5fd4c4"], [-300, "#b48cff"], [-250, "#ff8a5c"], [-210, "#ff5c7a"]].map(([x, c]) => `<path d="M${x - 24} -128 Q${x - 24} -168 ${x} -170 Q${x + 24} -168 ${x + 24} -128Z" fill="${c}" ${st(4)}/>`).join("") + `</g>` +
+                `<path d="M-510 -60 H-480 M-180 -60 H-140" ${st(10)}/>` +
+                // the engine: a chocolate boiler with strawberry bands, a peppermint chimney, a cream dome, a strawberry cab with a frosting roof, a lollipop lamp, a candy-cane cowcatcher
+                `<rect x="-140" y="-80" width="350" height="36" rx="8" fill="#4a2614" ${st(5)}/>` +
+                `<rect x="-40" y="-190" width="230" height="114" rx="54" fill="${D.lin("boil", [[0, "#9a5a34"], [0.5, "#6b3a22"], [1, "#4a2614"]])}" ${st(6)}/>${[10, 80, 150].map(x => `<rect x="${x}" y="-188" width="16" height="110" fill="#ff9ecb" ${st(3)}/>`).join("")}` +
+                `<path d="M96 -190 V-262 M130 -190 V-262" stroke="${INK}" stroke-width="5"/><rect x="96" y="-262" width="34" height="72" fill="${cane}" ${st(5)}/><path d="M80 -290 H146 L132 -262 H94Z" fill="#e5484d" ${st(5)}/>` +
+                `<path d="M20 -190 A26 26 0 0 1 72 -190Z" fill="#fff4e6" ${st(4)}/>` +
+                `<rect x="-140" y="-286" width="110" height="210" rx="10" fill="#ff7fb0" ${st(6)}/><rect x="-118" y="-258" width="66" height="56" rx="8" fill="#bfe8ff" ${st(4)}/><path d="M-160 -284 H-12 V-300 Q-86 -326 -160 -300Z" fill="#fff" ${st(5)}/>${[-150, -110, -70, -30].map(x => `<path d="M${x} -284 q8 14 16 0" fill="#fff" ${st(2)}/>`).join("")}` +
+                `<circle cx="206" cy="-140" r="40" fill="#8a4a2a" ${st(5)}/><circle cx="214" cy="-140" r="22" fill="#ffd23f" ${st(4)}/><path d="M200 -140 a14 14 0 0 1 28 0 a8 8 0 0 1 -16 0" fill="none" stroke="#fff" stroke-width="4"/>${glow(D, "head", 230, -140, 80, "#fff6c0", 0.5)}` +
+                `<path d="M200 -44 L262 0 H200Z" fill="${cane}" ${st(5)}/>` +
+                `<circle cx="-180" cy="-60" r="10" fill="#ffd23f" ${st(3)}/>` +
+                mint(-80, -40, 40, "tw0") + mint(40, -40, 40, "tw1") + mint(150, -30, 30, "tw2") + mint(-430, -28, 28, "tw3") + mint(-230, -28, 28, "tw4") + mint(-750, -28, 28, "tw5") + mint(-560, -28, 28, "tw6") +
+                `<g data-k="rod"><path d="M-80 -40 H40" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M-80 -40 H40" stroke="#e8c66a" stroke-width="6" stroke-linecap="round"/></g>` +
+                `<g data-k="bell" transform="translate(150 -190)"><path d="M-12 0 Q-12 -22 0 -24 Q12 -22 12 0Z" fill="#ffd23f" ${st(3)}/></g>` +
+                `</g>`;
+            return { back: b, under: train, front: `<g data-k="wF">${fr}</g>` };
         },
         frame(t, s) {
-            const roll = seg(t, 0.2, 3.7, k => k * k);
-            const x = lerp(60, 1290, roll), y = 330 + Math.pow((x + 100) / 1800, 2) * 570 - 84;
-            s.attr("wipe", "width", Math.max(0, x + 260));
-            s.set("cotton", `translate(${f(t * 14)} 0)`);
-            const crack = t > 3.7, k = seg(t, 3.7, 4.5, out);
-            if (!crack) {
-                s.set("acornA", `translate(${f(x)} ${f(y)}) rotate(${f(roll * 1260)})`);
-                s.hero(x, y - 84, 0.85, Math.sin(t * 16) * 8, 1, 1);
-                if (Math.random() < 0.7) s.emit("sprinkle", 1, [x - 60, y + 70]);
-            } else {
-                s.set("acornA", `translate(${f(x)} ${f(y)})`);
-                s.set("shellA", `translate(${f(-k * 220)} ${f(-Math.sin(k * Math.PI) * 200 + k * 160)}) rotate(${f(-k * 260)})`);
-                s.set("shellB", `translate(${f(k * 260)} ${f(-Math.sin(k * Math.PI) * 260 + k * 140)}) rotate(${f(k * 300)})`);
-                s.setStyle("acornA", "opacity", 1 - seg(t, 4.4, 4.8));
-                const j = seg(t, 3.7, 4.6), up = Math.sin(j * Math.PI);
-                s.hero(lerp(x, 1150, j), lerp(y - 84, 880, j) - up * 280, 1.1, j < 1 ? j * 360 : 0, -1, 1, j >= 1 && t < 4.8 ? 0.88 : 1);
-                s.shadow(lerp(x, 1150, j), 884, 1.1 - up * 0.5, 0.2 * j);
+            const TRACK = 770;
+            // the trip: 2850 units along, speeding up and slowing into the station
+            const k0 = seg(t, 1.0, 5.0, k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2), sc = k0 * 2850;
+            const speed = t > 1.0 && t < 5.0 ? Math.sin(seg(t, 1.0, 5.0, k => k) * Math.PI) : 0;
+            s.set("wB", `translate(${f(-sc)} 0)`); s.set("wF", `translate(${f(-sc)} 0)`);
+            s.set("farA", `translate(${f(-sc * 0.2)} 0)`); s.set("farB", `translate(${f(-sc * 0.2)} 0)`);
+            s.set("midA", `translate(${f(-sc * 0.5)} 0)`); s.set("midB", `translate(${f(-sc * 0.5)} 0)`);
+            const cand = seg(sc, 1350, 2050);                       // how far into Candy Hills (the swap happens while the train is in the log)
+            s.setStyle("skyB", "opacity", cand); s.setStyle("farB", "opacity", cand); s.setStyle("midB", "opacity", cand);
+            s.setStyle("farA", "opacity", 1 - cand); s.setStyle("midA", "opacity", 1 - cand);
+            s.set("cotton", `translate(${f(t * 16)} 0)`);
+            s.set("flow", `translate(${f(-(t * 70) % 100)} 0)`);
+            // the train: wheels turning, the coupling rod going round, a little rattle while it runs
+            const turn = sc / 40, bob = Math.sin(t * 34) * 1.6 * speed;
+            for (let i = 0; i < 7; i++) s.set("tw" + i, `rotate(${f(turn * 57.3 * (i < 2 ? 1 : i === 2 ? 1.33 : 1.43))})`);
+            s.set("rod", `translate(${f(Math.cos(turn) * 16)} ${f(Math.sin(turn) * 16)})`);
+            s.set("train", `translate(900 ${f(TRACK + bob)})`);
+            s.set("bell", `translate(150 -190) rotate(${f(t < 1.2 || (t > 4.8 && t < 5.6) ? Math.sin(t * 22) * 22 : 0)})`);
+            // puffs from the chimney: grey steam in the woods, pink cotton candy in Candy Hills
+            if (Math.random() < 0.35 + speed * 0.5) s.emit(cand > 0.5 ? "cotton" : "steam", 1, [1013, TRACK - 300 + bob]);
+            if (speed > 0.3 && Math.random() < 0.3) s.emit("spark", 1, [900 + rnd(-120, 150), TRACK - 6]);
+            // the squirrel waves goodbye
+            s.set("wave", `rotate(${f(Math.sin(t * 9) * 30 - 10)})`);
+            // the hero: hops onto the gumdrop car, rides it, hops off at the station
+            const carX = 900 - 330, carY = TRACK - 168 + bob;
+            if (t < 0.45) { s.hero(380, TRACK + 12, 1.0, 0, 1, 1); s.shadow(380, TRACK + 14, 1, 0.22); }
+            else if (t < 1.05) {
+                const j = seg(t, 0.45, 1.05), up = Math.sin(j * Math.PI);
+                s.hero(lerp(380, carX, j), lerp(TRACK + 12, carY, j) - up * 170, 1.0, j * 20 * (1 - j) * 4, 1, 1, j >= 1 ? 0.9 : 1);
+                s.shadow(380, TRACK + 14, 1, 0.22 * (1 - j));
+            } else if (t < 5.25) s.hero(carX, carY, 1.0, Math.sin(t * 5) * 4 * speed, 1, 1, t < 1.2 ? 0.9 : 1);
+            else {
+                const j = seg(t, 5.25, 6.0), up = Math.sin(j * Math.PI);
+                s.hero(lerp(carX, 1230, j), lerp(carY, TRACK + 12, j) - up * 330, 1.05, j < 1 ? j * 360 : 0, 1, 1, j >= 1 && t < 6.2 ? 0.86 : 1);
+                s.shadow(lerp(carX, 1230, j), TRACK + 14, 1.05 - up * 0.5, 0.22 * j);
             }
-            if (crack && !s.once("pop")) { s.emit("confetti", 90, [x, y]); s.emit("sprinkle", 40, [x, y]); s.shake(14); s.flash("#fff", 0.5); s.emit("ring", 1, [x, y]); }
-            if (t > 4.6 && !s.once("land")) s.emit("sprinkle", 30, [1150, 880]);
-            if (Math.random() < 0.08) s.emit("candy", 1, [rnd(0, W), -30]);
-            s.cam(lerp(clamp(x, 560, 1040), 900, seg(t, 3.8, 5.2)), lerp(clamp(y, 360, 560), 560, seg(t, 3.8, 5.2)), lerp(1.2, 1.08, seg(t, 3.8, 5.2)), 0);
+            if (t > 0.98 && !s.once("board")) s.emit("leafpuff", 10, [carX, carY]);
+            // out of the log: a burst of sprinkles where the swiss roll ends
+            const exitX = 2670 - sc;
+            if (exitX < 1050 && !s.once("exit")) { s.emit("sprinkle", 60, [Math.max(exitX, 860), TRACK - 150]); s.emit("sparkle", 30, [Math.max(exitX, 860), TRACK - 150]); s.flash("#fff0f8", 0.35); }
+            // into the station: brakes, a big pink puff, the bell
+            if (t > 4.7 && t < 5.0 && Math.random() < 0.8) s.emit("spark", 2, [900 + rnd(-100, 150), TRACK - 4]);
+            if (t > 5.0 && !s.once("stop")) { s.emit("cotton", 26, [1013, TRACK - 300]); s.shake(5); }
+            if (t > 6.0 && !s.once("land")) { s.emit("sprinkle", 50, [1230, TRACK + 4]); s.emit("confetti", 40, [1230, TRACK - 40]); s.emit("ring", 1, [1230, TRACK + 12]); s.shake(7); }
+            // falling: leaves in the woods, candy over Candy Hills
+            if (Math.random() < 0.35 * (1 - cand)) s.emit("leaf", 1, [rnd(-100, W + 100), -30]);
+            if (Math.random() < 0.12 * cand) s.emit("candy", 1, [rnd(0, W), -30]);
+            // the camera: close on the stop, back for the ride, in on the station at the end
+            const open = seg(t, 0.3, 1.6), end = seg(t, 4.8, 6.2);
+            s.cam(lerp(lerp(560, 800, open), 1000, end), lerp(lerp(600, 470, open), 560, end), lerp(lerp(1.3, 1.02, open), 1.18, end), 0);
         }
     };
 
@@ -493,69 +621,114 @@ const Travel = (() => {
         }
     };
 
-    // ---- Rainy City: sled down the hill into the city at night, skid, open the umbrella ----
+    // ---- Rainy City: down the river on an ice floe (the user, 2026-10-14: "change the ... to the city animation"). The
+    //      hero floats down a river at night on a melting ice floe: snowy banks, pines and a snowman give way to a stone
+    //      embankment and the lights of the city, the snow turns to rain, the floe slides under a lamp-lit stone bridge
+    //      past neon reflections and bumps a wooden dock; the hero jumps off with a splash and opens the umbrella ----
     S.rain = {
-        T: 7.4,
+        T: 7.8,
         build: (D, R) => {
-            let city = glow(D, "glowsky", 800, 760, 700, "#ff9a5a", 0.25);
-            city += `<path data-k="bolt" d="M1180 -20 L1140 120 L1180 120 L1120 300 L1200 150 L1160 150 L1210 -20Z" fill="#fff8c0" stroke="#fff" stroke-width="4" opacity="0"/>`;
-            city += [[-40, 260, 420, 2], [230, 210, 600, 1], [450, 250, 380, 0], [700, 200, 520, 3], [1000, 240, 640, 1], [1250, 220, 440, 2], [1470, 240, 560, 3]].map(([x, wd, h, roof], i) => building(x, wd, h, ["#3a4459", "#2f374a", "#465170", "#343d52", "#3e4862"][i % 5], ["#ffd56b", "#ffe9a8"][i % 2], R, roof, 800, "ant" + i)).join("");
-            // neon signs (a coffee cup, an umbrella, a star)
-            const neon = (x, y, d, c, k) => `<g data-k="${k}"><path d="${d}" transform="translate(${x} ${y})" fill="none" stroke="${c}" stroke-width="16" opacity=".25" stroke-linecap="round"/><path d="${d}" transform="translate(${x} ${y})" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/><path d="${d}" transform="translate(${x} ${y})" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`;
-            city += neon(310, 520, "M-30 -20 H24 V10 Q24 30 -3 30 Q-30 30 -30 10Z M24 -10 Q44 -10 40 6 Q36 16 24 14 M-14 -34 q6 -8 0 -16 M4 -34 q6 -8 0 -16", "#ff6fb5", "neon0");
-            city += neon(1080, 480, "M-44 10 Q0 -50 44 10 Q22 0 0 10 Q-22 0 -44 10Z M0 10 V44 q0 10 -10 10", "#5ff2ff", "neon1");
-            city += neon(760, 430, star5(0, 0, 30, 13), "#ffd23f", "neon2");
-            // the street: wet asphalt with reflections, a curb, lamps with light cones, puddles, a hydrant, a car
-            city += `<rect x="-100" y="800" width="${W + 200}" height="300" fill="${D.lin("street", [[0, "#2d3448"], [1, "#161a26"]])}" ${st(5)}/><rect x="-100" y="800" width="${W + 200}" height="22" fill="#4a5470" ${st(4)}/>`;
-            city += [[310, "#ff6fb5"], [1080, "#5ff2ff"], [760, "#ffd23f"], [230, "#ffd56b"], [1250, "#ffd56b"]].map(([x, c]) => `<rect x="${x - 26}" y="826" width="52" height="${110 + (x % 3) * 20}" fill="${D.lin("rf" + x, [[0, c, 0.45], [1, c, 0]])}"/>`).join("");
-            city += [[150, 0], [620, 1], [1130, 2], [1480, 3]].map(([x, i]) => `<path d="M${x - 70} 806 L${x - 12} 560 H${x + 12} L${x + 70} 806Z" fill="${D.lin("cone" + i, [[0, "#ffe9a8", 0.35], [1, "#ffe9a8", 0]])}"/><rect x="${x - 5}" y="560" width="10" height="250" fill="#2b2233"/><path d="M${x - 26} 560 H${x + 26} L${x + 16} 540 H${x - 16}Z" fill="#3a4459" ${st(4)}/><circle cx="${x}" cy="566" r="9" fill="#fff6c2"/>` + glow(D, "lamp" + i, x, 566, 60, "#ffe9a8", 0.6)).join("");
-            city += [[420, 870, 110], [960, 900, 150], [1350, 880, 90]].map(([x, y, rx]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="16" fill="#3a4a6e" ${st(3)}/><ellipse cx="${x - rx * 0.3}" cy="${y - 4}" rx="${rx * 0.35}" ry="4" fill="#9fb9e8" opacity=".6"/>`).join("");
-            city += `<g transform="translate(560 800)"><rect x="-16" y="-50" width="32" height="50" rx="8" fill="#e5484d" ${st(4)}/><rect x="-24" y="-36" width="48" height="12" rx="5" fill="#e5484d" ${st(3)}/><path d="M-16 -54 Q0 -70 16 -54Z" fill="#c43a3f" ${st(3)}/></g>`;
-            city += `<g transform="translate(1290 800)"><path d="M-110 0 V-46 Q-100 -64 -60 -66 L-30 -104 H50 L86 -66 Q114 -62 116 -40 V0Z" fill="#2f8fe0" ${st(5)}/><path d="M-22 -96 H44 L70 -66 H-44Z" fill="#9fd4ff" ${st(4)}/><circle cx="-60" cy="0" r="22" fill="#2b2233" ${st(4)}/><circle cx="66" cy="0" r="22" fill="#2b2233" ${st(4)}/><circle cx="-60" cy="0" r="8" fill="#9aa3b2"/><circle cx="66" cy="0" r="8" fill="#9aa3b2"/>` +
-                `<circle cx="108" cy="-38" r="8" fill="#fff6c2"/><path d="M114 -38 L260 -10 L260 -70Z" fill="#fff6c2" opacity=".18"/></g>`;
-            city += `<g transform="translate(860 800)"><rect x="-6" y="-170" width="12" height="170" fill="#2b2233"/><rect x="-22" y="-250" width="44" height="96" rx="8" fill="#3a3f4e" ${st(4)}/><circle data-k="tlR" cx="0" cy="-230" r="11" fill="#ff4d4d"/><circle cx="0" cy="-202" r="11" fill="#5a4a2a"/><circle data-k="tlG" cx="0" cy="-174" r="11" fill="#1d4a2a"/></g>`;
-            let b = `<g data-k="city" opacity="0">${city}</g>`;
-            // the snowy hill it comes down, with pines
-            b += `<g data-k="slope"><path d="M-100 220 Q700 420 1700 880 L1700 1100 L-100 1100Z" fill="${D.lin("snowh", [[0, "#ffffff"], [1, "#dfe9f7"]])}" ${st(5)}/>` + [[120, 260], [300, 300], [520, 380], [760, 470], [1020, 600]].map(([x, y]) => pine(x, y + 10, 0.8, "#2f6d4a", true)).join("") + `</g>`;
-            const sled = `<g data-k="sled"><path d="M-120 0 H110 Q150 0 150 -36" fill="none" stroke="${INK}" stroke-width="12" stroke-linecap="round"/><path d="M-120 0 H110 Q150 0 150 -36" fill="none" stroke="#e5484d" stroke-width="6" stroke-linecap="round"/>` +
-                `<path d="M-80 0 V-24 M80 0 V-24" ${st(6)}/><rect x="-110" y="-46" width="220" height="26" rx="8" fill="#c98a4b" ${st(5)}/><path d="M-60 -46 V-20 M0 -46 V-20 M60 -46 V-20" stroke="#8a5a3c" stroke-width="3"/></g>`;
+            const WATER = 800;
+            // the skies: a snowy night with stars and the moon, then the city's low, rainy, lamp-lit clouds
+            let b = `<rect x="-100" y="-100" width="${W + 200}" height="${H + 200}" fill="${D.lin("skyA", [[0, "#1d2b5c"], [1, "#7d8fc9"]])}"/>`;
+            for (let i = 0; i < 60; i++) b += `<circle cx="${f(R() * W)}" cy="${f(R() * 380)}" r="${f(1 + R() * 2)}" fill="#fff" opacity="${f(0.4 + R() * 0.6)}"/>`;
+            b += `<circle cx="1250" cy="150" r="50" fill="#f4f6ff" ${st(4)}/><circle cx="1234" cy="140" r="9" fill="#d6dcef"/>` + glow(D, "moon", 1250, 150, 160, "#dfe8ff", 0.45);
+            b += `<g data-k="skyB" opacity="0"><rect x="-100" y="-100" width="${W + 200}" height="${H + 200}" fill="${D.lin("skyB", [[0, "#1c2236"], [0.6, "#3b4560"], [1, "#6a5a6e"]])}"/>` + glow(D, "cityglow", 800, 700, 760, "#ff9a5a", 0.3) +
+                `<g data-k="clouds">${Array.from({ length: 6 }, (_, i) => cloud(i * 330 - 60, 90 + (i % 2) * 50, 1.3, "#4a5470", "#3a4258")).join("")}</g></g>`;
+            b += `<path data-k="bolt" d="M1180 -20 L1140 120 L1180 120 L1120 300 L1200 150 L1160 150 L1210 -20Z" fill="#fff8c0" stroke="#fff" stroke-width="4" opacity="0"/>`;
+            // far (a fifth as fast): snowy mountains and pines, or the city skyline with blinking antennas
+            let farA = [[200, 560, 420], [760, 520, 520], [1360, 560, 460], [1900, 540, 480]].map(([x, y, wd], i) => `<path d="M${x - wd} ${y + 180} L${f(x - wd * 0.2)} ${y - 200} L${x} ${y - 160} L${f(x + wd * 0.25)} ${y - 240} L${x + wd} ${y + 180}Z" fill="${["#c9d6f2", "#dfe7f8"][i % 2]}" ${st(5)}/><path d="M${f(x - wd * 0.2)} ${y - 200} L${f(x - wd * 0.08)} ${y - 130} L${x} ${y - 160} L${f(x + wd * 0.12)} ${y - 120} L${f(x + wd * 0.25)} ${y - 240}" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>`).join("") +
+                Array.from({ length: 16 }, (_, i) => pine(i * 150 - 40 + R() * 40, 700, 0.55 + R() * 0.2, "#2f5d48", true)).join("");
+            let farB = Array.from({ length: 16 }, (_, i) => { const x = i * 150 - 80, h = 200 + R() * 260, wd = 110 + R() * 50; let g = `<rect x="${f(x)}" y="${f(720 - h)}" width="${f(wd)}" height="${f(h + 40)}" fill="${["#252c40", "#2c3349", "#20263a"][i % 3]}" ${st(4)}/>`; for (let j = 0; j < 7; j++) if (R() < 0.6) g += `<rect x="${f(x + 12 + R() * (wd - 30))}" y="${f(730 - h + 20 + R() * (h - 60))}" width="10" height="14" fill="#ffd56b" opacity=".85"/>`; if (i % 4 === 1) g += `<path d="M${f(x + wd / 2)} ${f(720 - h)} V${f(650 - h)}" ${st(3)}/><circle data-k="ant${i}" cx="${f(x + wd / 2)}" cy="${f(648 - h)}" r="6" fill="#ff4d4d"/>`; return g; }).join("");
+            b += `<g data-k="farA">${farA}</g><g data-k="farB" opacity="0">${farB}</g>`;
+            // the middle distance (half as fast): the snowy far bank with pines, a snowman and a cabin, or tall buildings on the far embankment
+            let midA = `<path d="M-200 ${WATER - 6} Q400 ${WATER - 70} 1000 ${WATER - 40} T3400 ${WATER - 30} V${WATER + 4} H-200Z" fill="#f4faff" ${st(5)}/>` + Array.from({ length: 14 }, (_, i) => pine(i * 230 + R() * 60, WATER - 40, 0.8 + R() * 0.3, "#2f6d4a", true)).join("") +
+                `<g transform="translate(900 ${WATER - 44})"><circle cy="-34" r="34" fill="#fff" ${st(4)}/><circle cy="-92" r="26" fill="#fff" ${st(4)}/><circle cx="-8" cy="-98" r="3" fill="${INK}"/><circle cx="8" cy="-98" r="3" fill="${INK}"/><path d="M0 -90 l18 4 l-18 4Z" fill="#ff8a3a"/><path d="M-24 -66 Q0 -58 24 -66" stroke="#e5484d" stroke-width="10" stroke-linecap="round" fill="none"/><path d="M-30 -40 l-30 -20 M30 -40 l30 -24" ${st(4)}/></g>` +
+                `<g transform="translate(1700 ${WATER - 40})"><rect x="-80" y="-110" width="160" height="110" fill="#8a5a3c" ${st(5)}/><path d="M-100 -110 L0 -180 L100 -110Z" fill="#fff" ${st(5)}/><rect x="-26" y="-80" width="52" height="40" rx="4" fill="#ffd56b" ${st(3)}/>${glow(D, "cabin", 0, -60, 80, "#ffd27a", 0.45)}<path d="M50 -150 V-196 H70 V-136" fill="#6b4226" ${st(4)}/></g>`;
+            let midB = Array.from({ length: 13 }, (_, i) => building(i * 250 - 60 + R() * 30, 200 + R() * 40, 260 + R() * 220, ["#3a4459", "#2f374a", "#465170", "#343d52"][i % 4], ["#ffd56b", "#ffe9a8"][i % 2], R, i % 4, WATER - 20)).join("") +
+                `<rect x="-200" y="${WATER - 30}" width="3600" height="34" fill="#5a6070" ${st(4)}/>`;
+            b += `<g data-k="midA">${midA}</g><g data-k="midB" opacity="0">${midB}</g>`;
+            // ---- the river and everything on it (full speed) ----
+            let w = `<rect x="-300" y="${WATER}" width="5400" height="${H + 300 - WATER}" fill="${D.lin("water", [[0, "#2a4a78"], [1, "#0c1a33"]])}" ${st(5)}/>`;
+            w += `<g data-k="sheen">${Array.from({ length: 70 }, () => { const x = -300 + R() * 5400, y = WATER + 14 + R() * 90; return `<path d="M${f(x)} ${f(y)} h${f(30 + R() * 60)}" stroke="#9fb9e8" stroke-width="3" stroke-linecap="round" opacity="${f(0.2 + R() * 0.35)}"/>`; }).join("")}</g>`;
+            // the near bank: snow first, then the stone embankment wall with arches and lamps
+            w += `<path d="M-300 ${H - 20} Q300 ${H - 50} 900 ${H - 30} Q1300 ${H - 20} 1500 ${H - 40} L1500 ${H + 300} L-300 ${H + 300}Z" fill="#f4faff" ${st(5)}/>`;
+            w += `<rect x="1460" y="${H - 16}" width="3700" height="400" fill="#6a6f80" ${st(5)}/>${Array.from({ length: 40 }, (_, i) => `<path d="M${1460 + i * 92} ${H - 16} V${H + 40}" stroke="#555a6a" stroke-width="3"/>`).join("")}<rect x="1460" y="${H - 28}" width="3700" height="14" fill="#8a8f9e" ${st(4)}/>`;
+            // reflections of lights in the water (the lamps on the far embankment, the neon signs)
+            w += [[1900, "#ffe9a8"], [2300, "#ff6fb5"], [2700, "#ffe9a8"], [3100, "#5ff2ff"], [3450, "#ffe9a8"], [4100, "#ffe9a8"]].map(([x, c], i) => `<rect data-k="refl${i}" x="${x - 22}" y="${WATER + 6}" width="44" height="80" fill="${D.lin("rf" + i, [[0, c, 0.5], [1, c, 0]])}"/>`).join("");
+            // the far embankment's lamps and neon signs (on the world layer, so they line up with their reflections)
+            w += [1900, 2700, 3450].map((x, i) => `<rect x="${x - 4}" y="${WATER - 160}" width="8" height="150" fill="#2b2233"/><path d="M${x - 20} ${WATER - 160} H${x + 20} L${x + 12} ${WATER - 176} H${x - 12}Z" fill="#3a4459" ${st(3)}/><circle cx="${x}" cy="${WATER - 154}" r="7" fill="#fff6c2"/>${glow(D, "fl" + i, x, WATER - 154, 50, "#ffe9a8", 0.6)}`).join("");
+            const neon = (x, y, d, c, k) => `<g data-k="${k}" transform="translate(${x} ${y})"><path d="${d}" fill="none" stroke="${c}" stroke-width="16" opacity=".25" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>`;
+            w += neon(2300, WATER - 120, "M-30 -20 H24 V10 Q24 30 -3 30 Q-30 30 -30 10Z M24 -10 Q44 -10 40 6 Q36 16 24 14 M-14 -34 q6 -8 0 -16 M4 -34 q6 -8 0 -16", "#ff6fb5", "neon0");
+            w += neon(3100, WATER - 120, "M-44 10 Q0 -50 44 10 Q22 0 0 10 Q-22 0 -44 10Z M0 10 V44 q0 10 -10 10", "#5ff2ff", "neon1");
+            // a paper boat drifting along beside the hero
+            w += `<g data-k="boat"><path d="M-40 0 L40 0 L28 16 H-28Z" fill="#fffdf6" ${st(3)}/><path d="M-20 0 L0 -40 L20 0Z" fill="#f4efe2" ${st(3)}/><path d="M-34 6 H30" stroke="#a9c1ec" stroke-width="2"/></g>`;
+            // the dock: wooden boards on posts, a bench, a lamp with a cone of light, puddles
+            w += `<g transform="translate(3760 0)"><rect x="0" y="${WATER - 46}" width="1000" height="22" fill="#8a5a3c" ${st(5)}/>${Array.from({ length: 12 }, (_, i) => `<path d="M${i * 84} ${WATER - 46} V${WATER - 24}" stroke="#6b4226" stroke-width="3"/>`).join("")}` +
+                [10, 260, 520, 780].map(x => `<rect x="${x}" y="${WATER - 24}" width="22" height="200" fill="#6b4226" ${st(4)}/>`).join("") +
+                `<ellipse cx="250" cy="${WATER - 40}" rx="70" ry="6" fill="#3a4a6e" opacity=".8"/><ellipse cx="560" cy="${WATER - 40}" rx="50" ry="5" fill="#3a4a6e" opacity=".8"/>` +
+                `<path d="M210 ${WATER - 46} L270 ${WATER - 290} H290 L350 ${WATER - 46}Z" fill="${D.lin("cone", [[0, "#ffe9a8", 0.35], [1, "#ffe9a8", 0]])}"/><rect x="276" y="${WATER - 300}" width="8" height="256" fill="#2b2233"/><path d="M256 ${WATER - 300} H304 L294 ${WATER - 320} H266Z" fill="#3a4459" ${st(4)}/><circle cx="280" cy="${WATER - 294}" r="9" fill="#fff6c2"/>${glow(D, "dlamp", 280, WATER - 294, 70, "#ffe9a8", 0.6)}` +
+                `<g transform="translate(560 ${WATER - 46})"><rect x="-70" y="-46" width="140" height="10" rx="4" fill="#4a7ad6" ${st(3)}/><rect x="-70" y="-26" width="140" height="10" rx="4" fill="#4a7ad6" ${st(3)}/><path d="M-60 0 V-46 M60 0 V-46" ${st(5)}/></g></g>`;
+            b += `<g data-k="wB">${w}</g>`;
+            // ---- in front: the stone bridge the floe slides under, reeds on the snowy bank ----
+            let fr = `<g transform="translate(2150 0)"><path d="M-240 500 H240 V${H + 200} H120 V${WATER + 10} A120 230 0 0 0 -120 ${WATER + 10} V${H + 200} H-240Z" fill="${D.lin("stone", [[0, "#8a8f9e"], [1, "#5a5f6e"]])}" fill-rule="evenodd" ${st(6)}/>`;
+            for (let r = 0; r < 6; r++) for (let c = 0; c < 6; c++) { const x = -230 + c * 80 + (r % 2) * 40, y = 520 + r * 50; if (Math.abs(x + 20) < 130 && y > WATER - 220) continue; fr += `<rect x="${x}" y="${y}" width="76" height="46" rx="4" fill="none" stroke="#4e5260" stroke-width="2.5" opacity=".6"/>`; }
+            fr += `<path d="M-120 ${WATER + 10} A120 230 0 0 1 120 ${WATER + 10}" fill="none" stroke="#3e4250" stroke-width="10"/><rect x="-260" y="470" width="520" height="34" rx="6" fill="#9aa0b0" ${st(5)}/>` +
+                [-200, 200].map((x, i) => `<rect x="${x - 5}" y="350" width="10" height="122" fill="#2b2233"/><path d="M${x - 22} 350 H${x + 22} L${x + 14} 330 H${x - 14}Z" fill="#3a4459" ${st(3)}/><circle cx="${x}" cy="358" r="8" fill="#fff6c2"/>${glow(D, "blamp" + i, x, 358, 60, "#ffe9a8", 0.6)}`).join("") + `</g>`;
+            fr += Array.from({ length: 10 }, (_, i) => `<path d="M${i * 150 - 100} ${H + 4} q-6 -60 -2 -110 M${i * 150 - 90} ${H + 4} q4 -50 14 -90 M${i * 150 - 80} ${H + 4} q10 -44 26 -66" fill="none" stroke="#5a6b4a" stroke-width="5" stroke-linecap="round"/><ellipse cx="${i * 150 - 102}" cy="${H - 108}" rx="6" ry="16" fill="#7a5a3a" ${st(2)}/>`).join("");
+            // ---- the ice floe (under the hero), in two halves that split when it hits the dock ----
+            const floe = `<g data-k="floe"><g data-k="floeL"><path d="M-160 0 L-150 -18 L-60 -26 L0 -22 L0 20 L-60 26 L-140 18Z" fill="${D.lin("ice", [[0, "#ffffff"], [1, "#cfe6ff"]])}" ${st(5)}/><path d="M-150 -18 L-60 -26 L0 -22" fill="none" stroke="#fff" stroke-width="6"/><path d="M-140 18 L-60 26 L0 20 L0 30 L-60 34 L-130 26Z" fill="#7fb6ea" ${st(4)}/><path d="M-110 -14 l20 14 l16 -6" stroke="#a8d0f5" stroke-width="3" fill="none"/></g>` +
+                `<g data-k="floeR"><path d="M0 -22 L70 -24 L150 -14 L166 0 L150 16 L70 22 L0 20Z" fill="${D.lin("ice2", [[0, "#ffffff"], [1, "#cfe6ff"]])}" ${st(5)}/><path d="M0 -22 L70 -24 L150 -14" fill="none" stroke="#fff" stroke-width="6"/><path d="M0 20 L70 22 L150 16 L144 26 L70 32 L0 30Z" fill="#7fb6ea" ${st(4)}/><ellipse cx="96" cy="-24" rx="26" ry="10" fill="#fff" ${st(3)}/></g></g>`;
             const umb = `<g data-k="umb" opacity="0"><path d="M0 0 V160 q0 26 -24 26" fill="none" ${st(8)}/><g data-k="ucan"><path d="M-160 0 Q0 -160 160 0 Q120 -22 80 0 Q40 -22 0 0 Q-40 -22 -80 0 Q-120 -22 -160 0Z" fill="#ffd23f" ${st(6)}/>` +
                 `<path d="M-80 0 Q-60 -110 0 -116 M80 0 Q60 -110 0 -116" fill="none" stroke="#e8a81f" stroke-width="4"/><path d="M-120 -40 Q-70 -110 -10 -112" fill="none" stroke="#fff" stroke-width="5" opacity=".5"/><path d="M0 -116 V-136" ${st(6)}/></g></g>`;
-            return { back: b, under: sled, front: umb };
+            return { back: b, under: floe, front: `<g data-k="wF">${fr}</g>` + umb };
         },
         frame(t, s) {
-            const ride = seg(t, 0, 3.0, k => k * k);
-            const x = lerp(-60, 1150, ride), y = 220 + Math.pow((x + 100) / 1800, 1.4) * 660 + 4;
-            s.setStyle("slope", "opacity", 1 - seg(t, 2.6, 3.4));
-            s.setStyle("city", "opacity", seg(t, 2.2, 3.4));
-            const ang = 14 + ride * 16;
-            for (let i = 0; i < 3; i++) s.setStyle("neon" + i, "opacity", 0.75 + 0.25 * Math.sin(t * (9 + i * 3)) * (Math.sin(t * 2.3 + i) > 0.9 ? 1 : 0.3));
-            for (let i = 0; i < 7; i++) s.setStyle("ant" + i, "opacity", Math.sin(t * 3 + i) > 0 ? 1 : 0.2);
-            const go = Math.floor(t / 1.6) % 2 === 1;
-            s.attr("tlR", "fill", go ? "#5a2020" : "#ff4d4d"); s.attr("tlG", "fill", go ? "#3fff7a" : "#1d4a2a");
-            if (t < 3.0) {
-                s.set("sled", `translate(${f(x)} ${f(y)}) rotate(${f(ang)})`);
-                s.hero(x + Math.sin(ang * Math.PI / 180) * 30, y - 34, 0.95, ang, 1, 1);
-                if (Math.random() < 0.8) s.emit("snowpuff", 1, [x - 100, y]);
-            } else {
-                const k = seg(t, 3.0, 3.7, out);
-                s.set("sled", `translate(${f(lerp(x, 1900, k))} ${f(lerp(y, 806, k))}) rotate(${f(lerp(ang, -10, k))})`);
-                const j = seg(t, 3.0, 3.8), up = Math.sin(j * Math.PI);
-                s.hero(lerp(1150, 800, j), lerp(y - 34, 806, j) - up * 220, 1.15, j < 1 ? -j * 360 : 0, -1, 1, j >= 1 && t < 4.0 ? 0.86 : 1);
-                s.shadow(lerp(1150, 800, j), 808, 1.15 - up * 0.4, 0.25 * j);
-                s.set("umb", `translate(840 ${f(612 + Math.sin(t * 3) * 4)}) rotate(-8)`);
-                s.setStyle("umb", "opacity", seg(t, 3.9, 4.0));
-                s.set("ucan", `scale(${f(lerp(0.15, 1, seg(t, 3.9, 4.4, back)))} ${f(lerp(0.6, 1, seg(t, 3.9, 4.4)))})`);
+            const WATER = 800;
+            const k0 = seg(t, 0.2, 4.8, k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2), sc = k0 * 2900;
+            s.set("wB", `translate(${f(-sc)} 0)`); s.set("wF", `translate(${f(-sc)} 0)`);
+            s.set("farA", `translate(${f(-sc * 0.2)} 0)`); s.set("farB", `translate(${f(-sc * 0.2)} 0)`);
+            s.set("midA", `translate(${f(-sc * 0.5)} 0)`); s.set("midB", `translate(${f(-sc * 0.5)} 0)`);
+            const city = seg(sc, 700, 1700);                              // from snow to the city
+            s.setStyle("skyB", "opacity", city); s.setStyle("farB", "opacity", city); s.setStyle("midB", "opacity", city);
+            s.setStyle("farA", "opacity", 1 - city); s.setStyle("midA", "opacity", 1 - city);
+            s.set("clouds", `translate(${f(-t * 18)} 0)`);
+            s.set("sheen", `translate(${f(Math.sin(t * 1.5) * 20)} 0)`);
+            for (let i = 0; i < 2; i++) s.setStyle("neon" + i, "opacity", 0.75 + 0.25 * Math.sin(t * (9 + i * 3)) * (Math.sin(t * 2.3 + i) > 0.9 ? 1 : 0.3));
+            for (let i = 0; i < 6; i++) s.set("refl" + i, `skewX(${f(Math.sin(t * 3 + i) * 8)})`);
+            for (let i = 1; i < 16; i += 4) s.setStyle("ant" + i, "opacity", Math.sin(t * 3 + i) > 0 ? 1 : 0.2);
+            // the paper boat bobs along a little slower than the floe
+            const bx = 1300 + sc * 0.55;
+            s.set("boat", `translate(${f(bx)} ${f(WATER + 4 + Math.sin(t * 2.6) * 5)}) rotate(${f(Math.sin(t * 2) * 6)})`);
+            // the floe: bobbing, turning a little, melting in the rain
+            const fx = 700 + Math.sin(t * 1.1) * 18, fy = WATER + 4 + Math.sin(t * 2.2) * 5, rot = Math.sin(t * 1.6) * 2.5;
+            const melt = 1 - 0.18 * city, split = seg(t, 5.0, 6.0, out);
+            s.set("floe", `translate(${f(fx)} ${f(fy)}) rotate(${f(rot)}) scale(${f(melt)} 1)`);
+            s.set("floeL", `translate(${f(-split * 70)} ${f(split * 6)}) rotate(${f(-split * 6)})`);
+            s.set("floeR", `translate(${f(split * 60)} ${f(split * 10)}) rotate(${f(split * 8)})`);
+            if (Math.random() < 0.25) s.emit("ripple", 1, [fx + rnd(-170, 170), WATER + 22]);
+            // the hero: rides the floe, then jumps onto the dock and opens the umbrella under the lamp
+            if (t < 5.0) s.hero(fx - 20, fy - 22, 1.0, rot + Math.sin(t * 3) * 3, 1, 1);
+            else {
+                const j = seg(t, 5.0, 5.7), up = Math.sin(j * Math.PI);
+                s.hero(lerp(fx - 20, 1060, j), lerp(fy - 22, WATER - 46, j) - up * 220, 1.1, 0, 1, 1, j >= 1 && t < 5.9 ? 0.86 : 1);
+                s.shadow(lerp(fx - 20, 1060, j), WATER - 44, 1.1 - up * 0.4, 0.25 * j);
+                s.set("umb", `translate(1100 ${f(WATER - 240 + Math.sin(t * 3) * 4)}) rotate(-8)`);
+                s.setStyle("umb", "opacity", seg(t, 5.9, 6.0));
+                s.set("ucan", `scale(${f(lerp(0.15, 1, seg(t, 5.9, 6.4, back)))} ${f(lerp(0.6, 1, seg(t, 5.9, 6.4)))})`);
             }
-            if (t > 3.05 && !s.once("skid")) { s.emit("drop", 80, [1100, 800]); s.shake(12); s.emit("ring", 2, [1100, 806]); }
-            const flash = t > 4.8 && t < 5.1;
-            s.setStyle("bolt", "opacity", flash ? 1 : 0);
-            if (t > 4.8 && !s.once("thunder")) { s.flash("#eef4ff", 0.65); s.shake(5); }
-            const r = seg(t, 1.6, 3.2);
-            if (Math.random() < 1 - r) s.emit("snow", 1, [rnd(-100, W), -20]);
-            if (Math.random() < r * 3) s.emit("rain", 3, [rnd(-100, W + 200), -30]);
-            if (t > 3.2 && Math.random() < 0.5) { const pd = Math.floor(rnd(0, 3)); s.emit("ripple", 1, [[420, 960, 1350][pd] + rnd(-50, 50), [870, 900, 880][pd] + rnd(-6, 6)]); }
-            s.cam(lerp(clamp(x, 560, 1040), 800, seg(t, 2.8, 4.2)), lerp(clamp(y, 300, 560), 450, seg(t, 2.8, 4.2)), lerp(1.22, 1.04, seg(t, 2.8, 4.6)), 0);
+            if (t > 4.75 && !s.once("bump")) { s.shake(9); s.emit("drop", 30, [860, WATER]); s.emit("ring", 1, [860, WATER + 6]); }
+            if (t > 5.7 && !s.once("land")) { s.emit("drop", 60, [1060, WATER - 46]); s.emit("ring", 2, [1060, WATER - 40]); s.shake(7); }
+            // thunder once the umbrella is up
+            s.setStyle("bolt", "opacity", t > 6.5 && t < 6.8 ? 1 : 0);
+            if (t > 6.5 && !s.once("thunder")) { s.flash("#eef4ff", 0.65); s.shake(5); }
+            // the snow turns to rain
+            const rain = seg(t, 1.8, 3.6);
+            if (Math.random() < 1.2 * (1 - rain)) s.emit("wetsnow", 1, [rnd(-100, W + 100), -20]);
+            if (Math.random() < rain * 3) s.emit("rain", 3, [rnd(-100, W + 200), -30]);
+            if (rain > 0.3 && Math.random() < 0.5 * rain) s.emit("ripple", 1, [rnd(0, W), rnd(WATER + 14, WATER + 66)]);
+            const end = seg(t, 4.6, 6.0);
+            s.cam(lerp(lerp(720, 800, seg(t, 0.2, 1.4)), 900, end), lerp(560, 600, end), lerp(lerp(1.25, 1.06, seg(t, 0.2, 1.4)), 1.14, end), 0);
         }
     };
 
@@ -973,6 +1146,135 @@ const Travel = (() => {
         }
     };
 
+
+    // ---- The Celestial Rift (the secret world, 2026-10-14; the user: "the void dying released the angel from their
+    // prison (make that part of the transition animation)"): the Void collapses into a point and bursts; where it was
+    // hangs a golden prison held by four chains, with the Cursed Angel inside. Cracks run over the bars, the chains
+    // snap one by one, the cage shatters and the angel bursts out, tears the sky open and flies through. Your hero leaps
+    // after it, the camera dives into the tear, and on the other side it floats down onto a ruined platform in the rift.
+    S.rift = {
+        T: 10.2,
+        build: (D, R) => {
+            D.raw(`<filter id="tv-rift-glw" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`);
+            // the Void's space
+            let sp = `<rect x="-400" y="-400" width="${W + 800}" height="${H + 800}" fill="${D.lin("vsp", [[0, "#02010a"], [1, "#140838"]])}"/>`;
+            sp += glow(D, "vneb", 800, 450, 620, "#5a2dbf", 0.35);
+            for (let i = 0; i < 150; i++) sp += `<circle ${i % 15 === 0 ? `data-k="vt${i / 15}"` : ""} cx="${f(R() * W)}" cy="${f(R() * H)}" r="${f(0.7 + R() * 2.2)}" fill="#fff" opacity="${f(0.3 + R() * 0.7)}"/>`;
+            let vd = "";
+            for (let i = 0; i < 7; i++) vd += `<ellipse cx="0" cy="0" rx="${300 - i * 34}" ry="${92 - i * 10}" fill="none" stroke="${["#b18cff", "#9b6bff", "#ff9fe8", "#7a3cff", "#c49bff", "#5a2dbf", "#ffe066"][i]}" stroke-width="${10 - i}" opacity="${f(0.75 - i * 0.06)}"/>`;
+            for (let i = 0; i < 6; i++) vd += `<path d="M0 0 C${f(Math.cos(i) * 120)} ${f(Math.sin(i) * 60)} ${f(Math.cos(i + 1) * 220)} ${f(Math.sin(i + 1) * 110)} ${f(Math.cos(i + 1.6) * 300)} ${f(Math.sin(i + 1.6) * 130)}" fill="none" stroke="#2a1660" stroke-width="16" stroke-linecap="round"/>`;
+            vd += `<circle r="78" fill="#000"/><circle r="84" fill="none" stroke="#ffe066" stroke-width="5" opacity=".8"/>`;
+            // the prison: a gothic golden cage, four chains to the edges of the sky, the angel inside
+            const bars = Array.from({ length: 9 }, (_, i) => { const x = -120 + i * 30; return `<path d="M${x} -150 Q${x * 0.6} -220 0 -240 M${x} -150 V170 Q${x * 0.7} 220 0 236" fill="none" stroke="#c9902f" stroke-width="7"/><path d="M${x} -150 V170" stroke="#ffe7a3" stroke-width="2"/>`; }).join("");
+            const rings = [-150, -40, 70, 170].map(y => `<ellipse cy="${y}" rx="${y < 0 ? 122 : 124}" ry="18" fill="none" stroke="#e8c66a" stroke-width="8"/>`).join("");
+            const chain = (i, x2, y2) => {
+                const ang = Math.atan2(y2, x2), len = Math.hypot(x2, y2), n = Math.floor(len / 34);
+                return `<g data-k="ch${i}"><g transform="rotate(${f(ang * 180 / Math.PI)})">${Array.from({ length: n }, (_, j) => `<ellipse cx="${30 + j * 34}" cy="0" rx="20" ry="9" fill="none" stroke="#e8c66a" stroke-width="6" ${j % 2 ? `transform="rotate(90 ${30 + j * 34} 0)"` : ""}/>`).join("")}</g></g>`;
+            };
+            const cracks = [["M-60 -120 L-30 -60 L-50 0 L-10 60", "c0"], ["M70 -130 L40 -70 L80 -20 L50 40 L90 110", "c1"], ["M-100 20 L-60 70 L-90 130", "c2"], ["M10 -200 L-10 -150 L20 -100", "c3"]]
+                .map(([d, k]) => `<path data-k="${k}" d="${d}" fill="none" stroke="#fff6d8" stroke-width="5" stroke-linecap="round" stroke-dasharray="400" stroke-dashoffset="400" filter="url(#tv-rift-glw)"/>`).join("");
+            const shards = Array.from({ length: 14 }, (_, i) => `<path data-k="sh${i}" d="M0 -18 L10 0 L0 22 L-9 2Z" fill="${i % 3 ? "#e8c66a" : "#fff3c4"}" stroke="#8a5a1a" stroke-width="2" opacity="0"/>`).join("");
+            const prison = `<g data-k="cage">${glow(D, "pglow", 0, 0, 260, "#ffd06b", 0.5)}${chain(0, -820, -470)}${chain(1, 820, -470)}${chain(2, -820, 470)}${chain(3, 820, 470)}
+                <g data-k="angel"><g transform="scale(.95) translate(-120 -130)">${typeof Bosses !== "undefined" ? Bosses.inner("rift") : ""}</g></g>
+                <g data-k="bars">${bars}${rings}<path d="M-14 -246 L0 -270 L14 -246" fill="#e8c66a" stroke="#8a5a1a" stroke-width="3"/>${cracks}</g></g>
+                <g data-k="shards">${shards}</g>`;
+            // the tear it rips open
+            // a ragged tear: wide in the middle, every edge point a little different
+            const tearPts = (() => {
+                const top = [], bot = [];
+                for (let i = 0; i <= 26; i++) {
+                    const u = i / 26, x = -540 + u * 1080, w = 92 * Math.pow(Math.sin(Math.PI * u), 0.8) * (0.55 + R() * 0.75) + 3;
+                    top.push(`${f(x + (R() - 0.5) * 24)} ${f(-w - (i % 3 === 0 ? R() * 26 : 0))}`); bot.push(`${f(x + (R() - 0.5) * 24)} ${f(w * 0.85 + (i % 4 === 1 ? R() * 22 : 0))}`);
+                }
+                return "M" + top.join(" L") + " L" + bot.reverse().join(" L") + "Z";
+            })();
+            const tear = `<g data-k="tear" transform="translate(800 170) scale(1 0)"><path d="${tearPts}" fill="${D.lin("tin", [[0, "#ffb86b"], [0.48, "#fff6d8"], [0.52, "#ffe7a3"], [1, "#c46bff"]])}" stroke="#fff6d8" stroke-width="6" filter="url(#tv-rift-glw)"/>${glow(D, "tglow", 0, 0, 560, "#ffd06b", 0.55)}</g>`;
+            // the other side: the Celestial Rift
+            let rw = `<rect x="-400" y="-400" width="${W + 800}" height="${H + 800}" fill="${D.lin("rsk", [[0, "#0c0420"], [0.6, "#2a0f5a"], [1, "#4a1f7a"]])}"/>`;
+            rw += glow(D, "rn1", 300, 260, 420, "#7a3cff", 0.35) + glow(D, "rn2", 1300, 360, 380, "#d65fa8", 0.22) + glow(D, "rn3", 900, 140, 300, "#ffd06b", 0.2);
+            for (let i = 0; i < 90; i++) rw += `<circle cx="${f(R() * W)}" cy="${f(R() * H * 0.8)}" r="${f(0.8 + R() * 2)}" fill="#fff6d8" opacity="${f(0.3 + R() * 0.6)}"/>`;
+            { let top = "", bot = ""; for (let i = 0; i <= 30; i++) { const x = -60 + i * 58, w = 10 + R() * 22; top += `${i ? "L" : "M"}${f(x)} ${f(110 - w + Math.sin(i * 0.7) * 26)} `; bot = `L${f(x + (R() - 0.5) * 20)} ${f(110 + w * 0.7 + Math.sin(i * 0.7) * 26)} ` + bot; }
+              rw += `<path d="${top}${bot}Z" fill="#fff3c4" opacity=".92" filter="url(#tv-rift-glw)"/>`; }
+            rw += glow(D, "rtg", 800, 110, 700, "#ffd06b", 0.18);
+            // a giant fallen feather drifting far off, and two distant islands of ruin hanging on chains
+            rw += `<g data-k="bigfeather" opacity=".35"><path d="M1250 200 Q1360 300 1330 520 Q1320 600 1280 640 Q1250 590 1250 520 Q1210 330 1250 200Z" fill="#1c1230" stroke="#9b6bff" stroke-width="4"/><path d="M1258 210 Q1290 420 1282 630" stroke="#9b6bff" stroke-width="3" fill="none"/></g>`;
+            const island = (x, y, s2, k) => `<g data-k="${k}" transform="translate(${x} ${y}) scale(${s2})"><path d="M-160 0 L160 0 L110 60 L40 150 L-20 110 L-90 170 L-120 70Z" fill="#2a1f48" ${st(5)}/><path d="M-160 0 L160 0 L150 -16 L-150 -16Z" fill="${D.lin("isl" + k, [[0, "#efe6ff"], [1, "#b8a8d8"]])}" ${st(5)}/>
+                ${[-110, -40, 60, 120].map((cx, j) => j === 2 ? `<path d="M${cx - 14} -16 V-120 L${cx} -136 L${cx + 14} -120 V-16Z" fill="#e6dcf6" ${st(4)}/>` : `<rect x="${cx - 12}" y="${-16 - 60 - j * 14}" width="24" height="${60 + j * 14}" fill="#e6dcf6" ${st(4)}/><rect x="${cx - 16}" y="${-16 - 60 - j * 14 - 10}" width="32" height="10" fill="#e8c66a" ${st(3)}/>`).join("")}
+                <path d="M-120 -76 Q-30 -40 60 -100" fill="none" stroke="#e8c66a" stroke-width="4" stroke-dasharray="10 6"/>${[-60, 30].map(cx => `<path d="M${cx} 10 V-900" stroke="#c9902f" stroke-width="5" stroke-dasharray="14 8" opacity=".7"/>`).join("")}</g>`;
+            rw += island(240, 340, 0.55, "isA") + island(1260, 300, 0.42, "isB");
+            const column = (x, y, s, broken) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-60 0 L60 0 L36 54 L-6 40 L-40 66Z" fill="#3a2f5a" ${st(4)}/><rect x="-26" y="-180" width="52" height="180" fill="${D.lin("mar" + x, [[0, "#e6dcf6"], [1, "#a898c8"]], 0, 0, 1, 0)}" ${st(5)}/>${[-14, 0, 14].map(dx => `<path d="M${dx} -170 V-10" stroke="#8a7cae" stroke-width="2.5"/>`).join("")}<rect x="-36" y="-14" width="72" height="16" fill="#e8c66a" ${st(4)}/>${broken ? `<path d="M-26 -180 L-10 -206 L4 -186 L26 -214 L26 -180Z" fill="#e6dcf6" ${st(4)}/>` : `<rect x="-38" y="-198" width="76" height="20" fill="#e6dcf6" ${st(5)}/>`}</g>`;
+            rw += `<g data-k="ruinsFar" opacity=".75">${column(220, 560, 0.7, true)}${column(1380, 520, 0.8, false)}${column(1100, 380, 0.45, true)}${column(460, 360, 0.4, false)}</g>`;
+            rw += `<g data-k="plat"><path d="M500 780 L1100 780 L1040 860 L880 840 L760 900 L620 846 L540 870Z" fill="#3a2f5a" ${st(6)}/><rect x="500" y="752" width="600" height="32" rx="6" fill="${D.lin("plt", [[0, "#efe6ff"], [1, "#b8a8d8"]])}" ${st(6)}/>${Array.from({ length: 8 }, (_, i) => `<rect x="${514 + i * 72}" y="760" width="60" height="16" rx="3" fill="${i % 2 ? "#7a3cff" : "#e8c66a"}" opacity=".85"/>`).join("")}${column(560, 752, 0.55, true)}${column(1040, 752, 0.5, false)}</g>`;
+            return { back: `<g data-k="voidsp">${sp}<g data-k="void" transform="translate(800 450)">${vd}</g></g><g data-k="prison" opacity="0" transform="translate(800 470)">${prison}</g>${tear}<g data-k="riftw" opacity="0">${rw}</g>`, front: "" };
+        },
+        frame(t, s) {
+            // 1. the Void collapses and bursts
+            const shrink = seg(t, 0.2, 1.8, inn);
+            s.set("void", `translate(800 450) rotate(${f(t * 140)}) scale(${(1 - shrink * 0.98).toFixed(3)} ${((1 - shrink * 0.98) * (1 + shrink * 0.6)).toFixed(3)})`);
+            for (let i = 0; i < 10; i++) s.setStyle("vt" + i, "opacity", 0.3 + 0.7 * Math.abs(Math.sin(t * 2 + i)));
+            if (t > 1.8 && !s.once("burst")) { s.flash("#ffffff", 0.95); s.shake(20); s.emit("ring", 3, [800, 450]); s.emit("gold", 50, [800, 450]); s.emit("spark", 30, [800, 450]); }
+            s.setStyle("void", "opacity", 1 - seg(t, 1.75, 1.9));
+            // 2. the prison it was holding shut
+            const appear = seg(t, 1.85, 2.5, back);
+            s.setStyle("prison", "opacity", seg(t, 1.85, 2.2) * (1 - seg(t, 6.9, 7.3)));
+            s.set("prison", `translate(800 ${f(470 + Math.sin(t * 1.4) * 6)}) scale(${(0.6 + 0.4 * appear).toFixed(3)})`);
+            // cracks run over the bars, the chains snap one by one
+            ["c0", "c1", "c2", "c3"].forEach((k, i) => s.setStyle(k, "strokeDashoffset", String(400 * (1 - seg(t, 2.6 + i * 0.3, 3.2 + i * 0.3)))));
+            [3.0, 3.4, 3.75, 4.05].forEach((at, i) => {
+                const d = Math.max(0, t - at), dir = [[-1, -1], [1, -1], [-1, 1], [1, 1]][i];
+                s.set("ch" + i, d > 0 ? `translate(${f(dir[0] * d * 260)} ${f(dir[1] * d * 160 + d * d * 300)}) rotate(${f(dir[0] * d * 50)})` : "");
+                s.setStyle("ch" + i, "opacity", 1 - seg(d, 0.2, 0.9));
+                if (t > at && !s.once("snap" + i)) { s.emit("spark", 22, [800 + dir[0] * 130, 470 + dir[1] * 120]); s.shake(8); s.flash("#ffe7a3", 0.25); }
+            });
+            // 3. the cage shatters and the angel bursts out
+            const free = Math.max(0, t - 4.4);
+            s.setStyle("bars", "opacity", t < 4.4 ? 1 : 0);
+            for (let i = 0; i < 14; i++) {
+                const a = i / 14 * Math.PI * 2 + 0.3, v = 380 + (i % 4) * 90;
+                s.set("sh" + i, `translate(${f(Math.cos(a) * v * free)} ${f(Math.sin(a) * v * free + free * free * 260)}) rotate(${f(free * (200 + i * 40))})`);
+                s.setStyle("sh" + i, "opacity", free > 0 ? 1 - seg(free, 0.6, 1.4) : 0);
+            }
+            if (t > 4.4 && !s.once("shatter")) { s.flash("#fff6d8", 0.85); s.shake(26); s.emit("gold", 70, [800, 470]); s.emit("feather", 40, [800, 470]); s.emit("ring", 2, [800, 470]); }
+            const rise = seg(t, 4.4, 5.3, out), dash = seg(t, 5.9, 6.6, inn);
+            const ay = lerp(lerp(0, -150, rise), -300, dash), asc = (0.95 + rise * 0.35) * (1 - dash * 0.85);
+            s.set("angel", `translate(0 ${f(ay)}) scale(${asc.toFixed(3)})`);
+            s.setStyle("angel", "opacity", 1 - seg(t, 6.4, 6.7));
+            // 4. it slashes the sky open
+            const op = seg(t, 5.1, 5.8, back);
+            s.set("tear", `translate(800 170) scale(${(0.4 + 0.6 * op).toFixed(3)} ${(op * (1 + Math.sin(t * 5) * 0.04)).toFixed(3)})`);
+            s.setStyle("tear", "opacity", 1 - seg(t, 7.3, 7.5));
+            if (t > 5.1 && !s.once("slash")) { s.flash("#ffd06b", 0.5); s.shake(12); s.emit("gold", 40, [800, 170]); }
+            if (t > 5.2 && t < 7.2 && Math.random() < 0.5) s.emit("gold", 1, [800 + rnd(-480, 480), 170 + rnd(-40, 40)]);
+            // 5. the hero leaps after it into the tear, and comes out on the other side
+            if (t >= 6.1 && t < 7.3) {
+                const k = seg(t, 6.1, 7.2);
+                s.hero(lerp(260, 800, k), lerp(980, 190, out(k)) - Math.sin(k * Math.PI) * 140, lerp(1.1, 0.25, k), lerp(-10, 20, k), 1, 1);
+            } else if (t < 6.1) s.hero(-400, 1300, 1, 0, 1, 0);
+            const dive = seg(t, 6.8, 7.35, inn);
+            if (t > 7.3 && !s.once("through")) { s.flash("#ffffff", 1); s.shake(10); }
+            const there = t >= 7.35;
+            s.setStyle("voidsp", "opacity", there ? 0 : 1);
+            s.setStyle("riftw", "opacity", there ? 1 : 0);
+            if (!there) s.cam(lerp(800, 800, dive), lerp(450, 180, dive), 1 + dive * 2.6, 0);
+            else {
+                // floating down onto the ruined platform, feathers drifting all around
+                const fall = seg(t, 7.4, 9.0, k => k * k * (3 - 2 * k));
+                const y = lerp(-120, 752, fall), sway = Math.sin(t * 3) * 30 * (1 - fall);
+                s.hero(800 + sway, y, 1.05, Math.sin(t * 3) * 8 * (1 - fall), 1, 1, t > 9.0 && t < 9.2 ? 0.88 : 1);
+                s.shadow(800, 756, 1.05, 0.3 * fall);
+                if (t > 9.0 && !s.once("land")) { s.emit("dust", 26, [800, 752]); s.emit("ring", 1, [800, 756]); s.emit("gold", 20, [800, 740]); s.shake(6); }
+                if (Math.random() < 0.3) s.emit("feather", 1, [rnd(0, W), -30]);
+                if (Math.random() < 0.25) s.emit("gold", 1, [rnd(200, 1400), rnd(500, 880)]);
+                s.set("plat", `translate(0 ${f(Math.sin(t * 1.2) * 6)})`);
+                s.set("ruinsFar", `translate(${f(Math.sin(t * 0.4) * 10)} ${f(Math.sin(t * 0.7) * 8)})`);
+                s.set("isA", `translate(240 ${f(340 + Math.sin(t * 0.8) * 10)}) scale(.55)`); s.set("isB", `translate(1260 ${f(300 + Math.sin(t * 0.6 + 1) * 8)}) scale(.42)`);
+                s.set("bigfeather", `translate(${f(Math.sin(t * 0.5) * 30)} ${f((t - 7.4) * 40)}) rotate(${f(Math.sin(t * 0.7) * 8)} 1290 420)`);
+                s.cam(800, lerp(420, 470, seg(t, 7.4, 9.4)), lerp(1.25, 1.05, seg(t, 7.4, 9.0)), Math.sin(t * 0.7) * 1.2);
+            }
+            s.tint("#14062e", seg(t, 0, 1.8) * 0.2 * (there ? 0 : 1));
+        }
+    };
+
     // ---------------------------------------------------------------------------------------------
     // Particles: one canvas over the scene, drawn in scene coordinates through the same camera as the SVG.
     // Glows are cached sprites (cheap to draw); fast things leave trails; leaves tumble, confetti flips,
@@ -999,6 +1301,7 @@ const Travel = (() => {
                 const pal = list => list[Math.floor(rnd(0, list.length))];
                 switch (kind) {
                     case "snow": P({ ...base, vx: rnd(-30, 30), vy: rnd(70, 150), g: 0, life: 8, r: rnd(3, 10), sw: rnd(0, 6) }); break;
+                    case "wetsnow": P({ ...base, kind: "snow", vx: rnd(-50, 10), vy: rnd(260, 380), g: 0, life: rnd(1.6, 2.6), r: rnd(3, 8), sw: rnd(0, 6) }); break;
                     case "rain": P({ ...base, vx: -170, vy: rnd(1400, 1700), g: 0, life: 1.4, r: rnd(18, 32), c: "#bcd6ff", floor: rnd(800, 900) }); break;
                     case "leaf": P({ ...base, vx: n > 1 ? Math.cos(a) * sp : rnd(-60, 60), vy: n > 1 ? -rnd(300, 700) : rnd(70, 140), g: n > 1 ? 500 : 0, life: n > 1 ? rnd(1.6, 2.4) : 9, r: rnd(10, 17), c: pal(["#e88a3a", "#d4562e", "#f2b13a", "#c9642d"]), sw: rnd(0, 6) }); break;
                     case "leafpuff": P({ ...base, vx: rnd(-120, 120), vy: -rnd(80, 200), g: 400, life: 0.7, r: rnd(5, 8), c: pal(["#e88a3a", "#d4562e", "#f2b13a"]), kind: "leaf" }); break;
@@ -1008,6 +1311,8 @@ const Travel = (() => {
                     case "confetti": case "pixel": case "sprinkle": P({ ...base, c: pal(["#ff5c7a", "#ffd23f", "#5fd4c4", "#7b8cff", "#ff8a5c", "#5ff2ff", "#ff2bd6", "#7dff6b"]), r: kind === "sprinkle" ? rnd(5, 8) : rnd(6, 11), vy: -rnd(200, 700), g: 700, life: rnd(1.2, 2.0), flip: rnd(0, 6) }); break;
                     case "candy": P({ ...base, vx: rnd(-40, 40), vy: rnd(80, 160), g: 0, life: 9, r: rnd(10, 14), c: pal(["#ff5c7a", "#7fd1ff", "#ffd23f", "#b48cff"]) }); break;
                     case "sparkle": P({ ...base, g: 0, life: rnd(0.6, 1.2), r: rnd(6, 14), c: pal(["#ffffff", "#ffd23f", "#bfe6ff", "#ffb3e6"]) }); break;
+                    case "gold": P({ ...base, kind: "sparkle", g: n > 1 ? 120 : -30, life: rnd(0.8, 1.6), r: rnd(5, 12), c: pal(["#ffd06b", "#fff6d8", "#e8c66a"]) }); break;
+                    case "feather": P({ ...base, vx: n > 1 ? Math.cos(a) * sp : rnd(-50, 50), vy: n > 1 ? Math.sin(a) * sp - 160 : rnd(50, 110), g: n > 1 ? 220 : 0, life: n > 1 ? rnd(1.6, 2.6) : 9, r: rnd(10, 16), c: pal(["#ffffff", "#ffffff", "#1c1230"]), sw: rnd(0, 6) }); break;
                     case "graphite": P({ ...base, vx: rnd(-60, 60), vy: rnd(-40, 40), g: 300, life: 0.6, r: rnd(1.5, 3), c: "#5a5560" }); break;
                     case "paint": P({ ...base, vx: rnd(-300, 300), vy: rnd(-500, 100), g: 200, life: rnd(0.8, 1.4), r: rnd(10, 22), c: pal(["#ff7f98", "#ffd23f", "#7fd1ff", "#8be38b", "#c49bff"]) }); break;
                     case "drop": P({ ...base, vy: -rnd(300, 800), vx: rnd(-320, 320), g: 1500, r: rnd(5, 11), c: "#cfeaff", life: rnd(0.8, 1.3) }); break;
@@ -1020,6 +1325,7 @@ const Travel = (() => {
                     case "heat": P({ ...base, vx: 0, vy: -60, g: 0, life: 1.6, r: rnd(20, 40) }); break;
                     case "smoke": P({ ...base, vx: rnd(-90, 90), vy: -rnd(40, 160), g: -30, life: rnd(1.2, 2.4), r: rnd(18, 40), c: pal(["#8a8f9e", "#a6abb8", "#6f7482"]) }); break;
                     case "steam": P({ ...base, vx: rnd(-20, 20), vy: -rnd(120, 200), g: -20, life: rnd(1, 1.6), r: rnd(14, 24), c: "#e8ecf2", kind: "smoke" }); break;
+                    case "cotton": P({ ...base, kind: "puff", vx: n > 1 ? rnd(-220, 220) : -rnd(60, 160), vy: -rnd(60, 180), g: -30, life: rnd(1.2, 2), r: rnd(16, 30), c: pal(["#ffd1e8", "#ffb3dc", "#fff0f7"]) }); break;
                     case "ember": P({ ...base, vy: -rnd(300, 900), vx: rnd(-320, 320), g: 600, r: rnd(3, 7), c: pal(["#ffb21e", "#ff5a1f", "#ffe066"]), trail: [] }); break;
                     case "spark": P({ ...base, vy: -rnd(200, 600), g: 900, life: rnd(0.4, 0.9), r: rnd(2, 4), c: pal(["#ffe066", "#fff3a0", "#ffb21e"]), trail: [] }); break;
                     case "ghost": P({ ...base, vx: rnd(-20, 20), vy: -rnd(60, 120), g: 0, life: 5, r: rnd(16, 26), c: "#d6ccff", sw: rnd(0, 6) }); break;
@@ -1089,6 +1395,11 @@ const Travel = (() => {
                         else if (p.kind === "sprinkle") { ctx.fillStyle = p.c; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-p.r, -2.5, p.r * 2, 5, 2.5) : ctx.rect(-p.r, -2.5, p.r * 2, 5); ctx.fill(); }
                         else { const fl = Math.cos(p.age * 9 + p.flip); ctx.scale(1, fl); ctx.fillStyle = fl > 0 ? p.c : shade(p.c, -0.3); ctx.fillRect(-p.r, -p.r * 0.5, p.r * 2, p.r); }
                         break;
+                    case "feather":
+                        ctx.rotate(Math.sin(p.age * 2.2 + p.r) * 0.9 + p.rot * 0.2); ctx.scale(Math.cos(p.age * 3 + p.r) * 0.4 + 0.6, 1);
+                        ctx.fillStyle = p.c; ctx.strokeStyle = p.c === "#1c1230" ? "#9b6bff" : "#b8a080"; ctx.lineWidth = 1.4;
+                        ctx.beginPath(); ctx.moveTo(0, -p.r); ctx.quadraticCurveTo(p.r * 0.55, -p.r * 0.3, p.r * 0.28, p.r * 0.8); ctx.lineTo(0, p.r); ctx.lineTo(-p.r * 0.28, p.r * 0.8); ctx.quadraticCurveTo(-p.r * 0.55, -p.r * 0.3, 0, -p.r); ctx.fill(); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, -p.r * 0.9); ctx.lineTo(0, p.r * 1.2); ctx.stroke(); break;
                     case "candy":
                         ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.strokeStyle = INK; ctx.lineWidth = 2;
                         ctx.beginPath(); ctx.arc(0, 0, p.r * 0.7, 0, 7); ctx.fill(); ctx.stroke();
@@ -1165,7 +1476,7 @@ const Travel = (() => {
             <g data-k="cam">${built.back}${built.under || ""}${SHADOW}<g data-k="hero"><g data-k="heroIn">${Hero.inner(look)}</g></g>${built.front || ""}</g>
             <rect data-k="tint" width="${W}" height="${H}" fill="#000" opacity="0"/><rect width="${W}" height="${H}" fill="url(#tv-vig)"/><rect data-k="flash" width="${W}" height="${H}" fill="#fff" opacity="0"/></svg>
             <canvas class="tv-fx"></canvas>
-            <div class="tv-card"><small>World ${index + 1} of ${total}</small><b>${U.esc(w ? w.name : to)}</b></div>
+            <div class="tv-card"><small>${to === "rift" ? "Secret World" : `World ${index + 1} of ${total}`}</small><b>${U.esc(w ? w.name : to)}</b></div>
             <p class="tv-skip">Click to skip</p>`;
         document.getElementById("overlay").appendChild(el);
         const cv = el.querySelector("canvas"), card = el.querySelector(".tv-card");
@@ -1205,7 +1516,7 @@ const Travel = (() => {
         c.cleanup(() => { removeEventListener("resize", sizeCanvas); el.classList.remove("in"); setTimeout(() => el.remove(), 400); });
         requestAnimationFrame(() => el.classList.add("in"));
         // a soft rising chime when the new world appears, in the world's key
-        const pitch = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, library: -6, robot: -4, volcano: -7, space: -8 }[to] || 0;
+        const pitch = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, library: -6, robot: -4, volcano: -7, space: -8, rift: 9 }[to] || 0;
         c.later(() => [60, 64, 67, 72].forEach((n, i) => Sound.tone({ t: i * 0.13, f: Sound.midi(n + pitch), type: "sine", d: 0.9, v: 0.05 })), (scene.T - 2.2) * 1000);
         const T = scene.T, t0 = performance.now();
         // the camera, applied to the SVG and (as a matrix) to the particle canvas
