@@ -1,0 +1,537 @@
+{
+ "boss": [
+  {
+   "file": "paper.mp3",
+   "title": "Unsolicited Trailer Music",
+   "author": "Emma_MA",
+   "page": "unsolicited-trailer-music"
+  },
+  {
+   "file": "garden.mp3",
+   "title": "Flowerbed Fields",
+   "author": "Zane Little Music",
+   "page": "flowerbed-fields-loop"
+  },
+  {
+   "file": "squirrel.mp3",
+   "title": "Catch Me If You Can",
+   "author": "poinl",
+   "page": "catch-me-if-you-can"
+  },
+  {
+   "file": "candy.mp3",
+   "title": "Toy Soldiers",
+   "author": "Zane Little Music",
+   "page": "toy-soldiers"
+  },
+  {
+   "file": "ocean.mp3",
+   "title": "Video Game Pirate",
+   "author": "iamoneabe",
+   "page": "video-game-pirate"
+  },
+  {
+   "file": "snow.mp3",
+   "title": "Black Diamond",
+   "author": "Joth",
+   "page": "black-diamond"
+  },
+  {
+   "file": "snow-p2.mp3",
+   "title": "Hard Boss Battle 2",
+   "author": "MintoDog",
+   "page": "hard-boss-battle-2"
+  },
+  {
+   "file": "sky.mp3",
+   "title": "The Call for Unity",
+   "author": "vitalezzz",
+   "page": "the-call-for-unity"
+  },
+  {
+   "file": "sky-p2.mp3",
+   "title": "Mile-High Infraskyway",
+   "author": "Spring Spring",
+   "page": "mile-high-infraskyway"
+  },
+  {
+   "file": "desert.mp3",
+   "title": "King Crumble",
+   "author": "iamoneabe",
+   "page": "king-crumble"
+  },
+  {
+   "file": "carnival.mp3",
+   "title": "Ring Master",
+   "author": "Bobjt",
+   "page": "ring-master"
+  },
+  {
+   "file": "carnival-p2.mp3",
+   "title": "8-bit Action Boss Battle",
+   "author": "MintoDog",
+   "page": "8bit-action-boss-battle"
+  },
+  {
+   "file": "arcade.mp3",
+   "title": "Level 1 (Retro Game Music Pack)",
+   "author": "Juhani Junkala (SubspaceAudio)",
+   "page": "5-chiptunes-action"
+  },
+  {
+   "file": "arcade-p2.mp3",
+   "title": "Level 2 (Retro Game Music Pack)",
+   "author": "Juhani Junkala (SubspaceAudio)",
+   "page": "5-chiptunes-action"
+  },
+  {
+   "file": "library.mp3",
+   "title": "Sinister Abode",
+   "author": "Zane Little Music",
+   "page": "sinister-abode"
+  },
+  {
+   "file": "library-p2.mp3",
+   "title": "Shadows Awaken Within",
+   "author": "vitalezzz",
+   "page": "shadows-awaken-within"
+  },
+  {
+   "file": "robot.mp3",
+   "title": "Return of the Omega Droid",
+   "author": "Umplix",
+   "page": "return-of-the-omega-droid"
+  },
+  {
+   "file": "robot-p2.mp3",
+   "title": "Epic Combat",
+   "author": "Chester01",
+   "page": "epic-combat"
+  },
+  {
+   "file": "robot-p3.mp3",
+   "title": "Steel Commander",
+   "author": "vitalezzz",
+   "page": "steel-commander"
+  },
+  {
+   "file": "volcano.mp3",
+   "title": "Devoted Guard",
+   "author": "vitalezzz",
+   "page": "devoted-guard"
+  },
+  {
+   "file": "volcano-p2.mp3",
+   "title": "JRPG Epic Rock Battle Theme",
+   "author": "HydroGene",
+   "page": "jrpg-epic-rock-battle-theme-1"
+  },
+  {
+   "file": "volcano-p3.mp3",
+   "title": "Carnage (boss battle)",
+   "author": "glitchart (Centurion_of_war vs nene)",
+   "page": "carnage-boss-battle-centurion-of-war-vs-nene"
+  },
+  {
+   "file": "space.mp3",
+   "title": "Outworld",
+   "author": "vitalezzz",
+   "page": "outworld"
+  },
+  {
+   "file": "space-p2.mp3",
+   "title": "Claimed by the Void",
+   "author": "glitchart (vitalezzz vs tricksntraps)",
+   "page": "claimed-by-the-void-new-factory-ai-fight-and-simulation-unknown-vitalezzz-vs-tricksntraps"
+  },
+  {
+   "file": "space-p3.mp3",
+   "title": "Trance Boss Battle",
+   "author": "MintoDog",
+   "page": "trance-boss-battle"
+  },
+  {
+   "file": "space-p4.mp3",
+   "title": "The Final Mega Boss",
+   "author": "Umplix",
+   "page": "the-final-mega-boss"
+  },
+  {
+   "file": "space-p5.mp3",
+   "title": "Pandemia",
+   "author": "nene",
+   "page": "pandemia"
+  }
+ ],
+ "level": [
+  {
+   "file": "level-paper-1.mp3",
+   "title": "Cozy Puzzle In Game 1",
+   "author": "MintoDog",
+   "page": "cozy-puzzle-in-game-1"
+  },
+  {
+   "file": "level-paper-2.mp3",
+   "title": "Lofi Hip Hop Loop",
+   "author": "omfgdude",
+   "page": "lofi-hip-hop-loop"
+  },
+  {
+   "file": "level-paper-3.mp3",
+   "title": "Chill Lofi Inspired",
+   "author": "omfgdude",
+   "page": "chill-lofi-inspired"
+  },
+  {
+   "file": "level-paper-4.mp3",
+   "title": "Daisy",
+   "author": "Kistol",
+   "page": "daisy"
+  },
+  {
+   "file": "level-garden-1.mp3",
+   "title": "Blue Meadow in Green Sky",
+   "author": "yd",
+   "page": "blue-meadow-in-green-sky"
+  },
+  {
+   "file": "level-garden-2.mp3",
+   "title": "Peaceful Theme",
+   "author": "pebonius",
+   "page": "peaceful-theme"
+  },
+  {
+   "file": "level-garden-3.mp3",
+   "title": "Meadow Thoughts",
+   "author": "Écrivain",
+   "page": "meadow-thoughts"
+  },
+  {
+   "file": "level-garden-4.mp3",
+   "title": "Yellow Flowers And Tall Mossy Trees",
+   "author": "Écrivain",
+   "page": "yellow-flowers-and-tall-mossy-trees"
+  },
+  {
+   "file": "level-squirrel-1.mp3",
+   "title": "A Small Fire Will Do Calming Loop",
+   "author": "Trex0n",
+   "page": "a-small-fire-will-do-calming-loop"
+  },
+  {
+   "file": "level-squirrel-2.mp3",
+   "title": "Wooden Inn",
+   "author": "Indieteur",
+   "page": "wooden-inn"
+  },
+  {
+   "file": "level-squirrel-3.mp3",
+   "title": "Autumn Mp3 Free Music",
+   "author": "Duasun",
+   "page": "autumn-mp3-free-music"
+  },
+  {
+   "file": "level-squirrel-4.mp3",
+   "title": "Forest of Hope",
+   "author": "Tarush Singhal",
+   "page": "forest-of-hope"
+  },
+  {
+   "file": "level-candy-1.mp3",
+   "title": "Sugar Sweet",
+   "author": "iamoneabe",
+   "page": "sugar-sweet"
+  },
+  {
+   "file": "level-candy-2.mp3",
+   "title": "Tuesday Vibraphone",
+   "author": "Pro Sensory",
+   "page": "tuesday-vibraphone"
+  },
+  {
+   "file": "level-candy-3.mp3",
+   "title": "Sunset Walk Ambient Quiet Sweet Loop",
+   "author": "KiluaBoy",
+   "page": "sunset-walk-ambient-quiet-sweet-loop"
+  },
+  {
+   "file": "level-candy-4.mp3",
+   "title": "Snes Cute",
+   "author": "Pro Sensory",
+   "page": "snes-cute"
+  },
+  {
+   "file": "level-ocean-1.mp3",
+   "title": "Underwater Theme 1",
+   "author": "Spring Spring",
+   "page": "underwater-theme-1"
+  },
+  {
+   "file": "level-ocean-2.mp3",
+   "title": "Underwater World",
+   "author": "Indieteur",
+   "page": "underwater-world"
+  },
+  {
+   "file": "level-ocean-3.mp3",
+   "title": "Aquaria",
+   "author": "cynicmusic",
+   "page": "aquaria"
+  },
+  {
+   "file": "level-ocean-4.mp3",
+   "title": "Seaside Village",
+   "author": "KarateStudios",
+   "page": "seaside-village"
+  },
+  {
+   "file": "level-snow-1.mp3",
+   "title": "Snowfall",
+   "author": "Kistol",
+   "page": "snowfall"
+  },
+  {
+   "file": "level-snow-2.mp3",
+   "title": "Snow Globe",
+   "author": "Bobjt",
+   "page": "snow-globe"
+  },
+  {
+   "file": "level-snow-3.mp3",
+   "title": "Ice Village",
+   "author": "KarateStudios",
+   "page": "ice-village"
+  },
+  {
+   "file": "level-snow-4.mp3",
+   "title": "Land Of Snow",
+   "author": "haruta",
+   "page": "land-of-snow"
+  },
+  {
+   "file": "level-rain-1.mp3",
+   "title": "Smol Jazzy Beat",
+   "author": "Spring Spring",
+   "page": "smol-jazzy-beat"
+  },
+  {
+   "file": "level-rain-2.mp3",
+   "title": "Jazz",
+   "author": "Umplix",
+   "page": "jazz-2"
+  },
+  {
+   "file": "level-rain-3.mp3",
+   "title": "Giant Steps but Smooth",
+   "author": "Pro Sensory",
+   "page": "giant-steps-but-smooth"
+  },
+  {
+   "file": "level-rain-4.mp3",
+   "title": "Blue Rain",
+   "author": "Pro Sensory",
+   "page": "blue-rain"
+  },
+  {
+   "file": "level-sky-1.mp3",
+   "title": "Sleepy Clouds",
+   "author": "Fupi",
+   "page": "sleepy-clouds"
+  },
+  {
+   "file": "level-sky-2.mp3",
+   "title": "Napping On A Cloud",
+   "author": "congusbongus",
+   "page": "napping-on-a-cloud"
+  },
+  {
+   "file": "level-sky-3.mp3",
+   "title": "Daydream",
+   "author": "Adiutorium",
+   "page": "daydream"
+  },
+  {
+   "file": "level-sky-4.mp3",
+   "title": "Morning Sky",
+   "author": "Centurion_of_war",
+   "page": "morning-sky"
+  },
+  {
+   "file": "level-desert-1.mp3",
+   "title": "Desert Theme",
+   "author": "yd",
+   "page": "desert-theme"
+  },
+  {
+   "file": "level-desert-2.mp3",
+   "title": "Desert Overworld",
+   "author": "KarateStudios",
+   "page": "desert-overworld"
+  },
+  {
+   "file": "level-desert-3.mp3",
+   "title": "Telos Desert Village 2",
+   "author": "Tozan",
+   "page": "telos-desert-village-2"
+  },
+  {
+   "file": "level-desert-4.mp3",
+   "title": "Desert Settlement",
+   "author": "vitalezzz",
+   "page": "desert-settlement"
+  },
+  {
+   "file": "level-carnival-1.mp3",
+   "title": "4 Music Box Tracks",
+   "author": "Aureolus_Omicron",
+   "page": "4-music-box-tracks"
+  },
+  {
+   "file": "level-carnival-2.mp3",
+   "title": "Taking You To The Circus Guitar",
+   "author": "Pro Sensory",
+   "page": "taking-you-to-the-circus-guitar"
+  },
+  {
+   "file": "level-carnival-3.mp3",
+   "title": "Childrens March Theme",
+   "author": "CleytonKauffman",
+   "page": "childrens-march-theme"
+  },
+  {
+   "file": "level-carnival-4.mp3",
+   "title": "Carnival Rides",
+   "author": "Écrivain",
+   "page": "carnival-rides"
+  },
+  {
+   "file": "level-arcade-1.mp3",
+   "title": "Welcome to the Item Shop",
+   "author": "congusbongus",
+   "page": "welcome-to-the-item-shop"
+  },
+  {
+   "file": "level-arcade-2.mp3",
+   "title": "Starter (8 Bit Dub)",
+   "author": "TAD",
+   "page": "starter-8-bit-dub"
+  },
+  {
+   "file": "level-arcade-3.mp3",
+   "title": "Shopping Time",
+   "author": "SkyleTheFrench",
+   "page": "shopping-time"
+  },
+  {
+   "file": "level-arcade-4.mp3",
+   "title": "Midnight Drive",
+   "author": "congusbongus",
+   "page": "midnight-drive"
+  },
+  {
+   "file": "level-library-1.mp3",
+   "title": "Magic Puzzle In Game 1",
+   "author": "MintoDog",
+   "page": "magic-puzzle-in-game-1"
+  },
+  {
+   "file": "level-library-2.mp3",
+   "title": "Magic Puzzle In Game 2",
+   "author": "MintoDog",
+   "page": "magic-puzzle-in-game-2"
+  },
+  {
+   "file": "level-library-3.mp3",
+   "title": "Haunting Piano",
+   "author": "Emma_MA",
+   "page": "haunting-piano"
+  },
+  {
+   "file": "level-library-4.mp3",
+   "title": "Moonlit Lullaby For The Lost",
+   "author": "Tsorthan Grove",
+   "page": "moonlit-lullaby-for-the-lost"
+  },
+  {
+   "file": "level-robot-1.mp3",
+   "title": "Relaxed Robot Theme",
+   "author": "Nikke",
+   "page": "relaxed-robot-theme"
+  },
+  {
+   "file": "level-robot-2.mp3",
+   "title": "Sci Fi Puzzle In Game 3",
+   "author": "MintoDog",
+   "page": "sci-fi-puzzle-in-game-3"
+  },
+  {
+   "file": "level-robot-3.mp3",
+   "title": "Starfield Dreams",
+   "author": "congusbongus",
+   "page": "starfield-dreams"
+  },
+  {
+   "file": "level-robot-4.mp3",
+   "title": "Insect Factory Wii Style Music",
+   "author": "Zane Little Music",
+   "page": "insect-factory-wii-style-music"
+  },
+  {
+   "file": "level-volcano-1.mp3",
+   "title": "Krakatoa",
+   "author": "Kistol",
+   "page": "krakatoa"
+  },
+  {
+   "file": "level-volcano-2.mp3",
+   "title": "Chill Jungle",
+   "author": "Pro Sensory",
+   "page": "chill-jungle"
+  },
+  {
+   "file": "level-volcano-3.mp3",
+   "title": "I Think Id Stay Jungle Chill",
+   "author": "Emmntt",
+   "page": "i-think-id-stay-jungle-chill"
+  },
+  {
+   "file": "level-volcano-4.mp3",
+   "title": "Tribal Hangout",
+   "author": "Pro Sensory",
+   "page": "tribal-hangout"
+  },
+  {
+   "file": "level-space-1.mp3",
+   "title": "Floating In Space",
+   "author": "Umplix",
+   "page": "floating-in-space"
+  },
+  {
+   "file": "level-space-2.mp3",
+   "title": "Safe Space 0",
+   "author": "Tsorthan Grove",
+   "page": "safe-space-0"
+  },
+  {
+   "file": "level-space-3.mp3",
+   "title": "Spacious",
+   "author": "Indieteur",
+   "page": "spacious"
+  },
+  {
+   "file": "level-space-4.mp3",
+   "title": "Steller Dreams",
+   "author": "Synth-thetic",
+   "page": "steller-dreams"
+  }
+ ],
+ "composed": [
+  "Riddle of the Sands (the Sphinx's second phase)",
+  "Storm Front and Downpour (Thunderhead's two phases)",
+  "The Lost Everbook",
+  "A Page Comes Home",
+  "The Everbook Is Whole",
+  "Victory",
+  "Defeat"
+ ]
+}

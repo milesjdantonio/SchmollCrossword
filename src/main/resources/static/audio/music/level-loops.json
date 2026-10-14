@@ -1,0 +1,242 @@
+{
+ "level-arcade-1": {
+  "loopStart": 14.75,
+  "loopEnd": 64.8333
+ },
+ "level-arcade-2": {
+  "loopStart": 13.5,
+  "loopEnd": 41.4966
+ },
+ "level-arcade-3": {
+  "loopStart": 0.5,
+  "loopEnd": 91.8603
+ },
+ "level-arcade-4": {
+  "loopStart": 41.75,
+  "loopEnd": 137.5323
+ },
+ "level-candy-1": {
+  "loopStart": 18.75,
+  "loopEnd": 85.0879
+ },
+ "level-candy-2": {
+  "loopStart": 0.5,
+  "loopEnd": 128.5195
+ },
+ "level-candy-3": {
+  "loopStart": 0.5,
+  "loopEnd": 77.3
+ },
+ "level-candy-4": {
+  "loopStart": 0.5,
+  "loopEnd": 49.5034
+ },
+ "level-carnival-1": {
+  "loopStart": 17.75,
+  "loopEnd": 146.3218
+ },
+ "level-carnival-2": {
+  "loopStart": 0.5,
+  "loopEnd": 114.5764
+ },
+ "level-carnival-3": {
+  "loopStart": 0.5,
+  "loopEnd": 64.5
+ },
+ "level-carnival-4": {
+  "loopStart": 0.5,
+  "loopEnd": 25.9983
+ },
+ "level-desert-1": {
+  "loopStart": 8.25,
+  "loopEnd": 85.05
+ },
+ "level-desert-2": {
+  "loopStart": 18.0,
+  "loopEnd": 47.5385
+ },
+ "level-desert-3": {
+  "loopStart": 4.0,
+  "loopEnd": 126.2
+ },
+ "level-desert-4": {
+  "loopStart": 43.0,
+  "loopEnd": 142.3104
+ },
+ "level-garden-1": {
+  "loopStart": 0.5,
+  "loopEnd": 66.9959
+ },
+ "level-garden-2": {
+  "loopStart": 43.5,
+  "loopEnd": 148.2276
+ },
+ "level-garden-3": {
+  "loopStart": 3.5,
+  "loopEnd": 53.5013
+ },
+ "level-garden-4": {
+  "loopStart": 0.5,
+  "loopEnd": 62.0799
+ },
+ "level-library-1": {
+  "loopStart": 0.5,
+  "loopEnd": 122.6818
+ },
+ "level-library-2": {
+  "loopStart": 0.5,
+  "loopEnd": 120.5
+ },
+ "level-library-3": {
+  "loopStart": 5.25,
+  "loopEnd": 30.5132
+ },
+ "level-library-4": {
+  "loopStart": 4.0,
+  "loopEnd": 109.5
+ },
+ "level-ocean-1": {
+  "loopStart": 0.5,
+  "loopEnd": 82.7857
+ },
+ "level-ocean-2": {
+  "loopStart": 39.0,
+  "loopEnd": 131.1528
+ },
+ "level-ocean-3": {
+  "loopStart": 0.5,
+  "loopEnd": 44.4612
+ },
+ "level-ocean-4": {
+  "loopStart": 39.0,
+  "loopEnd": 63.0
+ },
+ "level-paper-1": {
+  "loopStart": 0.5,
+  "loopEnd": 130.6695
+ },
+ "level-paper-2": {
+  "loopStart": 0.5,
+  "loopEnd": 128.3869
+ },
+ "level-paper-3": {
+  "loopStart": 3.75,
+  "loopEnd": 94.8836
+ },
+ "level-paper-4": {
+  "loopStart": 43.75,
+  "loopEnd": 82.15
+ },
+ "level-rain-1": {
+  "loopStart": 0.5,
+  "loopEnd": 97.068
+ },
+ "level-rain-2": {
+  "loopStart": 0.5,
+  "loopEnd": 125.3
+ },
+ "level-rain-3": {
+  "loopStart": 18.25,
+  "loopEnd": 114.2501
+ },
+ "level-rain-4": {
+  "loopStart": 4.5,
+  "loopEnd": 45.5
+ },
+ "level-robot-1": {
+  "loopStart": 0.5,
+  "loopEnd": 94.4313
+ },
+ "level-robot-2": {
+  "loopStart": 4.0,
+  "loopEnd": 148.0
+ },
+ "level-robot-3": {
+  "loopStart": 39.0,
+  "loopEnd": 136.3366
+ },
+ "level-robot-4": {
+  "loopStart": 3.75,
+  "loopEnd": 139.6792
+ },
+ "level-sky-1": {
+  "loopStart": 39.5,
+  "loopEnd": 62.3571
+ },
+ "level-sky-2": {
+  "loopStart": 31.25,
+  "loopEnd": 125.851
+ },
+ "level-sky-3": {
+  "loopStart": 25.0,
+  "loopEnd": 52.4286
+ },
+ "level-sky-4": {
+  "loopStart": 0.5,
+  "loopEnd": 132.5
+ },
+ "level-snow-1": {
+  "loopStart": 0.5,
+  "loopEnd": 50.0
+ },
+ "level-snow-2": {
+  "loopStart": 5.5,
+  "loopEnd": 72.4767
+ },
+ "level-snow-3": {
+  "loopStart": 0.5,
+  "loopEnd": 143.0
+ },
+ "level-snow-4": {
+  "loopStart": 3.5,
+  "loopEnd": 70.7
+ },
+ "level-space-1": {
+  "loopStart": 4.0,
+  "loopEnd": 86.1
+ },
+ "level-space-2": {
+  "loopStart": 53.75,
+  "loopEnd": 130.6141
+ },
+ "level-space-3": {
+  "loopStart": 42.75,
+  "loopEnd": 106.7442
+ },
+ "level-space-4": {
+  "loopStart": 4.0,
+  "loopEnd": 152.6
+ },
+ "level-squirrel-1": {
+  "loopStart": 0.5,
+  "loopEnd": 64.5
+ },
+ "level-squirrel-2": {
+  "loopStart": 32.5,
+  "loopEnd": 126.1585
+ },
+ "level-squirrel-3": {
+  "loopStart": 16.0,
+  "loopEnd": 56.6153
+ },
+ "level-squirrel-4": {
+  "loopStart": 0.5,
+  "loopEnd": 124.9788
+ },
+ "level-volcano-1": {
+  "loopStart": 0.5,
+  "loopEnd": 72.5
+ },
+ "level-volcano-2": {
+  "loopStart": 10.25,
+  "loopEnd": 76.2556
+ },
+ "level-volcano-3": {
+  "loopStart": 4.25,
+  "loopEnd": 25.5707
+ },
+ "level-volcano-4": {
+  "loopStart": 37.0,
+  "loopEnd": 87.0006
+ }
+}

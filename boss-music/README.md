@@ -51,7 +51,7 @@ it IS the music right before the downbeat, it merges into the song exactly.
 | 4 | King Sourgum (Candy Hills) | Toy Soldiers (Zane Little Music) | one phase |  |
 | 5 | The Kraken (Coral Reef) | Video Game Pirate (iamoneabe) | one phase |  |
 | 6 | The Yeti (Snow Day) | Black Diamond (Joth) | Hard Boss Battle 2 (MintoDog) |  |
-| 7 | Thunderhead (Rainy City) | Wednesday Night Funk Fusion (Zane Little Music), jazzy at your request | Jazz n' brass loop (Emma_MA), more intense jazz at your request, now with a big-band shout chorus composed for it (you asked for a chorus): chorus then verse, 32 bars |  |
+| 7 | Thunderhead (Rainy City) | Storm Front, composed for the game (2026-10-13): a fast big-band swing in F minor, for "intense Gordon Goodwin vibes" (your request) | Downpour, composed for the game: a harder big-band Latin-funk shout in B flat minor, screaming lead trumpet |  |
 | 8 | Sir Squall (Sky Kingdom) | The Call for Unity (vitalezzz) | Mile-High Infraskyway (Spring Spring) |  |
 | 9 | The Sphinx (Desert Caravan) | King Crumble (iamoneabe) | Riddle of the Sands (7/4) (composed for this game) |  |
 | 10 | The Ringmaster (Big Top Carnival) | Ring Master (Bobjt) | 8-bit Action Boss Battle (climax, 185 BPM) (MintoDog) |  |

@@ -27,8 +27,6 @@ All from https://opengameart.org/content/<page>
   ocean.mp3       Video Game Pirate                             iamoneabe                             video-game-pirate
   snow.mp3        Black Diamond                                 Joth                                  black-diamond
   snow-p2.mp3     Hard Boss Battle 2                            MintoDog                              hard-boss-battle-2
-  rain.mp3        Wednesday Night Funk Fusion                   Zane Little Music                     wednesday-night-funk-fusion
-  rain-p2.mp3     Jazz n' brass loop (its chorus: see below)    Emma_MA                               jazz-n-brass-loop
   sky.mp3         The Call for Unity                            vitalezzz                             the-call-for-unity
   sky-p2.mp3      Mile-High Infraskyway                         Spring Spring                         mile-high-infraskyway
   desert.mp3      King Crumble                                  iamoneabe                             king-crumble
@@ -61,28 +59,32 @@ FluidSynth):
                   C major, the Void's tear in C minor) (19.8 seconds)
   story-page.mp3  A Page Comes Home: a page won back (6.4 seconds)
   story-finale.mp3 The Everbook Is Whole: the ending (14.4 seconds)
-  rain-p2.mp3     the chorus: a big-band shout chorus (trumpet, alto and tenor sax, trombones, brass section) on top of
-                  Emma_MA's Jazz n' brass loop (CC0), using only the notes the loop plays in each half bar
+  rain.mp3        Storm Front: fast big-band swing in F minor (saxes, trumpets, trombones, piano, bass, guitar, drums)
+  rain-p2.mp3     Downpour: a big-band Latin-funk shout in B flat minor (slap bass, timbales, congas, screaming trumpets)
 
 Level music (audio/music/level-<world>-<1..4>.mp3, added 2026-10-10): a calm song for every campaign level, each one
 different, picked to fit its world. All CC0 from https://opengameart.org/content/<page> (each page checked). For the
-game they were cut to 2.5 minutes at most (short loops repeated), faded at the end so the loop restarts gently, and
-levelled to the same, quieter loudness. Titles are as listed on OpenGameArt.
+game each one got a seamless loop (2026-10-11): the point where the song matches itself best (drums and harmony),
+lined up on the beat with a 60 ms crossfade; the file plays once, then loops between the points in level-loops.json.
+2.5 minutes at most, levelled to the same, quieter loudness. Titles are as listed on OpenGameArt. Rainy City 1-3
+(jazz), Neon Arcade 1-3 (chiptune), Acorn Woods 4 and Candy Hills 2 were swapped on 2026-10-11 (the user's request).
+Garden 1 was swapped on 2026-10-13 for a song that loops cleanly; ten songs got better loops that day (a seam that
+matches, the whole song end to start, or a song that fades out running its last 4 s into its first 4 s).
   file                     track                                        author                     page
   level-paper-1.mp3        Cozy Puzzle In Game 1                        MintoDog                   cozy-puzzle-in-game-1
   level-paper-2.mp3        Lofi Hip Hop Loop                            omfgdude                   lofi-hip-hop-loop
   level-paper-3.mp3        Chill Lofi Inspired                          omfgdude                   chill-lofi-inspired
   level-paper-4.mp3        Daisy                                        Kistol                     daisy
-  level-garden-1.mp3       Restful Meadow                               Tozan                      restful-meadow
+  level-garden-1.mp3       Blue Meadow in Green Sky                     yd                         blue-meadow-in-green-sky
   level-garden-2.mp3       Peaceful Theme                               pebonius                   peaceful-theme
   level-garden-3.mp3       Meadow Thoughts                              Écrivain                   meadow-thoughts
   level-garden-4.mp3       Yellow Flowers And Tall Mossy Trees          Écrivain                   yellow-flowers-and-tall-mossy-trees
   level-squirrel-1.mp3     A Small Fire Will Do Calming Loop            Trex0n                     a-small-fire-will-do-calming-loop
   level-squirrel-2.mp3     Wooden Inn                                   Indieteur                  wooden-inn
   level-squirrel-3.mp3     Autumn Mp3 Free Music                        Duasun                     autumn-mp3-free-music
-  level-squirrel-4.mp3     Peaceful Forest                              Samza                      peaceful-forest
+  level-squirrel-4.mp3     Forest of Hope                               Tarush Singhal             forest-of-hope
   level-candy-1.mp3        Sugar Sweet                                  iamoneabe                  sugar-sweet
-  level-candy-2.mp3        Ice Cream Truck Theme                        CleytonKauffman            ice-cream-truck-theme
+  level-candy-2.mp3        Tuesday Vibraphone                           Pro Sensory                tuesday-vibraphone
   level-candy-3.mp3        Sunset Walk Ambient Quiet Sweet Loop         KiluaBoy                   sunset-walk-ambient-quiet-sweet-loop
   level-candy-4.mp3        Snes Cute                                    Pro Sensory                snes-cute
   level-ocean-1.mp3        Underwater Theme 1                           Spring Spring              underwater-theme-1
@@ -93,9 +95,9 @@ levelled to the same, quieter loudness. Titles are as listed on OpenGameArt.
   level-snow-2.mp3         Snow Globe                                   Bobjt                      snow-globe
   level-snow-3.mp3         Ice Village                                  KarateStudios              ice-village
   level-snow-4.mp3         Land Of Snow                                 haruta                     land-of-snow
-  level-rain-1.mp3         Coffee House Bump                            OatCog                     coffee-house-bump
-  level-rain-2.mp3         Mocha Frapp                                  Pro Sensory                mocha-frapp
-  level-rain-3.mp3         Bossa Nova                                   Joth                       bossa-nova
+  level-rain-1.mp3         Smol Jazzy Beat                              Spring Spring              smol-jazzy-beat
+  level-rain-2.mp3         Jazz                                         Umplix                     jazz-2
+  level-rain-3.mp3         Giant Steps but Smooth                       Pro Sensory                giant-steps-but-smooth
   level-rain-4.mp3         Blue Rain                                    Pro Sensory                blue-rain
   level-sky-1.mp3          Sleepy Clouds                                Fupi                       sleepy-clouds
   level-sky-2.mp3          Napping On A Cloud                           congusbongus               napping-on-a-cloud
@@ -109,9 +111,9 @@ levelled to the same, quieter loudness. Titles are as listed on OpenGameArt.
   level-carnival-2.mp3     Taking You To The Circus Guitar              Pro Sensory                taking-you-to-the-circus-guitar
   level-carnival-3.mp3     Childrens March Theme                        CleytonKauffman            childrens-march-theme
   level-carnival-4.mp3     Carnival Rides                               Écrivain                   carnival-rides
-  level-arcade-1.mp3       Calm Ambient 1 Synthwave 4K                  cynicmusic                 calm-ambient-1-synthwave-4k
-  level-arcade-2.mp3       Calm Ambient 2 Synthwave 15K                 cynicmusic                 calm-ambient-2-synthwave-15k
-  level-arcade-3.mp3       Calm Relax 1 Synthwave 421K                  cynicmusic                 calm-relax-1-synthwave-421k
+  level-arcade-1.mp3       Welcome to the Item Shop                     congusbongus               welcome-to-the-item-shop
+  level-arcade-2.mp3       Starter (8 Bit Dub)                          TAD                        starter-8-bit-dub
+  level-arcade-3.mp3       Shopping Time                                SkyleTheFrench             shopping-time
   level-arcade-4.mp3       Midnight Drive                               congusbongus               midnight-drive
   level-library-1.mp3      Magic Puzzle In Game 1                       MintoDog                   magic-puzzle-in-game-1
   level-library-2.mp3      Magic Puzzle In Game 2                       MintoDog                   magic-puzzle-in-game-2

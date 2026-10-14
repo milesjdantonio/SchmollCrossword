@@ -66,19 +66,19 @@
   "file": "rain.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 150.2828,
-  "title": "Wednesday Night Funk Fusion",
-  "author": "Zane Little Music",
-  "page": "wednesday-night-funk-fusion"
+  "loopEnd": 71.5848,
+  "title": "Storm Front (big band swing)",
+  "author": "composed for this game",
+  "page": ""
  },
  "rain-p2": {
   "file": "rain-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 61.3802,
-  "title": "Jazz n' brass loop, with a shout chorus composed for this game",
-  "author": "Emma_MA",
-  "page": "jazz-n-brass-loop"
+  "loopEnd": 94.921,
+  "title": "Downpour (big band Latin-funk shout)",
+  "author": "composed for this game",
+  "page": ""
  },
  "sky": {
   "file": "sky.mp3",
