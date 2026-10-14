@@ -33,7 +33,7 @@ character and sound. They asked for **that level of effort, not that style**:
   (alibi, abhor, cacao) but skips the extremely hard ones in `very-hard-words.txt` (geode, adze, schwa).
   Settings "Allow extremely hard words in Unlimited Hard" adds those back (Unlimited only, so the daily stays the
   same for everyone). `App.loadWordsFor(difficulty, allowVeryHardWords)`.
-- **Three dailies a day**, one per difficulty, each with its own grid (seed = date × 10 + 1/2/3), words and clues.
+- **Five dailies a day**: Easy, Medium and Hard (seed = date × 10 + 1/2/3), the Challenge (digit 4) and the Boss, each with its own grid, words and clues.
   Each is scored separately (localStorage key `"20261008-easy"`); the Home screen shows a card per difficulty
   with ✓ and points, and the difficulty buttons show ✓ too.
 - **Challenge mode:** a fourth daily and an Unlimited option: a bigger grid each day (6x6, 7x7 or 9x9) with random

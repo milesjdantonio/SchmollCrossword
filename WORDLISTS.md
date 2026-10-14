@@ -201,8 +201,8 @@ All loaded from Google Fonts, and all under the SIL Open Font License 1.1, which
 - **Fredoka** (Garden). https://fonts.google.com/specimen/Fredoka
 - **Press Start 2P** and **VT323** (Neon Arcade). https://fonts.google.com/specimen/Press+Start+2P ,
   https://fonts.google.com/specimen/VT323
-- **Sniglet** and **Quicksand** (Snow Day). https://fonts.google.com/specimen/Sniglet ,
-  https://fonts.google.com/specimen/Quicksand
+- **Comfortaa** and **Quicksand** (Snow Day; Sniglet was dropped on 2026-10-11 as too heavy to read).
+  https://fonts.google.com/specimen/Comfortaa , https://fonts.google.com/specimen/Quicksand
 - **Patua One** (Acorn Woods). https://fonts.google.com/specimen/Patua+One
 - **Baloo 2** (Coral Reef). https://fonts.google.com/specimen/Baloo+2
 - **Lilita One** (Candy Hills). https://fonts.google.com/specimen/Lilita+One
