@@ -8,9 +8,9 @@
   },
   {
    "file": "garden.mp3",
-   "title": "Flowerbed Fields",
-   "author": "Zane Little Music",
-   "page": "flowerbed-fields-loop"
+   "title": "Boss Battle 6 (8-bit)",
+   "author": "nene",
+   "page": "boss-battle-6-8-bit"
   },
   {
    "file": "squirrel.mp3",
@@ -20,9 +20,10 @@
   },
   {
    "file": "candy.mp3",
-   "title": "Toy Soldiers",
-   "author": "Zane Little Music",
-   "page": "toy-soldiers"
+   "title": "To the Final Step (mix)",
+   "author": "glitchart, from Raymond1206, LSAo and migfus20",
+   "page": "to-the-final-step-raymond1206-lsao-migfus20",
+   "license": "CC-BY-SA 4.0"
   },
   {
    "file": "ocean.mp3",
@@ -31,22 +32,29 @@
    "page": "video-game-pirate"
   },
   {
-   "file": "snow.mp3",
-   "title": "Black Diamond",
-   "author": "Joth",
-   "page": "black-diamond"
-  },
-  {
    "file": "snow-p2.mp3",
    "title": "Hard Boss Battle 2",
    "author": "MintoDog",
    "page": "hard-boss-battle-2"
   },
   {
-   "file": "sky.mp3",
-   "title": "The Call for Unity",
-   "author": "vitalezzz",
-   "page": "the-call-for-unity"
+   "file": "snow.mp3",
+   "title": "Black Diamond",
+   "author": "Joth",
+   "page": "black-diamond"
+  },
+  {
+   "file": "rain-p2.mp3",
+   "title": "Fight for Better Future",
+   "author": "nene",
+   "page": "fight-for-better-future-rockmetal"
+  },
+  {
+   "file": "rain.mp3",
+   "title": "A Boar in the Bushes",
+   "author": "Gundatsch",
+   "page": "a-boar-in-the-bushes",
+   "license": "CC-BY 3.0"
   },
   {
    "file": "sky-p2.mp3",
@@ -55,16 +63,16 @@
    "page": "mile-high-infraskyway"
   },
   {
+   "file": "sky.mp3",
+   "title": "The Call for Unity",
+   "author": "vitalezzz",
+   "page": "the-call-for-unity"
+  },
+  {
    "file": "desert.mp3",
    "title": "King Crumble",
    "author": "iamoneabe",
    "page": "king-crumble"
-  },
-  {
-   "file": "carnival.mp3",
-   "title": "Ring Master",
-   "author": "Bobjt",
-   "page": "ring-master"
   },
   {
    "file": "carnival-p2.mp3",
@@ -73,34 +81,23 @@
    "page": "8bit-action-boss-battle"
   },
   {
-   "file": "arcade.mp3",
-   "title": "Level 1 (Retro Game Music Pack)",
-   "author": "Juhani Junkala (SubspaceAudio)",
-   "page": "5-chiptunes-action"
+   "file": "carnival.mp3",
+   "title": "Ring Master",
+   "author": "Bobjt",
+   "page": "ring-master"
   },
   {
    "file": "arcade-p2.mp3",
+   "title": "Orbital Colossus",
+   "author": "Matthew Pablo (matthewpablo.com)",
+   "page": "space-boss-battle-theme",
+   "license": "CC-BY 3.0"
+  },
+  {
+   "file": "arcade.mp3",
    "title": "Level 2 (Retro Game Music Pack)",
    "author": "Juhani Junkala (SubspaceAudio)",
    "page": "5-chiptunes-action"
-  },
-  {
-   "file": "library.mp3",
-   "title": "Sinister Abode",
-   "author": "Zane Little Music",
-   "page": "sinister-abode"
-  },
-  {
-   "file": "library-p2.mp3",
-   "title": "Shadows Awaken Within",
-   "author": "vitalezzz",
-   "page": "shadows-awaken-within"
-  },
-  {
-   "file": "robot.mp3",
-   "title": "Return of the Omega Droid",
-   "author": "Umplix",
-   "page": "return-of-the-omega-droid"
   },
   {
    "file": "robot-p2.mp3",
@@ -115,16 +112,16 @@
    "page": "steel-commander"
   },
   {
-   "file": "volcano.mp3",
-   "title": "Devoted Guard",
-   "author": "vitalezzz",
-   "page": "devoted-guard"
+   "file": "robot.mp3",
+   "title": "Return of the Omega Droid",
+   "author": "Umplix",
+   "page": "return-of-the-omega-droid"
   },
   {
    "file": "volcano-p2.mp3",
-   "title": "JRPG Epic Rock Battle Theme",
-   "author": "HydroGene",
-   "page": "jrpg-epic-rock-battle-theme-1"
+   "title": "Achilles",
+   "author": "Zane Little Music",
+   "page": "achilles"
   },
   {
    "file": "volcano-p3.mp3",
@@ -133,10 +130,10 @@
    "page": "carnage-boss-battle-centurion-of-war-vs-nene"
   },
   {
-   "file": "space.mp3",
-   "title": "Outworld",
+   "file": "volcano.mp3",
+   "title": "Devoted Guard",
    "author": "vitalezzz",
-   "page": "outworld"
+   "page": "devoted-guard"
   },
   {
    "file": "space-p2.mp3",
@@ -161,6 +158,44 @@
    "title": "Pandemia",
    "author": "nene",
    "page": "pandemia"
+  },
+  {
+   "file": "space.mp3",
+   "title": "Outworld",
+   "author": "vitalezzz",
+   "page": "outworld"
+  },
+  {
+   "file": "rift-p2.mp3",
+   "title": "Blackmoor Colossus",
+   "author": "Matthew Pablo (matthewpablo.com)",
+   "page": "colossal-boss-battle-theme",
+   "license": "CC-BY 3.0"
+  },
+  {
+   "file": "rift-p3.mp3",
+   "title": "Boss Battle #2 (Symphonic Metal)",
+   "author": "nene",
+   "page": "boss-battle-2-symphonic-metal"
+  },
+  {
+   "file": "rift-p4.mp3",
+   "title": "Determined Pursuit (Epic Orchestra Loop)",
+   "author": "Emma_MA",
+   "page": "determined-pursuit-epic-orchestra-loop"
+  },
+  {
+   "file": "rift-p5.mp3",
+   "title": "Boss Battle 8 (metal)",
+   "author": "nene",
+   "page": "boss-battle-8-metal"
+  },
+  {
+   "file": "rift.mp3",
+   "title": "Boss Theme 2",
+   "author": "Tausdei",
+   "page": "boss-theme-2",
+   "license": "CC-BY 3.0"
   }
  ],
  "level": [
@@ -523,15 +558,33 @@
    "title": "Steller Dreams",
    "author": "Synth-thetic",
    "page": "steller-dreams"
+  },
+  {
+   "file": "level-rift-1.mp3",
+   "title": "Heavenly Loop",
+   "author": "isaiah658",
+   "page": "heavenly-loop"
+  },
+  {
+   "file": "level-rift-2.mp3",
+   "title": "The Magnificent Cosmos",
+   "author": "Adiutorium",
+   "page": "the-magnificent-cosmos"
+  },
+  {
+   "file": "level-rift-3.mp3",
+   "title": "Across the Stars",
+   "author": "Indieteur",
+   "page": "across-the-stars"
   }
  ],
  "composed": [
   "Riddle of the Sands (the Sphinx's second phase)",
-  "Storm Front and Downpour (Thunderhead's two phases)",
   "The Lost Everbook",
   "A Page Comes Home",
   "The Everbook Is Whole",
   "Victory",
-  "Defeat"
+  "Defeat",
+  "The Restless Stacks and Ink and Fury (the Phantom Librarian's two phases)"
  ]
 }

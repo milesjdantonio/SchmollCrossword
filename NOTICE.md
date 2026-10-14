@@ -26,16 +26,29 @@ with no ads and no paid features.
 **SCOWL** (Spell Checker Oriented Word Lists) by Kevin Atkinson is the other source of `words.txt`. Its
 permissive license notice, `src/main/resources/SCOWL-Copyright.txt`, must stay with the word list.
 
-## Public domain (CC0 1.0): recorded sounds and music
+## Recorded sounds and music: mostly public domain (CC0 1.0), five boss songs need credit
 
-Every recorded file in `src/main/resources/static/audio/` comes from [Kenney](https://kenney.nl/) or from
+Almost every recorded file in `src/main/resources/static/audio/` comes from [Kenney](https://kenney.nl/) or from
 artists on [OpenGameArt](https://opengameart.org/) under
 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Each track, its author and its page are listed in
 `src/main/resources/static/audio/CREDITS.txt` and on the game's Credits page. The songs were edited for the
-game (cut, looped and mastered). The edits add no new restrictions.
+game (cut, looped and mastered). The edits add no new restrictions to the CC0 songs.
 
-The pieces composed for the game (the story music, the win and lose music, the Sphinx's second song and
-Thunderhead's chorus) are covered by the MIT License with the code. They were rendered with the
+Five boss songs (added 2026-10-14) are not CC0. They may be shared and changed, but only with credit:
+
+| File | Track | Author | License |
+|---|---|---|---|
+| `audio/music/rain.mp3` | A Boar in the Bushes | Gundatsch | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `audio/music/arcade-p2.mp3` | Orbital Colossus (Space Boss Battle Theme) | Music by Matthew Pablo, www.matthewpablo.com | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `audio/music/rift.mp3` | Boss Theme 2 | Tausdei | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `audio/music/rift-p2.mp3` | Blackmoor Colossus (Colossal Boss Battle Theme) | Music by Matthew Pablo, www.matthewpablo.com | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) |
+| `audio/music/candy.mp3` | To the Final Step (mix), by glitchart, of To the Final Step by Raymond1206 (CC BY-SA 4.0), two tracks by LSAo (OGA-BY 3.0) and Maybe Tomorrow is Different by migfus20 (CC BY 4.0) | glitchart, Raymond1206, LSAo, migfus20 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+
+Each was changed for the game (cut, looped, mastered, converted to MP3). Our edited `candy.mp3` is shared under
+CC BY-SA 4.0, like the mix it comes from.
+
+The pieces composed for the game (the story music, the win and lose music, the Sphinx's second song and the
+Phantom Librarian's two songs) are covered by the MIT License with the code. They were rendered with the
 [GeneralUser GS](https://schristiancollins.com/generaluser.php) SoundFont by S. Christian Collins, whose
 license allows any use of music made with it.
 

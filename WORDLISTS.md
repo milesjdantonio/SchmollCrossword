@@ -239,3 +239,25 @@ scored for intensity (drum hits per second, onset drive, brightness; `intensity.
 and every phase's song had to score clearly higher than the phase before it.
 
 Everything else is still synthesized in code (`sound.js`, `powers.js`, the worlds).
+
+## New music and a font (2026-10-14)
+
+The user picked boss songs and asked Claude to find more for the new secret boss, the Cursed Angel. Each license was
+checked on the track's own OpenGameArt page. Not all of them are CC0 this time, so the ones that need credit are
+credited in `static/audio/CREDITS.txt`, the Credits page and [NOTICE.md](NOTICE.md):
+
+| Source | Used for | License |
+|---|---|---|
+| [Boss Battle 6 (8-bit)](https://opengameart.org/content/boss-battle-6-8-bit), nene | Queen Thistle | CC0 |
+| [To the Final Step (mix)](https://opengameart.org/content/to-the-final-step-raymond1206-lsao-migfus20), glitchart (Raymond1206, LSAo, migfus20) | King Sourgum | CC BY-SA 4.0 (parts OGA-BY 3.0, CC BY 4.0) |
+| [A Boar in the Bushes](https://opengameart.org/content/a-boar-in-the-bushes), Gundatsch | Thunderhead, phase 1 | CC BY 3.0 |
+| [Fight for Better Future](https://opengameart.org/content/fight-for-better-future-rockmetal), nene | Thunderhead, phase 2 | CC0 |
+| [Achilles](https://opengameart.org/content/achilles), Zane Little Music | Magma Wyrm, phase 2 | CC0 |
+| [Space Boss Battle Theme (Orbital Colossus)](https://opengameart.org/content/space-boss-battle-theme), Matthew Pablo | Glitch, phase 2 | CC BY 3.0 |
+| [Boss Theme 2](https://opengameart.org/content/boss-theme-2), Tausdei | the Cursed Angel, phase 1 | CC BY 3.0 |
+| [Colossal Boss Battle Theme (Blackmoor Colossus)](https://opengameart.org/content/colossal-boss-battle-theme), Matthew Pablo | the Cursed Angel, phase 2 | CC BY 3.0 |
+| [Boss Battle #2 (Symphonic Metal)](https://opengameart.org/content/boss-battle-2-symphonic-metal), nene; [Determined Pursuit (Epic Orchestra Loop)](https://opengameart.org/content/determined-pursuit-epic-orchestra-loop), Emma_MA; [Boss Battle 8 (metal)](https://opengameart.org/content/boss-battle-8-metal), nene | the Cursed Angel, phases 3 to 5 | CC0 |
+| [Heavenly Loop](https://opengameart.org/content/heavenly-loop), isaiah658; [The Magnificent Cosmos](https://opengameart.org/content/the-magnificent-cosmos), Adiutorium; [Across the Stars](https://opengameart.org/content/across-the-stars), Indieteur | the Celestial Rift's level music | CC0 |
+| [Cinzel](https://github.com/NDISCOVER/Cinzel) (the original file from google/fonts) | the Celestial Rift's headings and letters | SIL Open Font License 1.1 (`static/fonts/OFL/cinzel.txt`) |
+
+The Phantom Librarian's two songs were composed for the game (no guitar, the user's request) and are MIT like the code.

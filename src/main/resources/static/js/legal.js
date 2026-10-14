@@ -4,7 +4,7 @@
 // Written to match what the code really does (LeaderboardController, ReportController, RateLimiter, game storage).
 // If that changes, change these too, and the "Last updated" date.
 const Legal = (() => {
-    const UPDATED = "October 13, 2026";
+    const UPDATED = "October 14, 2026";
     const REPO = "https://github.com/milesjdantonio/SchmollCrossword";
     const p = (...parts) => U.el("p", {}, ...parts);
     const a = (text, href) => U.el("a", { href, text, target: "_blank", rel: "noopener" });
@@ -43,7 +43,7 @@ const Legal = (() => {
                 p("Please report it privately: on the ", a("source code page", REPO), ", open the Security tab and choose Report a Vulnerability. Please don't post the details publicly before it's fixed.")),
             h("Credits and Licenses"),
             qa("Who made the music, fonts and words?",
-                p("Every song, sound pack, font and word list is credited by name in the Credits (Settings > Help & Legal > Credits). All the recorded music and sound effects are public domain (CC0); the fonts are under the SIL Open Font License; the word list comes from SCOWL and Spread the Word(list).")),
+                p("Every song, sound pack, font and word list is credited by name in the Credits (Settings > Help & Legal > Credits). The recorded music and sound effects are public domain (CC0), except five boss songs under Creative Commons licenses that need credit (CC BY 3.0, and one CC BY-SA 4.0), credited there; the fonts are under the SIL Open Font License; the word list comes from SCOWL and Spread the Word(list).")),
             qa("Can I use the code or the puzzles?",
                 p("The code is under the MIT License: use it, change it and share it, keeping the copyright notice. The word lists, puzzles and clues are under ", a("CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/"), ": non-commercial use only, with credit, under the same license. The repository's NOTICE.md lists what covers what.")),
             qa("Who made the game?",

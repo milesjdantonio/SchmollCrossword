@@ -17,7 +17,7 @@ const Credits = (() => {
 
     function roll(data) {
         const songs = list => U.el("ul", { class: "cr-songs" }, ...list.map(s => U.el("li", {},
-            U.el("b", {}, link(s.title, "https://opengameart.org/content/" + s.page)), U.el("span", { text: s.author }))));
+            U.el("b", {}, link(s.title, "https://opengameart.org/content/" + s.page)), U.el("span", { text: s.author + (s.license ? " · " + s.license : "") }))));
         return U.el("div", { class: "cr-roll" },
             U.el("div", { class: "cr-logo", "aria-hidden": "true" }, ..."SCHMOLL".split("").map(ch => U.el("i", { text: ch }))),
             U.el("h1", { class: "cr-title", text: "Schmoll Crossword" }),
@@ -34,12 +34,12 @@ const Credits = (() => {
                 U.el("p", { class: "cr-note" }, "Written by Claude and played with the ", link("GeneralUser GS", "https://schristiancollins.com/generaluser.php"), " SoundFont by S. Christian Collins.")),
             section("Sound Effects", line("", "Kenney"), note("Impact, Interface, Sci-fi, RPG Audio and Music Jingles packs."),
                 note("Most other sounds are made live in code.")),
-            section("Fonts", note("Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico and Josefin Sans."),
+            section("Fonts", note("Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico, Josefin Sans and Cinzel."),
                 note("All under the SIL Open Font License, served from this site.")),
             section("Licenses",
                 U.el("p", { class: "cr-note" }, "Code: MIT License, © 2026 Miles D'Antonio. ", link("Source on GitHub", "https://github.com/milesjdantonio/SchmollCrossword"), "."),
                 U.el("p", { class: "cr-note" }, "Word lists, puzzles and clues: ", link("CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/"), ". Fonts: SIL Open Font License."),
-                note("All recorded music and sound effects are public domain (CC0 1.0). Their authors are thanked here anyway."),
+                U.el("p", { class: "cr-note" }, "Music and sound effects: public domain (CC0 1.0), except four boss songs under ", link("CC BY 3.0", "https://creativecommons.org/licenses/by/3.0/"), " and one under ", link("CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0/"), ", marked above and credited to their authors. Our edited copy of that one is shared under CC BY-SA 4.0 too. Composed music: MIT."),
                 note("Schmoll Crossword is an independent project, not affiliated with any newspaper or puzzle publisher.")),
             section("Thank You", note("For playing.")),
             U.el("div", { class: "cr-end" }));
@@ -50,7 +50,7 @@ const Credits = (() => {
         open = true;
         const data = await fetch("audio/credits.json").then(r => r.json()).catch(() => ({ boss: [], level: [], composed: [] }));
         const own = Settings.get("design");
-        const worlds = Worlds.list.filter(w => !w.plain).map(w => w.id);
+        const worlds = Worlds.list.filter(w => !w.plain && (!w.secret || Campaign.secretOpen())).map(w => w.id);      // (no spoilers)
         const still = U.motion() === "still";
         const stage = U.el("div", { class: "cr-stage", role: "dialog", "aria-modal": "true", "aria-label": "Credits" });
         const scroller = U.el("div", { class: "cr-scroll", tabindex: "-1" });
@@ -69,7 +69,7 @@ const Credits = (() => {
         // behind the roll, in a random order (the user: "these should all be selected randomly"): every world's calm
         // scene, and every boss's arena going wild (its own chaos from a boss's later phase: chaos.js). A shuffled bag,
         // so each one shows once before any repeats.
-        const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id)).map(id => ({ id, boss: true }))];
+        const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretOpen())).map(id => ({ id, boss: true }))];
         let bag = [], shown = null;
         const draw = () => {
             if (!bag.length) bag = scenes.slice().sort(() => Math.random() - 0.5);

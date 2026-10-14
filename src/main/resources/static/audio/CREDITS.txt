@@ -1,10 +1,16 @@
 Schmoll Crossword: recorded sounds and music
 =============================================
 
-Every recorded file in this folder is in the public domain (Creative Commons Zero, CC0 1.0):
+Almost every recorded file in this folder is in the public domain (Creative Commons Zero, CC0 1.0):
 https://creativecommons.org/publicdomain/zero/1.0/
-CC0 needs no credit, but the authors are thanked here anyway. Each track's own page on OpenGameArt.org lists it as
-CC0 (checked one by one). For this game the songs were converted to MP3, given the same gentle mastering (a little
+CC0 needs no credit, but the authors are thanked here anyway. Each track's own page on OpenGameArt.org lists its
+license (checked one by one). Five boss songs (added 2026-10-14) are not CC0 and DO need credit; they're marked below:
+  CC-BY 3.0     https://creativecommons.org/licenses/by/3.0/        A Boar in the Bushes, Orbital Colossus, Boss Theme 2,
+                                                                    Blackmoor Colossus (credit the author; we changed the
+                                                                    files: cut, looped, mastered, MP3)
+  CC-BY-SA 4.0  https://creativecommons.org/licenses/by-sa/4.0/     To the Final Step (mix): our edited file (candy.mp3)
+                                                                    is shared under CC-BY-SA 4.0 too
+  OGA-BY 3.0 and CC-BY 4.0: parts of that mix (credited with it below) For this game the songs were converted to MP3, given the same gentle mastering (a little
 more low end and air, a wider stereo image, a hall reverb, even loudness), and each song's file was cut so that it
 starts with a build-up into the song, then loops a section seamlessly (loop points in music/songs.json).
 
@@ -21,33 +27,45 @@ from the song's own lead-in (played during the boss's intro), then the song loop
 All from https://opengameart.org/content/<page>
   file            track                                         author                                page
   paper.mp3       Unsolicited Trailer Music                     Emma_MA                               unsolicited-trailer-music
-  garden.mp3      Flowerbed Fields                              Zane Little Music                     flowerbed-fields-loop
+  garden.mp3      Boss Battle 6 (8-bit)                         nene                                  boss-battle-6-8-bit
   squirrel.mp3    Catch Me If You Can                           poinl                                 catch-me-if-you-can
-  candy.mp3       Toy Soldiers                                  Zane Little Music                     toy-soldiers
+  candy.mp3       To the Final Step (mix)                       glitchart                             to-the-final-step-raymond1206-lsao-migfus20
+                  CC-BY-SA 4.0. The mix is of: To the Final Step by Raymond1206 (CC-BY-SA 4.0, to-the-final-step),
+                  Emotional Strings Dramatic Battle Scene and Fantastic Electronic Emotional Battle by LSAo (OGA-BY 3.0),
+                  and Maybe Tomorrow is Different by migfus20 (CC-BY 4.0). Changes: cut, looped, mastered, MP3.
   ocean.mp3       Video Game Pirate                             iamoneabe                             video-game-pirate
   snow.mp3        Black Diamond                                 Joth                                  black-diamond
   snow-p2.mp3     Hard Boss Battle 2                            MintoDog                              hard-boss-battle-2
+  rain.mp3        A Boar in the Bushes                          Gundatsch (soundcloud.com/gundatsch)  a-boar-in-the-bushes
+                  CC-BY 3.0. Changes: cut, looped, mastered, MP3.
+  rain-p2.mp3     Fight for Better Future (rock/metal)          nene                                  fight-for-better-future-rockmetal
   sky.mp3         The Call for Unity                            vitalezzz                             the-call-for-unity
   sky-p2.mp3      Mile-High Infraskyway                         Spring Spring                         mile-high-infraskyway
   desert.mp3      King Crumble                                  iamoneabe                             king-crumble
   carnival.mp3    Ring Master                                   Bobjt                                 ring-master
   carnival-p2.mp3 8-bit Action Boss Battle (climax, 185 BPM)    MintoDog                              8bit-action-boss-battle
-  arcade.mp3      Level 1 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
-  arcade-p2.mp3   Level 2 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
-  library.mp3     Sinister Abode                                Zane Little Music                     sinister-abode
-  library-p2.mp3  Shadows Awaken Within                         vitalezzz                             shadows-awaken-within
-                  (rebuilt 2026-10-10: a new build-up from its loud part, which plays first; its guitar section comes in when the song comes round)
+  arcade.mp3      Level 2 (Retro Game Music Pack)               Juhani Junkala (SubspaceAudio)        5-chiptunes-action
+  arcade-p2.mp3   Orbital Colossus (Space Boss Battle Theme)    Music by Matthew Pablo, www.matthewpablo.com  space-boss-battle-theme
+                  CC-BY 3.0. Changes: cut, looped, mastered, MP3.
   robot.mp3       Return of the Omega Droid                     Umplix                                return-of-the-omega-droid
   robot-p2.mp3    Epic Combat                                   Chester01                             epic-combat
   robot-p3.mp3    Steel Commander                               vitalezzz                             steel-commander
   volcano.mp3     Devoted Guard                                 vitalezzz                             devoted-guard
-  volcano-p2.mp3  JRPG Epic Rock Battle Theme                   HydroGene                             jrpg-epic-rock-battle-theme-1
+  volcano-p2.mp3  Achilles                                      Zane Little Music (ko-fi.com/zanelittle)  achilles
   volcano-p3.mp3  Carnage (boss battle)                         glitchart (Centurion_of_war vs nene)  carnage-boss-battle-centurion-of-war-vs-nene
   space.mp3       Outworld                                      vitalezzz                             outworld
   space-p2.mp3    Claimed by the Void                           glitchart (vitalezzz vs tricksntraps) claimed-by-the-void-new-factory-ai-fight-and-simulation-unknown-vitalezzz-vs-tricksntraps
   space-p3.mp3    Trance Boss Battle                            MintoDog                              trance-boss-battle
   space-p4.mp3    The Final Mega Boss                           Umplix                                the-final-mega-boss
   space-p5.mp3    Pandemia                                      nene                                  pandemia
+  The Cursed Angel (the secret world, the Celestial Rift, 2026-10-14):
+  rift.mp3        Boss Theme 2                                  Tausdei                               boss-theme-2
+                  CC-BY 3.0. Changes: looped, mastered, MP3.
+  rift-p2.mp3     Blackmoor Colossus (Colossal Boss Battle Theme)  Music by Matthew Pablo, www.matthewpablo.com  colossal-boss-battle-theme
+                  CC-BY 3.0. Changes: looped, mastered, MP3.
+  rift-p3.mp3     Boss Battle #2 (Symphonic Metal)              nene                                  boss-battle-2-symphonic-metal
+  rift-p4.mp3     Determined Pursuit (Epic Orchestra Loop)      Emma_MA                               determined-pursuit-epic-orchestra-loop
+  rift-p5.mp3     Boss Battle 8 (metal)                         nene                                  boss-battle-8-metal
 
 Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
@@ -59,8 +77,10 @@ FluidSynth):
                   C major, the Void's tear in C minor) (19.8 seconds)
   story-page.mp3  A Page Comes Home: a page won back (6.4 seconds)
   story-finale.mp3 The Everbook Is Whole: the ending (14.4 seconds)
-  rain.mp3        Storm Front: fast big-band swing in F minor (saxes, trumpets, trombones, piano, bass, guitar, drums)
-  rain-p2.mp3     Downpour: a big-band Latin-funk shout in B flat minor (slap bass, timbales, congas, screaming trumpets)
+  library.mp3     The Restless Stacks: a danse macabre waltz in D minor (harpsichord, celesta, pizzicato, solo violin,
+                  bassoon, xylophone, bells, organ, choir; no guitar: the user, 2026-10-14)
+  library-p2.mp3  Ink and Fury: an organ toccata in C minor (organ, harpsichord, spiccato strings, horns, trombones,
+                  trumpets, choir, timpani, orchestral drums)
 
 Level music (audio/music/level-<world>-<1..4>.mp3, added 2026-10-10): a calm song for every campaign level, each one
 different, picked to fit its world. All CC0 from https://opengameart.org/content/<page> (each page checked). For the
@@ -131,3 +151,6 @@ matches, the whole song end to start, or a song that fades out running its last 
   level-space-2.mp3        Safe Space 0                                 Tsorthan Grove             safe-space-0
   level-space-3.mp3        Spacious                                     Indieteur                  spacious
   level-space-4.mp3        Steller Dreams                               Synth-thetic               steller-dreams
+  level-rift-1.mp3         Heavenly Loop                                isaiah658                  heavenly-loop
+  level-rift-2.mp3         The Magnificent Cosmos                       Adiutorium                 the-magnificent-cosmos
+  level-rift-3.mp3         Across the Stars                             Indieteur                  across-the-stars

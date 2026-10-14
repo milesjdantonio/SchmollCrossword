@@ -46,20 +46,21 @@ it IS the music right before the downbeat, it merges into the song exactly.
 | # | Boss | Phase 1 | Phase 2 | Phase 3+ |
 |---|---|---|---|---|
 | 1 | The Big Eraser (Notebook) | Unsolicited Trailer Music (Emma_MA) | one phase |  |
-| 2 | Queen Thistle (Garden) | Flowerbed Fields (Zane Little Music) | one phase |  |
+| 2 | Queen Thistle (Garden) | Boss Battle 6 (8-bit) (nene), your pick 2026-10-14 | one phase |  |
 | 3 | Old Grumbleowl (Acorn Woods) | Catch Me If You Can (poinl) | one phase |  |
-| 4 | King Sourgum (Candy Hills) | Toy Soldiers (Zane Little Music) | one phase |  |
+| 4 | King Sourgum (Candy Hills) | To the Final Step (mix) (glitchart, from Raymond1206, LSAo and migfus20; CC-BY-SA 4.0), your pick | one phase |  |
 | 5 | The Kraken (Coral Reef) | Video Game Pirate (iamoneabe) | one phase |  |
 | 6 | The Yeti (Snow Day) | Black Diamond (Joth) | Hard Boss Battle 2 (MintoDog) |  |
-| 7 | Thunderhead (Rainy City) | Storm Front, composed for the game (2026-10-13): a fast big-band swing in F minor, for "intense Gordon Goodwin vibes" (your request) | Downpour, composed for the game: a harder big-band Latin-funk shout in B flat minor, screaming lead trumpet |  |
+| 7 | Thunderhead (Rainy City) | A Boar in the Bushes (Gundatsch; CC-BY 3.0), your pick 2026-10-14 | Fight for Better Future (nene), measured more intense (+0.74 vs +0.37) |  |
 | 8 | Sir Squall (Sky Kingdom) | The Call for Unity (vitalezzz) | Mile-High Infraskyway (Spring Spring) |  |
 | 9 | The Sphinx (Desert Caravan) | King Crumble (iamoneabe) | Riddle of the Sands (7/4) (composed for this game) |  |
 | 10 | The Ringmaster (Big Top Carnival) | Ring Master (Bobjt) | 8-bit Action Boss Battle (climax, 185 BPM) (MintoDog) |  |
-| 11 | Glitch (Neon Arcade) | Level 1 (Retro Game Music Pack) (Juhani Junkala (SubspaceAudio)), a video-game feel at your request | Level 2 (Retro Game Music Pack) (Juhani Junkala (SubspaceAudio)) |  |
-| 12 | The Phantom Librarian (Haunted Library) | Sinister Abode (Zane Little Music) | Shadows Awaken Within (vitalezzz) |  |
+| 11 | Glitch (Neon Arcade) | Level 2 (Retro Game Music Pack) (Juhani Junkala), the old phase 2, moved up at your request | Space Boss Battle Theme: Orbital Colossus (Matthew Pablo; CC-BY 3.0), your pick |  |
+| 12 | The Phantom Librarian (Haunted Library) | The Restless Stacks, composed for the game (2026-10-14): a danse macabre waltz with no guitar (harpsichord, celesta, violin, organ, choir) | Ink and Fury, composed: an organ toccata (organ, strings, brass, choir) |  |
 | 13 | Mega Unit X (Robot Factory) | Return of the Omega Droid (Umplix) | Epic Combat (Chester01) | Steel Commander (vitalezzz) |
-| 14 | Magma Wyrm (Volcano Island) | Devoted Guard (vitalezzz) | JRPG Epic Rock Battle Theme (HydroGene) | Carnage (boss battle) (glitchart (Centurion_of_war vs nene)) |
+| 14 | Magma Wyrm (Volcano Island) | Devoted Guard (vitalezzz) | Achilles (Zane Little Music), your pick 2026-10-14 | Carnage (boss battle) (glitchart (Centurion_of_war vs nene)) |
 | 15 | The Void (Deep Space) | Outworld (vitalezzz) | Claimed by the Void (glitchart (vitalezzz vs tricksntraps)) | Trance Boss Battle (MintoDog) → The Final Mega Boss (Umplix) → Pandemia (nene) |
+| 16 | The Cursed Angel (the secret Celestial Rift) | Boss Theme 2 (Tausdei; CC-BY 3.0), your pick | Blackmoor Colossus (Matthew Pablo; CC-BY 3.0): choir chants | Boss Battle #2 (Symphonic Metal) (nene) → Determined Pursuit (Emma_MA, epic orchestra) → Boss Battle 8 (metal) (nene) |
 
 (The Library and the Robot Factory swapped places on the map at your request: the robot is now world 13. On 2026-10-09 you
 asked for new songs for the Yeti, the Garden, Acorn Woods and the Sphinx's phase 2, and for Pandemia to be the Void's
@@ -67,4 +68,6 @@ final phase; the Void's phases 2-4 moved up one.) A few
 phase songs have shorter loops (about 40-80 seconds) because the most intense tracks are short battle loops.
 
 The composed song (the Sphinx's 7/4) was written as MIDI and played with real sampled instruments (the free GeneralUser GS
-SoundFont, through FluidSynth). (Glitch's composed 5/4 song was replaced at your request.) Every other song is CC0 (public domain); see `static/audio/CREDITS.txt`.
+SoundFont, through FluidSynth). (Glitch's composed 5/4 song was replaced at your request.) The Phantom Librarian's two songs (2026-10-14) were composed the same way. Most other songs are CC0 (public domain); five need credit (CC-BY 3.0, one CC-BY-SA 4.0), see `static/audio/CREDITS.txt` and NOTICE.md.
+
+**2026-10-14:** your picks (Queen Thistle, King Sourgum, Thunderhead's phase 1, Magma Wyrm's phase 2, Glitch's phases, the Cursed Angel's phase 1) were checked for their licenses and built like the rest. Thunderhead's phase 2 and the Cursed Angel's phases 2-5 were chosen by measured intensity, each phase more intense than the one before (Boss Theme 2 -1.02, Blackmoor Colossus -0.85, Endless Pain +0.36, Inferior Deity +0.68, Boss Battle 8 +1.17). Seven of the new songs loop on themselves end to start (seams 0.976-1.000). The listening copies of the Cursed Angel's five are in `16-rift (The Cursed Angel)/`. Later the same day (you: "i like grandness of songs 1 and 2 of angel, i like the final fight feel of 5 / songs of phase 3 and 4 need changes") phases 3 and 4 became Boss Battle #2 (Symphonic Metal) by nene (+0.08: the grand orchestra with guitars, leading toward the metal finale) and Determined Pursuit by Emma_MA (+0.62: an epic orchestra loop with busy drums); the old ones can still be built as `rift-p3-old`/`rift-p4-old`. The old Thunderhead songs (Storm Front, Downpour) are no longer in the game but can still be built (`rain-old` in build_songs2.py).

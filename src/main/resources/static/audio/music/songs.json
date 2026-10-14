@@ -12,10 +12,10 @@
   "file": "garden.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 112.431,
-  "title": "Flowerbed Fields",
-  "author": "Zane Little Music",
-  "page": "flowerbed-fields-loop"
+  "loopEnd": 106.1168,
+  "title": "Boss Battle 6 (8-bit)",
+  "author": "nene",
+  "page": "boss-battle-6-8-bit"
  },
  "squirrel": {
   "file": "squirrel.mp3",
@@ -30,10 +30,10 @@
   "file": "candy.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 91.6144,
-  "title": "Toy Soldiers",
-  "author": "Zane Little Music",
-  "page": "toy-soldiers"
+  "loopEnd": 114.301,
+  "title": "To the Final Step (mix)",
+  "author": "glitchart (Raymond1206, LSAo, migfus20)",
+  "page": "to-the-final-step-raymond1206-lsao-migfus20"
  },
  "ocean": {
   "file": "ocean.mp3",
@@ -66,19 +66,19 @@
   "file": "rain.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 71.5848,
-  "title": "Storm Front (big band swing)",
-  "author": "composed for this game",
-  "page": ""
+  "loopEnd": 150.2769,
+  "title": "A Boar in the Bushes",
+  "author": "Gundatsch",
+  "page": "a-boar-in-the-bushes"
  },
  "rain-p2": {
   "file": "rain-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 94.921,
-  "title": "Downpour (big band Latin-funk shout)",
-  "author": "composed for this game",
-  "page": ""
+  "loopEnd": 74.629,
+  "title": "Fight for Better Future (rock/metal)",
+  "author": "nene",
+  "page": "fight-for-better-future-rockmetal"
  },
  "sky": {
   "file": "sky.mp3",
@@ -138,8 +138,8 @@
   "file": "arcade.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 56.6857,
-  "title": "Level 1 (Retro Game Music Pack)",
+  "loopEnd": 79.2962,
+  "title": "Level 2 (Retro Game Music Pack)",
   "author": "Juhani Junkala (SubspaceAudio)",
   "page": "5-chiptunes-action"
  },
@@ -147,28 +147,28 @@
   "file": "arcade-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 56.3259,
-  "title": "Level 2 (Retro Game Music Pack)",
-  "author": "Juhani Junkala (SubspaceAudio)",
-  "page": "5-chiptunes-action"
+  "loopEnd": 129.2307,
+  "title": "Orbital Colossus (Space Boss Battle Theme)",
+  "author": "Matthew Pablo",
+  "page": "space-boss-battle-theme"
  },
  "library": {
   "file": "library.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 51.4823,
-  "title": "Sinister Abode",
-  "author": "Zane Little Music",
-  "page": "sinister-abode"
+  "loopEnd": 83.6429,
+  "title": "The Restless Stacks (danse macabre)",
+  "author": "composed for this game",
+  "page": ""
  },
  "library-p2": {
   "file": "library-p2.mp3",
   "hit": 6.5,
-  "loopStart": 27.6173,
-  "loopEnd": 61.3841,
-  "title": "Shadows Awaken Within",
-  "author": "vitalezzz",
-  "page": "shadows-awaken-within"
+  "loopStart": 6.5,
+  "loopEnd": 104.6818,
+  "title": "Ink and Fury (organ toccata)",
+  "author": "composed for this game",
+  "page": ""
  },
  "robot": {
   "file": "robot.mp3",
@@ -210,10 +210,10 @@
   "file": "volcano-p2.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 82.0866,
-  "title": "JRPG Epic Rock Battle Theme",
-  "author": "HydroGene",
-  "page": "jrpg-epic-rock-battle-theme-1"
+  "loopEnd": 168.7512,
+  "title": "Achilles",
+  "author": "Zane Little Music",
+  "page": "achilles"
  },
  "volcano-p3": {
   "file": "volcano-p3.mp3",
@@ -298,5 +298,50 @@
   "title": "The Everbook Is Whole (composed for this game)",
   "author": "composed for this game",
   "page": ""
+ },
+ "rift": {
+  "file": "rift.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 139.3188,
+  "title": "Boss Theme 2",
+  "author": "Tausdei",
+  "page": "boss-theme-2"
+ },
+ "rift-p2": {
+  "file": "rift-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 124.1471,
+  "title": "Blackmoor Colossus (Colossal Boss Battle Theme)",
+  "author": "Matthew Pablo",
+  "page": "colossal-boss-battle-theme"
+ },
+ "rift-p3": {
+  "file": "rift-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 32.9828,
+  "title": "Boss Battle #2 (Symphonic Metal)",
+  "author": "nene",
+  "page": "boss-battle-2-symphonic-metal"
+ },
+ "rift-p4": {
+  "file": "rift-p4.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 114.5,
+  "title": "Determined Pursuit (Epic Orchestra Loop)",
+  "author": "Emma_MA",
+  "page": "determined-pursuit-epic-orchestra-loop"
+ },
+ "rift-p5": {
+  "file": "rift-p5.mp3",
+  "hit": 6.5,
+  "loopStart": 6.5,
+  "loopEnd": 57.499,
+  "title": "Boss Battle 8 (metal)",
+  "author": "nene",
+  "page": "boss-battle-8-metal"
  }
 }
