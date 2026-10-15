@@ -1325,6 +1325,7 @@ const Campaign = (() => {
     // the boss pushes harder when it's behind: up to +45% speed when you lead by 35% of the board
     const CATCH_UP = lead => 1 + Math.min(0.45, Math.max(0, lead - 0.08) * 1.6);
     const RAGE_LEAD = 0.25;           // you're this far ahead: the boss gets ENRAGED
+    const RAGE_COOLDOWN = 0.65;                    // an enraged boss's attack cooldown: 35% shorter
     // timers on the boss (seconds left), and what the status line calls them
     const BOSS_TIMERS = { freeze: "❄️ Frozen", slow: "🍬 Sticky", blind: "🥧 Can't see", stutter: "🤧 Sneezing", hypno: "🤹 Hypnotized", crash: "🍡 Sugar crash",
         bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer",
@@ -3597,8 +3598,8 @@ const Campaign = (() => {
             f.windup -= dt;
             if (f.windup <= 0) attack();
         } else if (f.puzzle) {
-            f.nextMove -= dt;
-            if (f.nextMove <= 0) { f.nextMove = f.th.every * (f.enraged ? 0.65 : 1) * (0.8 + Math.random() * 0.4); windUp(); }
+            f.nextMove -= dt / (f.enraged ? RAGE_COOLDOWN : 1);            // enraged: the cooldown runs 35% shorter, from the moment it gets angry
+            if (f.nextMove <= 0) { f.nextMove = f.th.every * (0.8 + Math.random() * 0.4); windUp(); }
         }
         applyMe();
         Game.markBossChanges(tickBefore);                   // letters that fell out, ran away, got eaten or blown up this tick
