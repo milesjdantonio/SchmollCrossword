@@ -410,7 +410,7 @@ const Powers = (() => {
             B("Tithe of Light", "🪙", "tithe", 12, "takes every third right letter you type for its own board", { proj: null, aura: ["✨", "⭐"], motion: "orbit" }),
             // five more
             B("Seraph's Lance", "🔱", "lance", 2, "drives a beam of angelic light down a whole column, clearing it (it shows which one first)", { proj: "🔱", aura: ["✨", "⭐"], motion: "fall" }),
-            B("Divine Decree", "⚜️", "decree", 12, "forbids the letter you need most: you can't type it", { proj: "⚜️", aura: ["✨", "📜"], motion: "pop" }),
+            B("Divine Decree", "⚜️", "decree", 10, "forbids the letter you need most for 10 seconds: you can't type it", { proj: "⚜️", aura: ["✨", "📜"], motion: "pop" }),
             B("Ascension", "🕊️", "ascend", 10, "sends angel birds to carry off 5 of your letters (click a bird to get its letter back), and every 2 seconds another floats up", { proj: null, aura: ["🕊️", "✨"], motion: "rise" }),
             B("Trumpet Blast", "📯", "trumpet", 1, "blows a trumpet that scrambles the letters inside two of your unfinished words", { proj: "📯", aura: ["🎵", "✨"], motion: "spark" }),
             B("Penance", "⛓️", "penance", 12, "makes every wrong letter you type cost you one of your right ones", { proj: "⛓️", aura: ["⛓️", "✨"], motion: "orbit" })]

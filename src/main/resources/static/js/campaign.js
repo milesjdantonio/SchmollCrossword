@@ -2153,7 +2153,7 @@ const Campaign = (() => {
     // why an ability can't be used right now (null: it can)
     function cantUse(a) {
         const f = fight, g = Game.state;
-        const myBad = Object.values(f.me).some(v => v > 0 && v !== true) || f.thorns;
+        const myBad = Object.entries(f.me).some(([k, v]) => k !== "decree" && v > 0 && v !== true) || f.thorns;   // (the angel's decree can't be washed off)
         switch (a.kind) {
             case "erase": case "scatter": return f.done.length ? null : "The boss hasn't finished a word yet.";
             case "knock": case "undo": case "chomp": case "blackhole": return bossFilled().length ? null : "The boss's board is still empty.";
@@ -2239,7 +2239,7 @@ const Campaign = (() => {
             case "slow": max("slow", 10); break;
             case "super": Game.fillCells(firstLetters(3)); break;                  // Sugar Rush: the first letters of 3 words
             case "reflect": f.me.reflect = 1; break;
-            case "cleanse": f.me = { shield: f.me.shield, reflect: f.me.reflect }; f.thorns = null; clearMe(true); break;
+            case "cleanse": { const decree = f.me.decree; f.me = { shield: f.me.shield, reflect: f.me.reflect }; f.thorns = null; clearMe(true); if (decree > 0) f.me.decree = decree; break; }   // (not the angel's decree)
             case "bubble": max("bubble", 15); break;
             case "undo": { let n = 0; while (f.log.length && n < 4) { const [r, c] = f.log.pop(); if (real(r, c)) { wipe([[r, c]], true); n++; } } break; }
             case "freeze": max("freeze", 6); break;
@@ -2405,7 +2405,7 @@ const Campaign = (() => {
         judgment: "click the halo 2× to turn the rays on the angel", wings: "every word you finish pushes the wings back a column",
         holylight: "every word you finish shrinks the light: 3 words put it out", scripture: "click the stolen clues 5× to take them back",
         tithe: "finish 2 words to end the tithe",
-        lance: "click the lance 2× to turn the beam on the angel", decree: "click the golden tablet 4× to break the decree",
+        lance: "click the lance 2× to turn the beam on the angel", decree: "it can't be broken: type around the letter for 10 seconds",
         ascend: "click an angel bird 3× to get its letter back; finish 2 words to bring the rest down", trumpet: "click the trumpet 2× before it sounds",
         penance: "type 6 right letters in a row to end your penance"
     };
@@ -2915,7 +2915,7 @@ const Campaign = (() => {
                 const need = {};
                 scopeAll().forEach(([r, c]) => { const ch = g.puzzle.solution[r][c]; if (g.letters[r][c] !== ch && !Game.isLocked(r, c)) need[ch] = (need[ch] || 0) + 1; });
                 const best = Object.entries(need).sort((a, b) => b[1] - a[1])[0];
-                if (best) { f.decree = best[0]; f.me.decree = dur; }
+                if (best) { f.decree = best[0]; f.me.decree = DECREE_SECONDS * (armor ? 0.5 : 1); }   // always 10 s: no breaking it, you sit it out
                 break;
             }
             case "ascend": f.me.ascend = dur; f.ascAcc = 0; setTimeout(() => sendBirds(f), U.motion() === "still" ? 0 : 900); break;   // Ascension: angel birds, then see the fight's tick
@@ -2998,34 +2998,19 @@ const Campaign = (() => {
         FX.burst({ x: from.x, y: from.y, n: 7, colors: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "petal", angle: -Math.PI / 2, spread: 0.8, speed: [60, 160], gravity: -60, life: [0.6, 1], size: [4, 7], spin: 2 });
         Sound.tone({ f: 900, f2: 1700, d: 0.25, v: 0.035, type: "sine", boss: true });
     }
-    // Divine Decree: a golden tablet over your board names the forbidden letter; 4 clicks break it
+    // Divine Decree: a golden tablet over your board names the forbidden letter for 10 seconds. It can't be clicked
+    // away: it counts down, and you type around the letter until it lifts.
+    const DECREE_SECONDS = 10;
     let decreeEl = null;
     function drawDecree(letter, f) {
         const area = document.querySelector(".board-wrap");                // on the board's top edge
         if (!letter) { if (decreeEl) decreeEl.hidden = true; return; }
-        if (!decreeEl) {
-            decreeEl = U.el("button", { type: "button", class: "decree-tablet", "aria-label": "The angel's decree: click it 4 times to break it",
-                html: `<small>Forbidden</small><b></b><i class="dt-cracks"></i>` });
-            decreeEl.addEventListener("pointerdown", e => {
-                e.preventDefault(); e.stopPropagation();
-                const fx = fight;
-                if (!fightOn() || !(fx.me.decree > 0)) return;
-                fx.taps = fx.taps || {};
-                const n = fx.taps.decree = (fx.taps.decree || 0) + 1;
-                U.restart(decreeEl, "shake");
-                decreeEl.dataset.hits = n;
-                Sound.tone({ f: 260 + n * 70, f2: 180, d: 0.1, v: 0.12, type: "triangle" });
-                const p = U.center(decreeEl);
-                FX.burst({ x: p.x, y: p.y, n: 8, colors: ["#e8c66a", "#fff6d8", "#8a5a1a"], shape: "rect", speed: [80, 220], gravity: 400, life: [0.4, 0.7], size: [3, 6], spin: 5 });
-                if (n >= 4) { fx.me.decree = 0; fx.taps.decree = 0; bossStun(2); floatText("Decree broken! The angel is stunned 2s ⚜️"); }
-                applyMe(); drawFight();
-            });
-        }
+        if (!decreeEl) decreeEl = U.el("div", { class: "decree-tablet", role: "status", html: `<small>Forbidden</small><b></b><em></em>` });
         if (area && decreeEl.parentNode !== area) area.appendChild(decreeEl);
         decreeEl.hidden = false;
-        decreeEl.dataset.hits = (f.taps && f.taps.decree) || 0;
-        const b = decreeEl.querySelector("b");
+        const b = decreeEl.querySelector("b"), left = Math.max(0, Math.ceil(f.me.decree || 0)) + "s";
         if (b.textContent !== letter) b.textContent = letter;
+        if (decreeEl.lastChild.textContent !== left) { decreeEl.lastChild.textContent = left; decreeEl.setAttribute("aria-label", `The angel forbids ${letter} for ${left}`); }
     }
     // a boss effect on a timer wiping your letters: they get the ✕ mark like any hit, so clicking puts them back
     //
