@@ -13,7 +13,7 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-// Step 13b: measuring findMatches, caching its answers, and the Trie
+// Measuring findMatches, caching its answers, and the Trie
 class FindMatchesSpeedTest {
 
     private final Map<Integer, List<String>> words = TestWords.everyday();
@@ -32,7 +32,7 @@ class FindMatchesSpeedTest {
         App.solve(new ArrayList<>(Slot.findAllSlots(shape)), TestWords.emptyGrid(shape.length), words, new HashSet<>(), new Random(seed));
     }
 
-    // Step 13b-1: count calls and repeated patterns
+    // count calls and repeated patterns
     @Test
     void countsCallsAndRepeats() {
         App.findMatches("C.T.", words);
@@ -51,7 +51,7 @@ class FindMatchesSpeedTest {
         assertTrue(percentRepeated > 50, "only " + percentRepeated + "% repeats");
     }
 
-    // Step 13b-2: the cache
+    // the cache
     @Test
     void cacheSavesAnswersUnderTheirPattern() {
         List<String> first = App.findMatches("C.T.", words);
@@ -68,7 +68,7 @@ class FindMatchesSpeedTest {
         assertEquals(6, App.findMatches("C.T.", words).size());
     }
 
-    // Step 26: the website uses two word lists, so answers cached from one must not leak into the other
+    // the website uses two word lists, so answers cached from one must not leak into the other
     @Test
     void cacheNeverMixesUpWordLists() {
         assertEquals(0, App.findMatches("OVOID", words).size());
@@ -86,7 +86,7 @@ class FindMatchesSpeedTest {
         assertTrue(elapsed < 1000, "took " + elapsed + " ms");
     }
 
-    // Step 13b-3: same answers as your Step 7 scan, for every 4- and 5-letter word with every other letter hidden
+    // the Trie gives the same answers as a plain scan, for every 4- and 5-letter word with every other letter hidden
     @Test
     void trieGivesTheSameAnswersAsTheScan() {
         List<String> different = new ArrayList<>();

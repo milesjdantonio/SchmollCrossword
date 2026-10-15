@@ -15,8 +15,7 @@ ShareAlike means adaptations must carry the same license, so these files are sha
 |---|---|
 | `src/main/resources/words.txt` | The answer list: words in both SCOWL and Spread the Word(list). Changes are described in `WORDLIST-NOTICE.txt`. |
 | `src/main/resources/too-hard-words.txt`, `not-easy-words.txt`, `very-hard-words.txt` | Difficulty filters chosen from that list. |
-| `src/main/resources/campaign/`, `src/main/resources/daily/` | Puzzles made ahead of time, filled with words from the list. |
-| `clue-bank/*.tsv`, `clue-bank/plan.json`, `clue-bank/needs.json` | The clue bank: a clue for each answer word. |
+| `src/main/resources/campaign/`, `src/main/resources/daily/` | Puzzles made ahead of time, filled with words from the list, and their clues. |
 | `puzzles/` (made while the game runs; not in the repository) | Generated daily, campaign and Unlimited puzzles. |
 
 You may copy, change and share these files **for non-commercial purposes only**, with credit to the
@@ -34,7 +33,7 @@ artists on [OpenGameArt](https://opengameart.org/) under
 `src/main/resources/static/audio/CREDITS.txt` and on the game's Credits page. The songs were edited for the
 game (cut, looped and mastered). The edits add no new restrictions to the CC0 songs.
 
-Five boss songs (added 2026-10-14) are not CC0. They may be shared and changed, but only with credit:
+Five boss songs are not CC0. They may be shared and changed, but only with credit:
 
 | File | Track | Author | License |
 |---|---|---|---|
@@ -47,7 +46,7 @@ Five boss songs (added 2026-10-14) are not CC0. They may be shared and changed, 
 Each was changed for the game (cut, looped, mastered, converted to MP3). Our edited `candy.mp3` is shared under
 CC BY-SA 4.0, like the mix it comes from.
 
-The pieces composed for the game (the story music, the win and lose music, the Sphinx's second song and the
+The pieces composed for the game by Claude (the story music, the win and lose music, the Sphinx's second song and the
 Phantom Librarian's two songs) are covered by the MIT License with the code. They were rendered with the
 [GeneralUser GS](https://schristiancollins.com/generaluser.php) SoundFont by S. Christian Collins, whose
 license allows any use of music made with it.

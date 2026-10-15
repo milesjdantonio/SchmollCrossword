@@ -1,4 +1,4 @@
-// Boss phases go wild (the user's design, 2026-10-09): "in every phase 2 there's lots of designs in the background,
+// Boss phases go wild: "in every phase 2 there's lots of designs in the background,
 // everything starts going crazy" - meteors falling and planets colliding in Deep Space, lava bombs on Volcano Island,
 // lightning in Rainy City... Each world has its own set pieces, drawn on a canvas in the boss arena (behind the
 // board), and every phase after that is wilder: more of them, bigger, faster.

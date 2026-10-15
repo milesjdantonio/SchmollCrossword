@@ -1,8 +1,7 @@
-// How to Play (built by Claude at the user's request, 2026-10-10): a short guide in two parts, Normal and Boss Fights,
-// that works like a video (the user: "make the tutorial work through videos/animations"). Each topic is a chapter
+// How to Play: a short guide in two parts, Normal and Boss Fights,
+// that works like a video. Each topic is a chapter
 // with its own little animation on a stage: a real board in the current world's colours, a pointer that clicks,
-// keys that light up, subtitles. A chapter plays over and over (the user, 2026-10-10: it doesn't move on to the
-// next one by itself, it replays; and no check marks); Next, the arrow keys or the chapter list go to another.
+// keys that light up, subtitles. A chapter plays over and over; Next, the arrow keys or the chapter list go to another.
 // Click the stage (or press Space) to pause.
 //
 //   HowTo.open("normal" | "boss")

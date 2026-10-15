@@ -17,10 +17,9 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// Checks on the puzzles that ship with the game (src/main/resources/campaign and daily), added by Claude at the
-// user's request on 2026-10-11:
-//   - "make sure clues dont include any words from the blocked list"
-//   - "each level should have 25 [puzzles] that it can pull from independently that no other level has"
+// Checks on the puzzles that ship with the game (src/main/resources/campaign and daily):
+//   - no clue uses a word from the blocked list
+//   - each level has 25 puzzles of its own, with boards no other level has
 class ShippedPuzzlesTest {
 
     static final Path CAMPAIGN = Path.of("src", "main", "resources", "campaign");
@@ -61,7 +60,7 @@ class ShippedPuzzlesTest {
         for (Path f : files(CAMPAIGN)) {
             String name = f.getFileName().toString();
             // only the puzzles a player solves must be unique; a boss's own board (the bot's, "-boss-v") can be any
-            // board, even one a player has (the user, 2026-10-14)
+            // board, even one a player has
             if (name.contains("-boss-v")) continue;
             String level = name.replaceAll("-v\\d+\\.json$", "");
             StringBuilder grid = new StringBuilder();

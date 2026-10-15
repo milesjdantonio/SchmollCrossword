@@ -36,8 +36,7 @@ const FX = (() => {
     // particles are moved by the scroll, effects drawn shifted by however far the page moved since they started
     // (fixed: true for a full-screen one)
     let lastSX = scrollX, lastSY = scrollY;
-    // ...or they follow an element (the user, 2026-10-14: "can you do this for other animations that are meant to travel
-    // boards ... several abilities and win animations"): while FX.anchor(el) is on (a win animation runs with the board
+    // ...or they follow an element: while FX.anchor(el) is on (a win animation runs with the board
     // as its anchor), new effects and bursts remember the element, which is measured again every frame. Effects are
     // drawn moved and scaled with it, particles moved with it, so the page shifting, a resize or the zoom setting
     // (and scrolling) don't leave them behind.
@@ -64,7 +63,7 @@ const FX = (() => {
     }
     // One bad particle (a NaN size, a negative radius...) used to throw out of this loop before the next frame was
     // asked for: raf stayed set, kick() thought it was still running, and every burst after that never showed for
-    // the rest of the visit (the user: "sometimes the animations for clicking things goes away"). Now a particle
+    // the rest of the visit. Now a particle
     // that throws is dropped, and the loop always carries on.
     function loop(now) {
         try { frame(now); }
@@ -116,8 +115,7 @@ const FX = (() => {
     }
 
     // ---- particles ----
-    // Redone on 2026-10-10 (the user: "make large adjustments to every particle, animation: make them look nicer, add
-    // extra details"). Every particle pops in with a little overshoot and gets its own shade of its colour, and each
+    // Every particle pops in with a little overshoot and gets its own shade of its colour, and each
     // shape has more to it: glowing halos (cached sprites, so they're cheap), trails behind fast sparks and stars,
     // stars that twinkle and flash a cross-shaped glint, confetti with a darker back as it flips and a glint on its
     // edge, shaded round dots, petals and leaves with veins and light, snowflakes with branches and a sparkle, nuts with
@@ -1016,7 +1014,7 @@ const FX = (() => {
                         const white = Math.max(0, (k - 0.75) / 0.25);
                         if (white > 0) { c.fillStyle = `rgba(235,245,255,${white})`; c.fillRect(0, 0, W, H); }
                     } else if (style === "rift") {
-                        // the Celestial Rift (2026-10-14): a jagged golden crack tears across the screen, splits wide
+                        // the Celestial Rift: a jagged golden crack tears across the screen, splits wide
                         // open into a sky of violet light and stars, then seals itself shut again
                         const N = 26, ang = Math.atan2(H * 0.7, W * 1.1), nx = -Math.sin(ang), ny = Math.cos(ang);
                         const half = Math.pow(k, 1.6) * Math.hypot(W, H) * 0.75 + k * 6;

@@ -100,8 +100,7 @@ const U = (() => {
     // Remove and re-add a class so its CSS animation plays again
     // Play a one-shot CSS animation again. The classes it adds stay on the element afterwards, so the ones started
     // before on the same element are taken off first: a square that was once "scorched" kept that class, and its
-    // stronger rule silently replaced every later flip or shake on it (the user: "sometimes the animations for
-    // clicking things goes away")
+    // stronger rule silently replaced every later flip or shake on it
     function restart(node, cls) {
         if (!node) return;
         const shots = node._shots || (node._shots = new Set());
@@ -203,7 +202,7 @@ const Bus = {
     }
 };
 
-// The player's settings (Step 24, grown in the redesign)
+// The player's settings
 const Settings = (() => {
     const KEY = "schmoll.settings";
     const DEFAULTS = {
@@ -212,7 +211,7 @@ const Settings = (() => {
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)
-        // Sound (the user, 2026-10-14: one Master Volume, then Music and Effects, each with its own sliders). Every
+        // Sound. Every
         // volume is a slider position from 0 to 1; Settings.gain(key) turns it into loudness (see VOLUME_DB).
         sound: true,            // all sound on or off: the mute button by Master Volume (sound effects are made in code, see sound.js)
         volume: 0.96,           // Master Volume: everything
@@ -226,12 +225,11 @@ const Settings = (() => {
         intro: false,           // play the start-up intro on every visit (it always plays the very first time)
         effects: "full"         // "full" or "lite"
     };
-    // A volume slider is a loudness curve, not a straight line (the user: "make it so the difference in volume between
-    // 1 and 100 is greater"): 100% is full, every step down is the same number of decibels, and 1% is VOLUME_DB below
+    // A volume slider is a loudness curve, not a straight line: 100% is full, every step down is the same number of decibels, and 1% is VOLUME_DB below
     // full (about the quietest sound you'd still notice). 0 is silent.
     const VOLUME_DB = 50;
     const gainOf = x => (x > 0 ? Math.pow(10, (Math.min(1, x) - 1) * VOLUME_DB / 20) : 0);
-    // the slider position that's as loud as an old straight-line volume (saves from before 2026-10-14)
+    // the slider position that's as loud as an old straight-line volume (older saves)
     const posOf = linear => (linear > 0 ? Math.max(0.01, Math.round((1 + 20 * Math.log10(Math.min(1, linear)) / VOLUME_DB) * 100) / 100) : 0);
     let values = load();
     const listeners = [];

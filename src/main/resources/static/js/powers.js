@@ -1,5 +1,5 @@
-// Campaign powers (built by Claude at the user's request): every boss-fight ability and every boss move, each with
-// its own effect, its own animation and its own synthesized sound. The rule (the user's): no two abilities do the
+// Campaign powers: every boss-fight ability and every boss move, each with
+// its own effect, its own animation and its own synthesized sound. The rule: no two abilities do the
 // same thing, and no ability is just a stronger copy of another one. The same goes for the bosses' moves.
 //
 //   Powers.ABILITIES   48 abilities, 3 per world (the secret world too): { id, world, name, icon, kind, flavor, desc, fx, sound }
@@ -103,7 +103,7 @@ const Powers = (() => {
         gravity: () => { T(500, 40, "sine", 0, 1.2, 0.3); T(250, 30, "triangle", 0.1, 1, 0.08); },
         flare: () => { T(400, 3000, "sine", 0, 0.5, 0.06); N(500, 4000, 0, 0.8, 0.2, { q: 0.4 }); T(3000, 300, "triangle", 0.5, 0.8, 0.04, { echo: 0.5 }); },
         collapse: () => { T(200, 30, "sawtooth", 0, 1.1, 0.12, { filt: { f: 400 } }); for (let i = 0; i < 5; i++) T(900 - i * 120, 300, "square", 0.2 + i * 0.12, 0.06, 0.04); },
-        // the moves added when every boss got 5 (2026-10-09)
+        // the moves added when every boss got 5
         inkblot: () => { N(400, 120, 0, 0.6, 0.3, { type: "lowpass" }); T(180, 60, "sine", 0, 0.4, 0.3); T(900, 300, "triangle", 0.15, 0.2, 0.05); },
         nobackspace: () => { T(1200, 1100, "sawtooth", 0, 0.5, 0.03, { filt: { f: 2000 } }); N(2500, 1800, 0, 0.6, 0.08, { q: 4 }); T(300, 200, "square", 0.5, 0.2, 0.05); },
         fakecheck: () => { T(M(76), M(74), "square", 0, 0.1, 0.05); T(M(70), M(68), "square", 0.12, 0.2, 0.05); N(1800, 900, 0.1, 0.4, 0.1, { q: 3 }); },
@@ -154,7 +154,7 @@ const Powers = (() => {
         holylight: () => { Sound.chord(0, [72, 76, 79, 84], { type: "sine", d: 1.6, v: 0.03, echo: 0.5 }); T(1800, 2400, "sine", 0, 1.2, 0.03, { vib: 6 }); },
         scripture: () => { N(1800, 700, 0, 0.35, 0.16, { q: 2 }); N(1400, 500, 0.18, 0.35, 0.14, { q: 2 }); T(M(62), M(57), "triangle", 0.3, 0.6, 0.06); },
         tithe: () => { [88, 84, 81].forEach((n, i) => T(M(n), null, "square", i * 0.1, 0.12, 0.03)); T(M(57), M(50), "sine", 0.35, 0.7, 0.08, { echo: 0.4 }); },
-        // its second five (the user, 2026-10-14): a lance of light, a decree, an ascension, a trumpet, penance
+        // its second five: a lance of light, a decree, an ascension, a trumpet, penance
         lance: () => { Sound.chord(0, [52, 59, 64, 71, 76], { type: "sine", d: 1.4, v: 0.03, echo: 0.5 }); T(3200, 200, "sawtooth", 0.2, 0.5, 0.025, { filt: { f: 2600 } }); T(90, 40, "sine", 0.45, 0.8, 0.3); N(4000, 500, 0.45, 0.8, 0.12, { q: 0.6 }); },
         decree: () => { T(M(40), null, "triangle", 0, 0.5, 0.14); N(400, 120, 0, 0.3, 0.16, { q: 1.5 }); Sound.chord(0.25, [62, 65, 69, 74], { type: "sine", d: 1.4, v: 0.028, echo: 0.4 }); },
         ascend: () => { [60, 64, 67, 72, 76, 79, 84, 88].forEach((n, i) => T(M(n), null, "triangle", i * 0.05, 0.4, 0.035, { echo: 0.3 })); T(400, 1600, "sine", 0, 1, 0.03, { vib: 4 }); },
@@ -186,8 +186,7 @@ const Powers = (() => {
     // every recorded sound a fight can use, so they're loaded before they're needed
     const ALL_SAMPLES = [...new Set([...Object.values(SMP), ...Object.values(BSMP)].map(x => x[0]).concat(["hit", "bell", "ko", "jingle-block", "jingle-win", "coin"]))];
 
-    // How loud each boss move and ability may play (the user, 2026-10-10: "some boss ability audios are wayyyy too
-    // loud, it shouldn't be any louder than the music"). Every one was measured in the browser (its sound, recording
+    // How loud each boss move and ability may play. Every one was measured in the browser (its sound, recording
     // and scene together, K-weighted momentary loudness), and the ones louder than the music were turned down to just
     // under it: a move to its own world's quietest song, an ability to the typical song. 1 when not listed.
     const MOVE_LEVEL = {
@@ -203,7 +202,7 @@ const Powers = (() => {
         "paper-rub": 0.93, "paper-wall": 0.49, "rain-thunder": 0.53, "robot-firewall": 0.5, "sky-tailwind": 0.48,
         "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53, "rift-constellation": 0.75, "rift-wish": 0.7, "rift-purify": 0.7, "rift-chorus": 0.65
     };
-    // Still too loud (the user, 2026-10-11: "the fire abilities from the magma wyrm for example"): the measure above
+    // Still too loud: the measure above
     // weighs low notes down (K-weighting), so the rumbles (fire, lava, engines, quakes: low noise and the thruster
     // and rumble recordings) measured quieter than they sound. Those play at half that level, and everything else
     // at 80% of it.
@@ -311,13 +310,12 @@ const Powers = (() => {
             { proj: null, aura: ["⏪", "🌀"], motion: "swirl", color: "#58d6ff", on: "boss" }),
         A("space", "wormhole", "Wormhole", "🌀", "wormhole", "Open a wormhole right under the boss's pencil.", "Everything the boss writes in the next 10s falls into the wormhole when it closes.",
             { proj: "🌀", path: "spiral", aura: ["🌀", "✨"], motion: "swirl", color: "#c06bff", on: "boss" }),
-        // the secret world (2026-10-14): the light the angel was locked away with, on your side now
+        // the secret world: the light the angel was locked away with, on your side now
         A("rift", "constellation", "Constellation", "✨", "constellation", "Join the stars and the hidden letters shine.", "Lights up the squares where two unfinished words cross: up to 4 right letters.",
             { proj: null, aura: ["✨", "⭐"], motion: "spark", color: "#ffd06b", on: "me" }),
         A("rift", "wish", "Wish Upon a Star", "🌠", "wish", "Make a wish on the next word you write.", "The next word you finish knocks as many letters off the boss's board as it has letters.",
             { proj: null, aura: ["⭐", "✨"], motion: "rise", color: "#fff3c4", on: "me" }),
-        // (Rewrite Fate, which put back what the boss erased, was replaced on 2026-10-14 at the user's request; the rift
-        // now has four, one for each of its four levels)
+        // (the rift has four abilities, one for each of its four levels)
         A("rift", "purify", "Purifying Light", "🕯️", "purify", "A clean light burns the mistakes out of your page.", "Up to 3 of your wrong letters turn into the right ones.",
             { proj: null, aura: ["✨", "🕯️"], motion: "rise", color: "#fff1c4", on: "me" }),
         A("rift", "chorus", "Angel Chorus", "🎶", "chorus", "A choir sings every right note back to you.", "For 20s, every right letter you type is sung into another square that needs the same letter (up to 6).",
@@ -404,13 +402,13 @@ const Powers = (() => {
             B("Collapse", "💫", "collapse", 6, "pulls one letter out of each of your finished words", { proj: "💫", aura: ["✦", "💫"], motion: "swirl" }),
             B("Warp Speed", "🚀", "snapfinish", 1, "warps ahead: the boss finishes the word it's on", { proj: null, aura: ["🚀", "✨"], motion: "drift" }),
             B("Event Horizon", "🕳️", "vowels", 10, "swallows every vowel on your board from view", { proj: "🕳️", aura: ["·", "✦"], motion: "swirl" })],
-        // the Cursed Angel (the user, 2026-10-14: "one of its attacks are rays that drop down and clear the whole row")
+        // the Cursed Angel
         rift: [B("Judgment Rays", "☀️", "judgment", 2, "drops rays of light that clear two whole rows of your board (it shows which ones while it winds up)", { proj: "☀️", aura: ["✨", "⭐"], motion: "fall" }),
             B("Wings of Night", "🌑", "wings", 14, "folds dark wings over your board from both sides, closing in", { proj: null, aura: ["·", "✦"], motion: "drift" }),
             B("Holy Light", "💫", "holylight", 12, "hangs a blinding light over your board that drifts as you work", { proj: "☀️", aura: ["✨", "⭐"], motion: "pop" }),
             B("Stolen Scripture", "📜", "scripture", 14, "snatches all of your Across or Down clues", { proj: "📜", aura: ["📄", "✨"], motion: "swirl" }),
             B("Tithe of Light", "🪙", "tithe", 12, "takes every third right letter you type for its own board", { proj: null, aura: ["✨", "⭐"], motion: "orbit" }),
-            // five more (the user, 2026-10-14: "5 more abilities ... one of them clears an entire column with an angelic beam")
+            // five more
             B("Seraph's Lance", "🔱", "lance", 2, "drives a beam of angelic light down a whole column, clearing it (it shows which one first)", { proj: "🔱", aura: ["✨", "⭐"], motion: "fall" }),
             B("Divine Decree", "⚜️", "decree", 12, "forbids the letter you need most: you can't type it", { proj: "⚜️", aura: ["✨", "📜"], motion: "pop" }),
             B("Ascension", "🕊️", "ascend", 10, "sends angel birds to carry off 5 of your letters (click a bird to get its letter back), and every 2 seconds another floats up", { proj: null, aura: ["🕊️", "✨"], motion: "rise" }),
@@ -420,7 +418,7 @@ const Powers = (() => {
     const WORLD_PITCH = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, robot: -4, library: -6, volcano: -7, space: -8, rift: 9 };
 
     // ---------------------------------------------------------------------------------------------
-    // How hard each boss fights (the user's design: difficulty in the fights too, not just the puzzles).
+    // How hard each boss fights.
     // k goes from 0 (world 1) to 1 (world 15); everything scales smoothly between the two ends.
     //   every     seconds between attacks              windup  seconds of warning before an attack lands
     //   power     how long its effects last (x)        rageSpeed  how much faster it writes when enraged
@@ -443,7 +441,7 @@ const Powers = (() => {
     const layer = () => document.getElementById("overlay") || document.body;
     const still = () => U.motion() === "still";
 
-    // ---- the physical look (the user, 2026-10-09: "more physical components rather than emojis") ----
+    // ---- the physical look ----
     // Every shot and swarm is drawn on the spells canvas: comets, embers, leaves, drops, flakes, sparks. The emoji a
     // caller names only picks WHAT is drawn (fire = embers, leaves = leaves, water = drops...), never the emoji itself.
     const KIT = () => (typeof Spells !== "undefined" && Spells.kit && Spells.kit.spray ? Spells.kit : null);

@@ -15,33 +15,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.servlet.http.HttpServletRequest; // everything about one incoming web request, e.g. who sent it
+import jakarta.servlet.http.HttpServletRequest;
 
 /*
- * ===== Step 18: The puzzle API =====
+ * The puzzle API: the dailies, Unlimited, the campaign and the boss fights, as JSON (Puzzle.toJson()).
  *
- * A "controller" answers web requests. Each method marked @GetMapping is connected to a URL:
- *
- *   http://localhost:8080/api/daily?difficulty=hard      -> daily("hard")
- *   http://localhost:8080/api/unlimited?difficulty=easy  -> unlimited("easy")
- *
- * Whatever the method returns is sent back to the browser. Ours return the JSON text from Puzzle.toJson().
- * @RequestParam reads the "?difficulty=..." part of the URL (and uses "medium" if it's missing).
+ *   /api/daily?difficulty=hard      today's daily for that difficulty
+ *   /api/unlimited?difficulty=easy  a new puzzle (rate-limited: each one is a paid Claude call)
  */
 @RestController
 public class PuzzleController {
 
     // Loaded ONCE when the server starts, then reused for every request (loading it per request would be slow).
-    // Design pass: one word list per difficulty ("easy" -> common words only, "hard" -> harder words allowed).
+    // One word list per difficulty ("easy" -> common words only, "hard" -> harder words allowed).
     private final Map<String, Map<Integer, List<String>>> wordsByDifficulty;
     private final Map<Integer, List<String>> allWords;   // Hard + Settings "Allow harder words" (Unlimited only)
 
-    // Step 26: limits how many paid unlimited puzzles can be made (see RateLimiter)
+    // Limits how many paid unlimited puzzles can be made (see RateLimiter)
     private final RateLimiter unlimitedLimiter;
     // The Unlimited Boss's own board is free (no clues), but making a grid takes the solver up to half a second, and
     // the solver is shared (PuzzleStore.buildGrid is synchronized), so a flood of them would hold up everyone's
     // dailies. One a fight is all the website asks for; 60 an hour per person is far more than anyone plays.
-    // (Added by Claude in the 2026-10-10 review.)
     private final RateLimiter boardLimiter = new RateLimiter(60, RateLimiter.HOUR, 100_000);
 
     // Spring Boot uses this one when the server starts (@Autowired picks it). @Value reads each limit from
@@ -67,22 +61,15 @@ public class PuzzleController {
         return wordsByDifficulty.get(difficulty);
     }
 
-    // Step 24's setting, now for Hard only: "Allow harder words" adds the extremely hard words. Unlimited only:
+    // The "Allow harder words" setting (Hard only) adds the extremely hard words. Unlimited only:
     // the daily never uses it, so the daily stays the same for everyone.
     Map<Integer, List<String>> wordsFor(String difficulty, boolean hardWords) {
         return hardWords && difficulty.equals("hard") ? allWords : wordsFor(difficulty);
     }
 
     /*
-     * ===== Step 18a: Is this a real difficulty? =====
-     *
-     * The URL is typed by whoever is calling the API, so it can contain anything (?difficulty=banana).
-     * Return true only for "easy", "medium" or "hard" (and, since Challenge mode, "challenge"), ignoring upper/lower
-     * case ("Hard" is fine). Null is false.
-     *
-     * Example:  isValidDifficulty("Hard") -> true      isValidDifficulty("banana") -> false
-     *
-     * Related LeetCode: 20. Valid Parentheses, 65. Valid Number (never trust input; check it first)
+     * The URL can contain anything (?difficulty=banana), so only "easy", "medium", "hard" and "challenge" pass,
+     * in any case ("Hard" is fine). Null is false.
      */
     static boolean isValidDifficulty(String difficulty) {
         if (difficulty == null) return false;
@@ -94,13 +81,9 @@ public class PuzzleController {
     }
 
     /*
-     * ===== Step 18b: GET /api/daily =====
-     *
-     * 1. If the difficulty isn't valid, stop with:   throw badDifficulty(difficulty);
-     * 2. Otherwise return today's daily puzzle for that difficulty (lowercased) from PuzzleStore.getDaily,
-     *    using PuzzleStore.DAILY_FOLDER, LocalDate.now() and that difficulty's word list.
+     * GET /api/daily: today's daily for a difficulty (HTTP 400 for a bad one), made once and then read from its file.
      */
-    // Time zones (added by Claude at the user's request): the browser sends the player's own date, ?date=2026-10-08,
+    // Time zones: the browser sends the player's own date, ?date=2026-10-08,
     // so the daily changes at the player's midnight, not the server's. Every place on Earth is within one day of
     // the server's date, so anything further away is refused (nobody can fetch next week's puzzles).
     @GetMapping(value = "/api/daily", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -134,18 +117,13 @@ public class PuzzleController {
     }
 
     /*
-     * ===== Step 18c: GET /api/unlimited =====
-     *
-     * 1. Same difficulty check as 18b.
-     * 2. Otherwise return PuzzleStore.generateUnlimited(...) with a random seed: new Random().nextLong()
-     *    (no seed in the Random = different every time, which is exactly what unlimited mode wants).
-     *
-     * Every unlimited puzzle is a paid API call, so Step 26 adds a rate limit (HTTP 429 when it's hit).
+     * GET /api/unlimited: a new puzzle with a random seed. Every one is a paid API call, so it's rate-limited
+     * (HTTP 429 when the limit is hit).
      */
     @GetMapping(value = "/api/unlimited", produces = MediaType.APPLICATION_JSON_VALUE)
     public String unlimited(@RequestParam(defaultValue = "medium") String difficulty,
                             @RequestParam(defaultValue = "false") boolean hardWords,    // Settings > harder words (Hard only)
-                            HttpServletRequest request) {                               // Step 26: who's asking
+                            HttpServletRequest request) {                               // who's asking
         if (!isValidDifficulty(difficulty)) {        // "if it's NOT a real difficulty..."
             throw badDifficulty(difficulty);         // ...stop here and send HTTP 400
         }
@@ -160,7 +138,7 @@ public class PuzzleController {
         return PuzzleStore.generateUnlimited(seed, difficulty.toLowerCase(), wordsFor(difficulty.toLowerCase(), hardWords));
     }
 
-    // How many Unlimited puzzles this player has left today (written by Claude): {"left":7,"limit":10,"nextInSeconds":0}
+    // How many Unlimited puzzles this player has left today: {"left":7,"limit":10,"nextInSeconds":0}
     // nextInSeconds = when they're out, how long until they get one back.
     @GetMapping(value = "/api/unlimited/left", produces = MediaType.APPLICATION_JSON_VALUE)
     public String unlimitedLeft(HttpServletRequest request) {
@@ -170,7 +148,7 @@ public class PuzzleController {
                 + ",\"nextInSeconds\":" + unlimitedLimiter.secondsUntilNext(person, now) + "}";
     }
 
-    // Campaign mode (written by Claude): GET /api/campaign/map lists the worlds in order with each level's difficulty;
+    // Campaign mode: GET /api/campaign/map lists the worlds in order with each level's difficulty;
     // GET /api/campaign?world=garden&level=3 gives that level's puzzle (made once, then read from its file).
     // A boss fight (level 5) is a race against a bot with its own puzzle: &boss=true gives the bot's puzzle.
     @GetMapping(value = "/api/campaign/map", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -202,7 +180,7 @@ public class PuzzleController {
         return campaign(world, level, boss, phase, 0);
     }
 
-    // Daily Boss / Unlimited Boss (written by Claude at the user's request, 2026-10-09).
+    // Daily Boss / Unlimited Boss.
     // GET /api/boss/daily?date=2026-10-09 -> {"world":"garden"}: which boss is today's
     @GetMapping(value = "/api/boss/daily", produces = MediaType.APPLICATION_JSON_VALUE)
     public String dailyBoss(@RequestParam(required = false) String date) {
@@ -241,7 +219,7 @@ public class PuzzleController {
                 "difficulty must be easy, medium, hard or challenge (got: " + difficulty + ")");
     }
 
-    // Step 26: HTTP 429 means "too many requests: slow down". The website shows a friendly message for it.
+    // HTTP 429 means "too many requests: slow down". The website shows a friendly message for it.
     static ResponseStatusException tooManyPuzzles() {
         return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "unlimited puzzle limit reached, try again later");
     }

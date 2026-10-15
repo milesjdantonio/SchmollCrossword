@@ -105,7 +105,7 @@ body {
 .logo:hover .logo-mark { transform: rotate(8deg) scale(1.1); }
 .logo-text { font: 700 calc(1.75rem * var(--head-scale)) var(--font-head); letter-spacing: .01em; white-space: nowrap; }
 /* the screens and the three quick buttons (How to Play, world, sound) share one pill, the buttons right after
-   Settings (the user, 2026-10-10); on narrower screens the pill is just the screens and the buttons sit by the logo */
+   Settings; on narrower screens the pill is just the screens and the buttons sit by the logo */
 .bar-group, .modes {
     display: flex;
     align-items: center;
@@ -307,7 +307,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .home-grid > .card:nth-child(4) { animation-delay: .21s; }
 @keyframes card-in { from { opacity: 0; transform: translateY(26px) scale(.96); } }
 .daily-card { grid-row: span 2; }      /* Unlimited and your streak stack beside it; the streak card reaches down to its bottom */
-/* the streak card is as tall as the rest of Daily, so its pieces spread out down it (the user, 2026-10-10) */
+/* the streak card is as tall as the rest of Daily, so its pieces spread out down it */
 .streak-card { display: flex; flex-direction: column; }
 .streak-card .streak-line { margin-top: auto; }
 .streak-card .home-ach { margin-bottom: auto; }
@@ -615,7 +615,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .cell .ltr { position: relative; z-index: 2; }
 .cell .num { position: absolute; top: 3px; left: 5px; z-index: 2; color: var(--num); font: 800 .72rem/1 var(--font-body); }
 /* letters show up the instant you type them, with a quick pop (never fading in) */
-/* (2026-10-10: a springier pop with a little overshoot, and a flash of the accent colour round the letter) */
+/* (a springier pop with a little overshoot, and a flash of the accent colour round the letter) */
 .cell.typed .ltr { animation: letter-in .3s cubic-bezier(.2, 1.7, .4, 1); }
 @keyframes letter-in {
     0% { transform: scale(1.38) translateY(-2px); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
@@ -1333,7 +1333,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .daily-chips .boss-chip.done .chip-state { color: var(--good); }
 
 /* ---------------------------------------------------------------------------------------------
-   Polish pass (the user, 2026-10-09: "doesn't look too much like AI", in the spirit of big product sites):
+   Polish pass:
    quiet Title Case labels instead of spaced-out capitals, lighter
    body text, and calm motion (a small lift on hover, a gentle press) instead of springy bounces and tilts.
    Every world keeps its own fonts, colours and corners.
@@ -1350,7 +1350,7 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .difficulty button.active:hover { background: var(--accent); }
 .daily-chip, .boss-chip { transition: transform .25s cubic-bezier(.25, .1, .25, 1), border-color .2s, background .2s, box-shadow .25s; }
 .daily-chip:hover, .boss-chip:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .1); }
-.daily-chip:active, .boss-chip:active { transform: scale(.99); }   /* the Boss chip moves like the others (the user) */
+.daily-chip:active, .boss-chip:active { transform: scale(.99); }   /* the Boss chip moves like the others */
 .subtitle { font-weight: 600; }
 
 /* the start screen: the 15 bosses parade along the bottom, above the ticker, and drop away when you press start */

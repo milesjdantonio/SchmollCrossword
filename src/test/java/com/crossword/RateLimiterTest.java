@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-// Step 26: the sliding-window rate limit. Times are made up, so "an hour later" takes no time at all.
+// The sliding-window rate limit. Times are made up, so "an hour later" takes no time at all.
 class RateLimiterTest {
 
     private static final long HOUR = RateLimiter.HOUR;
@@ -62,7 +62,7 @@ class RateLimiterTest {
         assertEquals(1, limiter.peopleTracked(), "only c is left");
     }
 
-    // Unlimited (since 2026-10-08): 10 per person per DAY, and the website can ask how many are left
+    // Unlimited: 10 per person per DAY, and the website can ask how many are left
     @Test
     void aDailyWindowCountsWhatsLeft() {
         long DAY = RateLimiter.DAY;

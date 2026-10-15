@@ -1,4 +1,4 @@
-// The CELESTIAL RIFT world (the secret 16th world, 2026-10-14): the torn sky where the Cursed Angel was imprisoned
+// The CELESTIAL RIFT world (the secret 16th world): the torn sky where the Cursed Angel was imprisoned
 // until the Void fell. It only opens after the Void is beaten (campaign.js) and then shows up in Settings too.
 //   Night: deep violet space, drifting nebulae, a great jagged tear across the sky with golden heaven light pouring
 //   through it (god rays, sparks falling from its burning edges), floating marble ruins of the old prison with crystal
@@ -163,8 +163,7 @@
             g.globalAlpha = 1;
             g.restore();
         }
-        // a crystal lantern of starlight hanging off a ruin on a thin golden cord, swaying (the user, 2026-10-14: the
-        // hanging chains here looked inappropriate, so they became lanterns)
+        // a crystal lantern of starlight hanging off a ruin on a thin golden cord, swaying
         function drawLantern(g, x, y, s, t, ph) {
             const sway = Math.sin(t * 0.9 + ph) * 0.18, len = s * 0.8;
             const ex = x + Math.sin(sway) * len, ey = y + Math.cos(sway) * len;
@@ -353,13 +352,12 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The win: the Constellation and Heaven's Gate (the user, 2026-10-14: "a different victory animation for the
-    // celestial rift"). The sky goes dark and every square lights up as a star; golden lines join them answer by
+    // The win: the Constellation and Heaven's Gate. The sky goes dark and every square lights up as a star; golden lines join them answer by
     // answer into a constellation. The constellation rises off the board and closes into a halo above it. Then the
     // heavens open: two gates of light part at the top of the screen and god rays pour down onto the board, great
     // wings of light unfold behind it and beat once, shaking loose a fall of white and gold feathers, and the halo
     // comes down over the board and rings out.
-    // It follows the board (the user, 2026-10-14): the board is measured again every frame, and the stars, lines, halo,
+    // It follows the board: the board is measured again every frame, and the stars, lines, halo,
     // wings and feathers are kept relative to it, so a scroll, a resize or the page moving around doesn't leave them behind.
     // ---------------------------------------------------------------------------------------------
     async function celebrate(c, { boardEl }) {

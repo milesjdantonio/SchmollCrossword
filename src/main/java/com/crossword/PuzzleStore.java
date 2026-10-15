@@ -3,9 +3,9 @@ package com.crossword;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files; // read/write a whole file in one line
-import java.nio.file.Path;  // a file or folder location
-import java.time.LocalDate; // a calendar date with no time, e.g. 2026-10-07
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -19,13 +19,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /*
- * ===== Step 17: Save generated puzzles =====
+ * Puzzles: making them and saving them.
  *
  * The daily puzzle must be IDENTICAL for everyone, but Claude writes different clues on every call
  * (and every call costs money). So each daily is written by Claude only the FIRST time it's asked for,
  * then saved as a file and served from the file forever after.
  *
- * Design pass: there are FIVE dailies every day: one per difficulty (easy, medium, hard), each with its own grid
+ * There are FIVE dailies every day: one per difficulty (easy, medium, hard), each with its own grid
  * (seed from date + difficulty), its own word list (easier words on easy) and its own clues, plus the Challenge and the Boss.
  *
  *   puzzles/daily/2026-10-07-easy.json     <- three different
@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 public class PuzzleStore {
 
     // Where daily puzzles are saved: puzzles/daily inside the project folder (ignored by git: it's generated data).
-    // Step 26: online, the host sets PUZZLE_DIR to a disk that survives restarts; otherwise a restart would lose
+    // Online, the host sets PUZZLE_DIR to a disk that survives restarts; otherwise a restart would lose
     // today's saved clues and the next request would pay Claude to write different ones.
     static final Path DAILY_FOLDER = Path.of(System.getenv().getOrDefault("PUZZLE_DIR", "puzzles"), "daily");
 
@@ -48,62 +48,28 @@ public class PuzzleStore {
         {true,  false, false, false, false}
     };
 
-    /*
-     * ===== Step 17a: A seed from a date =====
-     *
-     * Turn a date into a number, so the same date always gives the same seed (and so the same grid).
-     *
-     * Example:  2026-10-07  ->  20261007      2026-12-25  ->  20261225
-     *
-     * Tools: date.getYear(), date.getMonthValue(), date.getDayOfMonth() each return an int.
-     *        Think of it as building the number year, then month, then day: 2026 * 10000 + 10 * 100 + 7.
-     *
-     * Related LeetCode: 7. Reverse Integer, 9. Palindrome Number (building numbers digit by digit)
-     */
+    // A date as a number, so the same date always gives the same seed (and grid): 2026-10-07 -> 20261007
     static long seedForDate(LocalDate date) {
         return date.getYear() * 10000 + date.getMonthValue() * 100 + date.getDayOfMonth();
     }
 
-    // Design pass: each difficulty's daily gets its own seed (date seed + one digit), so its own grid.
+    // Each difficulty's daily gets its own seed (date seed + one digit), so its own grid.
     // Example:  2026-10-07 easy -> 202610071, medium -> 202610072, hard -> 202610073, challenge -> 202610074
     static long dailySeed(LocalDate date, String difficulty) {
         int digit = difficulty.equals("easy") ? 1 : difficulty.equals("medium") ? 2 : difficulty.equals("hard") ? 3 : 4;
         return seedForDate(date) * 10 + digit;
     }
 
-    /*
-     * ===== Step 17b: Where a daily puzzle lives =====
-     *
-     * The file for one date and difficulty, inside `folder`.
-     *
-     * Example:  dailyFile(puzzles/daily, 2026-10-07, "hard")  ->  puzzles/daily/2026-10-07-hard.json
-     *
-     * Tools: date.toString() gives "2026-10-07". folder.resolve("name.json") gives the file inside the folder.
-     */
+    // The file for one date and difficulty: puzzles/daily/2026-10-07-hard.json
     static Path dailyFile(Path folder, LocalDate date, String difficulty) {
         String fileName = date.toString() + "-" + difficulty + ".json";
-        return folder.resolve(fileName); 
+        return folder.resolve(fileName);
     }
 
     /*
-     * ===== Step 17c: Get today's puzzle, generating it only once =====
-     *
-     * If the file for this date and difficulty already exists, return what's in it (no API call!).
-     * Otherwise: generate it with generateDaily(...), save the JSON to the file, then return it.
-     *
-     * This "check the saved copy first" idea is the same as matchCache in Step 13b, but the notebook
-     * is a file on disk, so it survives restarting the program.
-     *
-     * Tools:
-     *   Files.exists(path)                   -> true if the file is there
-     *   Files.readString(path)               -> the whole file as a String
-     *   Files.createDirectories(folder)      -> makes the folder (and parents) if missing; harmless if it exists
-     *   Files.writeString(path, text)        -> saves text to the file
-     *
-     * Constraints:
-     *   - Never call generateDaily if the file already exists (that would cost money and change the clues).
-     *
-     * Related LeetCode: 146. LRU Cache (serve from a cache, compute and store on a miss)
+     * Today's puzzle for a difficulty: read from its file if it exists (no API call), else the one shipped with the
+     * app, else generated once (one API call), saved and returned. Never generated twice: that would cost money
+     * and change the clues.
      */
     // "synchronized" = only one request at a time may run this. On the website, two players could ask for a new
     // daily at the same moment; without it, both would call Claude and get DIFFERENT clues for the same daily.
@@ -115,7 +81,7 @@ public class PuzzleStore {
         if (Files.exists(file)) {
             return Files.readString(file);
         }
-        // Made ahead of time and shipped with the app (PuzzleBatch, 2026-10-10)? Serve that one
+        // Made ahead of time and shipped with the app? Serve that one
         String shipped = shippedDaily(file.getFileName().toString());
         if (shipped != null) return shipped;
 
@@ -131,7 +97,7 @@ public class PuzzleStore {
     // ---------------------------------------------------------------------------------------
 
     // Fills the SHAPE grid using a seed. The same seed always gives the same grid.
-    // "synchronized" (Step 26): the solver shares App's cache, counters and Trie, which aren't safe for two
+    // "synchronized": the solver shares App's cache, counters and Trie, which aren't safe for two
     // requests to change at the same moment. Filling a grid takes well under a second, so taking turns is fine.
     static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength) {
         return buildGrid(seed, wordsByLength, Set.of());
@@ -141,7 +107,7 @@ public class PuzzleStore {
     // Simply banning them doesn't work: the dense 5x5 shape often has no fill without a few "glue" words like
     // REST, and the search for one can take minutes. So it fills up to GRID_TRIES grids (seed, seed+1, ...; each
     // takes a few milliseconds) and keeps the one with the fewest avoided answers.
-    static final int GRID_TRIES = Integer.getInteger("gridTries", 30);     // (-DgridTries=8 for a faster batch build)
+    static final int GRID_TRIES = 30;
     static synchronized char[][] buildGrid(long seed, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
         return buildGrid(seed, wordsByLength, avoid, "");
     }
@@ -189,7 +155,7 @@ public class PuzzleStore {
         return ChallengeGrid.fill(seed, size, first, second, avoid, firstOnly);
     }
 
-    // Easier words in the campaign (the user, 2026-10-10: "lower the difficulty of the words chosen"). Every campaign
+    // Easier words in the campaign. Every campaign
     // puzzle (and the Daily and Unlimited Boss, which use the campaign's settings) fills from the word list one step
     // easier than its difficulty; the clues stay at the level's own difficulty.
     //   medium 5x5:  Easy's words (was Medium's)
@@ -270,22 +236,6 @@ public class PuzzleStore {
         return Puzzle.create(filled.blackSquares(), filled.grid(), clues, mode, seed, difficulty).toJson();
     }
 
-    // A campaign board with no clues from word lists the caller picks (PuzzleBatch's easier campaign, 2026-10-11:
-    // `first` is a level's list with its hardest words taken out, `second` the full list if a pattern needs it)
-    static String generateBigWith(long seed, String mode, String difficulty, int size, Map<Integer, List<String>> first,
-                                  Map<Integer, List<String>> second, Set<String> avoid, String favors) {
-        ChallengeGrid.Filled filled = null;
-        int bestScore = Integer.MIN_VALUE;
-        for (int attempt = 0; attempt < (favors.isEmpty() ? 1 : BIG_LESSON_TRIES); attempt++) {
-            ChallengeGrid.Filled f = buildChallenge(seed + attempt * 1000L, size, first, second, avoid, CAMPAIGN_FIRST_ONLY);
-            List<String> list = new ArrayList<>();
-            for (Slot slot : Slot.findAllSlots(f.blackSquares())) list.add(slot.getPattern(f.grid()));
-            int score = Lesson.favorScore(favors, list);
-            if (score > bestScore) { filled = f; bestScore = score; }
-        }
-        return Puzzle.create(filled.blackSquares(), filled.grid(), NO_CLUES, mode, seed, difficulty).toJson();
-    }
-
     // A normal 5x5 puzzle as JSON. COSTS MONEY (one API call).
     static String generateSmall(long seed, String mode, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
         return generateSmall(seed, mode, difficulty, wordsByLength, avoid, "", "");
@@ -309,11 +259,11 @@ public class PuzzleStore {
         ClueWriter.ClueSet clues = withClues ? ClueWriter.writeClues(answers, difficulty, focus, strong) : NO_CLUES;
         return Puzzle.create(SHAPE, grid, clues, mode, seed, difficulty).toJson();
     }
-    // an empty clue set: every entry gets a blank clue (the user, 2026-10-09: don't pay for the boss's clues)
+    // an empty clue set: every entry gets a blank clue (the boss's own board doesn't need clues, so it's free)
     static final ClueWriter.ClueSet NO_CLUES = new ClueWriter.ClueSet(List.of());
 
     // ---------------------------------------------------------------------------------------
-    // Fewer repeats (added by Claude at the user's request): the solver likes some words far more than others
+    // Fewer repeats: the solver likes some words far more than others
     // (REST was in 1 of every 3 easy grids, ERROR in 1 of 4), so a new puzzle stays away from the answers of
     // recent puzzles: the last few days' dailies, the campaign levels just before it, the last Unlimited puzzles.
     // ---------------------------------------------------------------------------------------
@@ -381,7 +331,7 @@ public class PuzzleStore {
                                            Map<Integer, List<String>> wordsByLength) throws IOException {
         return getCampaign(folder, section, level, boss, 0, wordsByLength);
     }
-    // The campaign's puzzle pool (2026-10-10): 25 ready-made puzzles per level, made by CampaignPool.java to the same
+    // The campaign's puzzle pool: 25 ready-made puzzles per level, made ahead of time to the same
     // settings and shipped inside the app (src/main/resources/campaign/<world>-<level>[-boss|-pN]-v<k>.json), so
     // nothing has to be generated (or paid for) while people play. null when a puzzle isn't in the pool.
     static String poolPuzzle(String name, int variant) throws IOException {
@@ -389,7 +339,7 @@ public class PuzzleStore {
             return in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
-    // a daily made ahead of time by PuzzleBatch, shipped in the app (src/main/resources/daily/<date>-<kind>.json)
+    // a daily made ahead of time and shipped in the app (src/main/resources/daily/<date>-<kind>.json)
     static String shippedDaily(String fileName) throws IOException {
         try (InputStream in = PuzzleStore.class.getResourceAsStream("/daily/" + fileName)) {
             return in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
@@ -452,7 +402,7 @@ public class PuzzleStore {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Daily Boss and Unlimited Boss (the user, 2026-10-09: "options daily boss and unlimited boss, a random boss"):
+    // Daily Boss and Unlimited Boss:
     // a boss fight outside the campaign, with the boss's campaign puzzle settings (one phase).
     // ---------------------------------------------------------------------------------------
     // Today's boss: 4 bosses along the map each day, so it's never the same two days running and every boss

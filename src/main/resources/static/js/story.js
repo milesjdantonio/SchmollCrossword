@@ -1,10 +1,10 @@
-// The campaign's story (the user, 2026-10-09: "the story is about getting a bunch of pages back for a book"):
+// The campaign's story:
 // the Everbook, the book that holds every word in every world, was torn apart by the Void; its 15 pages fell into
 // the 15 worlds and their bosses took them. Three cinematics and a book you can open:
 //   Story.intro(c, pages)            the opening: the Everbook, the Void tearing it apart, its pages flying to the 15 bosses
 //   Story.page(c, pages, world)      after a boss's first defeat: its page flies into the book
 //   Story.finale(c, pages)           the last page: the book is whole, the words pour back into the worlds
-//   Story.epilogue(c, pages, hero)   the Cursed Angel beaten (the secret world, 2026-10-14): it falls, the rift closes,
+//   Story.epilogue(c, pages, hero)   the Cursed Angel beaten (the secret world): it falls, the rift closes,
 //                                    the Everbook is clasped shut for good, and your hero keeps it
 //   Story.openBook(pages)            the book itself (from the 📖 button on the map): the pages you've won
 // pages = [{ world, name (the world), boss, color, won }] in map order (Campaign.storyPages()).
@@ -84,7 +84,7 @@ const Story = (() => {
     // The opening
     // =============================================================================================
     // the story's own music (Once Upon a Time by TAD, CC0) under every cutscene; it fades out when the scene ends
-    // Each cutscene's music is scored to it (the user, 2026-10-10: "make the story music follow the story animation"):
+    // Each cutscene's music is scored to it:
     // story (the intro), story-page and story-finale, composed for the game so every change lands on a scene (the
     // Void tearing the book, the pages scattering, the title...). The scenes wait for it to start, up to 1.5 s.
     // With the music off, the book's own little chimes play instead.
@@ -99,7 +99,7 @@ const Story = (() => {
         const el = stage("lx-intro"), scene = el.querySelector(".lx-scene"), stop = ambience(el, { letters: true });
         c.cleanup(() => { stop(); el.remove(); });
         await storyMusic(c, "story");
-        // 1. the Everbook, whole: all fifteen pages in it, whether or not you've won them back yet (the user's rule)
+        // 1. the Everbook, whole: all fifteen pages in it, whether or not you've won them back yet
         const whole = pages.map(p => ({ ...p, won: true }));
         scene.innerHTML = `<div class="lx-hero">${bookHtml(whole, { open: false })}</div>`;
         const book = scene.querySelector(".lx-book");

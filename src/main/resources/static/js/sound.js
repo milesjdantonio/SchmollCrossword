@@ -71,8 +71,7 @@ const Sound = (() => {
 
     // ---- building blocks ----
     // Boss-fight sounds (powers.js and the spells files mark theirs boss: true) play at a level set for each move or
-    // ability, from how loud each one measured, so none is louder than the boss music (the user, 2026-10-10: "it
-    // shouldn't be any louder than the music"). bossLevel(x, ms): for the next ms, marked sounds play at x (the
+    // ability, from how loud each one measured, so none is louder than the boss music. bossLevel(x, ms): for the next ms, marked sounds play at x (the
     // quietest one wins when two overlap). Everything else is left alone. On top of that, the player's own Boss Fight
     // Effects volume (bossFxVolume, in the sound menu) scales all of them.
     const levels = [];
@@ -125,7 +124,7 @@ const Sound = (() => {
         if (!ctx) return;
         v *= quiet;
         if (boss) v *= bossGain();
-        // No crash or clap sounds (the owner asked, 2026-10-08): short bursts of noise (claps, clicks, hi-hats,
+        // No crash or clap sounds : short bursts of noise (claps, clicks, hi-hats,
         // crackles) and hissy high-pass noise (cymbal crashes) are skipped everywhere. Soft whooshes, wind and
         // low rumbles still play.
         if (d < 0.25 || type === "highpass") return;
@@ -153,9 +152,9 @@ const Sound = (() => {
         select: () => { tone({ f: 1320, type: "triangle", d: 0.05, v: 0.06 }); tone({ t: 0.04, f: 1760, type: "triangle", d: 0.07, v: 0.05 }); },
         nav: () => { noise({ f: 400, f2: 3200, d: 0.22, v: 0.1, q: 0.8 }); tone({ f: 520, f2: 880, type: "triangle", d: 0.16, v: 0.05 }); },
         whoosh: () => noise({ f: 250, f2: 2800, d: 0.45, v: 0.18, q: 0.7 }),
-        // changing worlds (the user, 2026-10-11: replace the clap-like whoosh): no noise at all, a soft rising
+        // changing worlds: no noise at all, a soft rising
         // sweep of two sine voices that lands on a pair of bell notes
-        // changing worlds: a soft, low rise into a warm two-note chord (no high sweep or bell: the user, 2026-10-11)
+        // changing worlds: a soft, low rise into a warm two-note chord (no high sweep or bell)
         worldSwap: () => {
             tone({ f: 196, f2: 294, type: "sine", d: 0.5, v: 0.08, a: 0.1 });
             tone({ t: 0.22, f: midi(60), type: "sine", d: 0.8, v: 0.05, a: 0.04 });
@@ -244,7 +243,7 @@ const Sound = (() => {
         src.connect(gain).connect(fxBus);
         src.start(ctx.currentTime + t);
     }
-    // Music: two buses under the Master Volume, each with its own slider and no switch (the user, 2026-10-14):
+    // Music: two buses under the Master Volume, each with its own slider and no switch:
     // Boss Music (boss songs, the story, winning and losing: music() below) and Level Music (levelSong()). A slider
     // at 0 is off: that kind of song isn't even downloaded.
     let musicBus = null, levelBus = null, track = null;
@@ -255,8 +254,7 @@ const Sound = (() => {
         if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); }
         if (!levelBus) { levelBus = ctx.createGain(); levelBus.gain.value = levelLevel(); levelBus.connect(master); }
     };
-    // songs.json: each boss song's loop points. A song file starts with its build-up (the user's design: the intro is
-    // music that builds up and runs straight into the song), the song proper starts at "hit", then the browser loops
+    // songs.json: each boss song's loop points. A song file starts with its build-up, the song proper starts at "hit", then the browser loops
     // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
     let songs = null;
     const songList = () => songs || (songs = fetch("audio/music/songs.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
@@ -325,9 +323,9 @@ const Sound = (() => {
         }
     });
 
-    // ---- level songs (the user, 2026-10-10: a chill song for every campaign level, each one different) ----
+    // ---- level songs ----
     // levelSong("level-garden-2") plays audio/music/level-garden-2.mp3, fading in; levelSong(null) fades it out.
-    // It loops on itself (the user, 2026-10-11: "make sure all the level musics loop on itself nicely"): the file
+    // It loops on itself: the file
     // plays once from the top, then [loopStart, loopEnd] from level-loops.json repeats forever with no gap, so it's
     // decoded and played like the boss songs (an <audio> element can't loop part of a file, and leaves a gap when
     // it loops the whole). Only one plays at a time and only it is kept decoded; it's under the Level Music slider (0

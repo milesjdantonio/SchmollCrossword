@@ -1,4 +1,4 @@
-// Campaign bosses (built by Claude at the user's request): one boss per world, drawn as detailed SVG characters on a
+// Campaign bosses: one boss per world, drawn as detailed SVG characters on a
 // 240 x 240 canvas, plus everything that shows them FULL SCREEN in a boss fight:
 //
 //   Bosses.info(world)        name, colour, taunt
@@ -462,7 +462,7 @@ const Bosses = (() => {
 
 
     // ---------- The secret world, the Celestial Rift: The Cursed Angel ----------
-    // (2026-10-14) once the Everbook's guardian; it tried to keep the book for itself and was locked away, and the
+    // once the Everbook's guardian; it tried to keep the book for itself and was locked away, and the
     // Void's fall broke its prison open. A cracked halo, white wings above and corrupted black ones below, a robe the
     // corruption is climbing, a broken shackle on one wrist and a glowing book-sigil in its open hand.
     B.rift = { name: "The Cursed Angel", color: "#e8c66a", taunt: "Kneel, little writer. The Everbook is mine.", arena: ["#3a1a6a", "#07031a"], fx: "feathers",
@@ -516,7 +516,7 @@ const Bosses = (() => {
     // =============================================================================================
     // Rendering
     // =============================================================================================
-    // The story (the user asked for lore: why are you fighting them?). The Everbook, the great book that holds every
+    // The story. The Everbook, the great book that holds every
     // word, was torn apart, and each world's boss grabbed a piece of it. Win back every piece, world by world.
     //   story: the level sheet's paragraph · stakes: one line on the intro screen
     const LORE = {
@@ -738,8 +738,8 @@ const Bosses = (() => {
     // ---------------------------------------------------------------------------------------------
     // Full-screen moments
     // ---------------------------------------------------------------------------------------------
-    // The intro: the boss fills the screen, its name slams in, FIGHT! (no "VS": the user's request) The music is the boss song's own build-up
-    // (no sound effects, the user's design): FIGHT! lands on the beat where the song proper starts (until = Sound.buildDone)
+    // The intro: the boss fills the screen, its name slams in, FIGHT! The music is the boss song's own build-up
+    // (no sound effects): FIGHT! lands on the beat where the song proper starts (until = Sound.buildDone)
     async function intro(c, world, { until = null } = {}) {
         const b = info(world), still = U.motion() === "still";
         const el = U.el("div", { class: "bfx-intro", style: { "--boss": b.color, "--a1": b.arena[0], "--a2": b.arena[1] }, "aria-hidden": "true",

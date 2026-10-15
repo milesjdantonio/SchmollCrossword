@@ -1,5 +1,4 @@
-// Every boss move's own big effect (the user, 2026-10-09: the Thunderhead-lightning effort for every ability,
-// "player and boss"). The boss's moves come FROM the boss (its portrait) and land ON you: your board, the squares they
+// Every boss move's own big effect. The boss's moves come FROM the boss (its portrait) and land ON you: your board, the squares they
 // changed, your clue list, your abilities, your Super meter, your items. Each one is staged like the abilities in
 // spells-abilities.js: a source, something that travels, the hit, the letters reacting, physical particles.
 // Moves that power the boss up (Umbrella, Jet Stream...) play on the boss instead.
@@ -952,7 +951,7 @@
     });
 
     // =========================================================================================
-    // The Celestial Rift: The Cursed Angel (2026-10-14)
+    // The Celestial Rift: The Cursed Angel
     // =========================================================================================
     // Judgment Rays: a column of holy light drops out of the sky onto every square of each row it aimed at, one
     // after another; the row flashes white along its length and the letters burn away upward as light
@@ -1067,8 +1066,7 @@
         } });
         await wait(1800);
     });
-    // ---- its second five (the user, 2026-10-14: "5 more abilities ... one of them clears an entire column with an
-    //      angelic beam") ----
+    // ---- its second five ----
     // Seraph's Lance: a spear of light with little wings on its head falls out of the sky straight down the column;
     // each square it passes flashes and burns away. Then a pillar of light stands on the column, rings of light
     // running down it and feathers spiralling round it, before it narrows to a thread and goes out

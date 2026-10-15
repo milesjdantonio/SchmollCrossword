@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-// Step 13b-3: the letter tree, tested on a tiny word list
+// The letter tree, tested on a tiny word list
 class TrieTest {
 
     private Trie trie;

@@ -1,4 +1,4 @@
-// The World Leaderboard (built by Claude at the user's request, 2026-10-09): today's dailies, posted under a first
+// The World Leaderboard: today's dailies, posted under a first
 // name and a last-name initial ("Miles D."), ranked by each player's total points for the day.
 //
 //   Leaderboard.after(record, box)   on the results screen: post this daily (asks for a name the first time)
@@ -144,7 +144,7 @@ const Leaderboard = (() => {
         }
     }
 
-    // Home: today's top 50 across the bottom of the page (the user, 2026-10-10: "this leaderboard can show top 50")
+    // Home: today's top 50 across the bottom of the page
     async function drawHome(el, count) {
         if (!el) return;
         try {

@@ -13,8 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 /*
- * ===== Security headers =====   (written by Claude at the user's request, 2026-10-09: "make sure anything the
- * player can input couldn't run code and it's very secure")
+ * ===== Security headers =====   (nothing a player can type may ever run as code)
  *
  * A "filter" runs on every request before Spring's controllers see it. This one:
  *

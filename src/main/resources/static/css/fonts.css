@@ -476,7 +476,7 @@
   src: url(../fonts/ShareTechMono-Regular.ttf) format('truetype');
 }
 
-/* Cinzel (the Celestial Rift's headings and letters, 2026-10-14): the original font file from google/fonts, unchanged */
+/* Cinzel (the Celestial Rift's headings and letters): the original font file from google/fonts, unchanged */
 @font-face {
   font-family: 'Cinzel';
   font-style: normal;

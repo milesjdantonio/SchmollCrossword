@@ -112,21 +112,8 @@ public class Slot {
     }
 
     /*
-     * ===== Step 8a: Place a Word =====
-     *
-     * Write `word` into filledGrid along this slot, one letter per square.
-     * Return the squares that were EMPTY ('.') before and got a letter from this call.
-     * Squares that already had a letter (from a crossing word) are NOT in the list.
-     *
-     * Example:  grid row 0 = "C...", slot = Across (0,0) length 4, word = "CATS"
-     *           -> grid row 0 becomes "CATS"
-     *           -> returns [{0,1}, {0,2}, {0,3}]   (the C was already there)
-     *
-     * Constraints:
-     *   - word.length() == length, and word already fits getPattern() (findMatches guarantees this).
-     *   - Never return null. If nothing was empty, return an empty list.
-     *
-     * Related LeetCode: 37. Sudoku Solver, 51. N-Queens (place a choice, remember it, undo it later)
+     * Writes `word` into filledGrid along this slot and returns the squares that were empty before (only those:
+     * squares a crossing word already filled aren't in the list). E.g. "C..." + CATS -> [{0,1}, {0,2}, {0,3}].
      */
     List<int[]> placeWord(char[][] filledGrid, String word) {
         List<int[]> result = new ArrayList<>();
@@ -140,18 +127,10 @@ public class Slot {
                 result.add(cells.get(i));
             }
         }
-        return result; // placeholder so the project compiles
+        return result;
     }
 
-    /*
-     * ===== Step 8b: Remove a Word =====
-     *
-     * Undo a placeWord: set every square in `placedCells` back to '.'.
-     * Only touch those squares, so letters that belong to crossing words stay put.
-     *
-     * Example:  after placing "CATS" above, removeWord(grid, [{0,1}, {0,2}, {0,3}])
-     *           -> grid row 0 is back to "C..."
-     */
+    // Undoes a placeWord: blanks exactly the squares it filled, so letters of crossing words stay put
     void removeWord(char[][] filledGrid, List<int[]> placedCells) {
         for (int[] placedCell : placedCells) {
             filledGrid[placedCell[0]][placedCell[1]] = '.'; 

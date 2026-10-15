@@ -1,4 +1,4 @@
-// Campaign mode (built by Claude at the user's request): a map of the worlds, travelled from easy to hard. Each world
+// Campaign mode: a map of the worlds, travelled from easy to hard. Each world
 // has 5 levels; level 5 is a boss battle.
 //
 //   #campaign   the map: its own full page that scrolls down through every world (an Exit button goes home).
@@ -22,7 +22,7 @@ const Campaign = (() => {
     const W = 1000, SH = 1000, TOP = 170, BOTTOM = 240;     // map units: the map's width, one world's height, margins
     // Par times (seconds) for the "quick" star, for a 5x5 board; bigger boards get more time, by their area
     // ("challenge" = a Challenge grid with medium clues, "expert" = hard words and clues; see Campaign.java)
-    // (15% more time than they used to be: the user, 2026-10-10, "reduce the difficulty of the campaign across the board by around 15%")
+    // (15% more time than they used to be)
     const PAR_BASE = { easy: 140, medium: 210, hard: 280, challenge: 255, expert: 310 };
     const par = (d, size = 5) => Math.round((PAR_BASE[d] || 180) * Math.max(1, (size * size) / 25) / 10) * 10;
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -40,14 +40,13 @@ const Campaign = (() => {
     data.items = data.items || {};
 
     let map = null, full = null, loading = null;
-    // The secret world (the Celestial Rift, the user's design, 2026-10-14): on the map only once the Void is beaten
+    // The secret world (the Celestial Rift): on the map only once the Void is beaten
     // (or with the beta's Unlock All). map is what's shown; full has it too.
-    // TEST_SECRET_OPEN (the user, 2026-10-14: "for testing purposes can you leave it unlocked"): true puts the rift on
-    // the map and opens its first level without beating the Void. Off again (the user, later that day: "hide the
-    // celestial rift like how we planned ... it only gets shown after the void is beaten").
+    // TEST_SECRET_OPEN: true puts the rift on the map and opens its first level without beating the Void (for testing;
+    // false for everyone else).
     const TEST_SECRET_OPEN = false;
     // really unlocked (the Void beaten, or Unlock All), ignoring TEST_SECRET_OPEN: what the credits and the start
-    // screen's boss parade go by, so they never give the rift or the angel away (the user, 2026-10-14)
+    // screen's boss parade go by, so they never give the rift or the angel away
     const secretEarned = () => !!(data.betaUnlock || (data.levels && data.levels["space-5"]));
     const secretOpen = () => TEST_SECRET_OPEN || secretEarned();
     const visibleMap = () => full.filter(s => !s.secret || secretOpen());
@@ -84,7 +83,7 @@ const Campaign = (() => {
     const phase2Of = s => (s && s.phase2 ? s.phase2 : ["challenge", 6]);          // a boss's second puzzle: [difficulty, size]
     // every puzzle after a boss's first: [[difficulty, size], ...] (2 phases for most bosses, 3 for the last three, 5 for the Void)
     const laterPhases = s => (s && s.phases ? s.phases : [phase2Of(s)]);
-    // The puzzle pool (the user, 2026-10-10: "make 25 [per level] ... that it pulls from randomly"): every level has
+    // The puzzle pool: every level has
     // POOL ready-made puzzles with the same settings (Campaign.VARIANTS, PuzzleBatch.java), and every fresh start of a
     // level picks one at random, never one of the last RECENT you played there (so losing or replaying always brings a
     // new board and new clues). data.picks: each level's current one; data.recent: the last few.
@@ -100,8 +99,7 @@ const Campaign = (() => {
     }
     const tryOf = (world, level) => { const v = (data.picks || {})[keyOf(world, level)]; return v == null ? newPick(world, level) : v; };
     const playedBefore = (world, level) => (((data.recent || {})[keyOf(world, level)]) || []).length > 1;
-    // Lessons (the user's goal: keep improving the player, making them practise something different each level
-    // until they're a pro). Every level teaches one skill (Lesson.java on the server): its clues train it, and its
+    // Lessons. Every level teaches one skill (Lesson.java on the server): its clues train it, and its
     // third star is a goal that fits it.
     const lessonOf = (si, level) => (map && map[si] && map[si].lessons ? map[si].lessons[level - 1] : null);
     // the third star's goal: [text, check(game, puzzle)]
@@ -110,7 +108,7 @@ const Campaign = (() => {
         switch (lesson && lesson.star) {
             case "brisk": return [`Finish Under ${U.fmtTime(t(0.75))}`, g => g.seconds <= t(0.75)];
             case "fast": return [`Finish Under ${U.fmtTime(t(0.6))} (Speed)`, g => g.seconds <= t(0.6)];
-            // the campaign has no Check or Reveal (the user's rule), so these count wrong letters typed instead
+            // the campaign has no Check or Reveal, so these count wrong letters typed instead
             case "nocheck": return ["4 Wrong Letters or Fewer", g => (g.typos || 0) <= 4];
             case "clean": return ["A Clean Solve: 1 Wrong Letter at Most", g => (g.typos || 0) <= 1];
             default: return [`Finish Under ${U.fmtTime(p)}`, g => g.seconds <= p];
@@ -379,7 +377,7 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Your hero (hero.js; the user, 2026-10-11): made the first time the campaign opens, changed with the Hero button,
+    // Your hero (hero.js): made the first time the campaign opens, changed with the Hero button,
     // standing on the map on the level it's at and walking the road to the next one. data.hero is its look,
     // data.heroAt the level it stands on ({ si, level }), data.arrived the furthest world it has arrived in (each new
     // world plays its arrival scene once, see travel.js)
@@ -436,7 +434,7 @@ const Campaign = (() => {
             requestAnimationFrame(step);
         });
     }
-    // the bosses you've beaten: each one gives your hero new parts (hero.js; the user, 2026-10-14)
+    // the bosses you've beaten: each one gives your hero new parts (hero.js)
     const beatenBosses = () => (data.betaUnlock ? Bosses.list : (full || map || []).map(s => s.world).filter(w => data.levels[keyOf(w, 5)]));
     async function editHero(first = false) {
         const look = await Hero.maker({ look: data.hero || null, first, beaten: beatenBosses() });
@@ -559,8 +557,7 @@ const Campaign = (() => {
         box.classList.toggle("boss", boss);
         box.style.setProperty("--c", boss ? bossOf(s.world).color : biome(s.world).node);
         box.appendChild(U.el("button", { type: "button", class: "cm-sheet-close", "aria-label": "Close", text: "×", onclick: closeSheet }));
-        // a boss's sheet fits the screen (the user, 2026-10-14: "make it so you dont have to scroll for the boss page,
-        // every option should be there"): its moves | you vs the boss, with its story under them | the details, and a
+        // a boss's sheet fits the screen: its moves | you vs the boss, with its story under them | the details, and a
         // footer with your abilities and the buttons that always stays in view
         if (boss) box.appendChild(U.el("div", { class: "cm-side" },
             U.el("div", { class: "cm-detail-art cm-vs" },
@@ -693,7 +690,7 @@ const Campaign = (() => {
     }
 
     const slotName = () => !data.playing ? "campaign-none" : data.playing.special ? "special-" + data.playing.special : "campaign-" + keyOf(data.playing.world, data.playing.level);
-    // Daily Boss / Unlimited Boss (the user, 2026-10-09): a boss fight outside the campaign. data.playing.special
+    // Daily Boss / Unlimited Boss: a boss fight outside the campaign. data.playing.special
     // says which; it's that boss's own race (its moves, music and arena) at its campaign boss puzzle, one phase.
     // Nothing in the campaign changes: no stars or records, no rerolls, no pages for the book.
     const special = () => (data.playing && data.playing.special) || null;
@@ -761,7 +758,7 @@ const Campaign = (() => {
     function titles() {
         const c = current(), w = c && Worlds.byId[c.world];
         if (!w) return { title: "Campaign", sub: "" };
-        if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // just "Boss" on Daily and Unlimited (the user)
+        if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // just "Boss" on Daily and Unlimited
         const where = isSecret(c.si) ? "Secret World" : `World ${c.si + 1}`;
         if (c.level === 5) return { title: "Boss: " + bossOf(c.world).name, sub: `${where} · ${w.name}` };
         return { title: `${w.name} · Level ${c.level}`, sub: (isSecret(c.si) ? where : `${where} of ${MAIN}`) + (c.difficulty ? ` · ${label(c.difficulty, c.size)}` : "") };
@@ -780,7 +777,7 @@ const Campaign = (() => {
     }
 
     // Called by app.js for every screen: campaign screens wear the campaign's world; the rest wear the player's own
-    // Check and Reveal (the user's rules): never in the campaign (levels and bosses alike), always on the Daily and
+    // Check and Reveal: never in the campaign (levels and bosses alike), always on the Daily and
     // Unlimited Boss and everywhere else. ONE class decides it, set whenever the screen or the puzzle changes, so it
     // can't be left over from an earlier screen or wait for a fight's panel (it used to be three classes set at
     // different moments, so Check and Reveal sometimes showed and sometimes didn't)
@@ -838,7 +835,7 @@ const Campaign = (() => {
         skipping = false;
         const key = keyOf(c.world, c.level), old = data.levels[key];
         const firstClear = !old;
-        // coins: more for a first clear, and for bosses (levels pay a little more since 2026-10-11, the user's request)
+        // coins: more for a first clear, and for bosses 
         const coins = (boss ? 25 : 7) * stars + (firstClear ? (boss ? 100 : 30) : 0);
         data.coins = (data.coins || 0) + coins;
         data.levels[key] = { stars: Math.max(stars, old ? old.stars : 0), seconds: Math.min(game.seconds, old && old.seconds ? old.seconds : Infinity) };
@@ -910,16 +907,15 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Abilities (boss fights): 3 per world, each one different (no repeats, no stronger copies; the user's rule).
+    // Abilities (boss fights): 3 per world, each one different (no repeats, no stronger copies).
     // What they are, how they look and sound is in powers.js; what each one does is in useAbility below.
     // ---------------------------------------------------------------------------------------------
     const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];   // the map order (Campaign.java)
     const ABILITIES = Powers.ABILITIES.map(a => ({ ...a, price: 30 + WORLD_ORDER.indexOf(a.world) * 8 }));
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
-    // Unlocking (the user's design): a world's 1st ability unlocks when you clear its level 1, the 2nd at level 3,
-    // the 3rd when you beat its boss. The Celestial Rift has four, one per level, all before the angel (the user,
-    // 2026-10-14: "make it so you learn all the skills before the boss ... 1 skill for each of the 4 levels").
+    // Unlocking: a world's 1st ability unlocks when you clear its level 1, the 2nd at level 3,
+    // the 3rd when you beat its boss. The Celestial Rift has four, one per level, all before the angel.
     // Each unlock comes with FREE_USES uses; more cost coins in the shop.
     const FREE_USES = 2;
     const unlockAt = world => (world === "rift" ? [1, 2, 3, 4] : [1, 3, 5]);
@@ -962,8 +958,7 @@ const Campaign = (() => {
         save();
     }
     // Which abilities a boss fight brings, on keys 1-3:
-    //   - campaign bosses: any 3 you've unlocked, from any world (the user, 2026-10-10: "be able to equip whatever
-    //     ability you have unlocked"), picked on the boss's sheet or in the shop (data.loadout). Empty slots fill
+    //   - campaign bosses: any 3 you've unlocked, from any world, picked on the boss's sheet or in the shop (data.loadout). Empty slots fill
     //     with this world's unlocked ones first, then the newest you've unlocked.
     //   - the Boss on Daily and Unlimited: its own world's three, all unlocked, 3 uses each every attempt (fight.uses;
     //     the campaign's uses aren't touched)
@@ -979,7 +974,7 @@ const Campaign = (() => {
     }
     function equip(list) { data.loadout = list.filter(Boolean).slice(0, 3); save(); }
     const readyAbilities = (world) => loadout(world).filter(id => abilityOpen(abilityById[id]));
-    const DAILY_USES = 3, DAILY_TRY_COST = 50, UNLIMITED_TRY_COINS = 50;   // 50 per earlier attempt (the user, 2026-10-13)
+    const DAILY_USES = 3, DAILY_TRY_COST = 50, UNLIMITED_TRY_COINS = 50;   // 50 per earlier attempt
     const abilityOpen = a => (ownUses() ? a.world === fight.world : unlockedAbility(a));
     const usesOf = id => (ownUses() ? fight.uses[id] || 0 : data.owned[id] || 0);
     function spendUse(id) { if (ownUses()) fight.uses[id] = Math.max(0, (fight.uses[id] || 0) - 1); else { data.owned[id] = Math.max(0, (data.owned[id] || 0) - 1); save(); } }
@@ -999,8 +994,7 @@ const Campaign = (() => {
         saveCarry(won);
         save();
     }
-    // The words you got right carry over to your next attempt, filled in and locked (the user, 2026-10-10: "save the
-    // words you had correct for the next attempt (and they're locked)"). Only words you finished right yourself count
+    // The words you got right carry over to your next attempt, filled in and locked. Only words you finished right yourself count
     // (fight.credited: Reveal Puzzle's letters never do), saved with the puzzle's seed: per day on Daily, per boss on
     // Unlimited (a Rematch keeps them; a New Boss starts clean). A win clears them, so a Daily rematch starts empty.
     const carryKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-carry";
@@ -1196,9 +1190,9 @@ const Campaign = (() => {
         itemBar.hidden = U.view() !== "level";
         if (itemBar.hidden) return;
         itemBar.innerHTML = "";
-        const noItems = !!special();                           // the Daily and Unlimited Boss: no items (the user's rule), just Give Up
+        const noItems = !!special();                           // the Daily and Unlimited Boss: no items, just Give Up
         itemBar.classList.toggle("only-giveup", noItems);
-        // every item on one row (the user, 2026-10-11: "make sure all 5 items fit on the top row"), then the shop
+        // every item on one row, then the shop
         // and Give Up under it
         const row = U.el("div", { class: "cm-item-row" });
         if (!noItems) { row.appendChild(U.el("span", { class: "helper-label", text: "Items" })); itemBar.appendChild(row); }
@@ -1214,7 +1208,7 @@ const Campaign = (() => {
         if (!noItems) itemBar.appendChild(U.el("button", { type: "button", class: "cm-item shop", title: "Open the shop", text: "🛒", onclick: () => openShop("items") }));
         itemBar.appendChild(U.el("button", { type: "button", class: "cm-item giveup", title: "Give up this level", text: "Give Up", onclick: e => { e.currentTarget.blur(); giveUp(); } }));
     }
-    // Give up (the user asked for it on bosses and every level): ends the level without revealing the answers.
+    // Give up: ends the level without revealing the answers.
     // Nothing is saved, so you can try it again straight away.
     async function giveUp() {
         const g = Game.state;
@@ -1267,7 +1261,7 @@ const Campaign = (() => {
                     : U.el("button", { type: "button", class: "btn primary", text: level === 5 ? "Rematch" : "Try Again", onclick: () => { modal.remove(); play(world, level); } }),
                 special() ? null : U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(level === 5 ? "abilities" : "items") }),
                 U.el("button", { type: "button", class: special() ? "btn" : "btn ghost", text: special() ? "Return" : "Map", onclick: () => { modal.remove(); if (special()) backToMode(); else location.hash = "#campaign"; } }),
-                // the Unlimited Boss: Rematch, Return or New Boss (the user's three choices)
+                // the Unlimited Boss: Rematch, Return or New Boss
                 special() === "unlimited" ? U.el("button", { type: "button", class: "btn", text: "New Boss", onclick: () => { modal.remove(); playSpecial("unlimited"); } }) : null));
         modal.appendChild(card);
         document.getElementById("overlay").appendChild(modal);
@@ -1302,7 +1296,7 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Boss fights (the user's design, 2026-10-09): a pure RACE against a bot that solves its own puzzle next to
+    // Boss fights: a pure RACE against a bot that solves its own puzzle next to
     // yours. No HP and no clock: whoever finishes their board first wins the phase. Win the last phase to win.
     //   - the race bar at the top shows who's ahead: it pushes right when you lead, left when the boss does
     //   - you and the boss use abilities on each other to slow each other down
@@ -1318,10 +1312,8 @@ const Campaign = (() => {
     // how long the boss takes to solve its puzzle: the level's par time times this, by difficulty...
     const BOT_PACE = { easy: 1.15, medium: 1.05, hard: 0.95, challenge: 1, expert: 0.95 };
     // ...and faster in every world (world 1: x1.15, world 15: x0.72) and every phase (x0.94 each); on top of that every
-    // boss solves 15% faster than it used to (the user, 2026-10-09: "make each boss a little harder")
-    // (0.85, then 0.72; then a touch slower again at the user's request: 0.77; then every boss 10% easier, the user,
-    // 2026-10-11: it takes 10% longer to solve, 0.77 x 1.1)
-    const BOSS_SPEEDUP = 0.77 * 1.1 / 1.1;            // (2026-10-14, the user: "make the bosses solve 10% faster")
+    // boss solves 15% faster than it used to
+    const BOSS_SPEEDUP = 0.77;
     // (the boss's pace is set from the par times levels had before they got 15% longer: bosses didn't change)
     const BOSS_PAR = { easy: 120, medium: 180, hard: 240, challenge: 220, expert: 270 };
     const bossPar = (d, size) => Math.round((BOSS_PAR[d] || 180) * Math.max(1, (size * size) / 25) / 10) * 10;
@@ -1352,7 +1344,7 @@ const Campaign = (() => {
     let fight = null, lastKeyAt = 0;
     const panel = U.el("aside", { class: "boss-panel", hidden: true, "aria-label": "The boss" });
     document.getElementById("puzzle").appendChild(panel);
-    // The race bar (the user's design): at the top, the level's friend on the left and the boss on the right. The
+    // The race bar: at the top, the level's friend on the left and the boss on the right. The
     // middle is pushed right when you're ahead and left when the boss is (how far = how much more of the board).
     const raceEl = U.el("div", { class: "race-bar", hidden: true, role: "img", "aria-label": "Who's ahead in the race",
         html: `<div class="rb-side rb-me"><canvas class="rb-face" width="112" height="112"></canvas><div class="rb-who"><small>YOU</small><b class="rb-pct">0%</b></div></div>
@@ -1424,7 +1416,7 @@ const Campaign = (() => {
     const meStatus = U.el("div", { class: "me-status", "aria-live": "polite" });
     document.querySelector(".hud-row").after(meStatus);
     const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "polite" });
-    raceEl.querySelector(".rb-track").appendChild(warnEl);           // right under the race bar's "who's ahead" label (the user's spot)
+    raceEl.querySelector(".rb-track").appendChild(warnEl);           // right under the race bar's "who's ahead" label
     document.body.appendChild(U.el("div", { class: "close-edge", "aria-hidden": "true" }));   // red edges when the boss is almost done (.boss-close)
     const flareEl = U.el("div", { class: "fx-flare-screen", "aria-hidden": "true" });
     document.body.appendChild(flareEl);
@@ -1476,7 +1468,7 @@ const Campaign = (() => {
                 if (kept && fight && fight.key === key) notice("🔒", kept === 1 ? "1 Word Kept" : `${kept} Words Kept`, "Your right words from last time are filled in and locked.", "good", 4200);
             }
             else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
-            if (fight && fight.key === key && special()) setChaos(1);     // the Daily and Unlimited Boss's arena goes wild too (the user's request)
+            if (fight && fight.key === key && special()) setChaos(1);     // the Daily and Unlimited Boss's arena goes wild too
         } catch (err) {
             waiting(false, "Couldn't load the boss's puzzle: " + err.message);
             const l = panel.querySelector(".bp-loading");
@@ -1484,8 +1476,7 @@ const Campaign = (() => {
         }
     }
     // Back to a fight that's still going (you left for another screen and came back): leaving took down the panel, the
-    // arena's chaos, the rage and the music, so put them all back (the user: "it gets rid of all of the boss stuff like
-    // the background, the music, and abilities")
+    // arena's chaos, the rage and the music, so put them all back
     function resumeFight() {
         const f = fight;
         if (!f) return;
@@ -1528,7 +1519,7 @@ const Campaign = (() => {
     }
     function showPanel() {
         panel.hidden = false;
-        root.classList.toggle("special-boss", !!special());                 // the Daily and Unlimited Boss keep Check and Reveal (the user's rule)
+        root.classList.toggle("special-boss", !!special());                 // the Daily and Unlimited Boss keep Check and Reveal
         raceEl.hidden = false;
         raceShown = -1;
         raceFaceFor = "";
@@ -1565,7 +1556,7 @@ const Campaign = (() => {
                 <div class="bp-volume" title="Boss Music (also in Settings)"><button type="button" class="bp-vol-mute" aria-label="Boss music on or off"></button><input type="range" min="0" max="100" step="1" aria-label="Boss music volume"><output></output></div>
                 <div class="bp-abilities"><small>YOUR MOVES</small><div class="bp-ab-row"></div></div>
                 <div class="bp-board-wrap"><div class="bp-board"></div><div class="bp-fog" aria-hidden="true"></div><p class="bp-loading">The boss is getting ready…</p></div>`;
-            // (the boss's clues aren't shown, or even written: the user, 2026-10-09, so its board costs nothing)
+            // (the boss's clues aren't shown, or even written, so its board costs nothing)
             panel.querySelector(".bp-who b").textContent = b.name;
             if (fight.phase >= 2) panel.querySelector(".bp-who b").appendChild(U.el("span", { class: "bp-phase", text: fight.phase === fight.phases && fight.phases > 2 ? "FINAL PHASE" : "PHASE " + fight.phase }));
             panel.classList.toggle("phase2", fight.phase >= 2);
@@ -1596,7 +1587,7 @@ const Campaign = (() => {
         }
         drawFight();
     }
-    // When the boss blocks your abilities or items, the buttons say so for as long as it lasts (the user, 2026-10-09):
+    // When the boss blocks your abilities or items, the buttons say so for as long as it lasts:
     // Weed Wrap seals your abilities, its Umbrella bounces your next one, Firewall blocks your items
     function drawBlocks() {
         const f = fight;
@@ -1648,9 +1639,8 @@ const Campaign = (() => {
 
     }
     const real = (r, c) => { const ch = fight.letters[r][c]; return !!ch && ch !== "." && ch !== BLOT; };
-    // A music slider right in the game: Boss Music in a boss fight (the user: "when you're in a boss you don't have to
-    // travel menus"), Level Music by the timer in a level. The same settings as in Settings > Sound; 1% steps, no
-    // mouse wheel (the user, 2026-10-14). The button mutes that music (the slider goes to 0) and brings it back to
+    // A music slider right in the game: Boss Music in a boss fight, Level Music by the timer in a level. The same settings as in Settings > Sound; 1% steps, no
+    // mouse wheel. The button mutes that music (the slider goes to 0) and brings it back to
     // where it was.
     const lastMusic = {};
     const musicPct = key => Math.round(U.clamp(Settings.get(key) ?? 1, 0, 1) * 100);
@@ -1687,8 +1677,7 @@ const Campaign = (() => {
     }
     Settings.on(key => { if (key === "bossMusicVolume" || key === "sound") drawVolume(); });
 
-    // ---- the level's own song (the user, 2026-10-10: "add a song to each level (different for each level), not
-    // intense, not boss like, more just chill music that follows the level's theme"), and a music control by the
+    // ---- the level's own song, and a music control by the
     // timer to change it quickly ("add a music slider to the levels"). Songs: audio/music/level-<world>-<1..4>.mp3
     const songFor = (world, level) => `level-${world}-${level}`;
     const musicCtl = U.el("div", { class: "music-ctl", hidden: true, title: "Level Music (also in Settings and the sound menu)" },
@@ -1727,7 +1716,7 @@ const Campaign = (() => {
     Bus.on("win", () => levelMusic());
     Bus.on("surrender", () => levelMusic());
     // The warning box under the race bar: an attack winding up comes first, then what just happened (notice), then
-    // the boss being almost done (85%, the user's request)
+    // the boss being almost done (85%)
     let warnKey = "";
     function drawWarn() {
         const f = fight, wu = panel.querySelector(".bp-windup");
@@ -1861,8 +1850,7 @@ const Campaign = (() => {
         clearTimeout(speechTimer);
         speechTimer = setTimeout(() => { el.hidden = true; }, ms);
     }
-    // What just happened in the fight (the user, 2026-10-10: the full-screen text "covers the entire screen and it's
-    // annoying"): it's said in the warning box under the race bar for a few seconds. A wind-up there comes first.
+    // What just happened in the fight: it's said in the warning box under the race bar for a few seconds. A wind-up there comes first.
     //   tone: "good" (you blocked or countered), "bad" (it hit you), "mine" (your ability), "rage", "info"
     let note = null;
     function notice(icon, title, sub = "", tone = "info", ms = 2800) {
@@ -2121,7 +2109,7 @@ const Campaign = (() => {
         setTimeout(() => el.remove(), 1200);
     }
     // who's ahead in the race; far behind, the boss gets angry (not while it's calmed)
-    // the boss is almost done (the user: a warning at 85%): red edges, the warning box, an alarm; off again below 80%
+    // the boss is almost done: red edges, the warning box, an alarm; off again below 80%
     const CLOSE_AT = 0.85, CLOSE_OFF = 0.8;
     function updateHp() {
         const f = fight;
@@ -2366,20 +2354,18 @@ const Campaign = (() => {
         }
     }
     // ---- the boss's turn to be mean: first a wind-up (finish a word to block it), then the attack lands ----
-    // Each boss has 5 moves, the Cursed Angel 10 (the user asked for 5, all of them doing something that really hurts, and later 5 more for the angel); it picks one at
+    // Each boss has 5 moves, the Cursed Angel 10; it picks one at
     // random, never the same one twice in a row.
 
     // ---------------------------------------------------------------------------------------------
-    // Counterplay (the user, 2026-10-09: "add additional counterplay to every boss ability", e.g. "click the solar
-    // flare before it activates to cancel it and blind the boss instead", "words on the bottom of the board limit how
-    // far a flash flood goes up"). Besides blocking with a word, every move has its own way to fight back:
+    // Counterplay. Besides blocking with a word, every move has its own way to fight back:
     //   - INTERCEPTS: during the wind-up a drawn target appears; click it in time and the move is cancelled and
     //     turned back on the boss
     //   - your progress protects you: finished (right) words resist the move
     //   - once it lands, you can break it: brush snow off, cut thorns, wipe ink, repair glitched letters...
     // ---------------------------------------------------------------------------------------------
     // what to do about each move (shown on the warning and on the effect's chip)
-    // a tip in Title Case: "click the eraser to snatch it" -> "Click The Eraser To Snatch It" (the user, 2026-10-10)
+    // a tip in Title Case: "click the eraser to snatch it" -> "Click The Eraser To Snatch It"
     const tipCase = s => s.replace(/(^|[\s(·])(\p{Ll})/gu, (m, a, ch) => a + ch.toUpperCase());
     const COUNTER = {
         rubout: "click the eraser to snatch it", crumple: "finished words don't fold · click a fold to smooth it", inkblot: "click the blot 6× to wipe it",
@@ -2509,7 +2495,7 @@ const Campaign = (() => {
     };
     let interceptEl = null;
     // the target turns up somewhere random on the screen, drifts about, and jumps somewhere new after every hit
-    // (the user: "the click counterplay should be pretty hard"); later bosses' targets move faster
+    //; later bosses' targets move faster
     const TARGET = 58;
     function randomSpot() {
         const m = 20 + TARGET / 2, top = 64;
@@ -3038,7 +3024,7 @@ const Campaign = (() => {
         if (b.textContent !== letter) b.textContent = letter;
     }
     // a boss effect on a timer wiping your letters: they get the ✕ mark like any hit, so clicking puts them back
-    // (the user, 2026-10-14: the Aphid "does not mark words as deleted when they eat them")
+    //
     const bossWipe = list => { const before = Game.state.letters.map(r => [...r]); Game.setLetters(list); Game.markBossChanges(before); };
     // your wrong letters (that aren't locked): what Purifying Light fixes
     const wrongMine = () => { const g = Game.state; return scopeAll().filter(([r, c]) => g.letters[r][c] && g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c)); };
@@ -3065,11 +3051,8 @@ const Campaign = (() => {
         fight.minionAcc = 2;
     }
     function removeMinion() { if (minionEl) { minionEl.remove(); minionEl = null; } }
-    // Ascension's angel birds (the user, 2026-10-14: "make ascension also grab 5 letters off the board with angel birds /
-    // you can click the angel bird to bring them back, but you cant click the square to bring them back (... maybe angel
-    // locks around that square to show it was taken)"). Five doves swoop down, each carries one of your letters off
-    // (right ones first) and flies around the screen with it (the user: "fly around the screen (but slightly slower than
-    // the other stuff that moves around the screen) (make it 3 clicks but they dont teleport after each click)"): 3/4
+    // Ascension's angel birds. Five doves swoop down, each carries one of your letters off
+    // (right ones first) and flies around the screen with it: 3/4
     // of the speed of the boss's click targets, bouncing off the edges; 3 clicks bring it back, and it keeps its course
     // between clicks. Its square is sealed with a halo lock: no typing there, and clicking it does nothing. When
     // Ascension ends, the doves still flying take their letters to the angel, and the squares open again, empty.
@@ -3251,11 +3234,11 @@ const Campaign = (() => {
         // progress protects you: the flood stops at your finished words, the shaking and the tide ease off as you solve
         const safe = safeCells(), pct = myPct(), size = Game.state.puzzle ? Game.state.puzzle.size : 5, rows = doneAcrossRows();
         // Flash Flood rises over its whole duration and can cover the entire board. Each finished Across word in the
-        // bottom half holds it back by a third (the user: "you need like 3 rows of words to stop it")
+        // bottom half holds it back by a third
         if (on("halffog")) {
             f.floodMax = Math.max(f.floodMax || 0, m.halffog);
             const low = [...rows].filter(r => r >= size - Math.ceil(size / 2)).length;
-            // it rises until 5 seconds are left, then stays at its height for those 5 seconds (the user's rule)
+            // it rises until 5 seconds are left, then stays at its height for those 5 seconds
             const rise = 25 + 75 * Math.min(1, (f.floodMax - m.halffog) / Math.max(1.5, f.floodMax - FLOOD_HOLD)), dammed = Math.max(0, 100 - 34 * low);
             setVar(area, "--flood", Math.min(rise, dammed).toFixed(1) + "%");
             area.classList.toggle("flood-dammed", dammed < rise);
@@ -3701,10 +3684,10 @@ const Campaign = (() => {
         if (fight && !fight.over && isBossLevel(Game.state.puzzle)) lose("reveal");     // Reveal Puzzle = a lost attempt, with the same Rematch / Return / New Boss card
     });
 
-    // Phase 2 (the user's design): solving the boss's first puzzle doesn't end the fight. The boss powers up full screen,
+    // Phase 2: solving the boss's first puzzle doesn't end the fight. The boss powers up full screen,
     // you get a bigger puzzle (a Challenge grid instead of a normal 5x5, or a bigger Expert grid), and the boss starts
     // over on the board you just solved: a new race, a little faster and angrier every phase.
-    // The user's rule (2026-10-09): the next phase ALWAYS starts the moment you finish a board (if its puzzle is still
+    // The next phase ALWAYS starts the moment you finish a board (if its puzzle is still
     // being made, the boss powers up and you wait for it; only if it can't be made at all does the fight end there).
     function nextPhase(game) {
         if (!fight || fight.over || fight.switching || fight.phase >= fight.phases || !isBossLevel(game.puzzle) || U.view() !== "level") return false;
@@ -3786,7 +3769,7 @@ const Campaign = (() => {
 
 
     // ---------------------------------------------------------------------------------------------
-    // The mascot's lines in the campaign (the user asked for dialogue that fits): it talks about the lesson you're
+    // The mascot's lines in the campaign: it talks about the lesson you're
     // on, the boss you're fighting and the Everbook's story. null = use its normal line.
     // ---------------------------------------------------------------------------------------------
     const SKILL_WORD = {
@@ -3881,10 +3864,8 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     // Buttons and keys on the map page
     // ---------------------------------------------------------------------------------------------
-    // BETA helpers (the user, 2026-10-10: "add a button for beta: in the campaign there's a give 500 coins button and
-    // an unlock button to unlock all the maps"): a small strip on the map. Unlock All opens every world and level
-    // (data.betaUnlock), and every ability too (the user, 2026-10-11: "make the unlock button unlock all skills and
-    // levels"), and can be switched back. Set BETA to false to hide it (kept for beta testing).
+    // BETA helpers: a small strip on the map. Unlock All opens every world and level
+    // (data.betaUnlock), and every ability too, and can be switched back. Set BETA to false to hide it (kept for beta testing).
     const BETA = true;
     if (BETA) {
         const give = U.el("button", { type: "button", class: "btn small", text: "+500 Coins" });
@@ -3908,7 +3889,7 @@ const Campaign = (() => {
         });
         label();
         // on the page itself, not inside the map's view: the view is animated (a transform), and a fixed element
-        // inside a transformed one scrolls away with it instead of staying in the corner (the user, 2026-10-11)
+        // inside a transformed one scrolls away with it instead of staying in the corner
         document.body.appendChild(strip);
     }
     $("#cm-shop").addEventListener("click", () => openShop("items"));

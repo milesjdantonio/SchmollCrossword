@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /*
- * Campaign lessons (written by Claude at the user's request, 2026-10-09): the campaign is a course. Its goal is to
+ * Campaign lessons: the campaign is a course. Its goal is to
  * keep improving the player's skill, making them practise something different on every level until they solve like
  * a professional. So every level is a LESSON in one crossword skill:
  *   - its clues are written to train that skill (the instructions below go into Claude's prompt, see ClueWriter)
@@ -108,8 +108,7 @@ public class Lesson {
         Map.entry("robot",    List.of("theme", "misdirection", "double", "mixed")),     // world 13
         Map.entry("volcano",  List.of("long", "wordplay", "speed", "clean")),
         Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")),
-        // the secret world (2026-10-14): the hardest of the course, and the angel reviews them (it had 3 levels at first;
-        // level 3 is now long answers, and everything at once moved to level 4)
+        // the secret world: the hardest of the course, and the angel reviews them
         Map.entry("rift",     List.of("double", "misdirection", "long", "mixed")));
 
     // A level's lesson. Level 5 is the boss's review: null skill, and the four lessons in `review`.

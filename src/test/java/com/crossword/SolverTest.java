@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest; // runs the same test once for each value below
 import org.junit.jupiter.params.provider.ValueSource;
 
-// Steps 9-12: the backtracking solver, no repeated answers, seeded shuffles and the most-constrained slot
+// The backtracking solver, no repeated answers, seeded shuffles and the most-constrained slot
 class SolverTest {
 
     private final Map<Integer, List<String>> words = TestWords.everyday();
@@ -75,7 +75,7 @@ class SolverTest {
         assertEquals(1, remaining.size(), "remaining restored after failing");
     }
 
-    // Step 10: CAT is already filled in. Allowed if CAT hasn't been used, blocked if it has.
+    // CAT is already filled in. Allowed if CAT hasn't been used, blocked if it has.
     // List.of(...) can't be changed, so wrap it in new ArrayList<>(...) because solve removes slots.
     @Test
     void usedWordsCantRepeat() {
@@ -85,7 +85,7 @@ class SolverTest {
         assertFalse(App.solve(new ArrayList<>(List.of(tiny)), catGrid, words, new HashSet<>(Set.of("CAT")), new Random(0)));
     }
 
-    // Step 12a: same seed = same puzzle, different seed = different puzzle.
+    // same seed = same puzzle, different seed = different puzzle.
     // Also FAILS if the match cache hands out its own list (solve shuffles it).
     @Test
     void seedsAreRepeatable() {
@@ -95,7 +95,7 @@ class SolverTest {
         assertFalse(seed1.startsWith("A A H S"), "candidates are shuffled, not alphabetical");
     }
 
-    // Step 12b-1: pick the slot with the fewest matching words. On a tie, keep the earliest.
+    // pick the slot with the fewest matching words. On a tie, keep the earliest.
     @Test
     void picksTheMostConstrainedSlot() {
         char[][] grid = TestWords.emptyGrid(5);

@@ -79,7 +79,7 @@ const App = (() => {
         const view = U.view();
         const gameView = view === "daily" || view === "unlimited" || view === "level";
         if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
-        // a level lights up Campaign, but the Daily and Unlimited Boss belong to their own screens (the user's rule)
+        // a level lights up Campaign, but the Daily and Unlimited Boss belong to their own screens
         const tab = view === "level" ? (Campaign.playing && Campaign.playing.special) || "campaign" : view;
         document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === tab));
         for (const [name, el] of Object.entries(screens)) {
@@ -141,7 +141,7 @@ const App = (() => {
         const holder = $("#home-streak");
         holder.innerHTML = "";
         holder.appendChild(Game.streakBadge(streaks));
-        // this week, Sunday to Saturday (the user's choice, like the heatmap on Stats)
+        // this week, Sunday to Saturday
         const week = $("#home-week");
         week.innerHTML = "";
         const now = new Date(), sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
@@ -302,8 +302,7 @@ const App = (() => {
     });
     $("#replay-intro").addEventListener("click", () => intro(true));
 
-    // Zoom (the user, 2026-10-14: "zoom out making everything smaller allowing for more clues on the screen"; not on
-    // phones). CSS zoom on #app (the top bar and the page): it lays the page out again smaller, so more fits. The world's
+    // Zoom. CSS zoom on #app (the top bar and the page): it lays the page out again smaller, so more fits. The world's
     // background, the effects and pop-ups are outside #app and stay full-screen. It's applied when the slider is let go
     // (the generic form handler saves it); while dragging only the number changes, so the slider doesn't shrink under
     // the mouse.
@@ -324,7 +323,7 @@ const App = (() => {
     zoomQuery.addEventListener("change", applyZoom);
     Settings.on(key => { if (key === "zoom") applyZoom(); });
     applyZoom();
-    // Reset: everything, or just the leaderboard or the campaign (the user, 2026-10-13)
+    // Reset: everything, or just the leaderboard or the campaign
     function eraseAndReload(remove) {
         Game.stopSaving();
         try { remove(); } catch (err) { /* nothing saved */ }
@@ -358,10 +357,9 @@ const App = (() => {
     });
 
     // ---------------------------------------------------------------------------------------------
-    // Sound: every option (the user, 2026-10-10: the sound button should "open up all the sound options like boss
-    // fight music and other sounds"). Built the same way in Settings > Sound and in the sound button's menu; both show
+    // Sound: every option. Built the same way in Settings > Sound and in the sound button's menu; both show
     // the same settings, so changing one moves the other (syncSound).
-    // Laid out the user's way (2026-10-14): one Master Volume (with a mute button: the `sound` setting) for everything;
+    // The layout: one Master Volume (with a mute button: the `sound` setting) for everything;
     // Music: Level Music (each campaign level's chill song) and Boss Music (the boss fights, the story, winning and
     // losing), sliders with no switches (0 = off; the same settings as the sliders in a level and in a boss fight);
     // Effects: All Effects and Boss Fight Effects (the bosses' moves and your abilities), plus the Typing Sounds and
@@ -493,10 +491,10 @@ const App = (() => {
 
     // ---------------------------------------------------------------------------------------------
     // The start-up intro. It plays the very first time someone opens the game, in every world, Classic included; after
-    // that only when the "Play Intro on Open" setting is on (off by default; the user, 2026-10-09). "Reduce motion"
+    // that only when the "Play Intro on Open" setting is on (off by default). "Reduce motion"
     // skips it, and Settings can replay it.
     //   1. PRESS START, over the live world scene: letter tiles float up past you, rays turn slowly, the 15 bosses
-    //      parade along the bottom, and a ticker scrolls under them (no world emoji: the user's request).
+    //      parade along the bottom, and a ticker scrolls under them.
     //   2. A shockwave, a crossword grid draws itself across the screen, and the logo builds itself out of tiles
     //      (each one landing with a puff), then a shine sweeps across it.
     //   3. The logo holds a moment, and the current world adds its own flourish before its screen transition
@@ -603,7 +601,7 @@ const App = (() => {
         if (!skipped) {
             stage.classList.add("landed");
             Sound.play("title");
-            await pause(1100);                          // just the logo (the user: no line of text under it)
+            await pause(1100);                          // just the logo
             if (!skipped) {
                 const w = Worlds.current;
                 if (w.introFlourish) { try { w.introFlourish(logo); } catch (err) { console.error(err); } }

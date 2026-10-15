@@ -145,7 +145,7 @@
 .lx-world.got .lx-world-boss { animation: lx-grab .45s cubic-bezier(.2, 1.6, .4, 1); }
 @keyframes lx-grab { 40% { transform: scale(1.18) translateY(-6px); } }
 
-/* ---- the epilogue (the Cursed Angel beaten, 2026-10-14): the angel falls, the rift heals, the book is clasped shut ---- */
+/* ---- the epilogue (the Cursed Angel beaten): the angel falls, the rift heals, the book is clasped shut ---- */
 .lx-stage.lx-epilogue { background: radial-gradient(ellipse at 50% 35%, #3a1a6a 0%, #14062e 55%, #04020c 100%); }
 .lx-sky { position: relative; width: min(900px, 96vw); height: min(560px, 80vh); transition: opacity 1s, transform 1.2s; }
 .lx-sky.out { opacity: 0; transform: scale(1.1); }

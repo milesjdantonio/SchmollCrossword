@@ -1,5 +1,4 @@
-// FAQ, Privacy Notice and Terms of Use (the user, 2026-10-11, after a legal review: "add a terms of service and privacy
-// notice; add FAQ for mainly security questions, attributions, etc."). Opened from Settings > Help & Legal.
+// FAQ, Privacy Notice and Terms of Use. Opened from Settings > Help & Legal.
 //   Legal.open("faq" | "privacy" | "terms")
 // Written to match what the code really does (LeaderboardController, ReportController, RateLimiter, game storage).
 // If that changes, change these too, and the "Last updated" date.
@@ -47,7 +46,7 @@ const Legal = (() => {
             qa("Can I use the code or the puzzles?",
                 p("The code is under the MIT License: use it, change it and share it, keeping the copyright notice. The word lists, puzzles and clues are under ", a("CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/"), ": non-commercial use only, with credit, under the same license. The repository's NOTICE.md lists what covers what.")),
             qa("Who made the game?",
-                p("Miles D'Antonio, with Claude by Anthropic, which helped write the code, the worlds, the music composed for the game and the clues.")),
+                p("Miles D'Antonio, assisted by Claude, an AI model by Anthropic, with the code, the worlds and the clues. The music composed for the game was composed by Claude.")),
         ] },
         privacy: { title: "Privacy Notice", body: () => [
             p("Schmoll Crossword is a free game with no accounts, no ads and no tracking. This notice explains the little it does keep."),

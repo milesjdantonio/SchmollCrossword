@@ -1,6 +1,4 @@
-// The player's own hero (the user, 2026-10-11: "make the user make their player at the start, in the same way of how
-// the bosses are formatted; they can edit their character, their character travels between levels, it shows their
-// character vs boss in the boss menus"). Drawn like the bosses (bosses.js): an SVG character on a 240 x 240 canvas,
+// The player's own hero. Drawn like the bosses (bosses.js): an SVG character on a 240 x 240 canvas,
 // ink outlines, gradients, and the same animated parts (bz-float, bz-eyes, bz-sway), built from parts you pick.
 //
 //   Hero.svg(look, cls, { still })   an <svg> of the hero (each copy gets its own gradient ids)
@@ -19,13 +17,11 @@ const Hero = (() => {
     const f1 = v => (Math.round(v * 10) / 10).toString();
 
     // ---- the parts you can pick ----
-    // (more of everything since 2026-10-13, the user: "add more options for everything for the hero")
     const COLORS = ["#ffb84d", "#ff7f98", "#7fd1ff", "#8be38b", "#c49bff", "#ffd84d", "#ff8a5c", "#5fd4c4", "#f5efe3", "#a6b3c6", "#d6a77a", "#7b8cff",
         "#ffcf9e", "#b07a52", "#7a5236", "#ff5f5f", "#3fa66b", "#e0e0ff", "#2f6fb5", "#6b4fa0", "#b8f0a0"];
     const ACCENTS = ["#e5484d", "#ff9f1c", "#ffd23f", "#3fbf5f", "#2f8fe0", "#7a4fd6", "#ff6fb5", "#ffffff", "#5a5f6e", "#2b2233",
         "#7a4a2a", "#f2c56b", "#c8572a", "#00a6a6", "#9be15d", "#ff4d94", "#8b5cf6"];
-    // (fruit bodies since 2026-10-13, the user: "add more fruits... like strawberry, watermelon slice": they wear their
-    // own colours, so the Colour row hides for them)
+    // (fruit bodies wear their own colours, so the Colour row hides for them)
     const BODIES = ["Round", "Bean", "Block", "Pear", "Tall", "Blob", "Strawberry", "Watermelon Slice", "Apple", "Orange", "Lemon", "Peach"];
     const EYES = ["Dots", "Big", "Happy", "Starry", "Glasses", "Sleepy", "Wink", "Shades", "Determined", "Hearts", "Dizzy", "One Eye"];
     const MOUTHS = ["Smile", "Grin", "Surprised", "Cheeky", "Cat", "Fangs", "Tongue", "Big Smile", "Whistle", "Flat", "Buck Teeth", "Worried", "Zigzag"];
@@ -41,7 +37,7 @@ const Hero = (() => {
 
 
     // ---------------------------------------------------------------------------------------------
-    // The bosses' gifts (the user, 2026-10-14: "make it for defeated every boss gives more stuff for your hero"):
+    // The bosses' gifts:
     // each boss you beat unlocks a hat, an outfit and something to hold, in its world's style. They're the last 16 of
     // each list (so saved heroes keep their parts), in the map's order; the editor only offers the ones you've won.
     // ---------------------------------------------------------------------------------------------

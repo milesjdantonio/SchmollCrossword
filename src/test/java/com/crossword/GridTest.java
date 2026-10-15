@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
-// Step 11 (grid as text) and Step 14 (clue numbers)
+// The grid as text, and clue numbers
 class GridTest {
 
     private final boolean[][] miniBlack = {

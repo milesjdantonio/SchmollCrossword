@@ -34,7 +34,7 @@ class LessonTest {
         }
     }
 
-    // The goal (the user's): keep improving the player by making them practise different things. So no world
+    // The goal: keep improving the player by making them practise different things. So no world
     // repeats a skill, every skill in the list is used, and most skills come back later for another round.
     @Test
     void theCourseCoversEverySkillAndBringsThemBack() {

@@ -1,5 +1,4 @@
-// Machines (the user, 2026-10-09: "more physical components rather than emojis, e.g. the cannon could actually
-// build and launch a cannon from the boss side"). The powers that fire, fling or pump something get a real, drawn
+// Machines. The powers that fire, fling or pump something get a real, drawn
 // machine that assembles on screen first: wheels roll in, the frame drops on, the arm cranks back, the fuse burns,
 // and only then does it fire, with recoil, smoke and the projectile flying out of the right spot.
 // These replace those kinds' scenes from spells-abilities.js / spells-moves.js (same Spells.define).

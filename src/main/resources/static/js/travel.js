@@ -1,6 +1,4 @@
-// Arriving in a new world (the user, 2026-10-11: "make animations for each time a player gets to a new area,
-// representing them arriving from one place to the next"; remade 2026-10-13: "remake the animations between worlds
-// and make them significantly more detailed, as detailed as everything else"). The first time your hero reaches a
+// Arriving in a new world. The first time your hero reaches a
 // world, a short scene shows how it got there from the world before, each one different:
 //
 //   Notebook     sketched onto a page of the notebook in pencil (the spiral, doodles, a coffee ring), then coloured in
@@ -342,7 +340,7 @@ const Travel = (() => {
         }
     };
 
-    // ---- Candy Hills: the Candy Express (the user, 2026-10-14: "change the acorn to candy world animation"). A
+    // ---- Candy Hills: the Candy Express. A
     //      chocolate steam train with peppermint wheels waits at a little wooden stop in the autumn woods (a squirrel
     //      waves); the hero hops onto the gumdrop car, the train puffs into a hollow log and comes out of the far end,
     //      which is a chocolate swiss roll, into Candy Hills: over a candy-cane bridge and a chocolate river, past
@@ -623,7 +621,7 @@ const Travel = (() => {
         }
     };
 
-    // ---- Rainy City: down the river on an ice floe (the user, 2026-10-14: "change the ... to the city animation"). The
+    // ---- Rainy City: down the river on an ice floe. The
     //      hero floats down a river at night on a melting ice floe: snowy banks, pines and a snowman give way to a stone
     //      embankment and the lights of the city, the snow turns to rain, the floe slides under a lamp-lit stone bridge
     //      past neon reflections and bumps a wooden dock; the hero jumps off with a splash and opens the umbrella ----
@@ -1149,10 +1147,7 @@ const Travel = (() => {
     };
 
 
-    // ---- The Celestial Rift (the secret world, 2026-10-14; the user: "the void dying released the angel from their
-    // prison (make that part of the transition animation)"; remade the same day: "make the animation for the angel
-    // breaking out with a lot of detail ... a more detailed black hole collapsing and exploding and a really detailed
-    // breaking of the cage"):
+    // ---- The Celestial Rift (the secret world): the Void's death sets the angel free:
     //   0-1.6     the Void as a black hole: a lensed accretion disk spinning round its shadow, jets, the Void's own face
     //             inside, stars, rocks and dust spiralling in
     //   1.6-3.6   it collapses: one last swell, then it shrinks to a point, spinning faster and burning hotter, tearing a

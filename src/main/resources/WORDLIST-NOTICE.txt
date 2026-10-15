@@ -25,6 +25,5 @@ CC BY-NC-SA 4.0: you may reuse it for non-commercial purposes, with credit, unde
 The same goes for everything adapted from it or filled with its words, which is also shared under
 CC BY-NC-SA 4.0 (non-commercial, with credit, same license):
 - the difficulty filters too-hard-words.txt, not-easy-words.txt and very-hard-words.txt
-- the puzzles made ahead of time in campaign/ and daily/, and the puzzles the game makes and saves
-- the clue bank (clue-bank/ in the repository)
+- the puzzles made ahead of time in campaign/ and daily/ (with their clues), and the puzzles the game makes and saves
 The game's source code is under the MIT License (see LICENSE). NOTICE.md lists what covers what.

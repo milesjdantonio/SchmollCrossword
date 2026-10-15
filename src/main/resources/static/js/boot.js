@@ -1,6 +1,6 @@
 // Runs in the page's <head>, before anything is drawn (an external file, so the Content-Security-Policy can forbid
 // inline scripts: see SecurityHeaders.java).
-// A fresh start, once per browser (the user, 2026-10-10: "reset my stats" after the testing builds): every score,
+// A fresh start, once per browser: every score,
 // streak, saved game, achievement and the campaign go; settings, the intro and your leaderboard name stay.
 // (Raise FRESH to wipe everyone's stats again; a brand-new player has nothing to wipe.)
 try {

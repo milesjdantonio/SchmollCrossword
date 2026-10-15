@@ -1,11 +1,8 @@
-// The credits (the user, 2026-10-11: "a credits page ... in the bottom left corner, make it scroll, with the world
-// designs shifting in the background, and some peaceful music"; later: "move the credits button to an option in
-// settings, near the bottom"). Settings > Help & Legal > Credits opens a full-screen roll that scrolls up by itself (wheel, drag or keys scroll it too) while the
+// The credits. Settings > Help & Legal > Credits opens a full-screen roll that scrolls up by itself (wheel, drag or keys scroll it too) while the
 // background moves through every world, with a calm level song playing (the Level Music slider
 // applies). Escape, the Close button or reaching the end closes it and puts the player's own world back.
 // Every music credit comes from audio/credits.json (made from audio/CREDITS.txt, so the two always agree).
-// Credits.show({ ending: true }) also rolls them after the Cursed Angel's epilogue, the end of the story (the user,
-// 2026-10-14): it resolves when they close, and puts back the world being played instead of the Settings one.
+// Credits.show({ ending: true }) also rolls them after the Cursed Angel's epilogue, the end of the story: it resolves when they close, and puts back the world being played instead of the Settings one.
 const Credits = (() => {
     const SONG = "level-sky-2";                // Napping On A Cloud by congusbongus (CC0): calm, and it loops
     const WORLD_MS = 6500;                     // how long each world shows behind the roll
@@ -24,8 +21,8 @@ const Credits = (() => {
             U.el("div", { class: "cr-logo", "aria-hidden": "true" }, ..."SCHMOLL".split("").map(ch => U.el("i", { text: ch }))),
             U.el("h1", { class: "cr-title", text: "Schmoll Crossword" }),
             section("Made By", line("Created by", "Miles D'Antonio"),
-                line("Built with", "Claude, an AI model by Anthropic"),
-                note("Code, worlds, bosses, story and clues written together with Claude.")),
+                line("Assisted by", "Claude, an AI model by Anthropic"),
+                note("Claude assisted with the code, worlds, bosses, story and clues.")),
             section("Word List",
                 line("SCOWL", "Kevin Atkinson"),
                 line("Spread the Word(list)", "Brooke Husic and Enrique Henestroza Anguiano"),
@@ -33,7 +30,7 @@ const Credits = (() => {
             section("Boss Music", songs(data.boss)),
             section("Level Music", songs(data.level)),
             section("Composed for the Game", ...data.composed.map(t => U.el("p", { class: "cr-line" }, U.el("b", { text: t }))),
-                U.el("p", { class: "cr-note" }, "Written by Claude and played with the ", link("GeneralUser GS", "https://schristiancollins.com/generaluser.php"), " SoundFont by S. Christian Collins.")),
+                U.el("p", { class: "cr-note" }, "Composed by Claude and played with the ", link("GeneralUser GS", "https://schristiancollins.com/generaluser.php"), " SoundFont by S. Christian Collins.")),
             section("Sound Effects", line("", "Kenney"), note("Impact, Interface, Sci-fi, RPG Audio and Music Jingles packs."),
                 note("Most other sounds are made live in code.")),
             section("Fonts", note("Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico, Josefin Sans and Cinzel."),
@@ -70,7 +67,7 @@ const Credits = (() => {
         scroller.focus();
         Sound.levelSong(SONG, { v: 0.5, fade: 1.5 });
 
-        // behind the roll, in a random order (the user: "these should all be selected randomly"): every world's calm
+        // behind the roll, in a random order: every world's calm
         // scene, and every boss's arena going wild (its own chaos from a boss's later phase: chaos.js). A shuffled bag,
         // so each one shows once before any repeats.
         const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretEarned())).map(id => ({ id, boss: true }))];
@@ -88,7 +85,7 @@ const Credits = (() => {
             if (s.boss) {
                 const a = Bosses.arena(s.id, "credits-" + s.id);
                 a.classList.add("cr-show", "phase2");
-                Bosses.chaos(s.id, 4, { showcase: true });          // the wildest it gets, and every one of its set pieces (the user's request)
+                Bosses.chaos(s.id, 4, { showcase: true });          // the wildest it gets, and every one of its set pieces
             } else arenaOff();
             label.textContent = s.boss ? `${Bosses.info(s.id).name} · ${Worlds.byId[s.id].name}` : Worlds.byId[s.id].name;
             label.classList.remove("in"); void label.offsetWidth; label.classList.add("in");
@@ -139,7 +136,7 @@ const Credits = (() => {
         return finished;
     }
 
-    // opened from Settings > Help & Legal (the user moved it there from the bottom-left corner), with FAQ, Privacy and Terms
+    // opened from Settings > Help & Legal, with FAQ, Privacy and Terms
     for (const b of document.querySelectorAll(".help-legal [data-open]")) {
         b.addEventListener("click", () => { b.blur(); Sound.play("select"); if (b.dataset.open === "credits") show(); else Legal.open(b.dataset.open); });
     }

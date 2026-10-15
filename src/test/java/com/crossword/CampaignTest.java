@@ -126,7 +126,7 @@ class CampaignTest {
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.campaign("garden", 3, false, 1, -1)).getStatusCode().value(), "no negative tries");
     }
 
-    // The user's design (2026-10-09): the first five bosses have 1 phase, the last three 3, the final boss 5, the rest 2.
+    // The first five bosses have 1 phase, the last three 3, the final boss 5, the rest 2.
     // Every phase is at least as big as the one before.
     @Test
     void lastBossesHaveMorePhases() {
@@ -140,10 +140,10 @@ class CampaignTest {
             }
         }
         assertEquals("space", Campaign.SECTIONS.get(last).world());
-        assertEquals("robot", Campaign.SECTIONS.get(last - 2).world(), "the user swapped the robot and the library");
+        assertEquals("robot", Campaign.SECTIONS.get(last - 2).world(), "the robot comes after the library");
     }
 
-    // The boss's own board is made without clues, so it never calls Claude (the user: less expensive)
+    // The boss's own board is made without clues, so it never calls Claude
     @Test
     void bossBoardsHaveNoClues() {
         String json = PuzzleStore.generateSmall(7_000_000_016L, "campaign", "easy", TestWords.easy(), Set.of(), "", "", false);
@@ -153,7 +153,7 @@ class CampaignTest {
         assertTrue(!big.matches("(?s).*\"clue\"\s*:\s*\"[^\"]+\".*"));
     }
 
-    // Daily Boss (the user, 2026-10-09): a different boss every day, all 15 in 15 days, never the same two days running
+    // Daily Boss: a different boss every day, all 15 in 15 days, never the same two days running
     @Test
     void dailyBossCyclesThroughEveryBoss() {
         java.time.LocalDate day = java.time.LocalDate.of(2026, 10, 9);
@@ -173,7 +173,7 @@ class CampaignTest {
         assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("unlimited", null, "banana", false, null)).getStatusCode().value());
     }
 
-    // Losing or giving up rerolls the level (the user's rule): each try has its own seed and file
+    // Losing or giving up rerolls the level: each try has its own seed and file
     @Test
     void rerollsHaveTheirOwnSeedsAndFiles(@TempDir Path folder) {
         Campaign.Section garden = Campaign.SECTIONS.get(1);

@@ -18,7 +18,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// Fewer repeats (written by Claude at the user's request): no RAVEN and RAVENS in one puzzle, and new puzzles stay
+// Fewer repeats: no RAVEN and RAVENS in one puzzle, and new puzzles stay
 // away from the answers of recent ones (REST used to be in 1 of every 3 easy puzzles)
 class RepeatsTest {
 

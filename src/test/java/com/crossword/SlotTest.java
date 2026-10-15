@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-// Steps 4-8: finding slots, reading their pattern, placing and removing words
+// Finding slots, reading their pattern, placing and removing words
 class SlotTest {
 
     @Test
@@ -16,7 +16,7 @@ class SlotTest {
         assertEquals("Across at (0, 0), length 4", slots.get(0).toString());
     }
 
-    // Step 6: put a few letters in by hand so the patterns aren't all dots
+    // put a few letters in by hand so the patterns aren't all dots
     @Test
     void patternShowsLettersAndDots() {
         char[][] grid = TestWords.emptyGrid(5);
@@ -28,7 +28,7 @@ class SlotTest {
         assertEquals(".....", new Slot(1, 0, 5, true).getPattern(grid));
     }
 
-    // Step 8: place two crossing words, then undo them one at a time
+    // place two crossing words, then undo them one at a time
     @Test
     void placeAndRemoveCrossingWords() {
         char[][] grid = TestWords.emptyGrid(5);

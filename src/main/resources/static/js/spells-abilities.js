@@ -1,5 +1,4 @@
-// Every ability's own big effect (the user, 2026-10-09: "the effort you put into the lightning for Thunderhead, I
-// want in every ability"). Like the lightning, each one is a little scene aimed at the real target: the squares it
+// Every ability's own big effect. Like the lightning, each one is a little scene aimed at the real target: the squares it
 // changes, the boss's board or portrait, your board, your Super meter. It has a source (something thrown, poured,
 // grown or cast), a hit, the letters reacting in their own way, physical particles and an aftermath.
 //
@@ -39,7 +38,7 @@
             }
         });
     }
-    // How each particle looks (redone 2026-10-10, the user: "make large adjustments to every particle"): glows and
+    // How each particle looks: glows and
     // embers use the cached glow sprites from fx.js (cheaper than shadow blurs), stars twinkle, streaks fade at the
     // tail with a bright head, drops and hearts have a shine, leaves and petals have veins and light, confetti squares
     // show a darker back as they flip, coins spin with a rim and a glint, bubbles have a rainbow rim, dots are shaded.
@@ -990,7 +989,7 @@
     });
 
     // =========================================================================================
-    // The Celestial Rift (2026-10-14)
+    // The Celestial Rift
     // =========================================================================================
     // Constellation: a star lights on each crossing it fills, the stars join up with lines of gold, and they flare
     D("constellation", async c => {

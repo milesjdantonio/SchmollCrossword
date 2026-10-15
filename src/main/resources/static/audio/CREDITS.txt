@@ -67,7 +67,7 @@ All from https://opengameart.org/content/<page>
   rift-p4.mp3     Determined Pursuit (Epic Orchestra Loop)      Emma_MA                               determined-pursuit-epic-orchestra-loop
   rift-p5.mp3     Boss Battle 8 (metal)                         nene                                  boss-battle-8-metal
 
-Composed for this game (written as MIDI by Claude, played with the GeneralUser GS SoundFont by S. Christian Collins,
+Composed for this game (composed by Claude as MIDI, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
 FluidSynth):
   desert-p2.mp3   Riddle of the Sands, in 7/4 (2+2+3), D Hijaz: shanai, oud, darbuka, strings, choir, horns, timpani

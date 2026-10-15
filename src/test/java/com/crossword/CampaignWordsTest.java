@@ -11,7 +11,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /*
- * Easier words in the campaign (written by Claude, 2026-10-10, the user: "lower the difficulty of the words chosen"):
+ * Easier words in the campaign:
  * campaign puzzles fill from the word list one step easier than their difficulty (see PuzzleStore). These build
  * clue-less grids (no Claude call, free) for the campaign's sizes and check where their answers come from.
  */

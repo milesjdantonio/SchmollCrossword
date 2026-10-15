@@ -1,4 +1,4 @@
-// Spells (built by Claude at the user's request, 2026-10-09): the big animations for boss-fight abilities and boss
+// Spells: the big animations for boss-fight abilities and boss
 // moves. The user wanted them to feel real, "like the Thunderhead's lightning strike: make it strike actual lightning
 // that connects between the words and zaps them away". So every effect is aimed at the actual squares it changes:
 // the letters it erases are shown being zapped, burned, blown, washed or sucked away.
@@ -24,8 +24,7 @@ const Spells = (() => {
         size();
         addEventListener("resize", size);
     }
-    // Effects stay on what they were aimed at. Each one follows an element (the user, 2026-10-14: "this change you made
-    // for tracking boards, can you do this for other animations that are meant to travel boards"): the area a
+    // Effects stay on what they were aimed at. Each one follows an element: the area a
     // Spells.play is aimed at (your board, the boss's board, the boss), or else your board. It's measured again every
     // frame and the effect is drawn moved and scaled with it, so scrolling, the page shifting, a resize or the zoom
     // setting don't leave it behind. With nothing to follow it's shifted by the scroll, as before. fixed: true for
@@ -72,8 +71,7 @@ const Spells = (() => {
     const rnd = (a, b) => a + Math.random() * (b - a);
 
     // ---- drawing helpers ----
-    // Redone on 2026-10-10 (the user: "make large adjustments to every particle, animation: make them look nicer, add
-    // extra details"): every one has more to it now: light blooms and flares where things hit, afterimages, splatter,
+    // Every one has light blooms and flares where things hit, afterimages, splatter,
     // shine, foam, bubbles, debris, embers, smoke, tapered stems with thorns and flowers. Glows use the shared cached
     // sprites from fx.js (FX.art), which are much cheaper than shadow blurs.
     const TAU = Math.PI * 2;
@@ -588,7 +586,7 @@ const Spells = (() => {
             return { ghost, r };
         }).filter(Boolean);
     }
-    // what each way of leaving throws off, as the letter goes (the user, 2026-10-10: "add extra details")
+    // what each way of leaving throws off, as the letter goes
     const LEAVE_FX = {
         zap: (x, y, o) => { FX.burst({ x, y, n: 12, colors: ["#fff", o.color, "#bfe8ff"], shape: "spark", glow: true, speed: [120, 300], gravity: 200, drag: 1.4, life: [0.25, 0.55], size: [1.4, 2.4] }); FX.burst({ x, y, n: 5, colors: ["#ffffff", "#bfe8ff"], shape: "star", glow: true, speed: [40, 120], gravity: 0, life: [0.3, 0.5], size: [3, 5] }); },
         freeze: (x, y) => { FX.burst({ x, y, n: 8, colors: ["#ffffff", "#dff1ff"], shape: "flake", speed: [70, 200], gravity: 260, life: [0.5, 0.9], size: [3, 6], spin: 4 }); FX.burst({ x, y, n: 10, colors: ["#e8f7ff", "#9fdcff"], shape: "rect", speed: [100, 260], gravity: 500, life: [0.4, 0.7], size: [3, 6] }); },

@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.Set;
 
 /*
- * ===== Challenge mode: bigger grids =====   (written by Claude at the user's request, 2026-10-08)
+ * ===== Challenge mode: bigger grids =====
  *
  * Each challenge picks its board size from its seed (see SIZES), so some days are bigger than others. Its black
  * squares are random too, but always symmetric like a real crossword: turn the grid upside down (rotate it 180
@@ -23,7 +23,7 @@ import java.util.Set;
  * Long runs of white squares are broken up with black squares, except for a few 6- and 7-letter answers that are
  * kept on purpose: long answers crossing long answers are almost impossible to fill with everyday words.
  *
- * Filling: medium words first (the user asked for mostly medium words). Only if a pattern can't be filled with
+ * Filling: medium words first (so it's mostly medium words). Only if a pattern can't be filled with
  * those does it try Hard's bigger list, and if that fails too, the next pattern. The solver gets a budget
  * (App.solveBudget) for each try, so one stubborn pattern can't take forever.
  */
@@ -181,7 +181,7 @@ public class ChallengeGrid {
         return fill(seed, n, first, second, avoid, 0);
     }
     // firstOnly: how many patterns to try with `first`'s words alone before `second`'s are allowed too (the campaign
-    // uses this so its easier words win far more often: added by Claude, 2026-10-10)
+    // uses this so its easier words win far more often)
     static Filled fill(long seed, int n, Map<Integer, List<String>> first, Map<Integer, List<String>> second, Set<String> avoid, int firstOnly) {
         for (int attempt = 0; ; attempt++) {
             boolean[][] black = shape(seed * 31 + attempt, n);

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper; // a real JSON library (comes with the Claude SDK)
 
-// Step 16: build a Puzzle from a solved grid and its clues (no API call), then turn it into JSON
+// Build a Puzzle from a solved grid and its clues (no API call), then turn it into JSON
 class PuzzleTest {
 
     private final boolean[][] shape = TestWords.testShape();
@@ -44,7 +44,6 @@ class PuzzleTest {
         return out;
     }
 
-    // Step 16a
     @Test
     void entriesAreInNumberOrder() {
         Puzzle puzzle = sockPuzzle(sockClues());
@@ -69,7 +68,6 @@ class PuzzleTest {
         assertEquals("daily 1 medium", puzzle.mode + " " + puzzle.seed + " " + puzzle.difficulty);
     }
 
-    // Step 16b
     @Test
     void jsonHasEveryPart() {
         String json = sockPuzzle(sockClues()).toJson();

@@ -15,8 +15,8 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-// The secret world, the Celestial Rift (built by Claude at the user's request, 2026-10-14): it only shows up after the
-// Void, has 3 levels and a 5-phase boss (the Cursed Angel), and isn't one of the Everbook's 15 worlds.
+// The secret world, the Celestial Rift: it only shows up after the Void, has 4 levels and a 5-phase boss (the Cursed
+// angel), and isn't one of the Everbook's 15 worlds.
 class RiftTest {
 
     static final ObjectMapper JSON = new ObjectMapper();

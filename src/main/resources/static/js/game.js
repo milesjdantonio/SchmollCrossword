@@ -161,8 +161,7 @@ const Game = (() => {
         }
     }
 
-    // Unlimited opens on a picker, not a puzzle (the user, 2026-10-11: "have the player select what they want to do",
-    // so no Claude call happens by accident): a new Unlimited puzzle only starts when the player picks one, and an
+    // Unlimited opens on a picker, not a puzzle: a new Unlimited puzzle only starts when the player picks one, and an
     // unfinished one can be picked up again for free.
     const pickerEl = $("#un-picker");
     function hidePicker() { pickerEl.hidden = true; gameViewEl.classList.remove("picking"); }
@@ -337,8 +336,7 @@ const Game = (() => {
     }
 
     let lastClue = null, doneWords = null, doneKey = "";
-    // Squares the boss erased or changed (the user, 2026-10-09: "it's often hard to tell what letter the boss
-    // removed"): each gets a clear mark until its letter changes again, and clicking it puts your letter back (the
+    // Squares the boss erased or changed: each gets a clear mark until its letter changes again, and clicking it puts your letter back (the
     // user's rule). "r,c" -> { kind: "erased"|"changed", ch: the letter there now, was: yours before the boss }
     const hits = new Map();
     let hitsFor = "";
@@ -376,7 +374,7 @@ const Game = (() => {
         Bus.emit("restore", { row, col, letter: hit.was });
         return true;
     }
-    // Rewrite Fate (the Celestial Rift's ability, 2026-10-14): every marked square gets your letter back at once
+    // Rewrite Fate (the Celestial Rift's ability): every marked square gets your letter back at once
     function restoreAllHits() {
         let n = 0;
         for (const k of [...hits.keys()]) { const [r, c] = k.split(",").map(Number); if (restoreHit(r, c)) n++; }
@@ -564,7 +562,7 @@ const Game = (() => {
         } else if (p.mode === "campaign") {
             Object.assign(info, Campaign.onWin(game, p));
             // the Daily Boss is the 5th daily: points, the streak, the week. Every attempt costs 40, and the day's BEST
-            // score is kept, so a rematch can still improve it (the user's rule)
+            // score is kept, so a rematch can still improve it
             if (info.campaign && info.campaign.special === "daily") {
                 const day = (Campaign.playing.date || "").replace(/-/g, "") || dayKey(new Date());
                 const dayWasDone = todayIsDone(scores());
@@ -709,7 +707,7 @@ const Game = (() => {
             actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New Puzzle", onclick: () => { closeResults(); showPicker(); } }));
         }
         if (!info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
-        // after a boss fight there's no going back to the board (the user, 2026-10-09): the buttons above move you on
+        // after a boss fight there's no going back to the board: the buttons above move you on
         const bossEnd = !!(info.campaign && info.campaign.boss);
         if (!bossEnd) {
             actions.appendChild(U.el("button", { type: "button", class: "btn ghost", text: "See Board", onclick: closeResults }));
@@ -737,7 +735,7 @@ const Game = (() => {
                 U.el("span", {}, U.el("small", { text: "NEW ABILITY UNLOCKED" }), U.el("b", { text: `${c.newAbility.name} · ${c.freeUses} Free Uses` }))));
             setTimeout(() => { if (card.isConnected) Sound.play("sparkle"); }, 1400);
         }
-        // a boss beaten for the first time gives your hero new parts (hero.js; the user, 2026-10-14: "mention that in the unlock screen")
+        // a boss beaten for the first time gives your hero new parts (hero.js), said on the results
         if (c.heroGifts && c.heroGifts.length) {
             card.appendChild(U.el("div", { class: "res-ability res-hero" }, U.el("span", { class: "ra-icon", text: "🎁" }),
                 U.el("span", {}, U.el("small", { text: "NEW FOR YOUR HERO" }), U.el("b", { text: c.heroGifts.join(" · ") }))));
@@ -1107,7 +1105,7 @@ const Game = (() => {
             : "";
         $("#new-puzzle").hidden = view !== "unlimited";
         $("#boss-mode").hidden = view !== "daily" && view !== "unlimited";
-        $("#boss-mode").textContent = "Boss";                // the user: just "Boss", on Daily and on Unlimited
+        $("#boss-mode").textContent = "Boss";                // just "Boss", on Daily and on Unlimited
         $("#unlimited-left").hidden = view !== "unlimited";
         if (view === "unlimited") drawUnlimitedLeft();
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));

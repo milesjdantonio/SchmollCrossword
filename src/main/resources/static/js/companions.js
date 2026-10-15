@@ -1,5 +1,4 @@
-// The campaign's companions (written by Claude at the user's request, 2026-10-09: "significantly more text for the
-// campaign, like lore stuff, when clicking on them"). Each world's mascot is your companion there, with its own
+// The campaign's companions. Each world's mascot is your companion there, with its own
 // story about its world, its page of the Lost Everbook and the boss who took it.
 //
 //   Companions.click()          clicking the mascot on the map or in a campaign level: the next piece of its story
@@ -297,7 +296,7 @@ const Companions = (() => {
             idle: ["Beep. That's me thinking in space.", "Zero gravity makes my thoughts float off. Hold on.", "Space is silent, so I hum to keep us company."],
             done: ["Every star has its name back. I'm making a map.", "The Void's quiet now. Turns out it just needed a dictionary."]
         },
-        // the secret world (2026-10-14): Vigil, the little star that kept the Cursed Angel's prison shut
+        // the secret world: Vigil, the little star that kept the Cursed Angel's prison shut
         rift: {
             intro: "Oh. Oh no. You came through the tear. I'm Vigil. I was the light that kept the prison shut, and I... let it go.",
             lore: [

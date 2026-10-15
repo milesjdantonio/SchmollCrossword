@@ -48,7 +48,7 @@ final class TestWords {
         return everyday;
     }
 
-    // The "harder words" list (Step 13c setting turned off): too-hard words allowed, offensive ones still blocked
+    // The "harder words" list (the too-hard setting turned off): too-hard words allowed, offensive ones still blocked
     static synchronized Map<Integer, List<String>> withHardWords() {
         if (withHardWords == null) {
             withHardWords = load(false);

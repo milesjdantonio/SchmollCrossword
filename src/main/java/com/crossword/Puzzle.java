@@ -1,14 +1,11 @@
 package com.crossword;
 
 import java.util.ArrayList;
-import java.util.Comparator; // Tools for sorting, e.g. Comparator.comparingInt = "sort by this number"
+import java.util.Comparator;
 import java.util.List;
 
 /*
- * ===== Step 16: A Puzzle object =====
- *
- * Everything the website needs to show and check ONE puzzle, bundled together.
- * Steps 6-15 made the pieces (grid, numbers, answers, clues); this class packages them.
+ * Everything the website needs to show and check one puzzle: the grid, its numbers, answers and clues.
  */
 public class Puzzle {
 
@@ -17,7 +14,7 @@ public class Puzzle {
     public record Entry(int number, String direction, int row, int col, int length, String answer, String clue) {}
 
     String mode;              // "daily" (same for everyone) or "unlimited"
-    long seed;                // the random seed that built the grid (for daily: made from the date, Step 23)
+    long seed;                // the random seed that built the grid (for a daily: made from the date)
     String difficulty;        // "easy", "medium" or "hard"
     int size;                 // 5 for a 5x5 grid
     boolean[][] blackSquares; // true = black square
@@ -40,33 +37,15 @@ public class Puzzle {
     }
 
     /*
-     * ===== Step 16a: Assemble a Puzzle =====
-     *
-     * Build a Puzzle from a solved grid and its clues. No API calls here: the clues are handed in,
-     * so this can be tested for free (writeClues happens before, in whatever calls create).
-     *
-     * For every slot from Slot.findAllSlots(blackSquares):
-     *   - number    = the clue number on its first square (use App.numberGrid)
-     *   - direction = "across" or "down"
-     *   - row, col, length = where it is
-     *   - answer    = its letters in filledGrid (getPattern)
-     *   - clue      = the clue in `clues` whose answer matches ("" if Claude didn't give one)
-     * Put Across entries in `across` and Down entries in `down`, each sorted by number.
-     *
-     * Example:  the SOCK / ERRED / ADIEU / TEMPS / REST grid
+     * Builds a Puzzle from a solved grid and its clues (handed in, so no API call here): one Entry per slot, with
+     * its clue number, place, answer and clue ("" if there's none), Across and Down each sorted by number.
+     * E.g. the SOCK / ERRED / ADIEU / TEMPS / REST grid:
      *   across -> 1 SOCK, 5 ERRED, 7 ADIEU, 8 TEMPS, 9 REST
      *   down   -> 1 SEAT, 2 ORDER, 3 CRIME, 4 KEEPS, 6 DUST
-     *
-     * Constraints:
-     *   - findAllSlots returns Down slots column by column, which is NOT always number order,
-     *     so sort each list by number before building the Puzzle.
-     *   - Don't change filledGrid or blackSquares.
-     *
-     * Related LeetCode: 49. Group Anagrams (grouping into buckets), 179. Largest Number (sorting with a custom rule)
      */
     static Puzzle create(boolean[][] blackSquares, char[][] filledGrid, ClueWriter.ClueSet clues,
                          String mode, long seed, String difficulty) {
-        // ① The clue number of every square (Step 14)
+        // ① The clue number of every square
         int[][] numbers = App.numberGrid(blackSquares);
 
         // ② The two lists this method fills in
@@ -104,10 +83,7 @@ public class Puzzle {
     }
 
     /*
-     * ===== Step 16b: Turn the Puzzle into JSON =====
-     *
-     * The website is JavaScript and can't read a Java object, but it can read JSON text.
-     * Build this exact shape with a StringBuilder (no spaces or line breaks needed):
+     * The puzzle as JSON for the website:
      *
      *   {"mode":"daily","seed":1,"difficulty":"medium","size":5,
      *    "solution":["SOCK.","ERRED","ADIEU","TEMPS",".REST"],
@@ -115,16 +91,8 @@ public class Puzzle {
      *    "across":[{"number":1,"direction":"across","row":0,"col":0,"length":4,"answer":"SOCK","clue":"..."}, ...],
      *    "down":[ ...same shape... ]}
      *
-     * JSON rules you need:
-     *   - Text goes in double quotes: "mode":"daily". Numbers don't: "seed":1
-     *   - [ ] is a list, { } is an object (a group of "name":value pairs)
-     *   - Commas go BETWEEN items, never after the last one (the fencepost problem from formatGrid!)
-     *   - Use quote(...) below for every piece of text: a clue like  "Carpe diem," for one  contains
-     *     double quotes, which would break the JSON unless they're escaped as \"
-     *
-     * Black squares are the '.' in "solution" rows, so there's no separate blackSquares list.
-     *
-     * Related LeetCode: 297. Serialize and Deserialize Binary Tree, 271. Encode and Decode Strings
+     * Every piece of text goes through quote(...), which escapes quotes and backslashes. Black squares are the '.'
+     * in the "solution" rows, so there's no separate list of them.
      */
     String toJson() {
         StringBuilder sb = new StringBuilder("{");

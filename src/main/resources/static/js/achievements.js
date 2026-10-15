@@ -20,7 +20,7 @@ const Achievements = (() => {
         { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a normal daily." },
         { id: "challenger", icon: "\u{1F3D4}️", name: "Challenger", desc: "Solve a Challenge puzzle." },
         { id: "summit", icon: "\u{1F9D7}", name: "Summit", desc: "Solve a daily Challenge without Check or Reveal." },
-        // 18 more, to make 50 (the user, 2026-10-09)
+        // 18 more, to make 50
         { id: "easy1", icon: "\u{1F331}", name: "Warm-Up", desc: "Solve an Easy puzzle." },
         { id: "medium1", icon: "\u{1F3AF}", name: "Middle Ground", desc: "Solve a Medium puzzle." },
         { id: "speed20", icon: "\u{1F3CE}️", name: "Blink and You'll Miss It", desc: "Solve a puzzle in under 20 seconds." },
@@ -31,7 +31,7 @@ const Achievements = (() => {
         { id: "streak14", icon: "\u{1F4C5}", name: "Two Weeks Strong", desc: "Reach a 14-day streak." },
         { id: "grand", icon: "\u{1F3DF}️", name: "Grand Slam", desc: "Solve all five dailies in one day, the boss included." },
         { id: "points1000", icon: "\u{1F4B0}", name: "Big Scorer", desc: "Earn 1,000 daily points in total." },
-        // the campaign (the user asked for campaign achievements, 2026-10-08)
+        // the campaign
         { id: "cm-first", icon: "\u{1F97E}", name: "First Steps", desc: "Clear your first campaign level.", campaign: true },
         { id: "cm-boss", icon: "⚔️", name: "Boss Buster", desc: "Beat your first boss.", campaign: true },
         { id: "cm-half", icon: "\u{1F6E1}️", name: "Halfway There", desc: "Beat 8 bosses.", campaign: true },
@@ -55,7 +55,7 @@ const Achievements = (() => {
         { id: "cm-void", icon: "\u{1F30C}", name: "Into the Void", desc: "Beat the Void, the final boss.", campaign: true },
         { id: "cm-coins", icon: "\u{1FA99}", name: "Treasure Hoard", desc: "Have 1,000 coins at once.", campaign: true },
         { id: "cm-75", icon: "\u{1F3C5}", name: "Completionist", desc: "Clear all 75 campaign levels.", campaign: true },
-        // the secret world, the Celestial Rift (2026-10-14): hidden until they're unlocked
+        // the secret world, the Celestial Rift: hidden until they're unlocked
         { id: "rf-enter", icon: "\u{1F320}", name: "Through the Rift", desc: "Clear a level in the Celestial Rift.", campaign: true, secret: true },
         { id: "rf-pure", icon: "\u{1F56F}️", name: "Pure Light", desc: "Clear a Celestial Rift level with the corruption never above 25%.", campaign: true, secret: true },
         { id: "rf-angel", icon: "\u{1FAB6}", name: "Fallen Angel", desc: "Beat the Cursed Angel.", campaign: true, secret: true },

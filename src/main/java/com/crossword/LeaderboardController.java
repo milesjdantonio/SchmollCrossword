@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 
 /*
- * ===== The World Leaderboard =====   (written by Claude at the user's request, 2026-10-09)
+ * ===== The World Leaderboard =====
  *
  * Every day's dailies (Easy, Medium, Hard, Challenge and the Daily Boss) can be posted to a leaderboard for that
  * day, under a first name and a last-name initial ("Miles D."). A player's points for the day are added up across
@@ -38,7 +38,7 @@ import jakarta.servlet.http.HttpServletRequest;
  *   POST /api/leaderboard   { player, first, initial, date, difficulty, seconds, checked, revealed, stars, attempts }
  *   GET  /api/leaderboard?date=2026-10-09&player=...   -> the top 50, how many played, and your own place
  *
- * Safety (the user: "anything the player can input couldn't run code"):
+ * Safety (nothing a player types can ever run as code):
  *   - the name is only letters, with an apostrophe or hyphen inside ("O'Neil", "Anne-Marie"), at most 12, plus
  *     ONE letter for the initial; anything else is refused. Names containing a blocked word are refused too.
  *   - the server works the points out itself from the time, Checks, Reveals and stars (the same formula as

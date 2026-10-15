@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * Campaign mode (written by Claude at the user's request): a map of 15 worlds, travelled in order from easy to hard.
+ * Campaign mode: a map of 15 worlds, travelled in order from easy to hard.
  * Each world has 5 levels; level 5 is a boss battle.
  *
  * Every level is ONE fixed puzzle, the same for everyone (like a daily): the seed comes from the world and level,
@@ -16,11 +16,11 @@ public class Campaign {
     // One section of the map: a world, the difficulty and board size of its levels 1-4, and its boss's (level 5).
     // Difficulties: "easy" and "medium" are normal 5x5 puzzles. "challenge" is a Challenge grid with medium clues,
     // like the Challenge daily. "expert" is a Challenge grid with hard clues. The words are one step easier than the
-    // difficulty (the user, 2026-10-10): see "Easier words in the campaign" in PuzzleStore.java.
+    // difficulty: see "Easier words in the campaign" in PuzzleStore.java.
     record Section(String world, String difficulty, int size, String bossDifficulty, int bossSize) {}
 
     // The order of the map, easiest first. The ids match the worlds in static/js/worlds/.
-    // The user's design (2026-10-08): the Challenge grid felt right, so it's the MIDDLE of the campaign;
+    // The Challenge grid is the MIDDLE of the campaign:
     // the first worlds lead up to it with 5x5 puzzles and the later ones scale up from it (bigger, harder).
     static final List<Section> SECTIONS = List.of(
         new Section("paper",    "easy",      5, "easy",      5),
@@ -34,7 +34,7 @@ public class Campaign {
         new Section("desert",   "challenge", 7, "expert",    9),
         new Section("carnival", "expert",    6, "expert",    7),
         new Section("arcade",   "expert",    7, "expert",    7),
-        new Section("library",  "expert",    7, "expert",    9),      // the user swapped these two (2026-10-09):
+        new Section("library",  "expert",    7, "expert",    9),      // the robot comes after the library:
         new Section("robot",    "expert",    7, "expert",    9),      // the robot feels harder than the library
         new Section("volcano",  "expert",    9, "expert",    9),
         new Section("space",    "expert",    9, "expert",    9)
@@ -42,9 +42,9 @@ public class Campaign {
 
     static final int LEVELS = 5;      // per world; the last one is the boss
 
-    // The secret world (the user, 2026-10-14): the Celestial Rift, which only shows up on the map after the Void is
-    // beaten. The Void's fall broke open the prison of the Cursed Angel, who wants the Everbook for itself. "Hardest
-    // in the game": Expert words and clues on 7x7 and 9x9 boards, 4 levels like every world (since later the same day; it had 3) (each with a corruption meter, see
+    // The secret world: the Celestial Rift, which only shows up on the map after the Void is beaten. The Void's fall
+    // broke open the prison of the Cursed Angel, who wants the Everbook for itself. The hardest in the game: Expert
+    // words and clues on 7x7 and 9x9 boards, 4 levels like every world (each with a corruption meter, see
     // static/js/corruption.js), then the angel: a 5-phase boss (level 5, like every boss). It isn't one of the 15
     // pages of the Everbook, and it isn't in the Daily Boss rotation (dailyBossSection uses SECTIONS only).
     static final List<Section> SECRET = List.of(
@@ -60,8 +60,7 @@ public class Campaign {
     static boolean secret(Section section) {
         return SECRET.contains(section);
     }
-    // the levels a world has: 1-4 and the boss (5). (The secret world had only 1-3 at first; the user, later on
-    // 2026-10-14: "just make celestial rift have 5 levels (like the other levels)".)
+    // the levels a world has: 1-4 and the boss (5)
     static List<Integer> levels(Section section) {
         return List.of(1, 2, 3, 4, 5);
     }
@@ -93,7 +92,7 @@ public class Campaign {
         return difficulty.equals("challenge") || difficulty.equals("expert");
     }
 
-    // Boss phases (the user's design, 2026-10-08): when you solve the boss's first puzzle, phase 2 starts with a
+    // Boss phases: when you solve the boss's first puzzle, phase 2 starts with a
     // second, bigger one. The early bosses (normal 5x5 puzzles) switch to a Challenge grid; the Challenge and
     // Expert bosses switch to a bigger Expert grid, up to 9x9.
     static String phase2Difficulty(Section section) {
@@ -103,7 +102,7 @@ public class Campaign {
         return phaseSize(section, 2);
     }
 
-    // How many phases (puzzles) a boss fight has (the user's design, 2026-10-09): the first five bosses have just
+    // How many phases (puzzles) a boss fight has: the first five bosses have just
     // one, the last three have 3, the final boss (the Void) has 5, the rest have 2. Each new phase starts when you
     // finish a board.
     static final int SINGLE_PHASE_BOSSES = 5;
@@ -126,11 +125,10 @@ public class Campaign {
         return section.bossSize() >= 7 ? 9 : 7;
     }
 
-    // Rerolls (the user's rule, 2026-10-09): if you lose or give up, your next try is a NEW puzzle with new clues,
+    // Rerolls: if you lose or give up, your next try is a NEW puzzle with new clues,
     // so you can't win by remembering the answers. Try 0 is the level's first puzzle, try 1 the next one, and so on.
     // Each one is saved like the first (so Claude is paid once per puzzle); after VARIANTS tries they come round again.
-    // The puzzle pool (the user, 2026-10-10: "make 25 [per level] ... that it pulls from randomly ... they must feel
-    // the same"): every level has VARIANTS ready-made puzzles (CampaignPool.java), and the website picks one at random
+    // The puzzle pool: every level has VARIANTS ready-made puzzles (src/main/resources/campaign/), and the website picks one at random
     // each time a level starts (never one of the last few you played there).
     static final int VARIANTS = 25;
 

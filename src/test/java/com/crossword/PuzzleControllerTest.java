@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest; // a pretend web request, so no server is needed
 import org.springframework.web.server.ResponseStatusException;
 
-// Steps 18, 24 and 26: the API's input checks, word list choice and rate limit.
+// The API's input checks, word list choice and rate limit.
 // These call the controller's methods directly and never reach Claude.
 class PuzzleControllerTest {
 
@@ -52,7 +52,7 @@ class PuzzleControllerTest {
     void difficultyPicksTheWordList() {
         assertTrue(controller.wordsFor("hard").get(5).contains("ABHOR"), "less common words are Hard");
         assertFalse(controller.wordsFor("medium").get(5).contains("ABHOR"));
-        assertTrue(controller.wordsFor("medium").get(5).contains("ALIBI"), "common words are Medium (the review, 2026-10-08)");
+        assertTrue(controller.wordsFor("medium").get(5).contains("ALIBI"), "common words are Medium");
         assertFalse(controller.wordsFor("hard").get(5).contains("OVOID"), "extremely hard words need the setting");
         assertTrue(controller.wordsFor("hard", true).get(5).contains("OVOID"));
         assertFalse(controller.wordsFor("medium", true).get(5).contains("OVOID"), "the setting only changes Hard");
@@ -63,7 +63,7 @@ class PuzzleControllerTest {
         assertFalse(controller.wordsFor("hard", true).get(4).contains("DICK"), "offensive words are blocked either way");
     }
 
-    // Step 26: over the limit = HTTP 429 "too many requests", before any puzzle (or Claude call) is made
+    // over the limit = HTTP 429 "too many requests", before any puzzle (or Claude call) is made
     @Test
     void overTheLimitIsRejectedWith429() {
         ResponseStatusException e = assertThrows(ResponseStatusException.class,

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
- * ===== Step 13b-3: Trie (a tree of letters) =====
+ * A Trie (a tree of letters) for fast pattern lookups.
  *
  * A Trie stores words by their letters, one level per letter. Words that start the same way
  * share the same path, e.g. CAT, CATS and CUTE:
@@ -19,12 +19,8 @@ import java.util.List;
  *           |     |
  *           S*    E*        * = a word ends here
  *
- * Why it's faster for patterns like "C.T.":
- *   - The scan in findMatches checks EVERY 4-letter word (~2,100), letter by letter.
- *   - The Trie only walks paths that can still match: at 'C' it goes straight to the C branch,
- *     at '.' it tries each child, at 'T' it only follows T. Words starting with A, B, D... are never touched.
- *
- * Related LeetCode: 208. Implement Trie, 211. Design Add and Search Words Data Structure
+ * For a pattern like "C.T." it only walks paths that can still match: at 'C' it goes straight to the C branch,
+ * at '.' it tries each child, at 'T' it only follows T. Words starting with A, B, D... are never touched.
  */
 public class Trie {
 

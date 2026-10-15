@@ -223,8 +223,7 @@ const Worlds = (() => {
     // An offscreen canvas (for drawing a scene's still parts once)
     const canvas = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 
-    // Shared touches for the scenes' particles (2026-10-10, the user: "make large adjustments to every particle, add
-    // extra details"): glow() is a soft light round something (the cached sprite from fx.js, much cheaper than a shadow
+    // Shared touches for the scenes' particles: glow() is a soft light round something (the cached sprite from fx.js, much cheaper than a shadow
     // blur), glint() a cross-shaped sparkle for the brightest stars, sparks and crystals at the top of a twinkle.
     function glow(g, x, y, r, color, a = 1) {
         if (r < 1 || a <= 0.01) return;

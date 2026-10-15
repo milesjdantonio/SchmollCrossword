@@ -12,26 +12,17 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test; // @Test marks a method JUnit should run as one test
 
-/*
- * ===== Step 25: JUnit =====
- *
- * These used to be PASS/FAIL lines printed by App.main. Now each check is an assert inside a @Test method:
- *   - "mvn test" runs every test class and prints a summary ("Tests run: 80, Failures: 0")
- *   - a failing assert stops THAT test and reports what was expected and what came back
- *   - the build fails if any test fails, so a broken change can't sneak through
- *
- * Steps 7, 13 and 13c: loading the word list and finding words that fit a pattern.
- */
+// Loading the word lists and finding words that fit a pattern
 class WordListTest {
 
     private final Map<Integer, List<String>> words = TestWords.everyday();
 
-    // Step 7: findMatches with '.' wildcards
+    // findMatches with '.' wildcards
     @Test
     void findMatchesCountsWordsThatFit() {
         assertEquals(6, App.findMatches("C.T.", words).size(), "CATS, CITE, CITY, COTS, CUTE, CUTS (COTE is too hard)");
         assertEquals(1, App.findMatches("CAT", words).size(), "already a full word");
-        assertEquals(3701, App.findMatches(".....", words).size(), "every everyday 5-letter word (reviewed lists, 2026-10-08)");
+        assertEquals(3701, App.findMatches(".....", words).size(), "every everyday 5-letter word");
         assertEquals(0, App.findMatches("QZX..", words).size(), "nothing fits");
         assertEquals(0, App.findMatches("...............................", words).size(), "no words this long at all");
     }
@@ -41,7 +32,7 @@ class WordListTest {
         assertNotNull(App.findMatches("QZX..", words));
     }
 
-    // Step 13: player-friendly word list with offensive words blocked.
+    // the player-friendly word list, with offensive words blocked
     // DICK and HORNY are still in words.txt, so only the blocklist can keep them out.
     @Test
     void blocklistKeepsOffensiveWordsOut() throws IOException {
@@ -54,7 +45,7 @@ class WordListTest {
         assertEquals(0, App.findMatches("DARB", words).size(), "obscure ENABLE words are gone");
     }
 
-    // Step 13c: only everyday answers, with a setting to allow harder words
+    // only everyday answers, with a setting to allow harder words
     @Test
     void tooHardWordsSkippedByDefault() {
         assertEquals(0, App.findMatches("OVOID", words).size());

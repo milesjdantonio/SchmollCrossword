@@ -10,7 +10,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-// Step 17: daily puzzles saved to files (these never call the API)
+// Daily puzzles saved to files (these never call the API)
 class PuzzleStoreTest {
 
     private final LocalDate oct7 = LocalDate.of(2026, 10, 7);
@@ -21,7 +21,7 @@ class PuzzleStoreTest {
         assertEquals(20261008L, PuzzleStore.seedForDate(oct7.plusDays(1)), "next day, different seed");
     }
 
-    // Design pass: three dailies a day, each with its own seed (so its own grid)
+    // Three dailies a day, each with its own seed (so its own grid)
     @Test
     void eachDifficultyHasItsOwnDailySeed() {
         assertEquals(202610071L, PuzzleStore.dailySeed(oct7, "easy"));

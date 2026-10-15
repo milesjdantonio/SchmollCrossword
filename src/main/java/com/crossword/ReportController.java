@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 
 /*
- * ===== Reports =====   (written by Claude at the user's request, 2026-10-08)
+ * ===== Reports =====
  *
  * The website's "Report a problem" button sends the puzzle's seed, which clue (if any) and what the player wrote.
  * Each report becomes one line of JSON at the end of reports.jsonl, next to the daily puzzles:

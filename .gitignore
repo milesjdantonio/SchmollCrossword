@@ -18,11 +18,14 @@ desktop.ini
 # Generated puzzles (daily cache), made at run time
 puzzles/
 
-# boss music copies for listening in VS Code (the game's own files are in static/audio/music)
-boss-music/*
-!boss-music/README.md
+# local working files, not part of the game
+boss-music/
+clue-bank/
+tools/
+CLAUDE.md
+.claude/
 
-# the animation showreel video (made by a test script; too big for the repo)
+# videos (too big for the repository)
 showreel/
 level-music-review/
 

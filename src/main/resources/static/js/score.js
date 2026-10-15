@@ -1,4 +1,4 @@
-// Schmoll Crossword: the scoring formula (Step 21). Only DAILY puzzles earn points.
+// Schmoll Crossword: the scoring formula. Only DAILY puzzles earn points.
 //
 // ===== The design (chosen by the project owner) =====
 //   points = base points for the difficulty
@@ -9,7 +9,7 @@
 //   Revealing the whole puzzle is a surrender: 0 points, and it doesn't count toward the streak.
 //   The Daily Boss (the 5th daily, a race, so no clock): base 250 + 50 for each star (how close the boss got),
 //   with the same Check and Reveal penalties: 300 to 400 points. Every lost attempt before the win costs 40 more
-//   (the user, 2026-10-09: "if you lose it saves data but you lose more points").
+//.
 //   Streaks are shown on screen only: they never add points.
 
 const SCORING = {

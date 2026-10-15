@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-// Step 15a-15b: the prompt and the clue checks. Free: no internet, no API call (the paid ones are in LiveClaudeTest).
+// The prompt and the clue checks. Free: no internet, no API call (the paid ones are in LiveClaudeTest).
 class ClueWriterTest {
 
     private final List<String> twoAnswers = List.of("DESK", "CATS");
@@ -73,7 +73,7 @@ class ClueWriterTest {
         assertEquals(1, ClueWriter.findProblems(extraWord, twoAnswers).size());
     }
 
-    // Step 15e: quality control. The editor's prompt lists every clue and asks about truth, not just structure
+    // quality control. The editor's prompt lists every clue and asks about truth, not just structure
     @Test
     void reviewPromptListsTheCluesAndAsksIfTheyAreTrue() {
         String prompt = ClueWriter.buildReviewPrompt(clues(

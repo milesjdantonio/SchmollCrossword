@@ -1,20 +1,20 @@
 package com.crossword;
 
 import java.io.IOException;
-import java.nio.file.Files; // Helpers to read files in one line
-import java.nio.file.Path; // A file location, e.g. C:\Users\you\.schmoll-crossword\anthropic-api-key.txt
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashSet; // A Set with instant contains/add (used in findProblems)
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set; // A collection with no duplicates, good for "have I seen this?"
+import java.util.Set;
 
-import com.anthropic.client.AnthropicClient; // The object that talks to the Claude API
-import com.anthropic.client.okhttp.AnthropicOkHttpClient; // The standard way to build that client
+import com.anthropic.client.AnthropicClient;
+import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.StructuredMessageCreateParams;
 
 /*
- * ===== Step 15: AI-written clues (Claude API) =====
+ * AI-written clues (Claude API).
  *
  * For each puzzle, ask Claude to write a fresh, original clue for each of its ~10 answers,
  * at a chosen difficulty ("easy", "medium" or "hard").
@@ -26,7 +26,7 @@ public class ClueWriter {
     public record Clue(String answer, String clue) {}
     public record ClueSet(List<Clue> clues) {}
 
-    // Quality control (Step 15e): the editor's verdict on one clue, e.g. new Review("TEA", false, "TEA: ...").
+    // Quality control: the editor's verdict on one clue, e.g. new Review("TEA", false, "TEA: ...").
     public record Review(String answer, boolean ok, String problem) {}
     public record ReviewSet(List<Review> reviews) {}
 
@@ -38,7 +38,7 @@ public class ClueWriter {
         return difficulty.equalsIgnoreCase("easy") ? EASY_MODEL : MODEL;
     }
 
-    // The stronger model (the user, 2026-10-14): Sonnet 5.5 writes the clues for hard puzzles, Challenge and Expert
+    // The stronger model: Sonnet 5.5 writes the clues for hard puzzles, Challenge and Expert
     // grids, and boss puzzles, where wordplay and long clue lists need more skill; and it reviews every puzzle's clues.
     static final String STRONG_MODEL = "claude-sonnet-5-5";
     static final String REVIEW_MODEL = "claude-sonnet-5-5";
@@ -101,7 +101,7 @@ public class ClueWriter {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Step 15a: Build the prompt
+    // The prompt
     // ---------------------------------------------------------------------------------------
 
     static String buildPrompt(List<String> answers, String difficulty) {
@@ -192,7 +192,7 @@ public class ClueWriter {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Step 15b: Build a retry prompt
+    // A retry prompt
     // ---------------------------------------------------------------------------------------
 
     /*
@@ -236,7 +236,7 @@ public class ClueWriter {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Step 15c: Check Claude's work
+    // Checking Claude's work
     // ---------------------------------------------------------------------------------------
 
     /*
@@ -292,7 +292,7 @@ public class ClueWriter {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Step 15d: Call Claude, validate the response, and retry once if needed
+    // Calling Claude, validating the response, and retrying once if needed
     // ---------------------------------------------------------------------------------------
 
     // Counts calls and tokens since the server or batch started.
@@ -390,7 +390,7 @@ public class ClueWriter {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Step 15e: Quality control
+    // Quality control
     // ---------------------------------------------------------------------------------------
 
     /*

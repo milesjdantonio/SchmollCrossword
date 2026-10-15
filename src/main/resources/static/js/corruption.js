@@ -1,14 +1,11 @@
-// The Celestial Rift's levels (built by Claude at the user's request, 2026-10-14: "in every level the boss distracts
-// / makes things harder for them (different ui than the base boss)", with a corruption meter: "If it fills, you lose
-// the level"). The Cursed Angel watches you through a tear in the sky while you solve:
+// The Celestial Rift's levels. The Cursed Angel watches you through a tear in the sky while you solve:
 //   - the CORRUPTION meter rises slowly while the clock runs (half of it by the level's par time), and a little for
 //     every wrong letter; every right word you finish pushes it back (all of them together: 70%)
 //   - every so often the angel interferes: a black feather drifts over the board, a false letter is whispered into a
 //     square, a glare washes out your clues, a seal closes a square, chains wrap a clue, the board dims. Each one can
 //     be fought off (click it, or finish a word); ignore it and it feeds the corruption when it runs out
 //   - at 100% the rift takes over: the level is lost (try again with a new puzzle)
-// Harder (the user, later on 2026-10-14: "make it harder ... it can change and replace letters and it has more boss
-// like powers"):
+// Harder:
 //   - the corruption SEEPS into your board as it rises: every so often (16 seconds apart when the meter is empty, 5
 //     when it's nearly full) it changes one of your letters into a wrong one, or swaps two letters inside a word. The
 //     square is marked like a boss's hit, so clicking it puts your letter back

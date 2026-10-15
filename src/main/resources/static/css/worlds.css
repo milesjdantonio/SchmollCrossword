@@ -308,8 +308,7 @@
 [data-world="garden"] .cell.typed .ltr { animation: sprout-in .22s ease-out; }
 @keyframes sprout-in { from { transform: translateY(4px) scale(.85); } }
 svg.garden { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-/* the vines and flowers grow over the squares, so while you play they're see-through (the user: "it covers the
-   letters a lot"); once the puzzle is solved the garden comes out in full */
+/* the vines and flowers grow over the squares, so while you play they're see-through; once the puzzle is solved the garden comes out in full */
 svg.garden .g-vines { opacity: .42; transition: opacity .8s ease; }
 svg.garden .g-flowers { opacity: .55; transition: opacity .8s ease; }
 .board.solved svg.garden .g-vines, .board.solved svg.garden .g-flowers { opacity: 1; }
@@ -541,7 +540,7 @@ svg.garden .g-flowers { opacity: .55; transition: opacity .8s ease; }
     --shadow: 0 8px 22px rgba(35, 64, 95, .14);
     --board-shadow: 0 12px 30px rgba(35, 64, 95, .28);
     --font-body: "Quicksand", system-ui, sans-serif;
-    --font-head: "Comfortaa", sans-serif;          /* lighter than the old Sniglet (the user: "too thick to read") */
+    --font-head: "Comfortaa", sans-serif;          /* lighter than the old Sniglet */
     --font-cell: "Quicksand", sans-serif;
     --head-scale: .85;
     --cell-weight: 700;
