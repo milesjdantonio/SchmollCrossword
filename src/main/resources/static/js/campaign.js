@@ -42,10 +42,14 @@ const Campaign = (() => {
     let map = null, full = null, loading = null;
     // The secret world (the Celestial Rift, the user's design, 2026-10-14): on the map only once the Void is beaten
     // (or with the beta's Unlock All). map is what's shown; full has it too.
-    // TEST_SECRET_OPEN (the user, 2026-10-14: "for testing purposes can you leave it unlocked"): the rift is on the map
-    // and its first level is open without beating the Void. Set it false for the public launch, with BETA.
-    const TEST_SECRET_OPEN = true;
-    const secretOpen = () => !!(TEST_SECRET_OPEN || data.betaUnlock || (data.levels && data.levels["space-5"]));
+    // TEST_SECRET_OPEN (the user, 2026-10-14: "for testing purposes can you leave it unlocked"): true puts the rift on
+    // the map and opens its first level without beating the Void. Off again (the user, later that day: "hide the
+    // celestial rift like how we planned ... it only gets shown after the void is beaten").
+    const TEST_SECRET_OPEN = false;
+    // really unlocked (the Void beaten, or Unlock All), ignoring TEST_SECRET_OPEN: what the credits and the start
+    // screen's boss parade go by, so they never give the rift or the angel away (the user, 2026-10-14)
+    const secretEarned = () => !!(data.betaUnlock || (data.levels && data.levels["space-5"]));
+    const secretOpen = () => TEST_SECRET_OPEN || secretEarned();
     const visibleMap = () => full.filter(s => !s.secret || secretOpen());
     // the map grows (the Void just fell, or Unlock All was pressed): it's drawn again from scratch
     function refreshMap() {
@@ -236,7 +240,7 @@ const Campaign = (() => {
         if (si % 2) x = W - x;                     // every other world winds the other way
         return [x + (r() - 0.5) * 60, TOP + si * SH + y + (r() - 0.5) * 30];
     }
-    const slotOf = (si, l) => (isSecret(si) ? [null, 0, 1, 2, null, 4][l] : l - 1);
+    const slotOf = (si, l) => l - 1;            // (the rift had 4 nodes at first; every world has 5 now)
     const allNodes = () => [[500, 50], ...map.flatMap((s, si) => LV(si).map(l => nodePos(si, slotOf(si, l))))];
     // a level's place along the road (allNodes()[0] is the road's start)
     const nodeIndex = (si, l) => 1 + map.slice(0, si).reduce((n, s, i) => n + LV(i).length, 0) + LV(si).indexOf(l);
@@ -914,13 +918,16 @@ const Campaign = (() => {
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
     // Unlocking (the user's design): a world's 1st ability unlocks when you clear its level 1, the 2nd at level 3,
-    // the 3rd when you beat its boss. Each unlock comes with FREE_USES uses; more cost coins in the shop.
-    const UNLOCK_AT = [1, 3, 5], FREE_USES = 2;
-    const unlockLevel = a => UNLOCK_AT[ABILITIES.filter(x => x.world === a.world).indexOf(a)];
+    // the 3rd when you beat its boss. The Celestial Rift has four, one per level, all before the angel (the user,
+    // 2026-10-14: "make it so you learn all the skills before the boss ... 1 skill for each of the 4 levels").
+    // Each unlock comes with FREE_USES uses; more cost coins in the shop.
+    const FREE_USES = 2;
+    const unlockAt = world => (world === "rift" ? [1, 2, 3, 4] : [1, 3, 5]);
+    const unlockLevel = a => unlockAt(a.world)[ABILITIES.filter(x => x.world === a.world).indexOf(a)];
     // the ability a level unlocks (or null): abilityPrize(0, 3) = Paper's 2nd ability
     function abilityPrize(si, level) {
         if (!map || !map[si]) return null;
-        const i = UNLOCK_AT.indexOf(level);
+        const i = unlockAt(map[si].world).indexOf(level);
         return i < 0 ? null : ABILITIES.filter(a => a.world === map[si].world)[i] || null;
     }
     function earnedAbility(a) {
@@ -1328,7 +1335,7 @@ const Campaign = (() => {
         haste: "🛩️ Hasted", snowed: "🌨️ Snowed in" };
     // timers on your side (good ones)
     const MY_BUFFS = { blizzard: "🌨️ Blizzard: keep typing right", sun: "🌱 Words grow letters", tailwind: "🪁 Letters held", lucky: "🌈 Combo locked", fireup: "🔥 Wrong letters burn", hot: "🔥 Words stun", overclock: "⚡ Overclock",
-        armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed" };
+        armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed", chorus: "🎶 Angel chorus" };
     // what each boss move does to you, for the status chips
     const ME_TEXT = { crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
         ink: "🦑 Board blurred", whirl: "🌀 Board spinning", freeze: "🥶 Can't type", whiteout: "🌨️ Snowed in", downpour: "🌧️ Letters running", gale: "🌪️ Cursor blown",
@@ -1555,7 +1562,7 @@ const Campaign = (() => {
                 <div class="bp-stage"><div class="bp-portrait">${bossSvg(fight.world)}</div><div class="bp-speech" hidden></div><div class="bp-windup" hidden><i></i><span></span></div></div>
                 <div class="bp-who"><small>BOSS · ${U.esc(Worlds.byId[fight.world].name.toUpperCase())} · ${"💀".repeat(fight.th.stars)}</small><b></b><div class="bp-status"></div></div>
                 <div class="bp-bar bp-race" title="The boss's progress on its own board"><i></i><span></span></div>
-                <div class="bp-volume" title="Boss music volume: drag, or scroll the mouse wheel over it (also in Settings)"><button type="button" class="bp-vol-mute" aria-label="Boss music on or off"></button><input type="range" min="0" max="100" step="5" aria-label="Boss music volume"><output></output></div>
+                <div class="bp-volume" title="Boss Music (also in Settings)"><button type="button" class="bp-vol-mute" aria-label="Boss music on or off"></button><input type="range" min="0" max="100" step="1" aria-label="Boss music volume"><output></output></div>
                 <div class="bp-abilities"><small>YOUR MOVES</small><div class="bp-ab-row"></div></div>
                 <div class="bp-board-wrap"><div class="bp-board"></div><div class="bp-fog" aria-hidden="true"></div><p class="bp-loading">The boss is getting ready…</p></div>`;
             // (the boss's clues aren't shown, or even written: the user, 2026-10-09, so its board costs nothing)
@@ -1641,76 +1648,74 @@ const Campaign = (() => {
 
     }
     const real = (r, c) => { const ch = fight.letters[r][c]; return !!ch && ch !== "." && ch !== BLOT; };
-    // The boss music's volume, right in the fight (the user: "when you're in a boss you don't have to travel menus")
+    // A music slider right in the game: Boss Music in a boss fight (the user: "when you're in a boss you don't have to
+    // travel menus"), Level Music by the timer in a level. The same settings as in Settings > Sound; 1% steps, no
+    // mouse wheel (the user, 2026-10-14). The button mutes that music (the slider goes to 0) and brings it back to
+    // where it was.
+    const lastMusic = {};
+    const musicPct = key => Math.round(U.clamp(Settings.get(key) ?? 1, 0, 1) * 100);
+    const musicIcon = (on, v) => (!on || v === 0 ? "🔇" : v < 35 ? "🔈" : v < 70 ? "🔉" : "🔊");
+    function setMusic(key, v) {
+        v = U.clamp(Math.round(v), 0, 100);
+        if (v > 0) lastMusic[key] = v;
+        Settings.set(key, v / 100);
+        if (v > 0 && !Settings.get("sound")) Settings.set("sound", true);              // turning it up unmutes
+    }
+    function toggleMusic(key) {
+        const on = Settings.get("sound") && musicPct(key) > 0;
+        if (on) { lastMusic[key] = musicPct(key); setMusic(key, 0); }
+        else setMusic(key, lastMusic[key] || 80);
+    }
     function drawVolume() {
         const box = panel.querySelector(".bp-volume");
         if (!box) return;
-        const on = Settings.get("sound") && Settings.get("bossMusic") !== false, v = Math.round((Settings.get("musicVolume") ?? 1) * 100);
+        const v = musicPct("bossMusicVolume"), on = Settings.get("sound") && v > 0;
         const range = box.querySelector("input");
         if (document.activeElement !== range) range.value = v;
-        box.querySelector("output").textContent = on ? v + "%" : "off";
-        box.querySelector(".bp-vol-mute").textContent = !on ? "🔇" : v === 0 ? "🔈" : v < 60 ? "🔉" : "🔊";
+        box.querySelector("output").textContent = on ? v + "%" : "Off";
+        box.querySelector(".bp-vol-mute").textContent = musicIcon(on, v);
         box.classList.toggle("off", !on);
     }
     function wireVolume() {
         const box = panel.querySelector(".bp-volume");
         if (!box) return;
         const range = box.querySelector("input");
-        const set = v => {
-            Settings.set("musicVolume", U.clamp(v, 0, 100) / 100);
-            if (v > 0 && Settings.get("bossMusic") === false) Settings.set("bossMusic", true);     // turning it up turns the music back on
-            drawVolume();
-        };
-        range.addEventListener("input", () => set(Number(range.value)));
+        range.addEventListener("input", () => { setMusic("bossMusicVolume", Number(range.value)); drawVolume(); });
         range.addEventListener("change", () => range.blur());                                   // back to typing on the board
-        box.addEventListener("wheel", e => { e.preventDefault(); range.value = U.clamp(Number(range.value) + (e.deltaY < 0 ? 5 : -5), 0, 100); set(Number(range.value)); }, { passive: false });
-        box.querySelector(".bp-vol-mute").addEventListener("click", e => { Settings.set("bossMusic", Settings.get("bossMusic") === false); drawVolume(); e.currentTarget.blur(); });
+        box.querySelector(".bp-vol-mute").addEventListener("click", e => { toggleMusic("bossMusicVolume"); drawVolume(); e.currentTarget.blur(); });
         drawVolume();
     }
-    Settings.on(key => { if (key === "musicVolume" || key === "bossMusic" || key === "sound") drawVolume(); });
+    Settings.on(key => { if (key === "bossMusicVolume" || key === "sound") drawVolume(); });
 
     // ---- the level's own song (the user, 2026-10-10: "add a song to each level (different for each level), not
     // intense, not boss like, more just chill music that follows the level's theme"), and a music control by the
     // timer to change it quickly ("add a music slider to the levels"). Songs: audio/music/level-<world>-<1..4>.mp3
     const songFor = (world, level) => `level-${world}-${level}`;
-    const musicCtl = U.el("div", { class: "music-ctl", hidden: true, title: "Music volume (also in Settings and the sound menu)" },
+    const musicCtl = U.el("div", { class: "music-ctl", hidden: true, title: "Level Music (also in Settings and the sound menu)" },
         U.el("button", { type: "button", class: "mc-mute", "aria-label": "Level music on or off" }),
-        U.el("input", { type: "range", min: "0", max: "100", step: "5", "aria-label": "Music volume" }),
+        U.el("input", { type: "range", min: "0", max: "100", step: "1", "aria-label": "Level music volume" }),
         U.el("output"));
     document.querySelector(".hud-row").appendChild(musicCtl);
     const levelOn = () => U.view() === "level" && data.playing && !data.playing.special && data.playing.level < 5;
     function drawMusicCtl() {
         musicCtl.hidden = !levelOn();
         if (musicCtl.hidden) return;
-        const on = Settings.get("sound") && Settings.get("levelMusic") !== false, v = Math.round((Settings.get("musicVolume") ?? 1) * 100);
+        const v = musicPct("levelMusicVolume"), on = Settings.get("sound") && v > 0;
         const range = musicCtl.querySelector("input");
         if (document.activeElement !== range) range.value = v;
         musicCtl.querySelector("output").textContent = on ? v + "%" : "Off";
         const mute = musicCtl.querySelector(".mc-mute");
-        mute.textContent = !on ? "🔇" : v === 0 ? "🔈" : v < 60 ? "🔉" : "🔊";
-        mute.title = on ? `Music ${v}%: click to turn the level's music off` : "Music off: click to turn it on";
+        mute.textContent = musicIcon(on, v);
+        mute.title = on ? `Level Music ${v}%: click to mute it` : "Level Music off: click to turn it on";
         musicCtl.classList.toggle("off", !on);
     }
     {
         const range = musicCtl.querySelector("input");
-        const set = v => {
-            Settings.set("musicVolume", U.clamp(v, 0, 100) / 100);
-            if (v > 0 && Settings.get("levelMusic") === false) Settings.set("levelMusic", true);     // turning it up turns it back on
-            if (v > 0 && !Settings.get("sound")) Settings.set("sound", true);
-            drawMusicCtl();
-        };
-        range.addEventListener("input", () => set(Number(range.value)));
+        range.addEventListener("input", () => { setMusic("levelMusicVolume", Number(range.value)); drawMusicCtl(); });
         range.addEventListener("change", () => range.blur());                                   // back to typing on the board
-        musicCtl.addEventListener("wheel", e => { e.preventDefault(); range.value = U.clamp(Number(range.value) + (e.deltaY < 0 ? 5 : -5), 0, 100); set(Number(range.value)); }, { passive: false });
-        musicCtl.querySelector(".mc-mute").addEventListener("click", e => {
-            const on = Settings.get("sound") && Settings.get("levelMusic") !== false;
-            if (!on && !Settings.get("sound")) Settings.set("sound", true);
-            Settings.set("levelMusic", !on);
-            drawMusicCtl();
-            e.currentTarget.blur();
-        });
+        musicCtl.querySelector(".mc-mute").addEventListener("click", e => { toggleMusic("levelMusicVolume"); drawMusicCtl(); e.currentTarget.blur(); });
     }
-    Settings.on(key => { if (["musicVolume", "levelMusic", "sound"].includes(key)) drawMusicCtl(); });
+    Settings.on(key => { if (["levelMusicVolume", "sound"].includes(key)) drawMusicCtl(); });
     // which song should be playing: the level's, while it's being played (not once it's solved or given up)
     function levelMusic() {
         drawMusicCtl();
@@ -2172,7 +2177,8 @@ const Campaign = (() => {
             case "cheat": { const e = currentMyEntry(); return e && Game.cellsOf(e).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]) ? null : "Your selected word is already right."; }
             case "constellation": return crossings().length ? null : "No crossings left to light up.";
             case "wish": return f.wish ? "Your wish is already waiting for your next word." : null;
-            case "fate": return Game.hitCount() ? null : "The boss hasn't erased or changed any of your letters.";
+            case "purify": return wrongMine().length ? null : "You don't have any wrong letters to purify.";
+            case "chorus": return f.buff.chorus > 0 ? "The chorus is already singing." : null;
             default: return null;
         }
     }
@@ -2294,7 +2300,14 @@ const Campaign = (() => {
             // the Celestial Rift
             case "constellation": Game.fillCells(crossings().slice(0, 4)); break;
             case "wish": f.wish = true; break;
-            case "fate": { const n = Game.restoreAllHits(); floatText(n ? `${n} letter${n === 1 ? "" : "s"} written back 📜` : "Nothing to write back", n > 0); break; }
+            case "purify": {                                             // Purifying Light: up to 3 of your wrong letters turn right
+                const cells = wrongMine().sort(() => Math.random() - 0.5).slice(0, 3);
+                Game.setLetters(cells.map(([r, c]) => [r, c, g.puzzle.solution[r][c]]));
+                cells.forEach(([r, c], i) => setTimeout(() => { const el = Game.cellEl(r, c); if (el) U.restart(el, "flip"); }, i * 120));
+                floatText(`${cells.length} wrong letter${cells.length === 1 ? "" : "s"} made right ✨`);
+                break;
+            }
+            case "chorus": f.buff.chorus = 20; f.chorusN = 0; floatText("The chorus sings along: right letters echo 🎶"); break;   // Angel Chorus: see the typing handler
         }
         if (g.solved) return;
     }
@@ -2403,7 +2416,7 @@ const Campaign = (() => {
         holylight: "every word you finish shrinks the light: 3 words put it out", scripture: "click the stolen clues 5× to take them back",
         tithe: "finish 2 words to end the tithe",
         lance: "click the lance 2× to turn the beam on the angel", decree: "click the golden tablet 4× to break the decree",
-        ascend: "finish 2 words to bring your letters back down (finished words stay put)", trumpet: "click the trumpet 2× before it sounds",
+        ascend: "click an angel bird 3× to get its letter back; finish 2 words to bring the rest down", trumpet: "click the trumpet 2× before it sounds",
         penance: "type 6 right letters in a row to end your penance"
     };
     // the boss gets a taste of its own move
@@ -2915,7 +2928,7 @@ const Campaign = (() => {
                 if (best) { f.decree = best[0]; f.me.decree = dur; }
                 break;
             }
-            case "ascend": f.me.ascend = dur; f.ascAcc = 0; break;               // Ascension: see the fight's tick
+            case "ascend": f.me.ascend = dur; f.ascAcc = 0; setTimeout(() => sendBirds(f), U.motion() === "still" ? 0 : 900); break;   // Ascension: angel birds, then see the fight's tick
             case "trumpet": {                                                    // Trumpet Blast: the letters inside two words, out of order
                 const safe = safeCells(), loose = ([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c), used = new Set(), sets = [];
                 let n = 0;
@@ -2984,7 +2997,7 @@ const Campaign = (() => {
         const loose = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c));
         if (!loose.length) return;
         // letters with an empty square above them go first: they look like they're drifting up
-        const up = loose.filter(([r, c]) => open(r - 1, c) && !g.letters[r - 1][c] && !Game.isLocked(r - 1, c));
+        const up = loose.filter(([r, c]) => open(r - 1, c) && !g.letters[r - 1][c] && !Game.isLocked(r - 1, c) && !takenBy(r - 1, c));
         const [r, c] = U.pick(up.length ? up : loose), ch = g.letters[r][c], before = g.letters.map(x => [...x]);
         const to = up.length ? [r - 1, c] : null, from = U.center(Game.cellEl(r, c));
         Game.setLetters(to ? [[r, c, ""], [to[0], to[1], ch]] : [[r, c, ""]]);
@@ -3027,6 +3040,8 @@ const Campaign = (() => {
     // a boss effect on a timer wiping your letters: they get the ✕ mark like any hit, so clicking puts them back
     // (the user, 2026-10-14: the Aphid "does not mark words as deleted when they eat them")
     const bossWipe = list => { const before = Game.state.letters.map(r => [...r]); Game.setLetters(list); Game.markBossChanges(before); };
+    // your wrong letters (that aren't locked): what Purifying Light fixes
+    const wrongMine = () => { const g = Game.state; return scopeAll().filter(([r, c]) => g.letters[r][c] && g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c)); };
     const scopeAll = () => { const g = Game.state, out = []; g.puzzle.solution.forEach((row, r) => [...row].forEach((ch, c) => { if (ch !== ".") out.push([r, c]); })); return out; };
     const wrongLetter = right => String.fromCharCode(65 + ((right.charCodeAt(0) - 65 + 1 + Math.floor(Math.random() * 24)) % 26));
     const bossNextEmpty = () => { const f = fight; for (const e of f.queue) { if (f.done.includes(e)) continue; const empty = Game.cellsOf(e).find(([r, c]) => !f.letters[r][c]); if (empty) return empty; } return null; };
@@ -3050,15 +3065,140 @@ const Campaign = (() => {
         fight.minionAcc = 2;
     }
     function removeMinion() { if (minionEl) { minionEl.remove(); minionEl = null; } }
+    // Ascension's angel birds (the user, 2026-10-14: "make ascension also grab 5 letters off the board with angel birds /
+    // you can click the angel bird to bring them back, but you cant click the square to bring them back (... maybe angel
+    // locks around that square to show it was taken)"). Five doves swoop down, each carries one of your letters off
+    // (right ones first) and flies around the screen with it (the user: "fly around the screen (but slightly slower than
+    // the other stuff that moves around the screen) (make it 3 clicks but they dont teleport after each click)"): 3/4
+    // of the speed of the boss's click targets, bouncing off the edges; 3 clicks bring it back, and it keeps its course
+    // between clicks. Its square is sealed with a halo lock: no typing there, and clicking it does nothing. When
+    // Ascension ends, the doves still flying take their letters to the angel, and the squares open again, empty.
+    let birds = [];
+    const DOVE = `<svg viewBox="0 0 64 52" aria-hidden="true"><ellipse cx="32" cy="9" rx="13" ry="3.6" fill="none" stroke="#ffd06b" stroke-width="3"/>` +
+        `<g class="ab-wing l"><path d="M30 27 Q12 4 2 13 Q9 27 30 33Z" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><path d="M26 27 Q15 16 8 16 M24 30 Q14 23 7 23" fill="none" stroke="#e3d8ff" stroke-width="1.5"/></g>` +
+        `<g class="ab-wing r"><path d="M34 27 Q52 4 62 13 Q55 27 34 33Z" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><path d="M38 27 Q49 16 56 16 M40 30 Q50 23 57 23" fill="none" stroke="#e3d8ff" stroke-width="1.5"/></g>` +
+        `<path d="M22 31 Q32 22 42 30 Q40 40 32 41 Q24 40 22 31Z" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><path d="M27 40 L24 47 L30 42 L32 48 L34 42 L40 47 L37 40Z" fill="#fff" stroke="#c9b8ff" stroke-width="1.5"/>` +
+        `<circle cx="38" cy="25" r="5.5" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><circle cx="39.6" cy="24" r="1.3" fill="#2b2233"/><path d="M43.5 25 l4.5 1 l-4.5 1.6Z" fill="#ffb84d"/></svg>`;
+    const LOCK = `<svg viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="6.5" rx="10.5" ry="3.2" fill="none" stroke="#ffd06b" stroke-width="2.4"/>` +
+        `<path d="M13 21 Q4 12 1 18 Q5 25 13 25Z M27 21 Q36 12 39 18 Q35 25 27 25Z" fill="#fff" stroke="#c9b8ff" stroke-width="1.4"/>` +
+        `<path d="M15.5 18 v-3.5 a4.5 4.5 0 0 1 9 0 V18" fill="none" stroke="#8a5a1a" stroke-width="2.2"/><rect x="12.5" y="17.5" width="15" height="13" rx="3" fill="#ffd06b" stroke="#8a5a1a" stroke-width="1.5"/>` +
+        `<circle cx="20" cy="22.5" r="1.8" fill="#5a3a10"/><path d="M20 23.5 v3.5" stroke="#5a3a10" stroke-width="1.6"/></svg>`;
+    const takenBy = (r, c) => birds.find(b => b.r === r && b.c === c && b.held);
+    const placeBird = (el, x, y) => { el.style.left = x.toFixed(0) + "px"; el.style.top = y.toFixed(0) + "px"; };
+    function sendBirds(f) {
+        const g = Game.state;
+        if (fight !== f || f.over || !g.puzzle) return;
+        const safe = safeCells(), shuffle = list => list.sort(() => Math.random() - 0.5);
+        const loose = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c) && !takenBy(r, c));
+        const right = loose.filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c]);
+        const picks = [...shuffle(right), ...shuffle(loose.filter(x => !right.includes(x)))].slice(0, (f.buff.armor > 0) ? 3 : 5);
+        picks.forEach(([r, c], i) => {
+            const el = U.el("button", { type: "button", class: "angel-bird", "aria-label": "An angel bird carrying one of your letters: click it to bring the letter back",
+                html: DOVE + `<b class="ab-letter"></b><i class="ab-count">×3</i>` });
+            const b = { r, c, ch: null, el, held: false, puzzle: g.puzzle, f, hits: 0 };
+            document.body.appendChild(el);
+            placeBird(el, innerWidth * (0.15 + Math.random() * 0.7), -70);
+            el.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); hitBird(b); });
+            birds.push(b);
+            setTimeout(() => {                                          // down onto the square
+                const cell = Game.cellEl(r, c);
+                if (!el.isConnected || !cell) return;
+                const p = U.center(cell);
+                el.classList.add("swoop"); placeBird(el, p.x, p.y - 8);
+                setTimeout(() => grabLetter(b), U.motion() === "still" ? 0 : 640);
+            }, U.motion() === "still" ? 0 : 60 + i * 220);
+        });
+        if (picks.length) floatText("Angel birds took your letters! Click a bird 3 times to get its letter back 🕊️", false);
+    }
+    function grabLetter(b) {
+        const g = Game.state, f = b.f;
+        if (fight !== f || f.over || g.puzzle !== b.puzzle || !b.el.isConnected) return dropBird(b);
+        const ch = g.letters[b.r][b.c];
+        if (!ch || Game.isLocked(b.r, b.c)) return flyAway(b);       // nothing to take any more
+        b.ch = ch; b.held = true;
+        Game.setLetters([[b.r, b.c, ""]]);
+        const cell = Game.cellEl(b.r, b.c);
+        if (cell) { cell.classList.add("bird-taken"); if (!cell.querySelector(".taken-mark")) cell.appendChild(U.el("span", { class: "taken-mark", "aria-hidden": "true", html: LOCK })); U.restart(cell, "shake"); }
+        b.el.querySelector(".ab-letter").textContent = ch;
+        b.el.classList.add("holding");
+        const p = U.center(b.el);
+        FX.burst({ x: p.x, y: p.y, n: 10, colors: ["#ffffff", "#fff6d8", "#ffd06b"], shape: "petal", speed: [60, 180], gravity: 40, life: [0.6, 1], size: [4, 7], spin: 2 });
+        Sound.tone({ f: 1400, f2: 2100, type: "sine", d: 0.18, v: 0.04, boss: true });
+        flyBird(b);
+    }
+    // off it goes, round the whole screen, bouncing off the edges (3/4 of the speed of the boss's click targets)
+    function flyBird(b) {
+        if (!b.el.isConnected) return;
+        const q = U.center(b.el), m = 46;
+        const pos = { x: q.x, y: q.y }, speed = 0.75 * (45 + (b.f.si || 0) * 9);
+        let a = -Math.PI / 2 + (Math.random() - 0.5) * 2.2, prev = performance.now();
+        b.el.classList.remove("swoop"); b.el.classList.add("flying");
+        const step = now => {
+            if (!b.held || !b.el.isConnected) return;
+            const dt = Math.min(0.05, (now - prev) / 1000);
+            prev = now;
+            a += (Math.random() - 0.5) * 2.6 * dt;                     // a lazy, wandering course
+            pos.x += Math.cos(a) * speed * dt; pos.y += Math.sin(a) * speed * dt;
+            if (pos.x < m || pos.x > innerWidth - m) { a = Math.PI - a; pos.x = U.clamp(pos.x, m, innerWidth - m); }
+            if (pos.y < 64 + m || pos.y > innerHeight - m) { a = -a; pos.y = U.clamp(pos.y, 64 + m, innerHeight - m); }
+            placeBird(b.el, pos.x, pos.y);
+            b.el.classList.toggle("left", Math.cos(a) < 0);              // it faces the way it flies
+            requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+    }
+    // a click on a dove: three bring its letter back (it doesn't jump away between them)
+    function hitBird(b) {
+        if (!b.held || !fightOn()) return;
+        b.hits++;
+        const p = U.center(b.el);
+        FX.burst({ x: p.x, y: p.y, n: 6, colors: ["#ffffff", "#fff6d8"], shape: "petal", speed: [40, 140], gravity: 60, life: [0.4, 0.8], size: [4, 6], spin: 2 });
+        if (b.hits < 3) {
+            b.el.querySelector(".ab-count").textContent = "×" + (3 - b.hits);
+            U.restart(b.el, "ab-hit");
+            Sound.tone({ f: 700 + b.hits * 220, type: "sine", d: 0.12, v: 0.06 });
+            return;
+        }
+        rescueBird(b);
+    }
+    function rescueBird(b) {
+        if (!b.held || !fightOn()) return;
+        const g = Game.state, cell = Game.cellEl(b.r, b.c);
+        b.held = false;
+        b.el.classList.remove("flying"); b.el.classList.add("swoop");
+        if (cell) { const p = U.center(cell); placeBird(b.el, p.x, p.y - 8); }
+        Sound.tone({ f: 1046, f2: 1568, type: "sine", d: 0.3, v: 0.05, echo: 0.3 });
+        setTimeout(() => {
+            if (fight === b.f && !b.f.over && g.puzzle === b.puzzle && !g.letters[b.r][b.c] && !Game.isLocked(b.r, b.c)) Game.setLetters([[b.r, b.c, b.ch]]);
+            unmarkTaken(b);
+            const el = Game.cellEl(b.r, b.c);
+            if (el) { U.restart(el, "flip"); const p = U.center(el); FX.burst({ x: p.x, y: p.y, n: 12, colors: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "star", speed: [60, 200], gravity: 40, life: [0.4, 0.8], size: [2, 4], glow: true }); }
+            b.el.remove(); birds = birds.filter(x => x !== b);
+            floatText("Letter brought back 🕊️");
+            if (fight) drawFight();
+        }, U.motion() === "still" ? 0 : 520);
+    }
+    function unmarkTaken(b) { const cell = Game.cellEl(b.r, b.c); if (cell) { cell.classList.remove("bird-taken"); const m = cell.querySelector(".taken-mark"); if (m) m.remove(); } }
+    // off to the angel, letter and all (the square opens again, empty)
+    function flyAway(b) {
+        b.held = false; unmarkTaken(b);
+        const to = portraitEl() ? U.center(portraitEl()) : { x: innerWidth + 80, y: 60 };
+        b.el.classList.remove("flying", "swoop"); b.el.classList.add("away"); placeBird(b.el, to.x, to.y);
+        setTimeout(() => b.el.remove(), 950);
+        birds = birds.filter(x => x !== b);
+    }
+    function dropBird(b) { unmarkTaken(b); b.el.remove(); birds = birds.filter(x => x !== b); }
+    const removeBirds = () => { for (const b of [...birds]) dropBird(b); };
+
     function moveMinion() {
         const g = Game.state, wrap = document.querySelector(".board-wrap");
         const targets = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c));
         const [r, c] = targets.length ? U.pick(targets) : U.pick(scopeAll());
         const cell = Game.cellEl(r, c);
         if (!cell || !minionEl || !wrap) return;
-        const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-        minionEl.style.left = (a.left - w.left + a.width / 2) + "px";
-        minionEl.style.top = (a.top - w.top + a.height / 2) + "px";
+        const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect(), z = U.zoom();   // (on screen -> CSS inside the zoomed page)
+        minionEl.style.left = (a.left - w.left + a.width / 2) / z + "px";
+        minionEl.style.top = (a.top - w.top + a.height / 2) / z + "px";
         if (g.letters[r][c] && !Game.isLocked(r, c)) setTimeout(() => { if (minionEl && fight && fight.me.minion > 0 && g.letters[r][c] && !Game.isLocked(r, c)) { bossWipe([[r, c, ""]]); U.restart(cell, "scorched"); } }, 600);
     }
 
@@ -3180,12 +3320,14 @@ const Campaign = (() => {
         if (on("lights") && g.cells) {
             const cell = Game.cellEl(g.row, g.col), wrap = document.querySelector(".board-wrap");
             if (cell && wrap) {
-                const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect();
-                setVar(area, "--lx", Math.round(a.left + a.width / 2 - w.left) + "px");
-                setVar(area, "--ly", Math.round(a.top + a.height / 2 - w.top) + "px");
+                const a = cell.getBoundingClientRect(), w = wrap.getBoundingClientRect(), z = U.zoom();
+                setVar(area, "--lx", Math.round((a.left + a.width / 2 - w.left) / z) + "px");
+                setVar(area, "--ly", Math.round((a.top + a.height / 2 - w.top) / z) + "px");
             }
         }
         if (!on("minion")) removeMinion();
+        for (const b of [...birds]) if (b.puzzle !== Game.state.puzzle) dropBird(b);
+        if (birds.length && !on("ascend")) for (const b of [...birds]) if (b.held) flyAway(b);
     }
     function clearMe(keepShield = false) {
         if (fight && !keepShield) { fight.me = {}; fight.thorns = null; }
@@ -3196,6 +3338,7 @@ const Campaign = (() => {
             f.gum = null; f.bombAt = null; f.curse = null; f.snow = null; f.folds = null; f.piles = null; f.lie = null; f.mirage = null;
         }
         removeMinion();
+        removeBirds();
         const area = boardArea(), board = document.getElementById("board"), clues = document.querySelector(".clues");
         if (area) area.className = area.className.split(" ").filter(c => !c.startsWith("fx-")).join(" ");
         if (clues) clues.classList.remove("fx-blind", "fx-petals", "fx-numberless");
@@ -3220,6 +3363,7 @@ const Campaign = (() => {
         const f = fight, g = Game.state, now = performance.now(), here = g.row + "," + g.col;
         if (f.me.freeze > 0) return "freeze";
         if (f.me.decree > 0 && f.decree === letter) return "decree";
+        if (takenBy(g.row, g.col)) return "taken";
         if (f.thorns && f.thorns.cells.has(here)) return "thorns";
         if (f.gum && f.gum.cells.has(here)) return "gum";
         if (f.me.sandblast > 0 && Math.random() < 0.35) return "sand";
@@ -3240,6 +3384,7 @@ const Campaign = (() => {
         if (why === "thorns") Powers.aura(cell, ["🌹"], "pop", 2, 600);
         if (why === "gum") Powers.aura(cell, ["🩷"], "pop", 2, 600);
         if (why === "slow") Powers.aura(cell, ["🧤"], "pop", 1, 500);
+        if (why === "taken") floatText("An angel bird has this letter: click the bird 3 times to get it back", false);
         if (why === "decree") { if (decreeEl) U.restart(decreeEl, "shake"); floatText(`The angel forbids ${fight.decree}`, false); }
     }
     const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0);
@@ -3248,7 +3393,8 @@ const Campaign = (() => {
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.target.closest && e.target.closest("input, select, textarea")) return;
         if (document.querySelector("#overlay .results")) return;
-        if (/^[1-3]$/.test(e.key)) { const id = loadout(fight && fight.world)[+e.key - 1]; if (id && abilityOpen(abilityById[id])) { e.preventDefault(); useAbility(id); } return; }
+        // (4 too: the Celestial Rift's Boss on Unlimited brings all four of its abilities)
+        if (/^[1-4]$/.test(e.key)) { const id = loadout(fight && fight.world)[+e.key - 1]; if (id && abilityOpen(abilityById[id])) { e.preventDefault(); useAbility(id); } return; }
         const f = fight;
         if (/^[a-zA-Z]$/.test(e.key)) {
             lastKeyAt = performance.now();
@@ -3311,6 +3457,25 @@ const Campaign = (() => {
                 f.ocN = (f.ocN || 0) + 1;
                 const from = U.center(Game.cellEl(row, col)), toCell = f.cells && f.cells[target[0]][target[1]];
                 Powers.fly(from, toCell ? U.center(toCell) : U.center(panel), "⚡", "line", 300).then(() => { if (fight === f && !f.over) { wipe([target], true); drawFight(); } });
+            }
+        }
+        if (f.buff.chorus > 0 && letter && letter === g.puzzle.solution[row][col] && (f.chorusN || 0) < 6) {      // Angel Chorus
+            const mine = Game.cellsOf(currentMyEntry()) || [];
+            const others = scopeAll().filter(([r, c]) => (r !== row || c !== col) && g.puzzle.solution[r][c] === letter && g.letters[r][c] !== letter && !Game.isLocked(r, c));
+            const pickFrom = others.filter(([r, c]) => !mine.some(([r2, c2]) => r2 === r && c2 === c));
+            const to = U.pick(pickFrom.length ? pickFrom : others);
+            if (to) {
+                f.chorusN = (f.chorusN || 0) + 1;
+                const [r, c] = to;
+                Powers.fly(U.center(Game.cellEl(row, col)), U.center(Game.cellEl(r, c)), "🎵", "arc", 360, "#ffd06b").then(() => {
+                    if (fight !== f || f.over || g.solved || g.letters[r][c] === letter || Game.isLocked(r, c)) return;
+                    Game.setLetters([[r, c, letter]]);
+                    const el = Game.cellEl(r, c);
+                    if (el) { U.restart(el, "flip"); const p = U.center(el); FX.burst({ x: p.x, y: p.y, n: 10, colors: ["#fff6d8", "#ffd06b", "#ffffff"], shape: "star", speed: [60, 180], gravity: 60, life: [0.4, 0.8], size: [2, 4], glow: true }); }
+                    Sound.tone({ f: 880 * Math.pow(2, (f.chorusN % 5) * 2 / 12), type: "sine", d: 0.4, v: 0.05, echo: 0.4, boss: true });
+                    drawFight();
+                });
+                if (f.chorusN >= 6) f.buff.chorus = 0;
             }
         }
         if (f.me.penance > 0 && letter && !Game.isLocked(row, col)) {             // Penance: a wrong letter costs a right one; 6 right in a row end it
@@ -3807,7 +3972,7 @@ const Campaign = (() => {
     });
 
     return {
-        onView, showMap, play, playSpecial, heroLook, editHero, secretOpen, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
+        onView, showMap, play, playSpecial, heroLook, editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
         isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };

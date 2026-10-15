@@ -44,7 +44,7 @@ public class Campaign {
 
     // The secret world (the user, 2026-10-14): the Celestial Rift, which only shows up on the map after the Void is
     // beaten. The Void's fall broke open the prison of the Cursed Angel, who wants the Everbook for itself. "Hardest
-    // in the game": Expert words and clues on 7x7 and 9x9 boards, only 3 levels (each with a corruption meter, see
+    // in the game": Expert words and clues on 7x7 and 9x9 boards, 4 levels like every world (since later the same day; it had 3) (each with a corruption meter, see
     // static/js/corruption.js), then the angel: a 5-phase boss (level 5, like every boss). It isn't one of the 15
     // pages of the Everbook, and it isn't in the Daily Boss rotation (dailyBossSection uses SECTIONS only).
     static final List<Section> SECRET = List.of(
@@ -60,9 +60,10 @@ public class Campaign {
     static boolean secret(Section section) {
         return SECRET.contains(section);
     }
-    // the levels a world has: 1-4 and the boss (5), or for the secret world 1-3 and the boss (5)
+    // the levels a world has: 1-4 and the boss (5). (The secret world had only 1-3 at first; the user, later on
+    // 2026-10-14: "just make celestial rift have 5 levels (like the other levels)".)
     static List<Integer> levels(Section section) {
-        return secret(section) ? List.of(1, 2, 3, 5) : List.of(1, 2, 3, 4, 5);
+        return List.of(1, 2, 3, 4, 5);
     }
     static boolean hasLevel(Section section, int level) {
         return levels(section).contains(level);

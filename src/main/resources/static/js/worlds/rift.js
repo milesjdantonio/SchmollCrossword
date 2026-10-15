@@ -1,8 +1,8 @@
 // The CELESTIAL RIFT world (the secret 16th world, 2026-10-14): the torn sky where the Cursed Angel was imprisoned
 // until the Void fell. It only opens after the Void is beaten (campaign.js) and then shows up in Settings too.
 //   Night: deep violet space, drifting nebulae, a great jagged tear across the sky with golden heaven light pouring
-//   through it (god rays, sparks falling from its burning edges), floating marble ruins of the old prison with broken
-//   golden chains, crystal shards orbiting the tear, black and white feathers falling, golden motes rising, a mist
+//   through it (god rays, sparks falling from its burning edges), floating marble ruins of the old prison with crystal
+//   lanterns hanging off them, crystal shards orbiting the tear, black and white feathers falling, golden motes rising, a mist
 //   sea below and shooting stars.
 //   Day: a pale gold dawn over a sea of clouds; the tear is a dark violet wound that leaks corruption, the ruins are
 //   sunlit marble, and the feathers are white and gold.
@@ -133,11 +133,11 @@
             const c = mid[Math.floor(N / 2)];
             tear = { path, top: edge(top), bot: edge(bot), branches, mid, pts: [...top, ...bot], cx: c[0], cy: c[1], nx, ny, wMax, inner: null };
             ruins = [
-                { kind: "column", x: W * 0.12, y: H * 0.62, s: unit * 0.12, z: 0.9, ph: 0, chain: true, rot: -0.12 },
-                { kind: "arch", x: W * 0.84, y: H * 0.58, s: unit * 0.1, z: 0.75, ph: 1.4, chain: true, rot: 0.08 },
-                { kind: "slab", x: W * 0.62, y: H * 0.76, s: unit * 0.09, z: 1.05, ph: 2.2, chain: false, rot: -0.04 },
-                { kind: "wing", x: W * 0.34, y: H * 0.5, s: unit * 0.07, z: 0.55, ph: 3.3, chain: true, rot: 0.2 },
-                { kind: "column", x: W * 0.5, y: H * 0.46, s: unit * 0.05, z: 0.4, ph: 4.1, chain: false, rot: 0.3 }
+                { kind: "column", x: W * 0.12, y: H * 0.62, s: unit * 0.12, z: 0.9, ph: 0, lantern: true, rot: -0.12 },
+                { kind: "arch", x: W * 0.84, y: H * 0.58, s: unit * 0.1, z: 0.75, ph: 1.4, lantern: true, rot: 0.08 },
+                { kind: "slab", x: W * 0.62, y: H * 0.76, s: unit * 0.09, z: 1.05, ph: 2.2, lantern: false, rot: -0.04 },
+                { kind: "wing", x: W * 0.34, y: H * 0.5, s: unit * 0.07, z: 0.55, ph: 3.3, lantern: true, rot: 0.2 },
+                { kind: "column", x: W * 0.5, y: H * 0.46, s: unit * 0.05, z: 0.4, ph: 4.1, lantern: false, rot: 0.3 }
             ].map(r => ({ ...r, img: sprite(r.kind, r.s) }));
             shards = Array.from({ length: preview ? 4 : 8 }, (_, i) => ({ a: (i / 8) * TAU, r: unit * (0.1 + R() * 0.14), sp: (0.1 + R() * 0.15) * (i % 2 ? 1 : -1), s: unit * (0.012 + R() * 0.014), h: R() * TAU }));
             feathers = Array.from({ length: preview ? 6 : 26 }, () => newFeather(R, true));
@@ -163,19 +163,24 @@
             g.globalAlpha = 1;
             g.restore();
         }
-        function drawChain(g, x, y, s, t, ph) {
-            // a broken golden chain hanging off a ruin, swaying
-            const links = 6, sway = Math.sin(t * 0.9 + ph) * 0.25;
-            g.strokeStyle = TRIM; g.lineWidth = Math.max(1.2, s * 0.05);
-            let px = x, py = y;
-            for (let i = 0; i < links; i++) {
-                const a = Math.PI / 2 + sway * (i / links), len = s * 0.22;
-                const cx = px + Math.cos(a) * len * 0.5, cy = py + Math.sin(a) * len * 0.5;
-                g.save(); g.translate(cx, cy); g.rotate(a + (i % 2 ? Math.PI / 2 : 0));
-                g.beginPath(); g.ellipse(0, 0, len * 0.55, len * 0.3, 0, 0, TAU); g.stroke(); g.restore();
-                px += Math.cos(a) * len * 0.8; py += Math.sin(a) * len * 0.8;
-            }
-            Worlds.glint(g, px, py, s * 0.12, 0.6 + 0.4 * Math.sin(t * 3 + ph), "#fff3c4");
+        // a crystal lantern of starlight hanging off a ruin on a thin golden cord, swaying (the user, 2026-10-14: the
+        // hanging chains here looked inappropriate, so they became lanterns)
+        function drawLantern(g, x, y, s, t, ph) {
+            const sway = Math.sin(t * 0.9 + ph) * 0.18, len = s * 0.8;
+            const ex = x + Math.sin(sway) * len, ey = y + Math.cos(sway) * len;
+            g.strokeStyle = TRIM; g.lineWidth = Math.max(1, s * 0.02);
+            g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.sin(sway) * len * 0.3, y + len * 0.55, ex, ey); g.stroke();
+            const w = s * 0.1, h = s * 0.26, lit = 0.55 + 0.25 * Math.sin(t * 2 + ph);
+            g.save(); g.translate(ex, ey); g.rotate(-sway);
+            Worlds.glow(g, 0, h * 0.45, h * 1.5, night ? "#c49bff" : "#ffd06b", lit);
+            g.fillStyle = TRIM; g.fillRect(-w * 0.45, -h * 0.06, w * 0.9, h * 0.08);       // its little gold cap
+            g.beginPath(); g.moveTo(0, 0); g.lineTo(w, h * 0.35); g.lineTo(0, h); g.lineTo(-w, h * 0.35); g.closePath();
+            const cg = g.createLinearGradient(-w, 0, w, h);
+            cg.addColorStop(0, "#fff6d8"); cg.addColorStop(0.5, night ? "#c49bff" : "#ffd06b"); cg.addColorStop(1, night ? "#6b3fd6" : "#e8a840");
+            g.fillStyle = cg; g.fill(); g.lineWidth = Math.max(1, s * 0.015); g.strokeStyle = TRIM; g.stroke();
+            g.beginPath(); g.moveTo(0, 0); g.lineTo(0, h); g.moveTo(-w, h * 0.35); g.lineTo(w, h * 0.35); g.strokeStyle = "rgba(255,255,255,.5)"; g.stroke();
+            g.restore();
+            Worlds.glint(g, ex, ey + h * 0.35, s * 0.1, 0.5 + 0.5 * Math.sin(t * 3 + ph), "#fff3c4");
         }
 
         return {
@@ -267,14 +272,14 @@
                     g.restore();
                     if (front) Worlds.glint(g, x, y - s, s * 1.6, 0.5 + 0.5 * Math.sin(t * 5 + sh.h), "#ffffff");
                 }
-                // the prison's ruins, bobbing at their depths, chains hanging
+                // the prison's ruins, bobbing at their depths, lanterns hanging
                 for (const r of ruins) {
                     const x = r.x - px * 24 * r.z, y = r.y + Math.sin(t * 0.5 + r.ph) * 10 * r.z - py * 10 * r.z;
                     g.save(); g.translate(x, y); g.rotate(r.rot + Math.sin(t * 0.3 + r.ph) * 0.03);
                     g.globalAlpha = 0.55 + r.z * 0.4;
                     g.drawImage(r.img, -r.img.width / 2, -r.img.height * 0.55);
                     g.globalAlpha = 1;
-                    if (r.chain) drawChain(g, r.s * 0.3, r.s * 0.75, r.s, t, r.ph);
+                    if (r.lantern) drawLantern(g, r.s * 0.3, r.s * 0.75, r.s, t, r.ph);
                     g.restore();
                 }
                 // feathers falling, black ones too at night (the angel's)
@@ -354,11 +359,20 @@
     // heavens open: two gates of light part at the top of the screen and god rays pour down onto the board, great
     // wings of light unfold behind it and beat once, shaking loose a fall of white and gold feathers, and the halo
     // comes down over the board and rings out.
+    // It follows the board (the user, 2026-10-14): the board is measured again every frame, and the stars, lines, halo,
+    // wings and feathers are kept relative to it, so a scroll, a resize or the page moving around doesn't leave them behind.
     // ---------------------------------------------------------------------------------------------
     async function celebrate(c, { boardEl }) {
         if (U.motion() === "still") return;
-        const W = innerWidth, H = innerHeight, b = boardEl.getBoundingClientRect();
-        const bx = b.left + b.width / 2, by = b.top + b.height / 2, R = Math.max(b.width, b.height) / 2;
+        let W, H, bx, by, R, hx, hy, hrx, hry;
+        const measure = () => {
+            const b = boardEl.getBoundingClientRect();
+            W = innerWidth; H = innerHeight;
+            bx = b.left + b.width / 2; by = b.top + b.height / 2; R = Math.max(b.width, b.height) / 2 || 1;
+            // where the halo forms: above the board (kept on screen)
+            hx = bx; hy = Math.max(64, b.top - R * 0.12); hrx = R * 0.62; hry = hrx * 0.24;
+        };
+        measure();
         const p = Game.state.puzzle;
         if (!p) return;
         const ease = k => 1 - Math.pow(1 - k, 3), inout = k => k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, clamp01 = k => Math.max(0, Math.min(1, k));
@@ -368,19 +382,18 @@
             if (ch === ".") return;
             const el = Game.cellEl(r, col);
             if (!el) return;
-            const q = el.getBoundingClientRect(), s = { x0: q.left + q.width / 2, y0: q.top + q.height / 2, born: stars.length * 0.022, tw: Math.random() * TAU, size: 2.4 + Math.random() * 1.6 };
-            s.x = s.x0; s.y = s.y0;
+            // each star's place on the board, in board radii from its middle
+            const q = el.getBoundingClientRect(), s = { u: (q.left + q.width / 2 - bx) / R, v: (q.top + q.height / 2 - by) / R, born: stars.length * 0.022, tw: Math.random() * TAU, size: 2.4 + Math.random() * 1.6 };
+            s.x = bx + s.u * R; s.y = by + s.v * R;
             stars.push(s); byId.set(r + "," + col, s);
         }));
         // the constellation: each answer, one after another
         const lines = [...p.across, ...p.down].map((e, i) => ({ pts: Game.cellsOf(e).map(([r, col]) => byId.get(r + "," + col)).filter(Boolean), at: 0.35 + i * 0.07 })).filter(l => l.pts.length > 1);
-        // where the halo forms: above the board (kept on screen)
-        const hx = bx, hy = Math.max(64, b.top - R * 0.12), hrx = R * 0.62, hry = hrx * 0.24;
         stars.forEach((s, i) => { s.a = (i / stars.length) * TAU; });
         const T = { lift: 1.15 + lines.length * 0.07, gate: 0, wings: 0, down: 0, end: 0 };
         T.halo = T.lift + 0.9; T.gate = T.halo + 0.15; T.wings = T.gate + 0.9; T.down = T.wings + 1.15; T.end = T.down + 1.1;
         let t = 0, alive = true, beat = false;
-        const ups = [];                                                       // feathers shaken loose by the wings
+        const ups = [];                                                       // feathers shaken loose by the wings (x, y from the board's middle)
         // ---- a wing: the arm curves up and out from the board's shoulder; three rows of broad white feathers hang from
         //      it (long primaries at the back, then secondaries, then short coverts on top), edged in gold ----
         const feather = (g, len, wid) => {
@@ -422,8 +435,10 @@
         }
         let fadeOf = () => 1;
         FX.add({
+            fixed: true,                                                      // (it tracks the board itself, scroll included)
             update(dt) { t += dt; for (const f of ups) { f.vy += 30 * dt; f.x += (f.vx + Math.sin(t * 2 + f.ph) * 30) * dt; f.y += f.vy * dt; f.rot += f.vr * dt; } return alive; },
             draw(g) {
+                measure();
                 const fadeAll = t > T.end - 0.6 ? clamp01((T.end - t) / 0.6) : 1;
                 // the sky darkens
                 g.fillStyle = `rgba(10,4,32,${0.62 * clamp01(t / 0.5) * fadeAll})`; g.fillRect(0, 0, W, H);
@@ -456,20 +471,22 @@
                     g.globalCompositeOperation = "lighter";
                     if (fl > 0.9 && !beat) {
                         beat = true;
-                        for (const s of [-1, 1]) for (let i = 0; i < 26; i++) ups.push({ x: bx + s * R * (0.9 + Math.random() * 1.2), y: by - R * (0.6 - Math.random() * 1.1), vx: s * (20 + Math.random() * 80), vy: -60 + Math.random() * 50, rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 3, ph: Math.random() * TAU, gold: Math.random() < 0.3 });
-                        for (let i = 0; i < 30; i++) ups.push({ x: Math.random() * W, y: -20 - Math.random() * 120, vx: (Math.random() - 0.5) * 30, vy: 20 + Math.random() * 40, rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 2, ph: Math.random() * TAU, gold: Math.random() < 0.25 });
+                        for (const s of [-1, 1]) for (let i = 0; i < 26; i++) ups.push({ x: s * R * (0.9 + Math.random() * 1.2), y: -R * (0.6 - Math.random() * 1.1), vx: s * (20 + Math.random() * 80), vy: -60 + Math.random() * 50, rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 3, ph: Math.random() * TAU, gold: Math.random() < 0.3 });
+                        for (let i = 0; i < 30; i++) ups.push({ x: Math.random() * W - bx, y: -20 - Math.random() * 120 - by, vx: (Math.random() - 0.5) * 30, vy: 20 + Math.random() * 40, rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 2, ph: Math.random() * TAU, gold: Math.random() < 0.25 });
                     }
                 }
                 // ---- the constellation: stars on the squares, lines along the answers ----
                 const lift = clamp01((t - T.lift) / 0.9), lk = inout(lift);
                 for (const s of stars) {
+                    const x0 = bx + s.u * R, y0 = by + s.v * R;
+                    s.x = x0; s.y = y0;
                     if (t < s.born) continue;
                     if (lift > 0) {
                         if (t > T.halo) s.a += 0.9 / 60;
                         const tx = hx + Math.cos(s.a) * hrx, ty = hy + Math.sin(s.a) * hry;
                         let dx = tx, dy = ty;
                         if (t > T.down) { const d = inout(clamp01((t - T.down) / 0.55)); dx = bx + Math.cos(s.a) * (hrx + (R * 1.05 - hrx) * d); dy = (hy + (by - hy) * d) + Math.sin(s.a) * (hry + (R * 0.3 - hry) * d); }
-                        s.x = s.x0 + (dx - s.x0) * lk; s.y = s.y0 + (dy - s.y0) * lk - Math.sin(lk * Math.PI) * 40;
+                        s.x = x0 + (dx - x0) * lk; s.y = y0 + (dy - y0) * lk - Math.sin(lk * Math.PI) * 40;
                     }
                 }
                 const lineA = (1 - lk) * fadeAll;
@@ -499,8 +516,8 @@
                 // ---- the falling feathers ----
                 g.globalCompositeOperation = "source-over";
                 for (const f of ups) {
-                    if (f.y > H + 40) continue;
-                    g.save(); g.translate(f.x, f.y); g.rotate(f.rot); g.globalAlpha = 0.9 * fadeAll;
+                    if (by + f.y > H + 40) continue;
+                    g.save(); g.translate(bx + f.x, by + f.y); g.rotate(f.rot); g.globalAlpha = 0.9 * fadeAll;
                     g.fillStyle = f.gold ? "#ffe7a3" : "#ffffff"; g.strokeStyle = f.gold ? "#c9902f" : "#c9b8ff"; g.lineWidth = 1;
                     g.beginPath(); g.moveTo(-10, 0); g.quadraticCurveTo(0, -5, 10, 0); g.quadraticCurveTo(0, 4, -10, 0); g.fill(); g.stroke();
                     g.beginPath(); g.moveTo(-12, 0.5); g.lineTo(9, 0); g.stroke();
@@ -522,6 +539,7 @@
         c.later(() => { choir(0, [60, 67, 72, 76], 0.035, 2.4); noise({ type: "bandpass", f: 1200, f2: 3200, d: 1.6, v: 0.04, q: 0.5 }); }, T.gate * 1000);
         c.later(() => { noise({ type: "bandpass", f: 300, f2: 900, d: 0.8, v: 0.07, q: 0.7 }); choir(0, [55, 62, 67, 71], 0.03, 1.8); }, (T.wings + 0.85) * 1000);
         c.later(() => {
+            measure();
             FX.flash("#fff6d8", 420, 0.5);
             FX.ring({ x: bx, y: by, color: "#ffd06b", r1: R * 1.6, width: 14, dur: 1.1 });
             FX.ring({ x: bx, y: by, color: "#c49bff", r1: R * 1.15, width: 6, dur: 0.9 });

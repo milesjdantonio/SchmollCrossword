@@ -1027,20 +1027,37 @@
         await wait(600);
     });
     // Rewrite Fate: a golden quill writes across your board; every letter the boss took comes back in ink and light
-    D("fate", async c => {
-        const ps = pts(c), b = rect(myBoard());
-        const order = ps.length ? ps.slice().sort((a, p) => a.y - p.y || a.x - p.x) : [{ x: b.left + b.width * 0.2, y: b.top + b.height * 0.5 }, { x: b.right - b.width * 0.2, y: b.top + b.height * 0.5 }];
-        add({ life: 0.5 + order.length * 0.16, draw(ctx, k) {
-            const pos = k * (order.length - 1), i = Math.min(order.length - 2, Math.floor(pos)), a = order[Math.max(0, i)], bb = order[Math.min(order.length - 1, i + 1)], f = pos - Math.max(0, i);
-            const x = order.length > 1 ? lerp(a.x, bb.x, f) : a.x, y = order.length > 1 ? lerp(a.y, bb.y, f) : a.y;
-            ctx.save(); ctx.translate(x + 10, y - 26); ctx.rotate(0.7);
-            ctx.fillStyle = "#fff6d8"; ctx.strokeStyle = "#c9902f"; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.moveTo(0, 30); ctx.quadraticCurveTo(-10, 0, 0, -26); ctx.quadraticCurveTo(10, 0, 0, 30); ctx.fill(); ctx.stroke();
-            ctx.strokeStyle = "#e8c66a"; ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(0, 40); ctx.stroke();
-            ctx.restore();
-            K.haloAt(ctx, x, y, 30, "#ffd06b", 0.6);
+    // Purifying Light: a shaft of clean light comes down on each wrong letter, which flares white and comes back right
+    D("purify", async c => {
+        const ps = pts(c);
+        ps.forEach((p, i) => setTimeout(() => {
+            add({ life: 0.9, draw(ctx, k) {
+                const drop = Math.min(1, k / 0.25), f = k > 0.4 ? (1 - k) / 0.6 : 1, w = 26 * f;
+                ctx.globalCompositeOperation = "lighter";
+                const g = ctx.createLinearGradient(p.x - w, 0, p.x + w, 0);
+                g.addColorStop(0, "rgba(255,240,200,0)"); g.addColorStop(0.5, `rgba(255,255,250,${f})`); g.addColorStop(1, "rgba(255,240,200,0)");
+                ctx.fillStyle = g; ctx.fillRect(p.x - w, p.y - 260 * drop, w * 2, 260 * drop);
+                K.haloAt(ctx, p.x, p.y, 46 * (0.6 + k), "#fff6d8", f);
+            } });
+            spray(p, 14, { color: ["#ffffff", "#fff1c4", "#ffd06b"], shape: "star", speed: [60, 200], size: [2, 4], g: -40, life: [0.5, 0.9], add: true });
+        }, K.still() ? 0 : i * 140));
+        await wait(1100);
+    });
+    // Angel Chorus: a ring of golden notes circles your board and a choir of light rises behind it
+    D("chorus", async c => {
+        const b = rect(myBoard()), o = mid(myBoard());
+        add({ life: 1.8, draw(ctx, k, t) {
+            const a = Math.sin(Math.min(1, k * 1.4) * Math.PI);
+            ctx.globalCompositeOperation = "lighter";
+            K.haloAt(ctx, o.x, o.y, Math.max(b.width, b.height) * 0.7, "#ffe9a8", a * 0.5);
+            for (let i = 0; i < 12; i++) {
+                const ang = i / 12 * TAU + t * 1.6, rx = b.width * 0.62, ry = b.height * 0.62, x = o.x + Math.cos(ang) * rx, y = o.y + Math.sin(ang) * ry;
+                K.haloAt(ctx, x, y, 18, "#ffd06b", a * 0.8);
+                ctx.globalAlpha = a; ctx.fillStyle = "#fff6d8"; ctx.font = "900 22px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(i % 2 ? "♪" : "♫", x, y);
+            }
         } });
-        order.forEach((p, i) => setTimeout(() => { glow(p, { color: "#c49bff", r: 46, life: 0.5 }); spray(p, 8, { color: ["#c49bff", "#ffd06b", "#ffffff"], shape: "star", speed: [40, 140], size: [1.5, 3], g: 60, life: [0.3, 0.6], add: true }); }, K.still() ? 0 : 250 + i * 160));
-        await wait(600 + order.length * 160);
+        spray({ x: o.x, y: b.bottom }, 24, { color: ["#fff6d8", "#ffd06b"], shape: "star", angle: -Math.PI / 2, spread: 0.9, speed: [120, 300], size: [2, 4], g: -60, life: [0.8, 1.4], add: true });
+        await wait(1800);
     });
 })();

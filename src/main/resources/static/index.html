@@ -247,6 +247,12 @@
                         </div>
                         <p class="hint" id="mode-note">This world is always dark.</p>
                     </fieldset>
+                    <fieldset class="card" id="zoom-card" hidden>
+                        <legend>Zoom</legend>
+                        <div class="range snd-row zoom-row"><span class="snd-label">Page Size</span><output id="zoom-out">100%</output>
+                            <div class="snd-line"><input type="range" name="zoom" min="60" max="100" step="1" aria-label="Zoom"></div></div>
+                        <button type="button" class="btn small" id="zoom-reset">Reset</button>
+                    </fieldset>
                     <fieldset class="card">
                         <legend>Sound</legend>
                         <div class="sound-controls" id="sound-controls"></div>

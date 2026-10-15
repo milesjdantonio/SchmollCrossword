@@ -24,12 +24,23 @@ const Spells = (() => {
         size();
         addEventListener("resize", size);
     }
-    // Effects stay on what they were aimed at when the page scrolls: each remembers the scroll position it started at,
-    // and is drawn shifted by however far the page has moved since (fixed: true for one that measures live positions)
+    // Effects stay on what they were aimed at. Each one follows an element (the user, 2026-10-14: "this change you made
+    // for tracking boards, can you do this for other animations that are meant to travel boards"): the area a
+    // Spells.play is aimed at (your board, the boss's board, the boss), or else your board. It's measured again every
+    // frame and the effect is drawn moved and scaled with it, so scrolling, the page shifting, a resize or the zoom
+    // setting don't leave it behind. With nothing to follow it's shifted by the scroll, as before. fixed: true for
+    // one that measures live positions itself.
+    let aim = null;
+    const anchorOf = el => {
+        if (!el || !el.isConnected) return null;
+        const r = el.getBoundingClientRect();
+        return r.width ? { el, x: r.left, y: r.top, w: r.width, last: r } : null;
+    };
     function add(fx) {
         if (still()) return;
         ensure();
         fx.t = 0;
+        if (!fx.fixed && !fx.anchor) fx.anchor = anchorOf(aim && aim.isConnected ? aim : document.getElementById("board"));
         fx.sx = scrollX; fx.sy = scrollY;
         effects.push(fx);
         if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
@@ -40,9 +51,17 @@ const Spells = (() => {
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, innerWidth, innerHeight);
         // effects started while drawing (crumbs flying off an eraser...) join on the next frame instead of being lost
-        const now_ = effects, sx = scrollX, sy = scrollY;
+        const now_ = effects, sx = scrollX, sy = scrollY, seen = new Map();
+        // where an anchor is now (each element measured once a frame; a removed one keeps its last place)
+        const follow = a => {
+            let r = seen.get(a.el);
+            if (r === undefined) { r = a.el.isConnected ? a.el.getBoundingClientRect() : null; if (r && !r.width) r = null; seen.set(a.el, r); }
+            if (r) a.last = r;
+            const q = a.last, k = q.width / a.w;
+            g.translate(q.left, q.top); g.scale(k, k); g.translate(-a.x, -a.y);
+        };
         effects = [];
-        const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); if (!fx.fixed) g.translate(fx.sx - sx, fx.sy - sy); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
+        const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); if (fx.anchor) follow(fx.anchor); else if (!fx.fixed) g.translate(fx.sx - sx, fx.sy - sy); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
         effects = kept.concat(effects);
         if (effects.length) requestAnimationFrame(loop);
         else { running = false; g.clearRect(0, 0, innerWidth, innerHeight); }
@@ -789,7 +808,10 @@ const Spells = (() => {
     async function play(kind, ctx) {
         const fn = PLAYS[kind];
         if (!fn || still()) { ctx.cells.forEach(() => {}); return; }
+        const prev = aim;
+        if (ctx.area instanceof Element) aim = ctx.area;             // its effects follow what it's aimed at
         try { await fn({ cells: [], ...ctx }); } catch (err) { console.error("spell", kind, err); }
+        finally { if (aim === ctx.area) aim = prev; }
     }
     const has = kind => !!PLAYS[kind];
     // for spells-abilities.js: the drawing kit, and a way to give a kind its own effect

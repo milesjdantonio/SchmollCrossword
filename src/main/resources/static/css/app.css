@@ -205,12 +205,26 @@ body {
 .snd-group + .snd-group { padding-top: 12px; border-top: 1.5px solid var(--line); }
 .snd-head { margin: 0; color: var(--muted); font: 800 .78rem var(--font-body); letter-spacing: .02em; }
 .snd-master { font-size: 1.05rem; }
-/* a slider: its name and value on one line, the slider under them */
+.snd-master .snd-label { font-weight: 800; }
+/* a slider: its name and value on one line, the slider under them (Master's with its mute button in front) */
 .snd-row.range { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; }
-.snd-row.range input { grid-column: 1 / -1; width: 100%; margin: 0; }
-.snd-row output { min-width: 0; color: var(--muted); font-size: .88rem; }
+.snd-line { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+.snd-line input { flex: 1; min-width: 0; width: 100%; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.snd-row output { min-width: 0; color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; }
+/* Music and Effects: their sliders sit under the group's name, indented a little */
+.snd-group[data-group="music"] .snd-row, .snd-group[data-group="fx"] .snd-row { margin-left: 10px; }
+.snd-mute { flex: 0 0 auto; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1.5px solid var(--line); background: var(--surface-2, transparent); color: var(--ink); cursor: pointer; transition: transform .15s, background .2s; }
+.snd-mute:hover { transform: translateY(-1px); }
+.snd-mute svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.snd-mute svg .fill { fill: currentColor; stroke: none; }
+.snd-mute .x { display: none; }
+.snd-mute.off { color: var(--muted); }
+.snd-mute.off .x { display: inline; }
+.snd-mute.off .waves { display: none; }
 .sound-pop { overflow-x: hidden; }
-.snd-group.dim, .snd-row.dim { opacity: .5; }
+#zoom-card .zoom-row { margin-top: 4px; }
+#zoom-card #zoom-reset { margin-top: 12px; }
+.snd-group.dim, .snd-row.dim, .snd-row.zero output { opacity: .5; }
 
 main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .screen.enter { animation: screen-in .5s cubic-bezier(.2, .9, .3, 1); }

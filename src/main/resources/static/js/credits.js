@@ -1,9 +1,11 @@
 // The credits (the user, 2026-10-11: "a credits page ... in the bottom left corner, make it scroll, with the world
 // designs shifting in the background, and some peaceful music"; later: "move the credits button to an option in
 // settings, near the bottom"). Settings > Help & Legal > Credits opens a full-screen roll that scrolls up by itself (wheel, drag or keys scroll it too) while the
-// background moves through every world, with a calm level song playing (the Level Music setting and Music Volume
-// apply). Escape, the Close button or reaching the end closes it and puts the player's own world back.
+// background moves through every world, with a calm level song playing (the Level Music slider
+// applies). Escape, the Close button or reaching the end closes it and puts the player's own world back.
 // Every music credit comes from audio/credits.json (made from audio/CREDITS.txt, so the two always agree).
+// Credits.show({ ending: true }) also rolls them after the Cursed Angel's epilogue, the end of the story (the user,
+// 2026-10-14): it resolves when they close, and puts back the world being played instead of the Settings one.
 const Credits = (() => {
     const SONG = "level-sky-2";                // Napping On A Cloud by congusbongus (CC0): calm, and it loops
     const WORLD_MS = 6500;                     // how long each world shows behind the roll
@@ -45,12 +47,14 @@ const Credits = (() => {
             U.el("div", { class: "cr-end" }));
     }
 
-    async function show() {
+    async function show({ ending: afterStory = false } = {}) {
         if (open) return;
         open = true;
+        let closed;
+        const finished = new Promise(r => { closed = r; });
         const data = await fetch("audio/credits.json").then(r => r.json()).catch(() => ({ boss: [], level: [], composed: [] }));
-        const own = Settings.get("design");
-        const worlds = Worlds.list.filter(w => !w.plain && (!w.secret || Campaign.secretOpen())).map(w => w.id);      // (no spoilers)
+        const own = afterStory && Worlds.current ? Worlds.current.id : Settings.get("design");
+        const worlds = Worlds.list.filter(w => !w.plain && (!w.secret || Campaign.secretEarned())).map(w => w.id);      // (no spoilers: only once it's really unlocked)
         const still = U.motion() === "still";
         const stage = U.el("div", { class: "cr-stage", role: "dialog", "aria-modal": "true", "aria-label": "Credits" });
         const scroller = U.el("div", { class: "cr-scroll", tabindex: "-1" });
@@ -69,7 +73,7 @@ const Credits = (() => {
         // behind the roll, in a random order (the user: "these should all be selected randomly"): every world's calm
         // scene, and every boss's arena going wild (its own chaos from a boss's later phase: chaos.js). A shuffled bag,
         // so each one shows once before any repeats.
-        const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretOpen())).map(id => ({ id, boss: true }))];
+        const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretEarned())).map(id => ({ id, boss: true }))];
         let bag = [], shown = null;
         const draw = () => {
             if (!bag.length) bag = scenes.slice().sort(() => Math.random() - 0.5);
@@ -127,11 +131,12 @@ const Credits = (() => {
             arenaOff();
             stage.classList.remove("in");
             document.documentElement.classList.remove("credits-on");
-            Worlds.use(Settings.get("design") || own);
+            Worlds.use(afterStory ? own : Settings.get("design") || own);
             Mascot.away = wasAway;
-            setTimeout(() => stage.remove(), 500);
+            setTimeout(() => { stage.remove(); closed(); }, 500);
         }
         close.addEventListener("click", done);
+        return finished;
     }
 
     // opened from Settings > Help & Legal (the user moved it there from the bottom-left corner), with FAQ, Privacy and Terms

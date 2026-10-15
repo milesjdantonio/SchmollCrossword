@@ -23,7 +23,7 @@ const Sound = (() => {
         comp.threshold.value = -16;
         comp.ratio.value = 4;
         master = ctx.createGain();
-        master.gain.value = Settings.get("volume");
+        master.gain.value = Settings.gain("volume");
         // a gentle low-pass on everything takes the harsh edge off high, bright sounds
         const soften = ctx.createBiquadFilter();
         soften.type = "lowpass";
@@ -58,11 +58,12 @@ const Sound = (() => {
         if (document.hidden) ctx.suspend(); else ctx.resume();
         // (the level song pauses with everything else: it's played through the same audio context)
     });
-    // the sound effects' own volume (Settings > Sound, and the sound button's menu), under the main volume
-    function fxLevel() { return Settings.get("sound") ? 0.6 * Math.max(0, Math.min(1, Settings.get("fxVolume") ?? 1)) : 0; }
-    Settings.on((key, value) => {
+    // All Effects (Settings > Sound, and the sound button's menu), under the Master Volume; every volume follows the
+    // loudness curve in Settings.gain
+    function fxLevel() { return Settings.get("sound") ? 0.6 * Settings.gain("fxVolume") : 0; }
+    Settings.on(key => {
         if (!ctx) return;
-        if (key === "volume") master.gain.setTargetAtTime(value, ctx.currentTime, 0.05);
+        if (key === "volume") master.gain.setTargetAtTime(Settings.gain("volume"), ctx.currentTime, 0.05);
         if (key === "sound" || key === "fxVolume") fxBus.gain.setTargetAtTime(fxLevel(), ctx.currentTime, 0.05);
     });
 
@@ -81,7 +82,7 @@ const Sound = (() => {
         for (let i = levels.length - 1; i >= 0; i--) if (levels[i].until < now) levels.splice(i, 1);
         let g = 1;
         for (const l of levels) g = Math.min(g, l.x);
-        return g * Math.max(0, Math.min(1, Settings.get("bossFxVolume") ?? 1));
+        return g * Settings.gain("bossFxVolume");
     }
     function tone({ f = 440, f2, type = "sine", t = 0, d = 0.15, v = 0.2, a = 0.006, filt, echo = 0, crush = false, detune = 0, vib = 0, boss = false }) {
         if (!ctx) return;
@@ -243,12 +244,17 @@ const Sound = (() => {
         src.connect(gain).connect(fxBus);
         src.start(ctx.currentTime + t);
     }
-    // music has its own volume, under the sound effects, and follows the Sound and Boss music settings
-    let musicBus = null, track = null;
-    const musicOn = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
-    // the music bus: the Music Volume (boss songs and level songs both go through it); each kind has its own switch
-    const musicLevel = () => (Settings.get("sound") ? Math.max(0, Math.min(1, Settings.get("musicVolume") ?? 1)) : 0);
-    const makeBus = () => { if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); } };
+    // Music: two buses under the Master Volume, each with its own slider and no switch (the user, 2026-10-14):
+    // Boss Music (boss songs, the story, winning and losing: music() below) and Level Music (levelSong()). A slider
+    // at 0 is off: that kind of song isn't even downloaded.
+    let musicBus = null, levelBus = null, track = null;
+    const musicOn = () => !!Settings.get("sound") && (Settings.get("bossMusicVolume") ?? 1) > 0;
+    const musicLevel = () => (Settings.get("sound") ? Settings.gain("bossMusicVolume") : 0);
+    const levelLevel = () => (Settings.get("sound") ? Settings.gain("levelMusicVolume") : 0);
+    const makeBus = () => {
+        if (!musicBus) { musicBus = ctx.createGain(); musicBus.gain.value = musicLevel(); musicBus.connect(master); }
+        if (!levelBus) { levelBus = ctx.createGain(); levelBus.gain.value = levelLevel(); levelBus.connect(master); }
+    };
     // songs.json: each boss song's loop points. A song file starts with its build-up (the user's design: the intro is
     // music that builds up and runs straight into the song), the song proper starts at "hit", then the browser loops
     // [loopStart, loopEnd] exactly, forever (built so the seam can't be heard; see audio/CREDITS.txt)
@@ -307,12 +313,13 @@ const Sound = (() => {
         old.src.stop(ctx.currentTime + fade + 0.05);
     }
     Settings.on(key => {
-        if (musicBus && (key === "sound" || key === "musicVolume")) musicBus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, 0.05);
-        // Boss Music switched off: the song stops (but is remembered, so switching it back on brings it back)
-        if (key === "bossMusic" && !musicOn() && track && track.src) { const { name, args } = track; stopMusic(0.4); track = { name, src: null, args, hit: 0, ready: Promise.resolve(false) }; }
-        if (key === "sound" || key === "levelMusic") { if (songOn()) wakeSong(); else pauseSong(); }
-        // switched back on in the middle of a fight: the song that was skipped starts now (from its loop, no build-up)
-        if ((key === "sound" || key === "bossMusic") && musicOn() && track && !track.src && track.args && track.args.loop) {
+        if (musicBus && (key === "sound" || key === "bossMusicVolume")) musicBus.gain.setTargetAtTime(musicLevel(), ctx.currentTime, 0.05);
+        if (levelBus && (key === "sound" || key === "levelMusicVolume")) levelBus.gain.setTargetAtTime(levelLevel(), ctx.currentTime, 0.05);
+        // Boss Music down to 0: the song stops (but is remembered, so turning it back up brings it back)
+        if (key === "bossMusicVolume" && !musicOn() && track && track.src) { const { name, args } = track; stopMusic(0.4); track = { name, src: null, args, hit: 0, ready: Promise.resolve(false) }; }
+        if (key === "sound" || key === "levelMusicVolume") { if (songOn()) wakeSong(); else pauseSong(); }
+        // turned back up in the middle of a fight: the song that was skipped starts now (from its loop, no build-up)
+        if ((key === "sound" || key === "bossMusicVolume") && musicOn() && track && !track.src && track.args && track.args.loop) {
             const { name, args } = track;
             music(name, { ...args, fade: 0.05, fromLoop: true });
         }
@@ -323,10 +330,10 @@ const Sound = (() => {
     // It loops on itself (the user, 2026-10-11: "make sure all the level musics loop on itself nicely"): the file
     // plays once from the top, then [loopStart, loopEnd] from level-loops.json repeats forever with no gap, so it's
     // decoded and played like the boss songs (an <audio> element can't loop part of a file, and leaves a gap when
-    // it loops the whole). Only one plays at a time and only it is kept decoded; it's under the Music Volume and the
-    // Level Music switch, and a boss song (or the win or lose music) stops it.
+    // it loops the whole). Only one plays at a time and only it is kept decoded; it's under the Level Music slider (0
+    // = off), and a boss song (or the win or lose music) stops it.
     let song = null, loops = null;
-    const songOn = () => Settings.get("sound") && Settings.get("levelMusic") !== false;
+    const songOn = () => !!Settings.get("sound") && (Settings.get("levelMusicVolume") ?? 1) > 0;
     const loopList = () => loops || (loops = fetch("audio/music/level-loops.json").then(r => (r.ok ? r.json() : {})).catch(() => ({})));
     function levelSong(name, { v = 0.55, fade = 1.2 } = {}) {
         if (name && song && song.name === name) { wakeSong(); return; }
@@ -350,14 +357,14 @@ const Sound = (() => {
         if (le > ls && p > le) p = ls + ((p - ls) % (le - ls));
         return p;
     }
-    // the Level Music switch turned off: stop, but remember the spot to carry on from
+    // Level Music turned down to 0: stop, but remember the spot to carry on from
     function pauseSong() {
         if (!song || !song.src) return;
         song.pos = songPos(song);
         song.src.stop();
         song.src = null;
     }
-    // start (or carry on with) the level song; it's only downloaded and decoded while Level Music is on
+    // start (or carry on with) the level song; it's only downloaded and decoded while Level Music is above 0
     async function wakeSong() {
         if (!song || !songOn() || !init()) return;
         makeBus();
@@ -372,7 +379,7 @@ const Sound = (() => {
             [me.buf, me.loop] = [got[0], got[1][me.name] || null];
         }
         if (me.src || !songOn()) return;
-        if (!me.gain) { me.gain = ctx.createGain(); me.gain.gain.value = 0.0001; me.gain.connect(musicBus); }
+        if (!me.gain) { me.gain = ctx.createGain(); me.gain.gain.value = 0.0001; me.gain.connect(levelBus); }
         const src = ctx.createBufferSource(), L = me.loop, dur = me.buf.duration;
         src.buffer = me.buf;
         src.loop = true;
@@ -395,5 +402,5 @@ const Sound = (() => {
     }
 
     const hasSong = async name => !!(await songList())[name];
-    return { play, custom, sample, bossLevel, preload, preloadMusic, music, stopMusic, hasSong, buildDone, levelSong, get levelSongName() { return song ? song.name : null; }, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
+    return { play, custom, sample, bossLevel, preload, preloadMusic, music, stopMusic, hasSong, buildDone, levelSong, get levelSongName() { return song ? song.name : null; }, get bossMusicOn() { return musicOn(); }, get musicPlaying() { return track ? track.name : null; }, tone, noise, chord, midi, init, LIB, get ctx() { return ctx; } };
 })();

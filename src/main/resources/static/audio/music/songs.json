@@ -64,9 +64,9 @@
  },
  "rain": {
   "file": "rain.mp3",
-  "hit": 6.5,
-  "loopStart": 6.5,
-  "loopEnd": 150.2769,
+  "hit": 7.54,
+  "loopStart": 21.3,
+  "loopEnd": 165.0768,
   "title": "A Boar in the Bushes",
   "author": "Gundatsch",
   "page": "a-boar-in-the-bushes"
@@ -321,8 +321,8 @@
   "file": "rift-p3.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 32.9828,
-  "title": "Boss Battle #2 (Symphonic Metal)",
+  "loopEnd": 72.7069,
+  "title": "Boss Battle #2 (Symphonic Metal), with the melody of its 8-bit original",
   "author": "nene",
   "page": "boss-battle-2-symphonic-metal"
  },

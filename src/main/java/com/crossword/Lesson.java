@@ -108,8 +108,9 @@ public class Lesson {
         Map.entry("robot",    List.of("theme", "misdirection", "double", "mixed")),     // world 13
         Map.entry("volcano",  List.of("long", "wordplay", "speed", "clean")),
         Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")),
-        // the secret world (2026-10-14): only 3 levels, the hardest of the course, and the angel reviews them
-        Map.entry("rift",     List.of("double", "misdirection", "mixed")));
+        // the secret world (2026-10-14): the hardest of the course, and the angel reviews them (it had 3 levels at first;
+        // level 3 is now long answers, and everything at once moved to level 4)
+        Map.entry("rift",     List.of("double", "misdirection", "long", "mixed")));
 
     // A level's lesson. Level 5 is the boss's review: null skill, and the four lessons in `review`.
     record Level(Skill skill, int round, List<Skill> review) {
@@ -124,7 +125,7 @@ public class Lesson {
         List<String> course = COURSE.get(world);
         if (course == null) return null;
         Campaign.Section section = Campaign.section(world);
-        if (section != null && !Campaign.hasLevel(section, level)) return null;     // the rift has no level 4
+        if (section != null && !Campaign.hasLevel(section, level)) return null;     // (a level the world doesn't have)
         if (level >= Campaign.LEVELS) {
             List<Skill> review = new ArrayList<>();
             for (String id : course) review.add(SKILLS.get(id));

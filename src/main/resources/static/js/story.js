@@ -88,7 +88,7 @@ const Story = (() => {
     // story (the intro), story-page and story-finale, composed for the game so every change lands on a scene (the
     // Void tearing the book, the pages scattering, the title...). The scenes wait for it to start, up to 1.5 s.
     // With the music off, the book's own little chimes play instead.
-    const scored = () => Settings.get("sound") && Settings.get("bossMusic") !== false;
+    const scored = () => Sound.bossMusicOn;            // (Boss Music above 0)
     async function storyMusic(c, name) {
         c.cleanup(() => { if (Sound.musicPlaying === name) Sound.stopMusic(1.4); });
         if (!scored()) return;

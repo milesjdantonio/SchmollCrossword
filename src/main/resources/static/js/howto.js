@@ -761,7 +761,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Sound", len: 9800, text: "The speaker at the top opens every sound option: all sound on or off, the volume, each level's own calm song, the boss music, the music volume, the sound effects, the bosses' attacks and your abilities, typing and clicks. Settings has the same ones, and in a level the slider by the timer changes the music.",
+            title: "Sound", len: 11800, text: "The speaker at the top opens every sound option. Master Volume changes everything, and its button mutes it all. Level Music and Boss Music each have a slider: all the way down turns that music off. Effects has All Effects, the bosses' attacks and your abilities, and switches for typing and clicks. Settings has the same ones, and in a level or a boss fight a slider changes its music.",
             async demo(s) {
                 const tools = s.add("ht-tools", { x: 452, y: 14 });
                 s.add("ht-tool", { text: "?" }, tools); s.add("ht-tool", { text: Worlds.current.icon || "🌍" }, tools);
@@ -775,14 +775,20 @@ const HowTo = (() => {
                     const out = U.el("b", { text: v + "%" }), track = U.el("i", { class: "ht-track" }), fill = U.el("i", { class: "ht-tfill" }), knob = U.el("i", { class: "ht-knob" });
                     track.append(fill, knob);
                     r.append(U.el("span", { text: label }), out, track);
-                    const set = x => { fill.style.width = x + "%"; knob.style.left = x + "%"; out.textContent = Math.round(x) + "%"; };
+                    const set = x => { fill.style.width = x + "%"; knob.style.left = x + "%"; out.textContent = Math.round(x) ? Math.round(x) + "%" : "Off"; };
                     set(v);
                     rows[key] = { r, set, knob, v };
                     return r;
                 };
-                sw("all", "All Sound");
-                s.add("ht-shead", { text: "Music" }, menu); sw("level", "Level Music"); sw("music", "Boss Music"); sl("mvol", "Music Volume", 100);
-                s.add("ht-shead", { text: "Effects" }, menu); sl("boss", "Boss Fight Effects", 100); sw("typing", "Typing Sounds"); sw("clicks", "Click Sounds");
+                // (the same layout as the real menu: Master, then Music and Effects)
+                sl("master", "Master Volume", 96);
+                s.add("ht-shead", { text: "Music" }, menu); sl("level", "Level Music", 100); sl("bossm", "Boss Music", 100);
+                s.add("ht-shead", { text: "Effects" }, menu); sl("fx", "All Effects", 100); sl("boss", "Boss Fight Effects", 100); sw("typing", "Typing Sounds"); sw("clicks", "Click Sounds");
+                const drag = async (key, from, to, ms) => {
+                    const row = rows[key];
+                    await s.cursor.to(row.knob);
+                    await s.tween(ms, k => { row.set(U.lerp(from, to, k)); s.cursor.show(s.pos(row.knob).x, s.pos(row.knob).y); });
+                };
                 s.cursor.show(560, 330);
                 await s.wait(300);
                 s.sub("The speaker at the top opens every sound option");
@@ -790,15 +796,17 @@ const HowTo = (() => {
                 menu.style.opacity = "";
                 s.pop(menu);
                 await s.wait(1200);
-                s.sub("Every level has its own song: turn the music down");
-                const mv = rows.mvol;
-                await s.cursor.to(mv.knob);
-                await s.tween(900, k => { const x = U.lerp(100, 55, k); mv.set(x); s.cursor.show(s.pos(mv.knob).x, s.pos(mv.knob).y); });
+                s.sub("Master Volume changes everything");
+                await drag("master", 96, 70, 800);
+                await s.wait(600);
+                s.sub("Level Music and Boss Music each have their own");
+                await drag("bossm", 100, 55, 800);
+                await s.wait(600);
+                s.sub("All the way down turns it off");
+                await drag("level", 100, 0, 900);
                 await s.wait(700);
                 s.sub("The bosses' attacks and your abilities have their own");
-                const bf = rows.boss;
-                await s.cursor.to(bf.knob);
-                await s.tween(800, k => { const x = U.lerp(100, 65, k); bf.set(x); s.cursor.show(s.pos(bf.knob).x, s.pos(bf.knob).y); });
+                await drag("boss", 100, 65, 800);
                 await s.wait(700);
                 s.sub("Typing and clicks can go quiet on their own");
                 await s.cursor.click(rows.typing.querySelector(".ht-switch"));
@@ -1141,7 +1149,7 @@ const HowTo = (() => {
                 art.classList.remove("ko");
                 s.sub("New Boss picks another one");
                 await s.cursor.click(fresh);
-                const others = Bosses.list.filter(w => w !== sc.bw);
+                const others = Bosses.list.filter(w => w !== sc.bw && !(Worlds.byId[w] && Worlds.byId[w].secret));   // (never the secret world's boss)
                 for (let i = 0; i < 6; i++) { art.innerHTML = Bosses.svg(others[(i * 5) % others.length]); await s.wait(110 + i * 25); }
                 card.querySelector("small").textContent = "Boss · Attempt 1";
                 card.querySelector("b").textContent = Bosses.info(others[25 % others.length]).name;

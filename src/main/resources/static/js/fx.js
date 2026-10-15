@@ -36,6 +36,32 @@ const FX = (() => {
     // particles are moved by the scroll, effects drawn shifted by however far the page moved since they started
     // (fixed: true for a full-screen one)
     let lastSX = scrollX, lastSY = scrollY;
+    // ...or they follow an element (the user, 2026-10-14: "can you do this for other animations that are meant to travel
+    // boards ... several abilities and win animations"): while FX.anchor(el) is on (a win animation runs with the board
+    // as its anchor), new effects and bursts remember the element, which is measured again every frame. Effects are
+    // drawn moved and scaled with it, particles moved with it, so the page shifting, a resize or the zoom setting
+    // (and scrolling) don't leave them behind.
+    let aim = null, fno = 0;
+    function anchor(el) {
+        const prev = aim;
+        aim = el || null;
+        return () => { if (aim === el) aim = prev; };
+    }
+    const anchorOf = el => {
+        if (!el || !el.isConnected) return null;
+        const r = el.getBoundingClientRect();
+        return r.width ? { el, x: r.left, y: r.top, w: r.width, last: r, px: r.left, py: r.top, dx: 0, dy: 0, f: -1 } : null;
+    };
+    // an anchor's place this frame (measured once a frame; a removed element keeps its last place), and how far it moved
+    function track(a) {
+        if (a.f === fno) return a;
+        a.f = fno;
+        const r = a.el.isConnected ? a.el.getBoundingClientRect() : null;
+        if (r && r.width) a.last = r;
+        a.dx = a.last.left - a.px; a.dy = a.last.top - a.py;
+        a.px = a.last.left; a.py = a.last.top;
+        return a;
+    }
     // One bad particle (a NaN size, a negative radius...) used to throw out of this loop before the next frame was
     // asked for: raf stayed set, kick() thought it was still running, and every burst after that never showed for
     // the rest of the visit (the user: "sometimes the animations for clicking things goes away"). Now a particle
@@ -52,14 +78,26 @@ const FX = (() => {
         last = now;
         const sx = scrollX, sy = scrollY, mx = lastSX - sx, my = lastSY - sy;
         lastSX = sx; lastSY = sy;
-        if (mx || my) for (const p of parts) { p.x += mx; p.y += my; if (p.tr) for (let i = 0; i < p.tr.length; i += 2) { p.tr[i] += mx; p.tr[i + 1] += my; } }
+        fno++;
+        for (const p of parts) {
+            let ox = mx, oy = my;
+            if (p.an) { track(p.an); ox = p.an.dx; oy = p.an.dy; }
+            if (!ox && !oy) continue;
+            p.x += ox; p.y += oy;
+            if (p.tr) for (let i = 0; i < p.tr.length; i += 2) { p.tr[i] += ox; p.tr[i + 1] += oy; }
+        }
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         g.clearRect(0, 0, W, H);
         effects = effects.filter(e => {
             let alive = true;
             try {
                 alive = e.update(dt) !== false;
-                if (alive) { g.save(); if (!e.fixed) g.translate(e.sx - sx, e.sy - sy); e.draw(g, W, H); g.restore(); }
+                if (alive) {
+                    g.save();
+                    if (e.anchor) { const q = track(e.anchor).last, k = q.width / e.anchor.w; g.translate(q.left, q.top); g.scale(k, k); g.translate(-e.anchor.x, -e.anchor.y); }
+                    else if (!e.fixed) g.translate(e.sx - sx, e.sy - sy);
+                    e.draw(g, W, H); g.restore();
+                }
             } catch (err) { console.error(err); alive = false; }
             return alive;
         });
@@ -467,6 +505,8 @@ const FX = (() => {
         const shape = o.shape || "rect";
         // fast, bright things leave a trail (not in Lite effects)
         const trail = lite ? 0 : o.trail ?? (shape === "star" ? 5 : shape === "circle" && o.glow ? 6 : 0);
+        const an = o.fixed ? null : anchorOf(aim);
+        if (an) an.f = fno;                                  // (measured just now)
         for (let i = 0; i < n; i++) {
             const a = o.angle != null ? o.angle + U.rand(-1, 1) * (o.spread ?? Math.PI) : Math.random() * Math.PI * 2;
             const sp = range(o.speed, 300) * (o.even ? 1 : U.rand(0.35, 1));
@@ -480,7 +520,7 @@ const FX = (() => {
                 rot: Math.random() * 6.28, vr: U.rand(-1, 1) * (o.spin ?? 8), flip: Math.random() * 6.28, vf: U.rand(4, 12),
                 alpha: o.alpha ?? 1, fade: o.fade ?? true, glow: !!o.glow, shrink: !!o.shrink, wobble: o.wobble || 0,
                 trail, tr: trail ? [] : null,
-                seed: Math.random() * 10, text: o.text ? (Array.isArray(o.text) ? U.pick(o.text) : o.text) : ""
+                seed: Math.random() * 10, text: o.text ? (Array.isArray(o.text) ? U.pick(o.text) : o.text) : "", an
             });
         }
         kick();
@@ -488,6 +528,7 @@ const FX = (() => {
 
     function add(effect) {
         effect.sx = scrollX; effect.sy = scrollY;
+        if (!effect.fixed && !effect.anchor) effect.anchor = anchorOf(aim);
         effects.push(effect);
         kick();
         return effect;
@@ -1040,26 +1081,34 @@ const FX = (() => {
         });
     }
 
-    // Keep pieces of a cinematic that sit on or around the board (a snow globe, a chest...) attached to it while the
-    // page scrolls: they're position: fixed, so they're moved by however far the board has moved since they were placed.
+    // Keep pieces of a cinematic that sit on or around the board (a snow globe, a chest...) attached to it: they're
+    // position: fixed, so they're moved by however far the board has moved since they were placed. Checked every frame
+    // (it used to be only on scroll), so the page shifting or a resize moves them too.
     function follow(c, boardEl, ...els) {
         const start = boardEl.getBoundingClientRect();
         const items = els.map(el => ({ el, x: el.style.left ? parseFloat(el.style.left) : null, y: el.style.top ? parseFloat(el.style.top) : null }));
+        let raf = 0, lx = 0, ly = 0;
         const move = () => {
-            const r = boardEl.getBoundingClientRect(), dx = r.left - start.left, dy = r.top - start.top;
+            raf = requestAnimationFrame(move);
+            if (!boardEl.isConnected) return;
+            const r = boardEl.getBoundingClientRect();
+            if (!r.width) return;
+            const dx = r.left - start.left, dy = r.top - start.top;
+            if (dx === lx && dy === ly) return;
+            lx = dx; ly = dy;
             for (const it of items) {
                 if (it.x !== null) it.el.style.left = it.x + dx + "px";
                 if (it.y !== null) it.el.style.top = it.y + dy + "px";
             }
         };
-        addEventListener("scroll", move, { passive: true, capture: true });
-        c.cleanup(() => removeEventListener("scroll", move, { capture: true }));
+        raf = requestAnimationFrame(move);
+        c.cleanup(() => cancelAnimationFrame(raf));
     }
 
     function clear() { parts = []; effects = []; }
 
     return {
-        burst, add, ring, flash, shake, toast, countUp, cinematic, transition, follow, clear, star,
+        burst, add, ring, flash, shake, toast, countUp, cinematic, transition, follow, anchor, clear, star,
         // the shared sprites and colour helpers, for the other particle systems (spells, powers): halo(color) is a soft
         // glow, ball(color) a shaded ball, starImg(color, light, glow) and flake(color) are 4 radii across
         art: { halo: haloSprite, ball: ballSprite, starImg: starSprite, flake: flakeSprite, text: textSprite, tint, fade: (c, a) => css(rgba(c), a), rgba },

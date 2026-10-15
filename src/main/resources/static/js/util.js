@@ -186,7 +186,10 @@ const U = (() => {
         });
     }
 
-    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin };
+    // The page's zoom (Settings > Zoom; app.js puts it on #app). Measurements (getBoundingClientRect) are on-screen
+    // sizes, so a position measured on screen and then set as CSS INSIDE #app is divided by this.
+    const zoom = () => parseFloat(document.getElementById("app")?.style.zoom) || 1;
+    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
@@ -209,34 +212,60 @@ const Settings = (() => {
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)
-        sound: true,            // all sound on or off (sound effects are made in code, see sound.js)
-        bossMusic: true,        // music in boss fights, the story, winning and losing (tracks in audio/music)
-        levelMusic: true,       // each campaign level's own chill song (audio/music/level-<world>-<n>.mp3)
-        volume: 0.8,
-        musicVolume: 1,         // boss music, on top of the main volume (Settings, and the slider in every boss fight)
-        fxVolume: 1,            // sound effects, on top of the main volume
-        bossFxVolume: 1,        // boss moves and abilities, on top of the effects volume
+        // Sound (the user, 2026-10-14: one Master Volume, then Music and Effects, each with its own sliders). Every
+        // volume is a slider position from 0 to 1; Settings.gain(key) turns it into loudness (see VOLUME_DB).
+        sound: true,            // all sound on or off: the mute button by Master Volume (sound effects are made in code, see sound.js)
+        volume: 0.96,           // Master Volume: everything
+        levelMusicVolume: 1,    // each campaign level's own chill song (audio/music/level-<world>-<n>.mp3), and the credits
+        bossMusicVolume: 1,     // boss fights, the story, winning and losing (also the slider in every boss fight); 0 = off
+        fxVolume: 1,            // All Effects
+        bossFxVolume: 1,        // Boss Fight Effects: the bosses' moves and your abilities, on top of All Effects
         typingSounds: true,     // typing, erasing and moving on the board
         clickSounds: true,      // buttons, menus and switches
+        zoom: 1,                // Zoom: 0.6-1, smaller = more fits on screen (not on phones: see applyZoom in app.js)
         intro: false,           // play the start-up intro on every visit (it always plays the very first time)
         effects: "full"         // "full" or "lite"
     };
+    // A volume slider is a loudness curve, not a straight line (the user: "make it so the difference in volume between
+    // 1 and 100 is greater"): 100% is full, every step down is the same number of decibels, and 1% is VOLUME_DB below
+    // full (about the quietest sound you'd still notice). 0 is silent.
+    const VOLUME_DB = 50;
+    const gainOf = x => (x > 0 ? Math.pow(10, (Math.min(1, x) - 1) * VOLUME_DB / 20) : 0);
+    // the slider position that's as loud as an old straight-line volume (saves from before 2026-10-14)
+    const posOf = linear => (linear > 0 ? Math.max(0.01, Math.round((1 + 20 * Math.log10(Math.min(1, linear)) / VOLUME_DB) * 100) / 100) : 0);
     let values = load();
     const listeners = [];
 
     function load() {
         try {
             const raw = JSON.parse(localStorage.getItem(KEY)) || {};
-            return { ...DEFAULTS, ...raw };
+            return migrate({ ...DEFAULTS, ...raw }, raw);
         } catch (err) {
             return { ...DEFAULTS };
         }
+    }
+    // Old sound settings (one Music Volume with Level Music and Boss Music switches, straight-line volumes) become the
+    // new sliders at the same loudness; a switched-off music is a slider at 0.
+    function migrate(v, raw) {
+        if (raw.soundV === 2 || !["volume", "musicVolume", "fxVolume", "bossFxVolume", "bossMusic", "levelMusic"].some(k => k in raw)) { v.soundV = 2; return v; }
+        const lin = (k, d) => (typeof raw[k] === "number" ? raw[k] : d);
+        v.volume = posOf(lin("volume", 0.8));
+        v.fxVolume = posOf(lin("fxVolume", 1));
+        v.bossFxVolume = posOf(lin("bossFxVolume", 1));
+        const music = posOf(lin("musicVolume", 1));
+        v.levelMusicVolume = raw.levelMusic === false ? 0 : music;
+        v.bossMusicVolume = raw.bossMusic === false ? 0 : music;
+        delete v.musicVolume; delete v.bossMusic; delete v.levelMusic;
+        v.soundV = 2;
+        try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (err) { /* storage blocked */ }
+        return v;
     }
     function save() {
         try { localStorage.setItem(KEY, JSON.stringify(values)); } catch (err) { /* storage blocked */ }
     }
     return {
         get: key => values[key],
+        gain: key => gainOf(values[key] ?? 1),         // a volume setting as loudness (0-1), along the curve above
         all: () => ({ ...values }),
         set(key, value) {
             if (values[key] === value) return;

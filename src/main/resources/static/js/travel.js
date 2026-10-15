@@ -20,8 +20,10 @@
 //   Robot        falls through the pages of a giant book into a factory: arms, gears, steam, a conveyor
 //   Volcano      launches from the factory on a rocket over the sea, and crash-lands on the island's beach
 //   Deep Space   launched by the eruption into space, past planets, a comet and asteroids, onto a little moon
-//   Celestial Rift  the Void collapses; the prison it held shut cracks, its chains snap, the Cursed Angel breaks out
-//                and tears the sky open; the hero leaps through after it and floats down onto a ruin in the rift
+//   Celestial Rift  the Void, a black hole, collapses to a point and explodes into a nebula; the golden cage it held
+//                shut loses its runes, seal and padlock, cracks, its five chains snap, its bars bow and burst, and the
+//                Cursed Angel rises, unfolds its wings and tears the sky open; the hero leaps through after it and
+//                floats down onto a ruin in the rift
 //
 //   Travel.arrive(c, fromWorld, toWorld, look, { index, total })   c comes from FX.cinematic (skippable)
 //   Travel.WORLDS   the worlds that have a scene, in campaign order
@@ -1148,38 +1150,162 @@ const Travel = (() => {
 
 
     // ---- The Celestial Rift (the secret world, 2026-10-14; the user: "the void dying released the angel from their
-    // prison (make that part of the transition animation)"): the Void collapses into a point and bursts; where it was
-    // hangs a golden prison held by four chains, with the Cursed Angel inside. Cracks run over the bars, the chains
-    // snap one by one, the cage shatters and the angel bursts out, tears the sky open and flies through. Your hero leaps
-    // after it, the camera dives into the tear, and on the other side it floats down onto a ruined platform in the rift.
+    // prison (make that part of the transition animation)"; remade the same day: "make the animation for the angel
+    // breaking out with a lot of detail ... a more detailed black hole collapsing and exploding and a really detailed
+    // breaking of the cage"):
+    //   0-1.6     the Void as a black hole: a lensed accretion disk spinning round its shadow, jets, the Void's own face
+    //             inside, stars, rocks and dust spiralling in
+    //   1.6-3.6   it collapses: one last swell, then it shrinks to a point, spinning faster and burning hotter, tearing a
+    //             planet into a stream and dragging the stars in after it
+    //   3.6-3.95  silence: one point of light
+    //   3.95      it explodes: a nova, light rays, shock waves round it and along its disk, rocks flung out glowing, and a
+    //             nebula blooming where it was
+    //   4.5       in the nebula's heart hangs the prison, a golden birdcage on five chains, with the angel inside
+    //   5.8-9.4   the cage breaks: the angel's light builds, the runes on the bands go out one by one, the seal shatters
+    //             and the padlock falls apart, cracks run over the bars, the chains snap one at a time (each whips away,
+    //             its end swings down), the bars bow out and creak
+    //   9.4       the cage bursts, every bar, band, the dome and the base flying
+    //   9.5-12.1  the angel rises, its wings unfold and beat, it tears the sky open and flies through
+    //   11.6-     the hero leaps after it, the camera dives through the tear, and it floats down onto a ruin in the rift
     S.rift = {
-        T: 10.2,
+        T: 16.8,
         build: (D, R) => {
+            const G = S.rift.geo = { ps: [], rocks: [], runes: [], cracks: [], chains: [], barV: [], bandV: [] };
             D.raw(`<filter id="tv-rift-glw" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`);
-            // the Void's space
+            D.raw(`<clipPath id="tv-rift-hole"><circle r="116"/></clipPath>`);
+            // ---- the Void's space: nebulae, twinkling stars (pulled in as it collapses), far galaxies
             let sp = `<rect x="-400" y="-400" width="${W + 800}" height="${H + 800}" fill="${D.lin("vsp", [[0, "#02010a"], [1, "#140838"]])}"/>`;
-            sp += glow(D, "vneb", 800, 450, 620, "#5a2dbf", 0.35);
-            for (let i = 0; i < 150; i++) sp += `<circle ${i % 15 === 0 ? `data-k="vt${i / 15}"` : ""} cx="${f(R() * W)}" cy="${f(R() * H)}" r="${f(0.7 + R() * 2.2)}" fill="#fff" opacity="${f(0.3 + R() * 0.7)}"/>`;
-            let vd = "";
-            for (let i = 0; i < 7; i++) vd += `<ellipse cx="0" cy="0" rx="${300 - i * 34}" ry="${92 - i * 10}" fill="none" stroke="${["#b18cff", "#9b6bff", "#ff9fe8", "#7a3cff", "#c49bff", "#5a2dbf", "#ffe066"][i]}" stroke-width="${10 - i}" opacity="${f(0.75 - i * 0.06)}"/>`;
-            for (let i = 0; i < 6; i++) vd += `<path d="M0 0 C${f(Math.cos(i) * 120)} ${f(Math.sin(i) * 60)} ${f(Math.cos(i + 1) * 220)} ${f(Math.sin(i + 1) * 110)} ${f(Math.cos(i + 1.6) * 300)} ${f(Math.sin(i + 1.6) * 130)}" fill="none" stroke="#2a1660" stroke-width="16" stroke-linecap="round"/>`;
-            vd += `<circle r="78" fill="#000"/><circle r="84" fill="none" stroke="#ffe066" stroke-width="5" opacity=".8"/>`;
-            // the prison: a gothic golden cage, four chains to the edges of the sky, the angel inside
-            const bars = Array.from({ length: 9 }, (_, i) => { const x = -120 + i * 30; return `<path d="M${x} -150 Q${x * 0.6} -220 0 -240 M${x} -150 V170 Q${x * 0.7} 220 0 236" fill="none" stroke="#c9902f" stroke-width="7"/><path d="M${x} -150 V170" stroke="#ffe7a3" stroke-width="2"/>`; }).join("");
-            const rings = [-150, -40, 70, 170].map(y => `<ellipse cy="${y}" rx="${y < 0 ? 122 : 124}" ry="18" fill="none" stroke="#e8c66a" stroke-width="8"/>`).join("");
-            const chain = (i, x2, y2) => {
-                const ang = Math.atan2(y2, x2), len = Math.hypot(x2, y2), n = Math.floor(len / 34);
-                return `<g data-k="ch${i}"><g transform="rotate(${f(ang * 180 / Math.PI)})">${Array.from({ length: n }, (_, j) => `<ellipse cx="${30 + j * 34}" cy="0" rx="20" ry="9" fill="none" stroke="#e8c66a" stroke-width="6" ${j % 2 ? `transform="rotate(90 ${30 + j * 34} 0)"` : ""}/>`).join("")}</g></g>`;
+            sp += glow(D, "vneb", 800, 450, 680, "#5a2dbf", 0.32) + glow(D, "vneb2", 260, 200, 380, "#2bf0ff", 0.08) + glow(D, "vneb3", 1350, 700, 420, "#ff2bd6", 0.1);
+            let stars = "";
+            for (let i = 0; i < 170; i++) stars += `<circle ${i % 17 === 0 ? `data-k="vt${i / 17}"` : ""} cx="${f(R() * W)}" cy="${f(R() * H)}" r="${f(0.7 + R() * 2.2)}" fill="#fff" opacity="${f(0.3 + R() * 0.7)}"/>`;
+            const gal = D.rad("gal", [[0, "#fff6d8", 0.9], [0.35, "#c49bff", 0.45], [1, "#c49bff", 0]]);
+            for (let i = 0; i < 5; i++) { const x = 80 + R() * 1440, y = 60 + R() * 780; stars += `<ellipse cx="${f(x)}" cy="${f(y)}" rx="${f(24 + R() * 22)}" ry="${f(6 + R() * 6)}" fill="${gal}" transform="rotate(${f(R() * 180)} ${f(x)} ${f(y)})"/>`; }
+            sp += `<g data-k="stars">${stars}</g>`;
+            // stars and rocks near it, which it drags in (moved in frame)
+            for (let i = 0; i < 22; i++) {
+                G.ps.push({ a: R() * 6.283, r: 260 + R() * 560, w: 2 + R() * 3, t0: 0.3 + R() * 1.5, t1: 2.7 + R() * 0.8 });
+                sp += `<g data-k="ps${i}"><circle r="7" fill="#c49bff" opacity=".25"/><circle r="${f(1.8 + R() * 1.6)}" fill="#fff"/></g>`;
+            }
+            for (let i = 0; i < 7; i++) {
+                G.rocks.push({ a: R() * 6.283, r: 330 + R() * 420, w: 1.5 + R() * 2, t0: 0.6 + R() * 1.2, t1: 2.9 + R() * 0.6, s: 0.6 + R() * 0.8, spin: (R() - 0.5) * 300 });
+                let d = ""; for (let j = 0; j < 8; j++) { const b = j / 8 * 6.283, q = 18 * (0.7 + R() * 0.4); d += (j ? "L" : "M") + f(Math.cos(b) * q) + " " + f(Math.sin(b) * q); }
+                sp += `<g data-k="rk${i}"><path d="${d}Z" fill="#4a3d63" ${st(3)}/><ellipse cx="-4" cy="-5" rx="8" ry="4" fill="#fff" opacity=".18"/><circle cx="5" cy="4" r="3.5" fill="#2e2442"/></g>`;
+            }
+            // a little planet it tears into a stream
+            sp += `<g data-k="doom"><circle r="56" fill="${D.rad("doomg", [[0, "#9fdcff", 1], [1, "#2f8fe0", 1]], 0.35, 0.3, 0.8)}" ${st(5)}/><path d="M-36 -18 Q-14 -40 8 -26 Q18 -6 -6 6 Q-30 4 -36 -18Z M18 12 Q40 6 42 26 Q24 36 14 26Z" fill="#3fbf5f"/>` +
+                `<path d="M-50 10 Q0 24 50 8" stroke="#fff" stroke-width="5" fill="none" opacity=".45" stroke-linecap="round"/>${glow(D, "doomat", 0, 0, 80, "#bfe8ff", 0.35)}</g>`;
+            // ---- the black hole: a glow, jets, the far side of the disk, its lensed image over the top, the shadow (the
+            // Void's face inside it), the photon ring and the near side of the disk. Dashed strokes on every ring spin.
+            const DISK = ["#fff6d8", "#ffe7a3", "#ffc46b", "#ff9a6b", "#ff6ad5", "#c46bff", "#9b6bff", "#6a3cff"];
+            let backD = "", frontD = "";
+            DISK.forEach((c, i) => {
+                const rx = 150 + i * 38, ry = rx * 0.23, w = 15 - i, dash = `${f(20 + R() * 60)} ${f(10 + R() * 30)} ${f(6 + R() * 20)} ${f(14 + R() * 24)}`;
+                const arcB = `M${-rx} 0 A${rx} ${f(ry)} 0 0 1 ${rx} 0`, arcF = `M${-rx} 0 A${rx} ${f(ry)} 0 0 0 ${rx} 0`;
+                backD += `<path d="${arcB}" fill="none" stroke="${c}" stroke-width="${w}" opacity="${f(0.85 - i * 0.06)}"/><path data-k="dkb${i}" d="${arcB}" fill="none" stroke="${shade(c, 0.55)}" stroke-width="${f(w * 0.45)}" stroke-dasharray="${dash}" opacity=".85"/>`;
+                frontD += `<path d="${arcF}" fill="none" stroke="${c}" stroke-width="${w + 2}" opacity="${f(0.92 - i * 0.06)}"/><path data-k="dkf${i}" d="${arcF}" fill="none" stroke="${shade(c, 0.55)}" stroke-width="${f(w * 0.5)}" stroke-dasharray="${dash}" opacity=".9"/>`;
+            });
+            const jet = D.lin("jet", [[0, "#e6d4ff", 0], [0.6, "#c49bff", 0.5], [1, "#ffffff", 0.95]]), jet2 = D.lin("jet2", [[0, "#ffffff", 0.95], [0.4, "#c49bff", 0.5], [1, "#e6d4ff", 0]]);
+            const bh = glow(D, "bhg", 0, 0, 640, "#7a3cff", 0.5) + `<g data-k="bhHot" opacity="0">${glow(D, "bhhot", 0, 0, 520, "#fff3c4", 0.75)}</g>` +
+                `<g data-k="jets" opacity=".75"><path d="M-34 -110 L0 -760 L34 -110Z" fill="${jet}" opacity=".35"/><path d="M-10 -110 L0 -760 L10 -110Z" fill="${jet}"/><path d="M-34 110 L0 760 L34 110Z" fill="${jet2}" opacity=".35"/><path d="M-10 110 L0 760 L10 110Z" fill="${jet2}"/></g>` +
+                backD +
+                `<ellipse rx="170" ry="150" fill="none" stroke="${D.lin("lens", [[0, "#fff3c4", 0.95], [0.5, "#ff9a6b", 0.2], [1, "#c46bff", 0.55]])}" stroke-width="18"/><ellipse rx="150" ry="135" fill="none" stroke="#fff6d8" stroke-width="3" opacity=".55"/>` +
+                `<circle r="120" fill="#000"/><g data-k="vface" clip-path="url(#tv-rift-hole)" opacity=".5"><g transform="scale(.78) translate(-120 -120)">${typeof Bosses !== "undefined" ? Bosses.inner("space") : ""}</g></g>` +
+                `<circle r="118" fill="none" stroke="#000" stroke-width="10" opacity=".7"/><circle data-k="photon" r="123" fill="none" stroke="#fff3c4" stroke-width="3.5" filter="url(#tv-rift-glw)"/>` + frontD;
+            const pin = `<g data-k="pin" opacity="0" transform="translate(800 450)">${glow(D, "ping", 0, 0, 110, "#ffffff", 1)}<circle r="5" fill="#fff"/></g>`;
+            // ---- the explosion: a nebula that stays behind the prison, the nova, rays, shock rings
+            let neb = "";
+            [[-160, -60, 380, "#7a3cff", 0.55], [200, 40, 360, "#ff6ad5", 0.38], [-40, 140, 300, "#ffb86b", 0.3], [120, -170, 280, "#2bf0ff", 0.18], [-260, 120, 260, "#c46bff", 0.4], [0, 0, 240, "#fff3c4", 0.35]]
+                .forEach(([x, y, r, c, a], i) => { neb += glow(D, "nb" + i, x, y, r, c, a); });
+            for (let i = 0; i < 6; i++) neb += `<ellipse cx="${f((R() - 0.5) * 600)}" cy="${f((R() - 0.5) * 360)}" rx="${f(120 + R() * 140)}" ry="${f(14 + R() * 18)}" fill="#0a0418" opacity=".35" transform="rotate(${f(R() * 180)})"/>`;
+            for (let i = 0; i < 26; i++) neb += sparkle(Math.round((R() - 0.5) * 900), Math.round((R() - 0.5) * 560), 0.25 + R() * 0.45, i % 3 ? "#fff6d8" : "#e6d4ff");
+            let rays = "";
+            for (let i = 0; i < 28; i++) { const a = i / 28 * 6.283 + R() * 0.1, h = 0.02 + R() * 0.04, L = 700 + R() * 600; rays += `<path d="M0 0 L${f(Math.cos(a - h) * L)} ${f(Math.sin(a - h) * L)} L${f(Math.cos(a + h) * L)} ${f(Math.sin(a + h) * L)}Z" fill="#fff6d8" opacity="${f(0.2 + R() * 0.4)}"/>`; }
+            const boom = `<g transform="translate(800 450)"><g data-k="neb" opacity="0">${neb}</g><g data-k="rays" opacity="0">${rays}</g>` +
+                `<g data-k="nova" opacity="0"><circle r="300" fill="${D.rad("nova", [[0, "#ffffff", 1], [0.25, "#fff3c4", 0.95], [0.5, "#ffb86b", 0.6], [0.75, "#c46bff", 0.3], [1, "#7a3cff", 0]])}"/></g>` +
+                ["#ffffff", "#ffe7a3", "#c49bff"].map((c, i) => `<circle data-k="sw${i}" r="10" fill="none" stroke="${c}" stroke-width="20" opacity="0"/>`).join("") +
+                `<ellipse data-k="swd" rx="10" ry="2" fill="none" stroke="#ffe7a3" stroke-width="10" opacity="0"/></g>`;
+
+            // ---- the prison: a golden birdcage (back bars, the angel, front bars with rivets, bands with runes, a
+            // dome and finial, a base with a gem), a seal and padlock on the front, five chains, and cracks to come
+            const BX = [-128, -96, -64, -32, 0, 32, 64, 96, 128];
+            const BANDS = [[-150, 132, 22], [-40, 136, 24], [70, 136, 24], [170, 132, 22]];
+            const RUNES = ["M-4 -6 V6 M-4 -6 L4 -2 L-4 2", "M-5 6 L0 -6 L5 6 M-3 1 H3", "M0 -6 V6 M-5 -3 L5 3 M5 -3 L-5 3", "M-5 -5 H5 L-5 5 H5", "M0 -6 L5 0 L0 6 L-5 0Z", "M-5 -6 L0 0 L5 -6 M0 0 V6"];
+            const bar = x => `M0 -258 Q${f(x * 0.6)} -246 ${x} -150 V170 Q${f(x * 0.62)} 236 0 252`;
+            const links = (x1, y1, x2, y2) => {
+                const len = Math.hypot(x2 - x1, y2 - y1), a = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI, n = Math.ceil(len / 26);
+                let g = `<g transform="translate(${f(x1)} ${f(y1)}) rotate(${f(a)})">`;
+                for (let j = 0; j < n; j++) {
+                    const x = 13 + j * 26;
+                    g += j % 2 ? `<path d="M${x - 15} 0 H${x + 15}" stroke="#4a2e08" stroke-width="9" stroke-linecap="round"/><path d="M${x - 14} 0 H${x + 14}" stroke="#e0b552" stroke-width="4" stroke-linecap="round"/>`
+                        : `<ellipse cx="${x}" rx="17" ry="9" fill="none" stroke="#4a2e08" stroke-width="8"/><ellipse cx="${x}" rx="17" ry="9" fill="none" stroke="#f0d27a" stroke-width="4"/><path d="M${x - 10} -6 Q${x} -9 ${x + 10} -6" stroke="#fff6d8" stroke-width="1.6" fill="none"/>`;
+                }
+                return g + "</g>";
             };
-            const cracks = [["M-60 -120 L-30 -60 L-50 0 L-10 60", "c0"], ["M70 -130 L40 -70 L80 -20 L50 40 L90 110", "c1"], ["M-100 20 L-60 70 L-90 130", "c2"], ["M10 -200 L-10 -150 L20 -100", "c3"]]
-                .map(([d, k]) => `<path data-k="${k}" d="${d}" fill="none" stroke="#fff6d8" stroke-width="5" stroke-linecap="round" stroke-dasharray="400" stroke-dashoffset="400" filter="url(#tv-rift-glw)"/>`).join("");
-            const shards = Array.from({ length: 14 }, (_, i) => `<path data-k="sh${i}" d="M0 -18 L10 0 L0 22 L-9 2Z" fill="${i % 3 ? "#e8c66a" : "#fff3c4"}" stroke="#8a5a1a" stroke-width="2" opacity="0"/>`).join("");
-            const prison = `<g data-k="cage">${glow(D, "pglow", 0, 0, 260, "#ffd06b", 0.5)}${chain(0, -820, -470)}${chain(1, 820, -470)}${chain(2, -820, 470)}${chain(3, 820, 470)}
-                <g data-k="angel"><g transform="scale(.95) translate(-120 -130)">${typeof Bosses !== "undefined" ? Bosses.inner("rift") : ""}</g></g>
-                <g data-k="bars">${bars}${rings}<path d="M-14 -246 L0 -270 L14 -246" fill="#e8c66a" stroke="#8a5a1a" stroke-width="3"/>${cracks}</g></g>
-                <g data-k="shards">${shards}</g>`;
-            // the tear it rips open
-            // a ragged tear: wide in the middle, every edge point a little different
+            let chains = "";
+            [[-132, -150, -950, -640, 8.05], [132, -150, 950, -640, 8.4], [-132, 170, -950, 560, 7.3], [132, 170, 950, 560, 7.7], [0, -315, 0, -1150, 8.75]].forEach(([ax, ay, fx, fy, at], i) => {
+                const bx = ax + (fx - ax) * 0.3, by = ay + (fy - ay) * 0.3;
+                G.chains.push({ ax, ay, bx, by, fx, fy, at, a0: Math.atan2(by - ay, bx - ax) * 180 / Math.PI });
+                chains += `<g data-k="co${i}">${links(bx, by, fx, fy)}</g><g data-k="ci${i}">${links(ax, ay, bx, by)}</g><circle cx="${ax}" cy="${ay}" r="9" fill="#e0b552" stroke="#4a2e08" stroke-width="3"/>`;
+            });
+            let back = "";
+            BANDS.forEach(([y, rx, ry]) => { const arc = `M${-rx} ${y} A${rx} ${ry} 0 0 1 ${rx} ${y}`; back += `<path d="${arc}" fill="none" stroke="#3a260a" stroke-width="10"/><path d="${arc}" fill="none" stroke="#a87a30" stroke-width="5"/>`; });
+            for (let i = 0; i < 8; i++) { const x = -112 + i * 32; back += `<path d="${bar(x)}" fill="none" stroke="#3a260a" stroke-width="8"/><path d="${bar(x)}" fill="none" stroke="#9a7030" stroke-width="4"/>`; }
+            // the wings it unfolds once it's free: white feathers above, corrupted black ones below
+            const wing = side => {
+                let g = `<g transform="scale(${side} 1)"><g data-k="${side < 0 ? "wL" : "wR"}">`;
+                for (let j = 0; j < 5; j++) { const a = 20 + j * 12, len = 190 - j * 18; g += `<g transform="rotate(${a})"><path d="M10 0 Q${f(len * 0.5)} -15 ${f(len)} 0 Q${f(len * 0.55)} 15 10 0Z" fill="#1c1230" stroke="#9b6bff" stroke-width="2"/><path d="M14 0 L${f(len * 0.9)} 0" stroke="#5a3d8a" stroke-width="1.4"/></g>`; }
+                for (let row = 0; row < 3; row++) for (let j = 0; j < 7; j++) {
+                    const a = -75 + j * 13 + row * 4, len = (260 - row * 70) * (0.75 + j * 0.05), w = 18 - row * 3;
+                    g += `<g transform="rotate(${a})"><path d="M10 0 Q${f(len * 0.5)} ${-w} ${f(len)} 0 Q${f(len * 0.55)} ${w} 10 0Z" fill="${["#e6dcf6", "#f4eeff", "#ffffff"][row]}" stroke="#8a7cae" stroke-width="2"/><path d="M14 0 L${f(len * 0.92)} 0" stroke="#b8a8d8" stroke-width="1.4"/></g>`;
+                }
+                return g + "</g></g>";
+            };
+            const angel = `<g data-k="angel"><g data-k="aura" opacity=".4">${glow(D, "aur", 0, -10, 220, "#c49bff", 0.75)}${glow(D, "aur2", 0, -10, 120, "#ffe7a3", 0.6)}</g>` +
+                `<g transform="translate(0 -30)"><g data-k="wings" transform="scale(0.001)">${wing(-1)}${wing(1)}</g></g><g transform="scale(.95) translate(-120 -130)">${typeof Bosses !== "undefined" ? Bosses.inner("rift") : ""}</g></g>`;
+            const fbars = BX.map((x, i) => {
+                G.barV.push({ vx: x / 128 * (500 + R() * 500) + (R() - 0.5) * 220, vy: -200 - R() * 500, spin: (R() - 0.5) * 500 });
+                let g = `<g data-k="fb${i}"><path d="${bar(x)}" fill="none" stroke="#4a2e08" stroke-width="12" stroke-linecap="round"/><path d="${bar(x)}" fill="none" stroke="#e0b552" stroke-width="7" stroke-linecap="round"/><path d="${bar(x)}" transform="translate(-2 0)" fill="none" stroke="#fff3c4" stroke-width="2" opacity=".75"/>`;
+                BANDS.forEach(([y, rx, ry]) => { g += `<circle cx="${x}" cy="${f(y + ry * Math.sqrt(Math.max(0, 1 - (x / rx) ** 2)))}" r="5.5" fill="#f0d27a" stroke="#4a2e08" stroke-width="2"/>`; });
+                return g + "</g>";
+            }).join("");
+            const bands = BANDS.map(([y, rx, ry], j) => {
+                G.bandV.push({ vx: (R() - 0.5) * 700, vy: j < 2 ? -300 - R() * 300 : -80 - R() * 200, spin: (R() - 0.5) * 300 });
+                const arc = `M${-rx} ${y} A${rx} ${ry} 0 0 0 ${rx} ${y}`;
+                let g = `<g data-k="bd${j}"><path d="${arc}" fill="none" stroke="#4a2e08" stroke-width="15"/><path d="${arc}" fill="none" stroke="#e8c66a" stroke-width="9"/><path d="${arc}" transform="translate(0 -2.5)" fill="none" stroke="#fff3c4" stroke-width="2.2" opacity=".8"/>`;
+                for (let q = 0; q < 4; q++) {
+                    const th = Math.PI * (0.2 + q * 0.2), x = Math.cos(th) * rx, yy = y + Math.sin(th) * ry;
+                    G.runes.push({ x, y: yy });
+                    g += `<g transform="translate(${f(x)} ${f(yy)})"><g data-k="rn${j * 4 + q}"><path d="${RUNES[(j * 4 + q) % RUNES.length]}" fill="none" stroke="#efe2ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" filter="url(#tv-rift-glw)"/></g></g>`;
+                }
+                return g + "</g>";
+            }).join("");
+            // the runes go out in a random order
+            const order = G.runes.map((_, i) => i).sort(() => R() - 0.5);
+            order.forEach((ri, n) => { G.runes[ri].at = 6.0 + n * 0.085; });
+            const base = `<g data-k="base"><ellipse cy="262" rx="150" ry="30" fill="#7a5214" ${st(4)}/><ellipse cy="252" rx="150" ry="28" fill="#e0b552" ${st(4)}/><ellipse cy="248" rx="120" ry="18" fill="#f0d27a" opacity=".6"/>` +
+                `${[-100, -50, 0, 50, 100].map(x => `<circle cx="${x}" cy="${f(262 + 30 * Math.sqrt(1 - (x / 150) ** 2) - 4)}" r="4" fill="#fff3c4"/>`).join("")}<path d="M-12 290 L0 326 L12 290 L0 282Z" fill="#c46bff" ${st(3)}/><path d="M-4 292 L0 304" stroke="#fff" stroke-width="2"/></g>`;
+            const finial = `<g data-k="finial"><path d="M-22 -252 Q0 -296 22 -252Z" fill="#e0b552" ${st(4)}/><circle cy="-292" r="12" fill="#ffd06b" ${st(4)}/><circle cx="-4" cy="-296" r="4" fill="#fff6d8"/><circle cy="-311" r="9" fill="none" stroke="#4a2e08" stroke-width="8"/><circle cy="-311" r="9" fill="none" stroke="#f0d27a" stroke-width="4"/></g>`;
+            let cracks = "";
+            for (let i = 0; i < 9; i++) {
+                let x = -110 + R() * 220, y = -190 + R() * 380;
+                const sx = x, sy = y, dir = R() * 6.283;
+                let d = `M${f(x)} ${f(y)}`, br = "";
+                for (let j = 0; j < 6; j++) {
+                    const a = dir + (R() - 0.5) * 1.6;
+                    x += Math.cos(a) * (16 + R() * 18); y += Math.sin(a) * (16 + R() * 18); d += ` L${f(x)} ${f(y)}`;
+                    if (j === 2) { let bx = x, by = y; br = ` M${f(bx)} ${f(by)}`; for (let q = 0; q < 3; q++) { const b = dir + 1.2 + (R() - 0.5); bx += Math.cos(b) * 14; by += Math.sin(b) * 14; br += ` L${f(bx)} ${f(by)}`; } }
+                }
+                cracks += `<path data-k="ck${i}" d="${d}${br}" fill="none" stroke="#fff6d8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="600" stroke-dashoffset="600" filter="url(#tv-rift-glw)"/>`;
+                G.cracks.push({ x: sx, y: sy, at: 7.0 + i * 0.2 });
+            }
+            const seal = `<g transform="translate(0 30)"><g data-k="seal"><circle r="60" fill="#7a3cff" opacity=".12"/><circle r="58" fill="none" stroke="#c49bff" stroke-width="3" filter="url(#tv-rift-glw)"/><circle r="48" fill="none" stroke="#e6d4ff" stroke-width="1.5" stroke-dasharray="6 5"/>` +
+                `<path d="${star5(0, 0, 47, 19)}" fill="none" stroke="#c49bff" stroke-width="2"/>${Array.from({ length: 8 }, (_, i) => `<path d="M0 -55 V-49" stroke="#efe2ff" stroke-width="2.5" transform="rotate(${i * 45 + 22})"/>`).join("")}</g></g>`;
+            const lock = `<g transform="translate(0 40)"><g data-k="lock"><g data-k="lockSh"><path d="M-16 -8 V-26 a16 16 0 0 1 32 0 V-8" fill="none" stroke="#4a2e08" stroke-width="10"/><path d="M-16 -8 V-26 a16 16 0 0 1 32 0 V-8" fill="none" stroke="#c9c2d8" stroke-width="5"/></g>` +
+                `<rect x="-26" y="-10" width="52" height="44" rx="8" fill="#e0b552" stroke="#4a2e08" stroke-width="4"/><rect x="-20" y="-4" width="40" height="6" rx="3" fill="#fff3c4" opacity=".6"/><circle cy="10" r="6" fill="#2b1a08"/><path d="M-3 12 L0 24 L3 12Z" fill="#2b1a08"/>` +
+                `<path data-k="lockCk" d="M-22 -6 L-8 8 L-14 16 L4 30 M-8 8 L6 2" fill="none" stroke="#fff6d8" stroke-width="2.5" stroke-dasharray="90" stroke-dashoffset="90"/></g></g>`;
+            const prison = glow(D, "pglow", 0, 0, 340, "#ffd06b", 0.42) + chains + `<g data-k="backbars">${back}</g>` + angel + bands + fbars + base + finial +
+                `<g data-k="cracks">${cracks}</g>` + seal + lock + `<g data-k="inGlow" opacity="0">${glow(D, "ing", 0, 0, 320, "#fff3c4", 0.9)}</g>`;
+            // the tear it rips open: wide in the middle, every edge point a little different
             const tearPts = (() => {
                 const top = [], bot = [];
                 for (let i = 0; i <= 26; i++) {
@@ -1205,73 +1331,192 @@ const Travel = (() => {
             const column = (x, y, s, broken) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-60 0 L60 0 L36 54 L-6 40 L-40 66Z" fill="#3a2f5a" ${st(4)}/><rect x="-26" y="-180" width="52" height="180" fill="${D.lin("mar" + x, [[0, "#e6dcf6"], [1, "#a898c8"]], 0, 0, 1, 0)}" ${st(5)}/>${[-14, 0, 14].map(dx => `<path d="M${dx} -170 V-10" stroke="#8a7cae" stroke-width="2.5"/>`).join("")}<rect x="-36" y="-14" width="72" height="16" fill="#e8c66a" ${st(4)}/>${broken ? `<path d="M-26 -180 L-10 -206 L4 -186 L26 -214 L26 -180Z" fill="#e6dcf6" ${st(4)}/>` : `<rect x="-38" y="-198" width="76" height="20" fill="#e6dcf6" ${st(5)}/>`}</g>`;
             rw += `<g data-k="ruinsFar" opacity=".75">${column(220, 560, 0.7, true)}${column(1380, 520, 0.8, false)}${column(1100, 380, 0.45, true)}${column(460, 360, 0.4, false)}</g>`;
             rw += `<g data-k="plat"><path d="M500 780 L1100 780 L1040 860 L880 840 L760 900 L620 846 L540 870Z" fill="#3a2f5a" ${st(6)}/><rect x="500" y="752" width="600" height="32" rx="6" fill="${D.lin("plt", [[0, "#efe6ff"], [1, "#b8a8d8"]])}" ${st(6)}/>${Array.from({ length: 8 }, (_, i) => `<rect x="${514 + i * 72}" y="760" width="60" height="16" rx="3" fill="${i % 2 ? "#7a3cff" : "#e8c66a"}" opacity=".85"/>`).join("")}${column(560, 752, 0.55, true)}${column(1040, 752, 0.5, false)}</g>`;
-            return { back: `<g data-k="voidsp">${sp}<g data-k="void" transform="translate(800 450)">${vd}</g></g><g data-k="prison" opacity="0" transform="translate(800 470)">${prison}</g>${tear}<g data-k="riftw" opacity="0">${rw}</g>`, front: "" };
+            return { back: `<g data-k="voidsp">${sp}<g transform="translate(800 450)"><g data-k="bh">${bh}</g></g>${pin}${boom}</g><g data-k="prison" opacity="0" transform="translate(800 470)">${prison}</g>${tear}<g data-k="riftw" opacity="0">${rw}</g>`, front: "" };
         },
         frame(t, s) {
-            // 1. the Void collapses and bursts
-            const shrink = seg(t, 0.2, 1.8, inn);
-            s.set("void", `translate(800 450) rotate(${f(t * 140)}) scale(${(1 - shrink * 0.98).toFixed(3)} ${((1 - shrink * 0.98) * (1 + shrink * 0.6)).toFixed(3)})`);
+            const G = S.rift.geo, deg = 180 / Math.PI;
             for (let i = 0; i < 10; i++) s.setStyle("vt" + i, "opacity", 0.3 + 0.7 * Math.abs(Math.sin(t * 2 + i)));
-            if (t > 1.8 && !s.once("burst")) { s.flash("#ffffff", 0.95); s.shake(20); s.emit("ring", 3, [800, 450]); s.emit("gold", 50, [800, 450]); s.emit("spark", 30, [800, 450]); }
-            s.setStyle("void", "opacity", 1 - seg(t, 1.75, 1.9));
-            // 2. the prison it was holding shut
-            const appear = seg(t, 1.85, 2.5, back);
-            s.setStyle("prison", "opacity", seg(t, 1.85, 2.2) * (1 - seg(t, 6.9, 7.3)));
-            s.set("prison", `translate(800 ${f(470 + Math.sin(t * 1.4) * 6)}) scale(${(0.6 + 0.4 * appear).toFixed(3)})`);
-            // cracks run over the bars, the chains snap one by one
-            ["c0", "c1", "c2", "c3"].forEach((k, i) => s.setStyle(k, "strokeDashoffset", String(400 * (1 - seg(t, 2.6 + i * 0.3, 3.2 + i * 0.3)))));
-            [3.0, 3.4, 3.75, 4.05].forEach((at, i) => {
-                const d = Math.max(0, t - at), dir = [[-1, -1], [1, -1], [-1, 1], [1, 1]][i];
-                s.set("ch" + i, d > 0 ? `translate(${f(dir[0] * d * 260)} ${f(dir[1] * d * 160 + d * d * 300)}) rotate(${f(dir[0] * d * 50)})` : "");
-                s.setStyle("ch" + i, "opacity", 1 - seg(d, 0.2, 0.9));
-                if (t > at && !s.once("snap" + i)) { s.emit("spark", 22, [800 + dir[0] * 130, 470 + dir[1] * 120]); s.shake(8); s.flash("#ffe7a3", 0.25); }
+            // ---- 1. the black hole, alive, then collapsing
+            const swell = seg(t, 1.2, 1.6, out) * (1 - seg(t, 1.6, 1.9)), col = seg(t, 1.6, 3.6, inn), heat = seg(t, 1.4, 3.5);
+            const bs = (1 + swell * 0.12) * (1 - col * 0.985), alive = t < 3.6;
+            s.set("bh", `scale(${bs.toFixed(4)}) rotate(${f(Math.sin(t * 0.6) * 3 - 8)})`);
+            s.setStyle("bh", "opacity", alive ? 1 : 0);
+            s.hole(Math.max(4, 112 * bs));
+            const flow = t * 140 + col * col * 3200;
+            for (let i = 0; i < 8; i++) { const v = flow * (1.7 - i * 0.13); s.setStyle("dkb" + i, "strokeDashoffset", f(v)); s.setStyle("dkf" + i, "strokeDashoffset", f(-v)); }
+            s.setStyle("bhHot", "opacity", heat);
+            s.set("jets", `scale(${f(0.7 + Math.random() * 0.25 + heat * 0.8)} ${f(1 + heat * 0.7 + swell * 0.3)})`);
+            s.set("vface", `rotate(${f(t * 30 + col * col * 500)}) scale(${f(1 + swell * 0.15 - col * 0.5)})`);
+            s.setStyle("vface", "opacity", 0.5 * (1 - seg(t, 2.3, 3.1)) * (0.8 + Math.sin(t * 9) * 0.2));
+            s.setStyle("photon", "strokeWidth", f(3.5 + heat * 6));
+            s.set("stars", `translate(800 450) scale(${f(1 - col * 0.14)}) rotate(${f(col * col * 10)}) translate(-800 -450)`);
+            // stars and rocks spiral in, stretched (the rocks pulled long towards it)
+            G.ps.forEach((p, i) => {
+                const k = seg(t, p.t0, p.t1, inn), r = p.r * (1 - k), a = p.a + k * k * p.w;
+                s.set("ps" + i, `translate(${f(800 + Math.cos(a) * r)} ${f(450 + Math.sin(a) * r * 0.6)}) rotate(${f(a * deg + 90)}) scale(${f(1 + k * 5)} ${f(1 - k * 0.5)})`);
+                s.setStyle("ps" + i, "opacity", k < 0.96 ? 1 : 0);
             });
-            // 3. the cage shatters and the angel bursts out
-            const free = Math.max(0, t - 4.4);
-            s.setStyle("bars", "opacity", t < 4.4 ? 1 : 0);
-            for (let i = 0; i < 14; i++) {
-                const a = i / 14 * Math.PI * 2 + 0.3, v = 380 + (i % 4) * 90;
-                s.set("sh" + i, `translate(${f(Math.cos(a) * v * free)} ${f(Math.sin(a) * v * free + free * free * 260)}) rotate(${f(free * (200 + i * 40))})`);
-                s.setStyle("sh" + i, "opacity", free > 0 ? 1 - seg(free, 0.6, 1.4) : 0);
+            G.rocks.forEach((p, i) => {
+                const k = seg(t, p.t0, p.t1, inn), r = p.r * (1 - k), a = p.a + k * k * p.w;
+                s.set("rk" + i, `translate(${f(800 + Math.cos(a) * r)} ${f(450 + Math.sin(a) * r * 0.6)}) rotate(${f(a * deg)}) scale(${f(p.s * (1 + k * 2.6))} ${f(p.s * (1 - k * 0.55))}) rotate(${f(t * p.spin * (1 - k))})`);
+                s.setStyle("rk" + i, "opacity", k < 0.95 ? 1 : 0);
+            });
+            // the planet: pulled off course, stretched into a stream, and swallowed
+            {
+                const k = seg(t, 1.3, 3.25, inn), r0 = Math.hypot(500, 220 / 0.6), a0 = Math.atan2(-220 / 0.6, -500), r = r0 * (1 - k), a = a0 + k * 2.4;
+                const x = 800 + Math.cos(a) * r, y = 450 + Math.sin(a) * r * 0.6;
+                s.set("doom", `translate(${f(x)} ${f(y)}) rotate(${f(a * deg + 90)}) scale(${f(0.8 * (1 + k * 3))} ${f(0.8 * (1 - k * 0.65))})`);
+                s.setStyle("doom", "opacity", 1 - seg(k, 0.85, 0.98));
+                if (k > 0.05 && k < 0.92) s.emit("stream", 2, [x, y]);
             }
-            if (t > 4.4 && !s.once("shatter")) { s.flash("#fff6d8", 0.85); s.shake(26); s.emit("gold", 70, [800, 470]); s.emit("feather", 40, [800, 470]); s.emit("ring", 2, [800, 470]); }
-            const rise = seg(t, 4.4, 5.3, out), dash = seg(t, 5.9, 6.6, inn);
+            if (t < 3.5) { const rate = 0.5 + heat * 3; for (let n = 0; n < Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0); n++) s.emit("infall", 1, [800, 450]); if (Math.random() < 0.06 + heat * 0.2) s.emit("inrock", 1, [800, 450]); }
+            if (t > 1.6 && t < 3.6) s.shake(2 + col * 10);
+            if (t > 0.05 && !s.once("hum")) s.tone({ f: 46, f2: 42, d: 3.4, v: 0.07 });
+            if (t > 1.2 && !s.once("breath")) { s.tone({ f: 70, f2: 110, d: 0.4, v: 0.06, type: "triangle" }); s.emit("violet", 30, [800, 450]); }
+            if (t > 1.6 && !s.once("suck")) { s.tone({ f: 160, f2: 26, d: 2.0, v: 0.1, type: "triangle" }); s.tone({ f: 900, f2: 3000, d: 2.0, v: 0.012, type: "sine" }); }
+            // a moment of silence: one point of light
+            s.setStyle("pin", "opacity", seg(t, 3.4, 3.6) * (t < 3.95 ? 1 : 0));
+            s.set("pin", `translate(800 450) scale(${f(0.8 + Math.sin(t * 40) * 0.2 + seg(t, 3.8, 3.95) * 0.6)})`);
+            // ---- 2. it explodes
+            const ex = t - 3.95;
+            if (ex > 0 && !s.once("boom")) {
+                s.flash("#ffffff", 1); s.shake(36);
+                s.emit("shock", 3, [800, 450]); s.emit("blast", 46, [800, 450]); s.emit("gold", 70, [800, 450]); s.emit("spark", 60, [800, 450]); s.emit("violet", 50, [800, 450]); s.emit("flare", 1, [800, 450]);
+                s.tone({ f: 90, f2: 24, d: 2.4, v: 0.3 }); s.tone({ f: 420, f2: 60, d: 0.9, v: 0.07, type: "sawtooth" }); s.tone({ t: 0.05, f: 1600, f2: 400, d: 1.2, v: 0.02 });
+            }
+            s.set("nova", `scale(${f(0.05 + out(clamp(ex / 1.2)) * 3.4)})`);
+            s.setStyle("nova", "opacity", ex > 0 ? 1 - seg(ex, 0.3, 1.6) : 0);
+            s.set("rays", `rotate(${f(ex * 8)}) scale(${f(0.2 + out(clamp(ex / 0.5)))})`);
+            s.setStyle("rays", "opacity", ex > 0 ? seg(ex, 0, 0.15) * (1 - seg(ex, 0.8, 2.2)) : 0);
+            for (let i = 0; i < 3; i++) {
+                const k = clamp((ex - i * 0.12) / (1.1 + i * 0.3));
+                s.attr("sw" + i, "r", f(20 + out(k) * (1100 + i * 200))); s.attr("sw" + i, "stroke-width", f(26 * (1 - k) + 1));
+                s.setStyle("sw" + i, "opacity", ex > i * 0.12 && k < 1 ? 1 - k : 0);
+            }
+            { const k = clamp(ex / 0.9), rx = 20 + out(k) * 1500; s.attr("swd", "rx", f(rx)); s.attr("swd", "ry", f(rx * 0.2)); s.attr("swd", "stroke-width", f(16 * (1 - k) + 1)); s.setStyle("swd", "opacity", ex > 0 && k < 1 ? 1 - k : 0); }
+            s.set("neb", `rotate(${f(Math.max(0, ex) * 3)}) scale(${f(0.25 + out(clamp(ex / 2.5)) * 0.9)})`);
+            s.setStyle("neb", "opacity", ex > 0 ? seg(ex, 0.1, 1.2) * 0.95 - seg(ex, 1.8, 3.5) * 0.3 : 0);
+            // ---- 3. the prison in the nebula's heart
+            const lurch = Math.sin(seg(t, 8.75, 9.2) * Math.PI) * 18;
+            const py = 470 + Math.sin(t * 1.4) * 6 + lurch, psc = lerp(0.72, 1, seg(t, 4.5, 5.6, back));
+            const wp = (x, y) => [800 + x * psc, py + y * psc];
+            s.setStyle("prison", "opacity", seg(t, 4.5, 5.3) * (1 - seg(t, 11.8, 12.4)));
+            s.set("prison", `translate(800 ${f(py)}) scale(${psc.toFixed(3)})`);
+            const power = seg(t, 5.8, 9.4), fr = Math.max(0, t - 9.4), broke = t >= 9.4;
+            s.setStyle("aura", "opacity", Math.min(1, 0.35 + power * 0.65 + Math.sin(t * (4 + power * 14)) * 0.12));
+            s.set("aura", `scale(${f(0.8 + power * 0.6 + Math.sin(t * 6) * 0.04)})`);
+            // the runes on the bands flicker and go out, one by one
+            G.runes.forEach((r, i) => {
+                const d = t - r.at;
+                s.setStyle("rn" + i, "opacity", d < -0.3 ? 0.95 : d < 0 ? (Math.random() < 0.5 ? 0.2 : 1) : 0.1);
+                if (d > 0 && !s.once("rune" + i)) { s.emit("violet", 6, wp(r.x, r.y)); if (i % 4 === 0) s.tone({ f: 1300 - i * 30, f2: 500, d: 0.18, v: 0.02 }); }
+            });
+            // the seal shatters, the padlock cracks and falls apart
+            { const d = t - 6.55; s.set("seal", d < 0 ? `rotate(${f(t * 25)})` : `rotate(${f(t * 25)}) scale(${f(1 + d * 2.5)})`); s.setStyle("seal", "opacity", d < 0 ? (t > 6.2 && Math.random() < 0.4 ? 0.3 : 0.95) : 1 - seg(d, 0, 0.35)); }
+            if (t > 6.55 && !s.once("seal")) { s.emit("violet", 34, wp(0, 30)); s.emit("ring", 1, wp(0, 30)); s.flash("#c49bff", 0.25); s.tone({ f: 1800, f2: 900, d: 0.5, v: 0.03 }); }
+            s.setStyle("lockCk", "strokeDashoffset", f(90 * (1 - seg(t, 6.65, 6.9))));
+            { const d = Math.max(0, t - 6.95); s.set("lock", d ? `translate(0 ${f(40 * d + 900 * d * d)}) rotate(${f(d * 160)})` : ""); s.set("lockSh", d ? `translate(${f(d * 80)} ${f(-d * 300 + d * d * 600)}) rotate(${f(-d * 300)})` : ""); s.setStyle("lock", "opacity", 1 - seg(d, 0.8, 1.2)); }
+            if (t > 6.95 && !s.once("lock")) { s.emit("spark", 20, wp(0, 40)); s.shake(6); s.tone({ f: 900, f2: 300, d: 0.25, v: 0.05, type: "triangle" }); }
+            // cracks run over the cage, light leaking through
+            G.cracks.forEach((c, i) => {
+                s.setStyle("ck" + i, "strokeDashoffset", f(600 * (1 - seg(t, c.at, c.at + 0.5))));
+                if (t > c.at && !s.once("ck" + i)) { s.emit("gold", 6, wp(c.x, c.y)); s.tone({ f: 2400, f2: 1100, d: 0.09, v: 0.015, type: "triangle" }); }
+            });
+            s.setStyle("cracks", "opacity", broke ? 0 : 1);
+            s.setStyle("inGlow", "opacity", broke ? 0.9 * (1 - seg(fr, 0, 0.8)) : seg(t, 7.0, 9.4) * 0.55);
+            // the chains strain, then snap one at a time: the far end whips away, the near end swings down and dangles
+            G.chains.forEach((c, i) => {
+                const d = t - c.at, top = i === 4;
+                if (d < 0) {
+                    const j = d > -0.5 ? 2.2 : 0;
+                    s.set("ci" + i, j ? `translate(${f(rnd(-j, j))} ${f(rnd(-j, j))})` : ""); s.set("co" + i, j ? `translate(${f(rnd(-j, j))} ${f(rnd(-j, j))})` : "");
+                    return;
+                }
+                const len = Math.hypot(c.fx - c.bx, c.fy - c.by), ux = (c.fx - c.bx) / len, uy = (c.fy - c.by) / len;
+                s.set("co" + i, `translate(${f(ux * d * 900)} ${f(uy * d * 900)})`); s.setStyle("co" + i, "opacity", 1 - seg(d, 0.25, 0.7));
+                const fall = broke ? `translate(0 ${f(900 * fr * fr)}) ` : "";
+                if (top) s.set("ci" + i, `translate(0 ${f(260 * d * d + (broke ? 900 * fr * fr : 0))})`);
+                else {
+                    let diff = 90 - c.a0; diff = ((diff + 540) % 360) - 180;
+                    s.set("ci" + i, `${fall}rotate(${f(diff * (1 - Math.exp(-2.5 * d) * Math.cos(7 * d)))} ${c.ax} ${c.ay})`);
+                }
+                s.setStyle("ci" + i, "opacity", top ? 1 - seg(d, 0.4, 0.8) : 1 - seg(fr, 0.6, 1.1));
+                if (!s.once("snap" + i)) {
+                    const bp = wp(c.bx, c.by);
+                    s.emit("link", 6, bp); s.emit("spark", 26, bp); s.emit("flare", 1, bp); s.shake(10); s.flash("#ffe7a3", 0.22);
+                    s.tone({ f: 1500, f2: 400, d: 0.22, v: 0.05, type: "triangle" }); s.tone({ f: 180, f2: 90, d: 0.35, v: 0.07, type: "sawtooth" });
+                }
+            });
+            // the bars bow out and creak, then the cage bursts and every piece flies
+            const bulge = seg(t, 8.3, 9.35, inn);
+            [8.5, 8.9, 9.2].forEach((at, i) => { if (t > at && !s.once("creak" + i)) { s.shake(6 + i * 3); s.tone({ f: 72 - i * 6, f2: 54, d: 0.45, v: 0.07, type: "sawtooth" }); s.emit("gold", 10, wp(rnd(-120, 120), rnd(-150, 170))); } });
+            [-128, -96, -64, -32, 0, 32, 64, 96, 128].forEach((x, i) => {
+                if (!broke) { const j = bulge * 2.5; s.set("fb" + i, `translate(${f(x / 128 * bulge * 26 + rnd(-j, j))} ${f(rnd(-j, j))})`); return; }
+                const v = G.barV[i];
+                s.set("fb" + i, `translate(${f(v.vx * fr)} ${f(v.vy * fr + 700 * fr * fr)}) rotate(${f(v.spin * fr)} ${x} 0)`); s.setStyle("fb" + i, "opacity", 1 - seg(fr, 0.9, 1.5));
+            });
+            for (let j = 0; j < 4; j++) {
+                const v = G.bandV[j];
+                s.set("bd" + j, broke ? `translate(${f(v.vx * fr)} ${f(v.vy * fr + 700 * fr * fr)}) rotate(${f(v.spin * fr)})` : `scale(${f(1 + bulge * 0.2)} 1)`);
+                s.setStyle("bd" + j, "opacity", 1 - seg(fr, 0.9, 1.5));
+            }
+            s.set("backbars", `scale(${f(1 + bulge * 0.18)} 1)`); s.setStyle("backbars", "opacity", broke ? 1 - seg(fr, 0, 0.2) : 1);
+            s.set("base", broke ? `translate(0 ${f(200 * fr + 800 * fr * fr)}) rotate(${f(fr * 20)})` : ""); s.setStyle("base", "opacity", 1 - seg(fr, 0.8, 1.3));
+            s.set("finial", broke ? `translate(0 ${f(-900 * fr + 700 * fr * fr)}) rotate(${f(fr * 400)} 0 -280)` : ""); s.setStyle("finial", "opacity", 1 - seg(fr, 0.8, 1.3));
+            if (broke && !s.once("shatter")) {
+                const o = wp(0, 0);
+                s.flash("#fff6d8", 0.9); s.shake(30);
+                s.emit("shard", 60, o); s.emit("gold", 60, o); s.emit("feather", 40, o); s.emit("shock", 2, o); s.emit("spark", 40, o); s.emit("flare", 1, o);
+                s.tone({ f: 110, f2: 32, d: 1.4, v: 0.24 }); s.tone({ f: 2200, f2: 900, d: 0.5, v: 0.03 }); s.tone({ t: 0.08, f: 1700, f2: 700, d: 0.4, v: 0.025 });
+            }
+            // ---- 4. the angel rises, unfolds its wings and beats them once
+            const rise = seg(t, 9.5, 10.5, out), dash = seg(t, 11.4, 12.05, inn), strain = t > 8.3 && t < 9.4 ? bulge * 3 : 0;
             const ay = lerp(lerp(0, -150, rise), -300, dash), asc = (0.95 + rise * 0.35) * (1 - dash * 0.85);
-            s.set("angel", `translate(0 ${f(ay)}) scale(${asc.toFixed(3)})`);
-            s.setStyle("angel", "opacity", 1 - seg(t, 6.4, 6.7));
-            // 4. it slashes the sky open
-            const op = seg(t, 5.1, 5.8, back);
+            s.set("angel", `translate(${f(rnd(-strain, strain))} ${f(ay + rnd(-strain, strain))}) scale(${asc.toFixed(3)})`);
+            s.setStyle("angel", "opacity", 1 - seg(t, 11.9, 12.2));
+            const u = seg(t, 9.6, 10.4, back), beat = Math.sin(seg(t, 10.4, 11.0) * Math.PI * 2);
+            s.set("wings", `scale(${Math.max(0.001, Math.min(1.08, u)).toFixed(3)})`);
+            const wr = `rotate(${f(lerp(70, 0, clamp(u)) + beat * 14)}) scale(${f(lerp(0.35, 1, clamp(u)))} ${f(1 - Math.abs(beat) * 0.12)})`;
+            s.set("wL", wr); s.set("wR", wr);
+            if (t > 10.4 && !s.once("wings")) { s.emit("feather", 30, wp(0, ay - 30)); s.tone({ f: 300, f2: 140, d: 0.5, v: 0.05 }); }
+            // ---- 5. it slashes the sky open
+            const op = seg(t, 10.6, 11.3, back);
             s.set("tear", `translate(800 170) scale(${(0.4 + 0.6 * op).toFixed(3)} ${(op * (1 + Math.sin(t * 5) * 0.04)).toFixed(3)})`);
-            s.setStyle("tear", "opacity", 1 - seg(t, 7.3, 7.5));
-            if (t > 5.1 && !s.once("slash")) { s.flash("#ffd06b", 0.5); s.shake(12); s.emit("gold", 40, [800, 170]); }
-            if (t > 5.2 && t < 7.2 && Math.random() < 0.5) s.emit("gold", 1, [800 + rnd(-480, 480), 170 + rnd(-40, 40)]);
-            // 5. the hero leaps after it into the tear, and comes out on the other side
-            if (t >= 6.1 && t < 7.3) {
-                const k = seg(t, 6.1, 7.2);
+            s.setStyle("tear", "opacity", 1 - seg(t, 12.8, 13.0));
+            if (t > 10.6 && !s.once("slash")) { s.flash("#ffd06b", 0.5); s.shake(12); s.emit("gold", 40, [800, 170]); s.tone({ f: 300, f2: 1200, d: 0.5, v: 0.05 }); }
+            if (t > 10.7 && t < 12.7 && Math.random() < 0.5) s.emit("gold", 1, [800 + rnd(-480, 480), 170 + rnd(-40, 40)]);
+            // ---- 6. the hero leaps after it into the tear, and comes out on the other side
+            if (t >= 11.6 && t < 12.8) {
+                const k = seg(t, 11.6, 12.7);
                 s.hero(lerp(260, 800, k), lerp(980, 190, out(k)) - Math.sin(k * Math.PI) * 140, lerp(1.1, 0.25, k), lerp(-10, 20, k), 1, 1);
-            } else if (t < 6.1) s.hero(-400, 1300, 1, 0, 1, 0);
-            const dive = seg(t, 6.8, 7.35, inn);
-            if (t > 7.3 && !s.once("through")) { s.flash("#ffffff", 1); s.shake(10); }
-            const there = t >= 7.35;
+            } else if (t < 11.6) s.hero(-400, 1300, 1, 0, 1, 0);
+            const dive = seg(t, 12.3, 12.85, inn);
+            if (t > 12.8 && !s.once("through")) { s.flash("#ffffff", 1); s.shake(10); }
+            const there = t >= 12.85;
             s.setStyle("voidsp", "opacity", there ? 0 : 1);
             s.setStyle("riftw", "opacity", there ? 1 : 0);
-            if (!there) s.cam(lerp(800, 800, dive), lerp(450, 180, dive), 1 + dive * 2.6, 0);
-            else {
+            if (!there) {
+                let cy = 450, cz, cr = 0;
+                if (t < 3.95) { cz = lerp(1.02, 1.38, seg(t, 0, 3.7, inn)); cr = Math.sin(t * 0.8) * 1.5 + col * 4; }
+                else if (t < 9.4) { cz = t < 4.6 ? lerp(1.38, 0.96, seg(t, 3.95, 4.6, out)) : lerp(0.96, 1.2, seg(t, 4.6, 9.3)); cy = lerp(450, 470, seg(t, 3.95, 5.5)); }
+                else { cz = lerp(1.2, 1.0, seg(t, 9.4, 10.6, out)); cy = lerp(470, 330, seg(t, 9.6, 11.3)); }
+                s.cam(800, lerp(cy, 180, dive), cz * (1 + dive * 2.6), cr * (1 - dive));
+            } else {
                 // floating down onto the ruined platform, feathers drifting all around
-                const fall = seg(t, 7.4, 9.0, k => k * k * (3 - 2 * k));
+                const fall = seg(t, 12.9, 14.5, k => k * k * (3 - 2 * k));
                 const y = lerp(-120, 752, fall), sway = Math.sin(t * 3) * 30 * (1 - fall);
-                s.hero(800 + sway, y, 1.05, Math.sin(t * 3) * 8 * (1 - fall), 1, 1, t > 9.0 && t < 9.2 ? 0.88 : 1);
+                s.hero(800 + sway, y, 1.05, Math.sin(t * 3) * 8 * (1 - fall), 1, 1, t > 14.5 && t < 14.7 ? 0.88 : 1);
                 s.shadow(800, 756, 1.05, 0.3 * fall);
-                if (t > 9.0 && !s.once("land")) { s.emit("dust", 26, [800, 752]); s.emit("ring", 1, [800, 756]); s.emit("gold", 20, [800, 740]); s.shake(6); }
+                if (t > 14.5 && !s.once("land")) { s.emit("dust", 26, [800, 752]); s.emit("ring", 1, [800, 756]); s.emit("gold", 20, [800, 740]); s.shake(6); }
                 if (Math.random() < 0.3) s.emit("feather", 1, [rnd(0, W), -30]);
                 if (Math.random() < 0.25) s.emit("gold", 1, [rnd(200, 1400), rnd(500, 880)]);
                 s.set("plat", `translate(0 ${f(Math.sin(t * 1.2) * 6)})`);
                 s.set("ruinsFar", `translate(${f(Math.sin(t * 0.4) * 10)} ${f(Math.sin(t * 0.7) * 8)})`);
                 s.set("isA", `translate(240 ${f(340 + Math.sin(t * 0.8) * 10)}) scale(.55)`); s.set("isB", `translate(1260 ${f(300 + Math.sin(t * 0.6 + 1) * 8)}) scale(.42)`);
-                s.set("bigfeather", `translate(${f(Math.sin(t * 0.5) * 30)} ${f((t - 7.4) * 40)}) rotate(${f(Math.sin(t * 0.7) * 8)} 1290 420)`);
-                s.cam(800, lerp(420, 470, seg(t, 7.4, 9.4)), lerp(1.25, 1.05, seg(t, 7.4, 9.0)), Math.sin(t * 0.7) * 1.2);
+                s.set("bigfeather", `translate(${f(Math.sin(t * 0.5) * 30)} ${f((t - 12.9) * 40)}) rotate(${f(Math.sin(t * 0.7) * 8)} 1290 420)`);
+                s.cam(800, lerp(420, 470, seg(t, 12.9, 14.9)), lerp(1.25, 1.05, seg(t, 12.9, 14.5)), Math.sin(t * 0.7) * 1.2);
             }
-            s.tint("#14062e", seg(t, 0, 1.8) * 0.2 * (there ? 0 : 1));
+            s.tint("#000", there || t >= 3.95 ? 0 : 0.08 + col * 0.45);
         }
     };
 
@@ -1293,6 +1538,8 @@ const Travel = (() => {
     const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     function particles(cv) {
         const ctx = cv.getContext("2d"), list = [];
+        let hole = 100;                    // particles spiralling into the rift's black hole vanish inside this radius
+        const rockPts = () => Array.from({ length: 7 }, (_, j) => { const b = j / 7 * 6.283, q = rnd(0.7, 1.1); return [Math.cos(b) * q, Math.sin(b) * q]; });
         const P = (o) => list.push(Object.assign({ age: 0, rot: rnd(0, 6), vr: rnd(-6, 6), trail: null, floor: null }, o));
         const emit = (kind, n, [x, y]) => {
             for (let i = 0; i < n; i++) {
@@ -1335,6 +1582,16 @@ const Travel = (() => {
                     case "balloon": P({ ...base, vx: rnd(-20, 20), vy: -rnd(60, 110), g: 0, life: 10, r: rnd(16, 22), c: pal(["#ff5c7a", "#ffd23f", "#5fd4c4", "#b48cff"]), sw: rnd(0, 6) }); break;
                     case "ring": P({ ...base, vx: 0, vy: 0, g: 0, life: 0.7 + i * 0.2, r: 10, grow: 220 + i * 120, c: "#ffffff" }); break;
                     case "ripple": P({ ...base, kind: "ring", vx: 0, vy: 0, g: 0, life: 0.7, r: 3, grow: rnd(30, 60), c: "#bcd6ff" }); break;
+                    // the rift's black hole: dust and rocks spiralling in (orbit), a planet's stream, and its explosion
+                    case "infall": P({ ...base, orbit: { cx: x, cy: y, ang: rnd(0, 6.283), rad: rnd(420, 950), flat: 0.5, w: rnd(500, 900), fall: rnd(40, 110), acc: rnd(150, 300) }, life: 8, r: rnd(1.6, 3.4), c: pal(["#c49bff", "#ffe7a3", "#ff9fe8", "#ffffff", "#9b6bff"]), trail: [] }); break;
+                    case "inrock": P({ ...base, kind: "rock", orbit: { cx: x, cy: y, ang: rnd(0, 6.283), rad: rnd(500, 900), flat: 0.5, w: rnd(400, 700), fall: rnd(40, 90), acc: rnd(120, 220) }, life: 8, r: rnd(5, 11), vr: rnd(-4, 4), c: pal(["#4a3d63", "#5a4a78"]), pts: rockPts() }); break;
+                    case "stream": { const dx = x - 800, dy = (y - 450) / 0.6; P({ ...base, kind: "spark", orbit: { cx: 800, cy: 450, ang: Math.atan2(dy, dx) + rnd(-0.05, 0.05), rad: Math.hypot(dx, dy) + rnd(-14, 14), flat: 0.6, w: rnd(700, 900), fall: rnd(200, 300), acc: 400 }, life: 6, r: rnd(2, 4), c: pal(["#7ad7ff", "#3fbf5f", "#bfe8ff", "#ffffff"]), trail: [] }); break; }
+                    case "blast": P({ ...base, kind: "rock", vx: Math.cos(a) * rnd(300, 1300), vy: Math.sin(a) * rnd(300, 1300) * 0.7, g: 0, drag: 0.35, life: rnd(1.4, 2.4), r: rnd(6, 16), vr: rnd(-8, 8), c: pal(["#4a3a68", "#6a5a8a", "#3a2a50"]), pts: rockPts(), hot: true, trail: [], tc: "#ffb86b" }); break;
+                    case "shard": P({ ...base, vx: Math.cos(a) * rnd(250, 900), vy: Math.sin(a) * rnd(250, 900) - 200, g: 700, drag: 0.6, life: rnd(1.2, 2.2), r: rnd(6, 14), vr: rnd(-14, 14), c: pal(["#e0b552", "#f0d27a", "#fff3c4", "#c9902f"]) }); break;
+                    case "link": P({ ...base, vx: rnd(-300, 300), vy: -rnd(100, 500), g: 1100, life: rnd(1, 1.6), r: rnd(8, 12), vr: rnd(-12, 12), c: "#f0d27a" }); break;
+                    case "shock": P({ ...base, vx: 0, vy: 0, g: 0, life: 0.9 + i * 0.35, r: 20, grow: 900 + i * 400, c: ["#ffffff", "#ffe7a3", "#c49bff"][i % 3] }); break;
+                    case "flare": P({ ...base, vx: 0, vy: 0, g: 0, life: 0.45, r: rnd(90, 140), c: "#fff3c4" }); break;
+                    case "violet": P({ ...base, kind: "sparkle", g: 60, life: rnd(0.6, 1.2), r: rnd(4, 9), c: pal(["#c49bff", "#e6d4ff", "#9b6bff"]) }); break;
                     case "firework": P({ ...base, kind: "rocket", vx: rnd(-40, 40), vy: -rnd(700, 900), g: 300, life: rnd(0.9, 1.3), r: 4, c: pal(["#ff5c7a", "#ffd23f", "#5ff2ff", "#b48cff", "#7dff6b"]), trail: [], y: y }); break;
                     default: P(base);
                 }
@@ -1353,7 +1610,16 @@ const Travel = (() => {
                 const p = list[i];
                 p.age += dt;
                 if (p.age > p.life) { if (p.kind === "rocket") burst(p); list.splice(i, 1); continue; }
-                p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.vr * dt;
+                if (p.orbit) {                  // spiralling in: faster and faster as it falls, gone inside the hole
+                    const o = p.orbit;
+                    o.fall += o.acc * dt; o.rad -= o.fall * dt; o.ang += (o.w / Math.max(30, o.rad)) * dt;
+                    if (o.rad < hole) { list.splice(i, 1); continue; }
+                    p.x = o.cx + Math.cos(o.ang) * o.rad; p.y = o.cy + Math.sin(o.ang) * o.rad * o.flat;
+                } else {
+                    p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+                    if (p.drag) { const dr = Math.pow(p.drag, dt); p.vx *= dr; p.vy *= dr; }
+                }
+                p.rot += p.vr * dt;
                 if (p.sw != null) p.x += Math.sin(p.age * 2.4 + p.sw) * 40 * dt;
                 if (p.trail) { p.trail.push(p.x, p.y); if (p.trail.length > 16) p.trail.splice(0, 2); }
                 if (p.floor != null && p.y > p.floor) {        // rain hits the ground: a little splash
@@ -1365,7 +1631,7 @@ const Travel = (() => {
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, a);
                 if (p.trail && p.trail.length > 4) {
-                    ctx.strokeStyle = p.c; ctx.lineCap = "round"; ctx.lineWidth = p.r * 1.2; ctx.globalAlpha = Math.max(0, a) * 0.45;
+                    ctx.strokeStyle = p.tc || p.c; ctx.lineCap = "round"; ctx.lineWidth = p.r * 1.2; ctx.globalAlpha = Math.max(0, a) * 0.45;
                     ctx.beginPath(); for (let j = 0; j < p.trail.length; j += 2) (j ? ctx.lineTo : ctx.moveTo).call(ctx, p.trail[j], p.trail[j + 1]); ctx.stroke();
                     ctx.globalAlpha = Math.max(0, a);
                 }
@@ -1418,7 +1684,27 @@ const Travel = (() => {
                         if (p.kind === "sparkle") { ctx.rotate(p.rot * 0.3); ctx.fillStyle = "#fff"; ctx.beginPath(); for (let j = 0; j < 8; j++) { const b = j * Math.PI / 4, q = j % 2 ? p.r * 0.25 : p.r * 1.3; ctx.lineTo(Math.cos(b) * q, Math.sin(b) * q); } ctx.fill(); }
                         break;
                     }
-                    case "spark": case "ember": case "rocket": {
+                    case "rock":
+                        ctx.rotate(p.rot);
+                        if (p.hot) { ctx.globalCompositeOperation = "lighter"; ctx.drawImage(glowSprite("#ff9a6b"), -p.r * 2.2, -p.r * 2.2, p.r * 4.4, p.r * 4.4); ctx.globalCompositeOperation = "source-over"; }
+                        ctx.fillStyle = p.c; ctx.strokeStyle = INK; ctx.lineWidth = 1.5;
+                        ctx.beginPath(); p.pts.forEach(([u, v], j) => (j ? ctx.lineTo(u * p.r, v * p.r) : ctx.moveTo(u * p.r, v * p.r))); ctx.closePath(); ctx.fill(); ctx.stroke();
+                        ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.beginPath(); ctx.ellipse(-p.r * 0.25, -p.r * 0.3, p.r * 0.45, p.r * 0.25, -0.5, 0, 7); ctx.fill(); break;
+                    case "shard":
+                        ctx.rotate(p.rot); ctx.scale(Math.cos(p.age * 8 + p.r), 1);
+                        ctx.fillStyle = p.c; ctx.strokeStyle = "#5a3a0c"; ctx.lineWidth = 1.4;
+                        ctx.beginPath(); ctx.moveTo(0, -p.r); ctx.lineTo(p.r * 0.45, p.r * 0.2); ctx.lineTo(0, p.r * 0.9); ctx.lineTo(-p.r * 0.35, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+                        ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.beginPath(); ctx.moveTo(0, -p.r); ctx.lineTo(-p.r * 0.35, 0); ctx.stroke(); break;
+                    case "link":
+                        ctx.rotate(p.rot); ctx.lineWidth = 6; ctx.strokeStyle = "#5a3a0c"; ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r * 0.5, 0, 0, 7); ctx.stroke();
+                        ctx.lineWidth = 3; ctx.strokeStyle = p.c; ctx.stroke(); break;
+                    case "shock": {
+                        const r = p.r + p.grow * out(k);
+                        ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = p.c; ctx.globalAlpha = 0.55 * (1 - k); ctx.lineWidth = 40 * (1 - k) + 2;
+                        ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.stroke();
+                        ctx.globalAlpha = Math.max(0, 1 - k); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke(); break;
+                    }
+                    case "spark": case "ember": case "rocket": case "infall": {
                         ctx.globalCompositeOperation = "lighter";
                         ctx.drawImage(glowSprite(p.c), -p.r * 4, -p.r * 4, p.r * 8, p.r * 8);
                         ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, p.r * 0.6, 0, 7); ctx.fill(); break;
@@ -1457,7 +1743,7 @@ const Travel = (() => {
                 ctx.restore();
             }
         };
-        return { emit, draw };
+        return { emit, draw, setHole: r => { hole = r; } };
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -1483,7 +1769,7 @@ const Travel = (() => {
         const k = {};
         el.querySelectorAll("[data-k]").forEach(n => { if (n.dataset.k) k[n.dataset.k] = n; });
         const fx = particles(cv);
-        const seen = new Set();
+        const seen = new Set(), stillMode = U.motion() === "still";
         const cam = { x: 800, y: 450, z: 1, r: 0 };
         let shake = 0, flash = 0, flashC = "#fff";
         let sketched = null;
@@ -1501,6 +1787,8 @@ const Travel = (() => {
             flash: (col, a) => { flashC = col; flash = Math.max(flash, a); },
             emit: (kind, n, at) => fx.emit(kind, n, at),
             once: key => (seen.has(key) ? true : (seen.add(key), false)),
+            hole: r => fx.setHole(r),
+            tone: o => { if (!stillMode && typeof Sound !== "undefined") Sound.tone(o); },     // (a still scene would play them all at once)
             tint: (color, a) => { k.tint.setAttribute("fill", color); k.tint.style.opacity = String(a); },
             sketch: (draw, fill) => {
                 if (!sketched) {

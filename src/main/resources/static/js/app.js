@@ -301,6 +301,29 @@ const App = (() => {
         else location.hash = "#daily";
     });
     $("#replay-intro").addEventListener("click", () => intro(true));
+
+    // Zoom (the user, 2026-10-14: "zoom out making everything smaller allowing for more clues on the screen"; not on
+    // phones). CSS zoom on #app (the top bar and the page): it lays the page out again smaller, so more fits. The world's
+    // background, the effects and pop-ups are outside #app and stay full-screen. It's applied when the slider is let go
+    // (the generic form handler saves it); while dragging only the number changes, so the slider doesn't shrink under
+    // the mouse.
+    const ZOOM_MIN = 0.6;
+    const zoomQuery = matchMedia("(pointer: fine) and (min-width: 760px)");       // a mouse or trackpad on a screen this wide
+    function applyZoom() {
+        const z = zoomQuery.matches ? U.clamp(Settings.get("zoom") ?? 1, ZOOM_MIN, 1) : 1;
+        $("#app").style.zoom = z === 1 ? "" : String(z);
+        $("#zoom-card").hidden = !zoomQuery.matches;
+        const range = form.elements.zoom, pct = Math.round(z * 100);
+        if (document.activeElement !== range) range.value = pct;
+        $("#zoom-out").textContent = pct + "%";
+        $("#zoom-reset").disabled = pct === 100;
+        dispatchEvent(new Event("resize"));               // (canvases and layouts that measure the page measure it again)
+    }
+    form.elements.zoom.addEventListener("input", e => { $("#zoom-out").textContent = e.target.value + "%"; });
+    $("#zoom-reset").addEventListener("click", () => Settings.set("zoom", 1));
+    zoomQuery.addEventListener("change", applyZoom);
+    Settings.on(key => { if (key === "zoom") applyZoom(); });
+    applyZoom();
     // Reset: everything, or just the leaderboard or the campaign (the user, 2026-10-13)
     function eraseAndReload(remove) {
         Game.stopSaving();
@@ -338,19 +361,21 @@ const App = (() => {
     // Sound: every option (the user, 2026-10-10: the sound button should "open up all the sound options like boss
     // fight music and other sounds"). Built the same way in Settings > Sound and in the sound button's menu; both show
     // the same settings, so changing one moves the other (syncSound).
-    //   Sound (everything on or off) and Volume; Level Music (each campaign level's chill song), Boss Music (the boss
-    //   fights, the story, winning and losing) and Music Volume (both; the same setting as the sliders in a level and
-    //   in a boss fight); Effects Volume, Boss Fight Effects (the bosses' moves
-    //   and your abilities), Typing Sounds and Click Sounds.
+    // Laid out the user's way (2026-10-14): one Master Volume (with a mute button: the `sound` setting) for everything;
+    // Music: Level Music (each campaign level's chill song) and Boss Music (the boss fights, the story, winning and
+    // losing), sliders with no switches (0 = off; the same settings as the sliders in a level and in a boss fight);
+    // Effects: All Effects and Boss Fight Effects (the bosses' moves and your abilities), plus the Typing Sounds and
+    // Click Sounds switches. Sliders move in 1% steps and ignore the mouse wheel (it scrolls the page, as it should).
     // ---------------------------------------------------------------------------------------------
     const SOUND_GROUPS = [
-        { key: "all", rows: [["switch", "sound", "All Sound"], ["range", "volume", "Volume"]] },
-        { key: "music", head: "Music", rows: [["switch", "levelMusic", "Level Music"], ["switch", "bossMusic", "Boss Music"], ["range", "musicVolume", "Music Volume"]] },
-        { key: "fx", head: "Effects", rows: [["range", "fxVolume", "Effects Volume"], ["range", "bossFxVolume", "Boss Fight Effects"], ["switch", "typingSounds", "Typing Sounds"], ["switch", "clickSounds", "Click Sounds"]] }
+        { key: "all", rows: [["master", "volume", "Master Volume"]] },
+        { key: "music", head: "Music", rows: [["range", "levelMusicVolume", "Level Music"], ["range", "bossMusicVolume", "Boss Music"]] },
+        { key: "fx", head: "Effects", rows: [["range", "fxVolume", "All Effects"], ["range", "bossFxVolume", "Boss Fight Effects"], ["switch", "typingSounds", "Typing Sounds"], ["switch", "clickSounds", "Click Sounds"]] }
     ];
-    const SOUND_KEYS = new Set(SOUND_GROUPS.flatMap(g => g.rows.map(r => r[1])));
+    const SOUND_KEYS = new Set(["sound", ...SOUND_GROUPS.flatMap(g => g.rows.map(r => r[1]))]);
     const soundOn = key => Settings.get(key) !== false;              // the switches (older saves may not have the new ones)
     const level = key => Math.round(U.clamp(Settings.get(key) ?? 1, 0, 1) * 100);
+    const SPEAKER = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg>`;
     // a short sound at the new level when a slider is let go, so you hear what you picked
     const PREVIEW = {
         volume: () => Sound.play("word"),
@@ -373,24 +398,24 @@ const App = (() => {
                     });
                     group.appendChild(U.el("label", { class: "switch snd-row" + (key === "sound" ? " snd-master" : "") }, input, U.el("span", { class: "track" }), label));
                 } else {
-                    const input = U.el("input", { type: "range", min: "0", max: "100", step: "5", "data-skey": key });
+                    const input = U.el("input", { type: "range", min: "0", max: "100", step: "1", "data-skey": key, "aria-label": label });
                     const out = U.el("output", { "data-sout": key });
                     input.addEventListener("input", () => {
                         Settings.set(key, Number(input.value) / 100);
-                        // turning a volume up turns its sound back on
-                        if (Number(input.value) > 0 && key === "volume" && !Settings.get("sound")) Settings.set("sound", true);
-                        if (Number(input.value) > 0 && key === "musicVolume" && !soundOn("bossMusic") && !soundOn("levelMusic")) { Settings.set("bossMusic", true); Settings.set("levelMusic", true); }
+                        if (Number(input.value) > 0 && !Settings.get("sound")) Settings.set("sound", true);    // turning a volume up unmutes
                         syncSound();
                     });
                     input.addEventListener("change", () => { if (PREVIEW[key]) PREVIEW[key](); });
-                    const row = U.el("label", { class: "range snd-row" }, U.el("span", { class: "snd-label", text: label }), input, out);
-                    // the mouse wheel moves it too
-                    row.addEventListener("wheel", e => {
-                        e.preventDefault();
-                        input.value = U.clamp(Number(input.value) + (e.deltaY < 0 ? 5 : -5), 0, 100);
-                        input.dispatchEvent(new Event("input"));
-                    }, { passive: false });
-                    group.appendChild(row);
+                    const line = U.el("div", { class: "snd-line" });
+                    if (kind === "master") {                     // Master Volume's mute button: all sound off and on again
+                        const mute = U.el("button", { type: "button", class: "snd-mute", "data-smute": "1", "aria-label": "Mute all sound" });
+                        mute.innerHTML = SPEAKER;
+                        mute.addEventListener("click", () => { Settings.set("sound", !Settings.get("sound")); if (Settings.get("sound")) Sound.play("toggle", true); syncSound(); });
+                        line.appendChild(mute);
+                    }
+                    line.appendChild(input);
+                    group.appendChild(U.el("div", { class: "range snd-row" + (kind === "master" ? " snd-master" : "") },
+                        U.el("span", { class: "snd-label", text: label }), out, line));
                 }
             }
             box.appendChild(group);
@@ -400,13 +425,15 @@ const App = (() => {
     function syncSound() {
         for (const input of document.querySelectorAll("[data-skey]")) {
             const key = input.dataset.skey;
-            if (input.type === "checkbox") input.checked = key === "sound" ? !!Settings.get("sound") : soundOn(key);
+            if (input.type === "checkbox") input.checked = soundOn(key);
             else if (document.activeElement !== input) input.value = level(key);
         }
-        for (const out of document.querySelectorAll("[data-sout]")) out.textContent = level(out.dataset.sout) + "%";
-        // with all sound off the rest is dimmed (still changeable); the music volume dims with the music off
-        for (const g of document.querySelectorAll(".snd-group")) g.classList.toggle("dim", g.dataset.group !== "all" && !Settings.get("sound"));
-        for (const r of document.querySelectorAll('[data-skey="musicVolume"]')) r.closest(".snd-row").classList.toggle("dim", !soundOn("bossMusic") && !soundOn("levelMusic"));
+        const on = !!Settings.get("sound");
+        for (const out of document.querySelectorAll("[data-sout]")) { const v = level(out.dataset.sout); out.textContent = v === 0 || (!on && out.dataset.sout === "volume") ? "Off" : v + "%"; }
+        for (const b of document.querySelectorAll("[data-smute]")) { b.classList.toggle("off", !on); b.setAttribute("aria-pressed", String(!on)); b.title = on ? "Mute All Sound" : "Unmute"; }
+        // muted: everything below Master is dimmed (still changeable); a slider at 0 dims its own row
+        for (const g of document.querySelectorAll(".snd-group")) g.classList.toggle("dim", g.dataset.group !== "all" && !on);
+        for (const r of document.querySelectorAll(".snd-row.range")) { const i = r.querySelector("[data-skey]"); r.classList.toggle("zero", !!i && level(i.dataset.skey) === 0); }
     }
     soundControls($("#sound-controls"));
     soundControls($("#sound-pop-controls"));
@@ -503,6 +530,9 @@ const App = (() => {
         }
         return out + "</svg>";
     }
+    // the start screen's boss parade: a secret world's boss (the Cursed Angel) only once it's really unlocked
+    const paradeBosses = () => Bosses.list.filter(w => !(Worlds.byId[w] && Worlds.byId[w].secret)
+        || (typeof Campaign !== "undefined" && Campaign.secretEarned()));
 
     async function intro(force = false) {
         const box = $("#intro");
@@ -521,7 +551,7 @@ const App = (() => {
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <button type="button" class="intro-start">PRESS START</button>
             </div>
-            <div class="intro-bosses" aria-hidden="true">${typeof Bosses !== "undefined" ? Bosses.list.map((w, i) => `<span class="ib" style="--i:${i}">${Bosses.svg(w)}</span>`).join("") : ""}</div>
+            <div class="intro-bosses" aria-hidden="true">${typeof Bosses !== "undefined" ? paradeBosses().map((w, i) => `<span class="ib" style="--i:${i}">${Bosses.svg(w)}</span>`).join("") : ""}</div>
             <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;
         Mascot.away = true;
         await new Promise(resolve => {
@@ -597,6 +627,9 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     // Start
     // ---------------------------------------------------------------------------------------------
+    // a secret world picked while it was open for testing goes back to Classic until it's really unlocked
+    { const d = Worlds.byId[Settings.get("design")], plain = Worlds.list.find(w => w.plain);
+      if (d && d.secret && !Campaign.secretOpen() && plain) Settings.set("design", plain.id); }
     Worlds.use(Settings.get("design"));
     refreshWorldUI();
     drawTools();

@@ -33,10 +33,9 @@ class RiftTest {
     }
 
     @Test
-    void threeLevelsAndABoss() {
-        assertEquals(List.of(1, 2, 3, 5), Campaign.levels(rift()));
-        assertFalse(Campaign.hasLevel(rift(), 4));
-        assertTrue(Campaign.hasLevel(Campaign.section("space"), 4), "the other worlds keep their level 4");
+    void fourLevelsAndABossLikeEveryWorld() {
+        assertEquals(List.of(1, 2, 3, 4, 5), Campaign.levels(rift()));
+        assertTrue(Campaign.hasLevel(rift(), 4));
         assertEquals(7, Campaign.size(rift(), 1));
         assertEquals(9, Campaign.size(rift(), 2));
         assertEquals(9, Campaign.size(rift(), 5));
@@ -54,11 +53,11 @@ class RiftTest {
 
     @Test
     void itsLessonsAndTheMap() {
-        assertEquals(3, Lesson.COURSE.get("rift").size());
-        assertEquals("null", Lesson.json("rift", 4));
+        assertEquals(4, Lesson.COURSE.get("rift").size());
+        assertTrue(Lesson.json("rift", 4).contains("\"mixed\""), Lesson.json("rift", 4));
         assertTrue(Lesson.json("rift", 5).contains("\"review\""));
         String map = Campaign.mapJson();
-        assertTrue(map.contains("\"world\":\"rift\",\"secret\":true,\"levelList\":[1,2,3,5]"), map.substring(map.length() - 400));
+        assertTrue(map.contains("\"world\":\"rift\",\"secret\":true,\"levelList\":[1,2,3,4,5]"), map.substring(map.length() - 400));
         assertTrue(map.contains("\"levelList\":[1,2,3,4,5]"));
     }
 
@@ -87,6 +86,6 @@ class RiftTest {
             n++;
             for (int phase = 2; phase <= 5; phase++) { assertNotNull(PuzzleStore.poolPuzzle(PuzzleStore.poolPhaseName(rift(), phase), v), "phase " + phase); n++; }
         }
-        assertEquals(225, n);
+        assertEquals(250, n);
     }
 }

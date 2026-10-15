@@ -42,8 +42,8 @@ const Corruption = (() => {
     const STORE = "rift";
     const RATE_SHARE = 60, WORDS_SHARE = 70, WRONG = 0.9, CAST = 1.5, COUNTER = 2.5;
     // what the angel does in each level (level 1 knows four tricks, level 3 all six), and how often (seconds)
-    const KINDS = [["feather", "whisper", "glare", "chain"], ["feather", "whisper", "glare", "chain", "seal"], ["feather", "whisper", "glare", "chain", "seal", "dim"]];
-    const EVERY = [19, 16, 13];
+    const KINDS = [["feather", "whisper", "glare", "chain"], ["feather", "whisper", "glare", "chain", "seal"], ["feather", "whisper", "glare", "chain", "seal", "dim"], ["feather", "whisper", "glare", "chain", "seal", "dim"]];
+    const EVERY = [19, 17, 15, 13];
     const INFO = {
         feather: { name: "A Black Feather", tip: "Click the feather to catch it", cost: 5, ms: 8000 },
         whisper: { name: "The Angel Whispers", tip: "A false letter: click it away, don't type it", cost: 5, ms: 10000 },
@@ -53,8 +53,8 @@ const Corruption = (() => {
         dim: { name: "The Light Fades", tip: "Finish a word to bring the light back", cost: 4, ms: 9000 }
     };
     // its spells: which ones each level knows, how often (seconds), the warning, the clicks on the omen that stop one
-    const SPELLS = [["smite", "corrupt"], ["smite", "corrupt", "scramble"], ["smite", "corrupt", "scramble", "judgment"]];
-    const SPELL_EVERY = [30, 25, 20], WINDUP = [3.4, 3, 2.6], OMEN_HITS = [1, 2, 2], LANDED = 3;
+    const SPELLS = [["smite", "corrupt"], ["smite", "corrupt", "scramble"], ["smite", "corrupt", "scramble", "judgment"], ["smite", "corrupt", "scramble", "judgment"]];
+    const SPELL_EVERY = [30, 26, 23, 20], WINDUP = [3.4, 3.1, 2.8, 2.6], OMEN_HITS = [1, 2, 2, 2], LANDED = 3;
     const SPELL = {
         smite: { name: "Smite", tip: "Click the omen to stop it: it erases 3 letters" },
         corrupt: { name: "Corrupting Touch", tip: "Click the omen to stop it: it turns 3 right letters wrong" },
@@ -125,7 +125,7 @@ const Corruption = (() => {
     // ---- the angel's tricks ----
     const layer = () => document.querySelector(".board-wrap");
     function cast() {
-        const kinds = KINDS[s.level - 1] || KINDS[2], busy = new Set(s.tricks.map(t => t.kind));
+        const kinds = KINDS[s.level - 1] || KINDS[3], busy = new Set(s.tricks.map(t => t.kind));
         const free = kinds.filter(k => !busy.has(k) && can(k));
         if (!free.length) return;
         let kind = U.pick(free);
@@ -306,7 +306,7 @@ const Corruption = (() => {
         return lines.sort((a, b) => b.length - a.length)[0] || [];
     }
     function windUp() {
-        const kinds = SPELLS[s.level - 1] || SPELLS[2];
+        const kinds = SPELLS[s.level - 1] || SPELLS[3];
         const options = kinds.filter(k => k !== s.lastSpell).map(k => [k, aim(k)]).filter(([k, t]) => t.length >= (k === "scramble" ? 2 : 1));
         if (!options.length) return;
         const [kind, targets] = U.pick(options);
@@ -453,7 +453,7 @@ const Corruption = (() => {
         stopQuiet();
         const saved = U.store.get(STORE, null);
         const keep = saved && saved.key === key && String(saved.seed) === String(seed) && !g().solved;
-        s = { key, seed, level: U.clamp(level, 1, 3), value: keep ? saved.value : 0, peak: keep ? saved.peak : 0, rate: RATE_SHARE / Math.max(60, par), perWord: WORDS_SHARE / Math.max(4, entries),
+        s = { key, seed, level: U.clamp(level, 1, 4), value: keep ? saved.value : 0, peak: keep ? saved.peak : 0, rate: RATE_SHARE / Math.max(60, par), perWord: WORDS_SHARE / Math.max(4, entries),
             tricks: [], nextCast: 9, nextSpell: 16, seepAcc: 0, pending: null, lastSpell: null, lastSec: g().seconds, onLose, over: false, countered: 0, lastKind: null, warned: false, credited: new Set(), ready: false };
         const holder = bar.querySelector(".rw-angel");
         if (!holder.childNodes.length && typeof Bosses !== "undefined") holder.innerHTML = Bosses.inner("rift");

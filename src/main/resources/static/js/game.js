@@ -367,6 +367,7 @@ const Game = (() => {
     function restoreHit(row, col) {
         const k = row + "," + col, hit = hits.get(k);
         if (!hit || game.solved || isLocked(row, col) || game.letters[row][col] !== hit.ch) return false;
+        if (game.cells[row][col].classList.contains("bird-taken")) return false;    // an angel bird has it: only the bird gives it back
         hits.delete(k);
         game.letters[row][col] = hit.was;
         game.wrong[row][col] = false;
@@ -602,9 +603,16 @@ const Game = (() => {
     async function celebrate(info) {
         const w = Worlds.current, puzzle = game.puzzle;
         Mascot.hush();
-        if (info.campaign && info.campaign.boss) await FX.cinematic(c => Campaign.bossFinale(c, game));
-        if (w && w.celebrate) await FX.cinematic(c => w.celebrate(c, { boardEl, game, info }));
+        // the win animations follow the board while they play (FX.anchor)
+        const unanchor = FX.anchor(boardEl);
+        try {
+            if (info.campaign && info.campaign.boss) await FX.cinematic(c => Campaign.bossFinale(c, game));
+            if (w && w.celebrate) await FX.cinematic(c => w.celebrate(c, { boardEl, game, info }));
+        } finally { unanchor(); }
         if (info.campaign && info.campaign.boss && info.campaign.firstClear) await FX.cinematic(c => Campaign.storyAfterBoss(c, info));   // its page goes into the Everbook
+        // the Cursed Angel beaten for the first time: the story is over, so the credits roll after its epilogue
+        // (skipping the epilogue doesn't skip them: each has its own skip)
+        if (info.campaign && info.campaign.boss && info.campaign.firstClear && info.campaign.epilogue && game.puzzle === puzzle) await Credits.show({ ending: true });
         // they moved on to another puzzle or page during the animation: don't open these results over it
         // (they wait behind the board's Results button for when they come back)
         if (game.puzzle !== puzzle) return;

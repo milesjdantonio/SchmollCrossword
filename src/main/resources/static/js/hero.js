@@ -487,7 +487,9 @@ const Hero = (() => {
             };
             // the next part along that isn't locked (bosses not beaten yet keep theirs)
             const step = (key, list, d) => { const lock = lockOf(key); let v = cur[key]; for (let i = 0; i < list.length; i++) { v = (v + d + list.length) % list.length; if (!lock || !lock.has(v)) return v; } return cur[key]; };
-            const left = L.top.size + L.outfit.size + L.item.size;
+            // (the secret world's 3 gifts aren't counted until the Void is beaten: no spoilers)
+            const secretHidden = beaten && !beaten.includes("rift") && !(typeof Campaign !== "undefined" && Campaign.secretOpen());
+            const left = L.top.size + L.outfit.size + L.item.size - (secretHidden ? 3 : 0);
             const swatches = (label, key, list) => U.el("div", { class: "hm-row" }, U.el("small", { text: label }),
                 U.el("div", { class: "hm-swatches" }, ...list.map(c => U.el("button", { type: "button", class: "hm-swatch" + (cur[key] === c ? " on" : ""), style: { background: c }, "aria-label": `${label} ${c}`, onclick: () => set(key, c) }))));
             const nameIn = U.el("input", { type: "text", class: "hm-input", maxlength: "12", value: cur.name, "aria-label": "Name", autocomplete: "off", spellcheck: "false" });

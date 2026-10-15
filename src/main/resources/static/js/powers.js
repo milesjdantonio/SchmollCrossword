@@ -64,10 +64,11 @@ const Powers = (() => {
         blackhole: () => { T(900, 40, "sine", 0, 1.6, 0.25); T(1800, 60, "triangle", 0, 1.4, 0.05, { echo: 0.4 }); N(2000, 60, 0, 1.4, 0.2, { type: "lowpass" }); },
         reverse: () => { [84, 81, 77, 74, 72, 69, 65].forEach((n, i) => T(M(n), M(n) * 0.97, "triangle", i * 0.07, 0.12, 0.06, { echo: 0.2 })); T(1200, 200, "sine", 0, 0.6, 0.04); },
         wormhole: () => { for (let i = 0; i < 4; i++) T(200 + i * 100, 1600 - i * 200, "sine", i * 0.15, 0.4, 0.05, { echo: 0.5 }); T(60, 30, "sine", 0.5, 0.8, 0.2); },
-        // the Celestial Rift: star chimes joining up, a wish's rising shimmer, and fate rewound on a harp
+        // the Celestial Rift: star chimes joining up, a wish's rising shimmer, a clean light, and a choir
         constellation: () => { [84, 88, 91, 96, 100].forEach((n, i) => T(M(n), null, "sine", i * 0.11, 0.7, 0.045, { echo: 0.5 })); T(M(60), M(72), "triangle", 0, 0.9, 0.04); },
         wish: () => { T(400, 2400, "sine", 0, 0.9, 0.05, { echo: 0.5, vib: 8 }); [79, 86, 91, 98].forEach((n, i) => T(M(n), null, "triangle", 0.5 + i * 0.08, 0.5, 0.04, { echo: 0.4 })); },
-        fate: () => { [96, 93, 89, 86, 84, 81, 77, 74].forEach((n, i) => T(M(n), null, "triangle", i * 0.06, 0.35, 0.045, { echo: 0.35 })); Sound.chord(0.55, [62, 66, 69, 74], { type: "sine", d: 1.1, v: 0.03, echo: 0.4 }); }
+        purify: () => { Sound.chord(0, [64, 68, 71, 76], { type: "sine", d: 1.2, v: 0.03, echo: 0.45 }); [88, 92, 95, 100].forEach((n, i) => T(M(n), null, "triangle", 0.2 + i * 0.07, 0.4, 0.035, { echo: 0.3 })); },
+        chorus: () => { Sound.chord(0, [60, 64, 67, 72], { type: "sine", d: 1.8, v: 0.03, echo: 0.5 }); Sound.chord(0.45, [62, 65, 69, 74], { type: "sine", d: 1.6, v: 0.025, echo: 0.5 }); T(M(84), M(88), "sine", 0.2, 1.2, 0.02, { vib: 5 }); },
     };
     // every boss move's sound, when it lands on you (charge sounds are shared by kind of attack)
     const BSND = {
@@ -167,7 +168,7 @@ const Powers = (() => {
         sand: ["sand"], quicksand: ["goo", 0.7], check: ["question"], blind: ["punch"], hypno: ["pluck2"], crash: ["crunch"], chomp: ["retro"], cheat: ["retro2"],
         extralife: ["jingle-life"], autofill: ["click"], overclock: ["zap"], firewall: ["field2"], calm: ["back"], haunt: ["creak2"], ghost: ["page"], hot: ["thruster"],
         lavafloor: ["rumble2"], fireup: ["thruster2"], blackhole: ["engine"], reverse: ["rewind2"], wormhole: ["warp"],
-        constellation: ["chime"], wish: ["lucky", 1.2], fate: ["rewind2", 1.3] };
+        constellation: ["chime"], wish: ["lucky", 1.2], purify: ["chime", 1.3], chorus: ["bell", 1.2] };
     const BSMP = { rubout: ["scratch2"], crumple: ["page2"], thorns: ["knife"], petals: ["cloth4"], acorns: ["plank2"], sour: ["goo", 1.3], sticky: ["goo", 0.6],
         ink: ["punch2"], whirl: ["drop3"], freeze: ["ice2"], whiteout: ["snowstep2"], lightning: ["crunch2"], downpour: ["splash", 0.8], gale: ["sand", 1.3], twister: ["switch"],
         riddle: ["question2"], sandblast: ["step"], mirror: ["glass4"], confetti: ["punch", 1.4], glitch: ["glitch"], lag: ["glitch2"], lock: ["latch"], static: ["noise"],
@@ -200,7 +201,7 @@ const Powers = (() => {
         "arcade-cheat": 0.56, "arcade-chomp": 0.99, "arcade-extralife": 0.57, "candy-rush": 0.94,
         "carnival-cotton": 0.82, "carnival-pie": 0.77, "desert-mirage": 0.57, "garden-sun": 0.71,
         "paper-rub": 0.93, "paper-wall": 0.49, "rain-thunder": 0.53, "robot-firewall": 0.5, "sky-tailwind": 0.48,
-        "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53, "rift-constellation": 0.75, "rift-wish": 0.7, "rift-fate": 0.7
+        "space-blackhole": 0.3, "space-wormhole": 0.32, "volcano-lava": 0.53, "rift-constellation": 0.75, "rift-wish": 0.7, "rift-purify": 0.7, "rift-chorus": 0.65
     };
     // Still too loud (the user, 2026-10-11: "the fire abilities from the magma wyrm for example"): the measure above
     // weighs low notes down (K-weighting), so the rumbles (fire, lava, engines, quakes: low noise and the thruster
@@ -315,8 +316,12 @@ const Powers = (() => {
             { proj: null, aura: ["✨", "⭐"], motion: "spark", color: "#ffd06b", on: "me" }),
         A("rift", "wish", "Wish Upon a Star", "🌠", "wish", "Make a wish on the next word you write.", "The next word you finish knocks as many letters off the boss's board as it has letters.",
             { proj: null, aura: ["⭐", "✨"], motion: "rise", color: "#fff3c4", on: "me" }),
-        A("rift", "fate", "Rewrite Fate", "📜", "fate", "What was taken is written back.", "Puts back every letter on your board that the boss erased or changed.",
-            { proj: null, aura: ["✨", "💫"], motion: "swirl", color: "#c49bff", on: "me" })
+        // (Rewrite Fate, which put back what the boss erased, was replaced on 2026-10-14 at the user's request; the rift
+        // now has four, one for each of its four levels)
+        A("rift", "purify", "Purifying Light", "🕯️", "purify", "A clean light burns the mistakes out of your page.", "Up to 3 of your wrong letters turn into the right ones.",
+            { proj: null, aura: ["✨", "🕯️"], motion: "rise", color: "#fff1c4", on: "me" }),
+        A("rift", "chorus", "Angel Chorus", "🎶", "chorus", "A choir sings every right note back to you.", "For 20s, every right letter you type is sung into another square that needs the same letter (up to 6).",
+            { proj: null, aura: ["🎶", "✨"], motion: "orbit", color: "#ffd06b", on: "me" })
     ];
 
     // ---------------------------------------------------------------------------------------------
@@ -408,7 +413,7 @@ const Powers = (() => {
             // five more (the user, 2026-10-14: "5 more abilities ... one of them clears an entire column with an angelic beam")
             B("Seraph's Lance", "🔱", "lance", 2, "drives a beam of angelic light down a whole column, clearing it (it shows which one first)", { proj: "🔱", aura: ["✨", "⭐"], motion: "fall" }),
             B("Divine Decree", "⚜️", "decree", 12, "forbids the letter you need most: you can't type it", { proj: "⚜️", aura: ["✨", "📜"], motion: "pop" }),
-            B("Ascension", "🕊️", "ascend", 10, "lifts your letters: every 2 seconds one floats up a square, or off the board", { proj: null, aura: ["🕊️", "✨"], motion: "rise" }),
+            B("Ascension", "🕊️", "ascend", 10, "sends angel birds to carry off 5 of your letters (click a bird to get its letter back), and every 2 seconds another floats up", { proj: null, aura: ["🕊️", "✨"], motion: "rise" }),
             B("Trumpet Blast", "📯", "trumpet", 1, "blows a trumpet that scrambles the letters inside two of your unfinished words", { proj: "📯", aura: ["🎵", "✨"], motion: "spark" }),
             B("Penance", "⛓️", "penance", 12, "makes every wrong letter you type cost you one of your right ones", { proj: "⛓️", aura: ["⛓️", "✨"], motion: "orbit" })]
     };

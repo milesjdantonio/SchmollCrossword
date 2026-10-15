@@ -312,7 +312,7 @@ const Companions = (() => {
                 "If we win, I want to stay up here and keep watch again. Over everyone this time, not just one prisoner."
             ],
             levels: ["It's watching through the tear. Finish words fast, and swat its tricks away!", "Deeper in. The corruption is thicker here. Keep your light up.",
-                "Last stretch before the angel itself. It's going to try everything."],
+                "Long words up here. Long words, long shadows. I'll keep shining.", "Last stretch before the angel itself. It's going to try everything."],
             boss: { before: "There it is. The Cursed Angel. Watch for the rows its rays aim at, and don't let it take the book!", win: "It's over. Its light is out, and the rift is closing. Thank you. Truly.",
                 lose: "It took the board. But it hasn't taken the book. Again, together.", during: ["Its wings are shaking!", "Every word is light!", "Keep writing, it can't stand it!"] },
             idle: ["Twinkle. That's a star thing, sorry.", "I used to count the feathers. Then I ran out of numbers.", "If you're stuck, start where two words cross. Light gathers there."],
