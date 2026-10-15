@@ -685,10 +685,15 @@ const Campaign = (() => {
         if (level === 5) { fight = null; prefetchBoss(world); }   // a boss fight always starts from the beginning
         else { fight = null; hidePanel(); }                        // straight from a boss to a level: the boss panel goes
         Sound.play("start");
-        if (U.view() === "level") Game.show("level");
-        else location.hash = "#level";
+        enterLevel();
     }
 
+    // Into the level view. From inside a level (a new Unlimited Boss from its lose card, the next level) the hash
+    // doesn't change, so onView doesn't run: put on the level's world here, or the last one's scene, board and win stay
+    function enterLevel() {
+        if (U.view() === "level") { Worlds.use(data.playing.world); Game.show("level"); }
+        else location.hash = "#level";
+    }
     const slotName = () => !data.playing ? "campaign-none" : data.playing.special ? "special-" + data.playing.special : "campaign-" + keyOf(data.playing.world, data.playing.level);
     // Daily Boss / Unlimited Boss: a boss fight outside the campaign. data.playing.special
     // says which; it's that boss's own race (its moves, music and arena) at its campaign boss puzzle, one phase.
@@ -699,7 +704,7 @@ const Campaign = (() => {
         // a fight that's still going (you went back to the Daily or Unlimited page): carry on with it, so starting
         // over can't skip an attempt or refill the abilities. Giving up ends it.
         if (!rematch && fight && !fight.over && !fight.attemptCounted && special() === kind && fight.key === "sp-" + data.playing.sid && (kind !== "daily" || data.playing.date === dayStr())) {
-            if (U.view() === "level") Game.show("level"); else location.hash = "#level";
+            enterLevel();
             return;
         }
         await fetchMap().catch(() => null);
@@ -720,8 +725,7 @@ const Campaign = (() => {
         Sound.play("start");
         if (again) Game.restartSlot(slotName());          // the same puzzle, from a clean board
         else Game.forgetSlot(slotName());                 // a new boss (or today's, fetched again): a new copy of its puzzle
-        if (U.view() === "level") Game.show("level");
-        else location.hash = "#level";
+        enterLevel();
     }
     const specialUrl = () => { const p = data.playing; return p.special === "daily" ? `/api/boss?kind=daily&date=${p.date || dayStr()}` : `/api/boss?kind=unlimited&world=${encodeURIComponent(p.world)}`; };
     const backToMode = () => { const k = special(); location.hash = k === "daily" ? "#daily" : k === "unlimited" ? "#unlimited" : "#campaign"; };
