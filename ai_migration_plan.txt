@@ -1,0 +1,41 @@
+# AI Migration Plan: Fully Browser-Based Local Inference via WebLLM
+
+## 1. Model Architecture & Division of Labor
+We are moving away from cloud-based APIs (Haiku/Sonnet) to entirely browser-based local inference using WebLLM. 
+
+**The New Roster:**
+*   **Easy Clues:** Qwen 3 8B
+*   **Medium Clues:** Qwen 3 8B
+*   **Hard Clues:** Llama 3.1 8B (Specifically `Llama-3.1-8B-Instruct-q4f16_1-MLC`)
+*   **Challenge Clues:** Llama 3.1 8B
+*   **Boss Clues:** Llama 3.1 8B
+*   **Universal Reviewer (All Levels):** Llama 3.1 8B
+
+## 2. Prompt Engineering Updates
+Because we are transitioning to 8-billion parameter models (which are smaller than Sonnet 5), complex constraints like "Homographs in Disguise" will fail if prompted as a single block of text. 
+
+**Action Required:** Refactor the `buildPrompt` methods in `ClueWriter.java` to use a "Chain-of-Thought" or Step-by-Step structure. 
+
+*Example for Llama 3.1 8B Boss/Hard Prompts:*
+```
+This puzzle is a lesson on 'Homographs in Disguise'. Follow these instructions step-by-step:
+Step 1: Identify the most common, everyday meaning of the answer word.
+Step 2: Identify a secondary, less common meaning of the answer word.
+Step 3: Write a crossword clue that defines the LESS COMMON meaning identified in Step 2. Do not define the common meaning.
+Step 4: Ensure the clue is EXACTLY 8 words long. Count the words carefully.
+Step 5: Review the clue to ensure it does not contain the answer word.
+Step 6: Output ONLY the final 8-word clue for each answer.
+```
+
+## 3. Integration & Testing (WebLLM)
+*   **Engine Setup:** Utilize WebLLM (powered by Apache TVM and WebGPU) to load the quantized MLC models directly in the user's browser.
+*   **JSON Enforcement:** Do not rely on prompt-based JSON formatting. You MUST utilize WebLLM's native JSON Schema support (or Llama 3.1's JSON mode) to guarantee the model outputs a perfectly parseable JSON object.
+*   **Testing:** Test on a standard machine with 8GB-16GB RAM. Ensure Chrome/Edge/Firefox has WebGPU enabled. 
+
+## 4. Potential Issues & Mitigations
+*   **VRAM/Memory Limits:** 8B models push the boundaries of browser tab memory limits (typically 4GB-8GB). If users report browser crashes or "Out of Memory" errors on older devices, implement a fallback to smaller models like `Phi-3.5-mini-instruct-q4f16_1-MLC` (3.8B) or `Qwen2.5-3B`.
+*   **Infinite Retry Loops:** If Llama 3.1 8B fails the reviewer checks repeatedly, it may get stuck in a `findProblems()` loop. Implement a strict retry limit (e.g., max 3 attempts) before falling back to a safer, simpler prompt constraint.
+*   **Thermal Throttling:** Running LLMs locally via WebGPU will cause laptops to heat up. Keep batch generation small (e.g., 5 clues at a time).
+
+## 5. Architectural Reminder
+The desktop Java application (`schmoll.desktop`) handles ALL spatial logic, grid building, and duplicate removal. The AI should *never* be asked to build the interlocking grid. It only receives predetermined answers to generate semantic clues.
