@@ -53,6 +53,6 @@ Make proper error messages, for EVERYTHING. Error messages that even nontechnica
 
 Remove the /10 limit because we are changing to browser AI. Give a unlimited pre load option that allows the user to generate 5-10-25-50 puzzles for offline use or just not to wait, And for each one it generates all 5. Example: Selecting preload 5 will save to their browser an easy medium hard challenge and boss. The problem with this is for this to be worth it it has to work offline. If this is a problem tell me first. Pre load should have a progress bar and a time remaining estimation. No more than 50 saved on browser at one time 
 
-Make the classic world, theme/world button more recognizable so users know instantly how to change their design(especially dark mode )
+Make the classic world, theme/world button more recognizable so users know instantly how to change their design(especially dark mode) Make it go off of the system by default 
 
 make every world and winning animaton just as detailed as the celestial rift one 
