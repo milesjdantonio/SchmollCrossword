@@ -35,7 +35,7 @@ The leaderboard should not require last name
 
 In the daily and unlimited when the player selects reveal puzzle it should finish the puzzle in the background because it shows the answer
 
-Add a multiplayer mode(call it online and make it work through 8 digit codes)
+Add a multiplayer mode(call it online and make it work through 8 digit codes)(Format it like ____-____) Also for multiplayer make it so you can see everyones hero and how far they are(add cool animations) Make it a max of 10 players and it just shows a greyed out board, if its filled out reuse the red pulse thing below, this doesnt have to be perfect we'll refine it a lot though you will have to run test for this(prepare)
 
 Add a glowing red pulse that fades in and out around the board when the board is finished but has errors 
 Make the pop ups for skills(like what u learn in the level) and boss attacks be dismissable. Be able to click on it to dismiss 

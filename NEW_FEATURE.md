@@ -57,3 +57,5 @@ Why it fits: It gives players a reason to return, and you can build it around yo
 - A personal best time
 - One puzzle per day, separate from unlimited random puzzles
 Why it fits: Your puzzle bank can supply daily puzzles without an extra Claude API call for every player.
+
+Add a times up feature that just says, when it hits midnight and the player is in a daily, that its hit midnight and their progress no longer counts to the date, then give them a exit and continue prompt. Also make it so when a player hasnt reloaded to get the new dailies that it doesnt let them play and gives them a reload prompt instead
