@@ -209,16 +209,19 @@ Send a **daily operational summary email** to the configured developer contact w
 - Fit the items section on one row where the layout permits, with responsive behavior on narrow screens.
 - Remove the leaderboard's last-name requirement; collect only the information actually needed.
 - Verify achievement progress survives reloads and works across relevant game modes.
+- Change Boss Enrage to begin when the player is 50% more progress than the player
+- Make the boss phases reduce the cooldown off boss abilities, so at phase 3 - 5 its very chaotic (but keep it controlled)
 
 ### 5.2 Visual fixes and polish
 
-- Fix the background image stretching issue reported in Google Chrome while checking the currently working Vivaldi behavior.
+- Fix the background image stretching issue reported in Google Chrome while checking the currently working Vivaldi behavior. Review other browsers as well.
 - Remove the unwanted black background behind the space world's black hole.
 - Attach Celestial Rift background chains properly to the blocks beside them.
 - Make the Classic/world/theme control more recognizable so players can find it immediately.
 - Default theme selection to **System**, respecting light/dark system preference.
 - Make world and victory animations consistently detailed, using Celestial Rift as the reference quality level. Treat this as a large staged art/polish task rather than a single bug fix.
 - Add the glowing red pulse around a completed board that still contains errors; ensure it is clearly visible without being excessively thin or distracting.
+- Review Module Device's UI 
 
 ### 5.3 Audio fixes
 
