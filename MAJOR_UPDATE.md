@@ -211,6 +211,9 @@ Send a **daily operational summary email** to the configured developer contact w
 - Verify achievement progress survives reloads and works across relevant game modes.
 - Change Boss Enrage to begin when the player is 50% more progress than the player
 - Make the boss phases reduce the cooldown off boss abilities, so at phase 3 - 5 its very chaotic (but keep it controlled)
+- Add a Predicted Time to take for boss battles, for however how many phases and their average time on those types of puzzles, if they dont have a saved average time then just put an approximate average, also save how many phases the boss has before starting the boss
+- The Zoom doesnt do anything on screens already too small, Also make the default 50(but make 50 look like 100) so a player can soom in further as well
+- Make sure letters are visible when typing them, several worlds remove this
 
 ### 5.2 Visual fixes and polish
 
