@@ -148,3 +148,30 @@ These estimates do not apply to initial puzzles generated within an existing sub
 ## Instructions for Claude Code
 
 Begin in analysis/planning mode. Inspect the existing codebase and report how the current puzzle generation, persistence, player identity, completion tracking, and puzzle assignment work. Map this plan to the current implementation and identify discrepancies or unresolved decisions. Do not edit files until the proposed implementation steps and risks have been presented for approval.
+
+
+1. Protect the puzzle bank from bad data
+
+Puzzle validation before publication
+Every imported or AI-generated puzzle should pass checks before entering the public bank: valid grid dimensions, correct answer lengths, matching clue numbers, valid crossings, no missing answers, and successful puzzle loading in the existing game.
+
+
+
+Report a bad clue
+Let players flag a clue that is incorrect, ambiguous, or has an incorrect answer. Track reports, and let an administrator review or temporarily disable problematic puzzles.
+
+
+
+Duplicate detection
+Prevent exact duplicate puzzles from filling the bank. You could also detect near-duplicates based on grid and answer sets, since two puzzles with different IDs can still be effectively identical.
+
+
+
+One subtle issue: a puzzle that is structurally valid isn't necessarily a good puzzle. Keep your existing Claude quality review, and add player reports and quality statistics as a second line of defense.
+2. Make puzzle assignment reliable
+This is one of the most important backend details.
+- Track assignment separately from completion. If a player receives a puzzle but closes the tab, the game shouldn't necessarily give them a different puzzle immediately.
+- Prevent race conditions. Two simultaneous requests from the same player shouldn't assign the same puzzle twice or corrupt their history.
+- Handle exhausted inventories. If a player has completed every easy puzzle, the game needs a defined fallback instead of endlessly generating more puzzles or repeatedly returning the same one.
+- Preserve in-progress puzzles. If a player leaves halfway through, they should be able to continue the same puzzle using your existing save mechanism.
+I'd make resuming an unfinished puzzle the default. It avoids wasting assignments and makes the game feel much more polished.
