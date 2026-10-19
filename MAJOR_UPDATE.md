@@ -426,3 +426,102 @@ A workstream is not complete merely because the feature appears to work once. Co
 ---
 
 **Source documents consolidated:** NEW_FEATURE.md, PUZZLE_BANK_PLAN.md, and RANDOM_CHANGE.md, organized into priorities, dependencies, and acceptance criteria. Keep those source files until the roadmap has been reviewed and approved; this file is the organized master plan, not authorization to implement every item at once.
+
+
+---
+
+## Appendix A — Detailed Existing Bug Checklist
+
+These are specific tasks from the original notes. Keep them here so consolidating the planning files does not lose individual fixes.
+
+### Campaign visuals and navigation
+- [ ] Fix the Celestial Rift background chains so they attach correctly to nearby blocks.
+- [ ] Remove the unwanted black background behind the Space world's black hole.
+- [ ] Fix the stretched image/background issue observed in Google Chrome (it looked correct in Vivaldi).
+- [ ] Make every world and victory animation approach the detail level of Celestial Rift.
+- [ ] Play the world transition animation when the player advances after defeating a boss or manually selects the next level. For the Angel sequence, play it after defeating the Void.
+- [ ] Make the world/theme selector more recognizable, especially for changing dark mode; follow the operating-system theme by default.
+- [ ] Make skill-learning and boss-attack pop-ups dismissible by clicking them.
+- [ ] Fit the inventory/items section on one row where the layout allows it.
+
+### Audio fixes
+- [ ] Set the current sound-volume default to 80; make the 100 setting louder than the current 100 setting.
+- [ ] Review the following tracks/phases for loop issues:
+  - Old Grumble Owl — Phase 1
+  - King Sourgum — Phase 1
+  - The Kraken — Phase 1
+  - The Yeti — Phase 1
+  - Thunderhead — Phase 1
+  - Sir Squall — Phase 2
+  - The Sphinx — Phase 1
+  - The Ringmaster — Phase 1
+  - Mega Unit X — Phases 1, 2, and 3
+  - Magma Wyrm — Phase 1 (loop boundary appears to be set up immediately before the loop)
+  - Magma Wyrm — Phase 2 (review the rhythm leading into the guitar and compare it with the start)
+  - Magma Wyrm — Phase 3
+  - The Void — Phases 2 and 3
+  - The Void — Phases 4 and 5 (nearly correct; fine-tune the loop)
+  - Cursed Angel — Phase 1 (currently replays the full track instead of looping properly)
+- [ ] Swap Cursed Angel Phase 3 and Phase 4; this is an ordering fix, not a loop fix.
+
+### Daily, unlimited, and achievement behavior
+- [ ] Verify achievements across Daily, Unlimited, and boss-related gameplay; each should trigger correctly and only once.
+- [ ] Add 10 time-based achievements.
+- [ ] When a player uses “Reveal Puzzle” in Daily or Unlimited, complete the puzzle state in the background as well as displaying the answer.
+- [ ] Show the time remaining until the Daily's cutoff/points expire.
+- [ ] At midnight, if a player is still playing a Daily, explain that the date has changed and that the current run will no longer count for the previous date; offer clear exit/continue choices.
+- [ ] If a player has not loaded the new Daily after the date changes, prevent them from accidentally playing the stale Daily and prompt them to reload.
+- [ ] Remove the leaderboard's last-name requirement.
+
+### Multiplayer specification
+- [ ] Add an Online multiplayer mode using room codes formatted as `XXXX-XXXX` (eight characters grouped by a hyphen).
+- [ ] Support up to 10 players per room.
+- [ ] Show each participant's hero and progress with clear animations.
+- [ ] Represent unfilled cells/boards in a muted grey state; reuse the existing red-pulse treatment to identify a completed board that still contains errors.
+- [ ] Let the room owner configure difficulty and competition options, including whether second- and third-place finishes count.
+- [ ] Treat this as an iterative feature: start with a tested, reliable minimum version, then refine the presentation and options.
+- [ ] Make room membership, puzzle identity, progress, and timing authoritative on the server; support reconnecting without duplicating a player session.
+
+### General quality and support
+- [ ] Fix browser-specific HTML issues.
+- [ ] Add understandable, actionable error messages throughout the game, including retry/reload/report options where appropriate.
+- [ ] Add `schmollcrossword@gmail.com` to appropriate contact, support, and problem-reporting locations.
+- [ ] Investigate the existing persistence architecture before deciding whether a database is necessary. Document which data currently works, where it is stored, and what can be lost on restart/deployment; do not introduce a database solely on assumption.
+- [ ] Add a developer dashboard for puzzle-generation, inventory, error, and game-health metrics.
+- [ ] Expand Unlimited-mode statistics to help players understand their solving patterns and improve.
+- [ ] Investigate optional offline puzzle packs (for example 5, 10, 25, or 50 puzzles per difficulty). Explain storage, freshness, and synchronization trade-offs before implementation.
+- [ ] Improve share links so Discord/messages can display a preview image and text without exposing puzzle answers. Test actual crawler-generated previews, not only the in-game share UI.
+
+## Appendix B — Feature Details Retained from Original Notes
+
+### Custom puzzles
+- Allow players to create a custom grid and enter their own words and clues, validate it, and share a link. Start with a simple editor; defer collaborative editing until the basic format is reliable.
+
+### Weekly quests
+- Examples: complete three Medium puzzles, solve without hints, or finish a Hard puzzle.
+- Rewards may include badges, profile decorations, or themes.
+
+### Shareable results
+- Provide a compact, answer-safe result suitable for Discord, messages, and social platforms. Example fields: puzzle number, difficulty, solve time, hints used, and solved status.
+
+### Statistics
+- Include completion count and rate, average solve time by difficulty, longest streak, personal records, difficult puzzles, hints, and mistakes.
+
+### Gameplay customization
+- Support light, dark, and system themes; keyboard controls/shortcuts; sound effects and reduced motion; adjustable text/cell size; and optional timer/mistake counter.
+
+### Puzzle-bank implementation safeguards
+- Store the exact validated puzzle, rather than regenerating it from a seed or prompt whenever it is played.
+- Keep player assignment/completion history separate from shared puzzle data. Resume unfinished puzzles where possible.
+- Use unique constraints/transactions or equivalent protection for concurrent requests; in-process synchronization alone does not protect multiple server instances.
+- Import batches safely and resumably; never run a huge generation batch automatically at startup.
+- Validate structure, answer lengths, clue numbering, crossings, clue quality, and uniqueness before publishing a puzzle.
+- Keep generation jobs bounded and observable with statuses, retries, timeouts, and failure reasons. Prevent duplicate replenishment jobs.
+- Track inventory and quality by difficulty, puzzle assignments/completions, reports, generation failures, and API usage/cost where available.
+- Do not expose provider credentials or unnecessary answer/user data in production logs.
+- Preserve existing player data and daily puzzle identity. A regenerated puzzle must not silently replace a Daily that has already been started.
+- Treat the proposed three-month history reset as a gameplay eligibility window, not deletion of permanent completion records, achievements, streaks, or statistics.
+- Send a single daily developer summary email with the number of players who triggered generation and a compact health/design report, rather than one email per event.
+- If a puzzle needs to be generated, show a branded loading screen with progress and the existing rising-letter visual motif; provide a graceful failure state and retry path.
+- Preserve the current Claude API-key approach. Do not migrate to browser AI/WebGPU unless a separate decision is made later.
+
