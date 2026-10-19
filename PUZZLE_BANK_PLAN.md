@@ -175,3 +175,8 @@ This is one of the most important backend details.
 - Handle exhausted inventories. If a player has completed every easy puzzle, the game needs a defined fallback instead of endlessly generating more puzzles or repeatedly returning the same one.
 - Preserve in-progress puzzles. If a player leaves halfway through, they should be able to continue the same puzzle using your existing save mechanism.
 I'd make resuming an unfinished puzzle the default. It avoids wasting assignments and makes the game feel much more polished.
+
+Make it so they reset every 3 months(so puzzles played 3 months ago reset, the player likely forgot them)
+When it has to generate new puzzles say generating new puzzles and generate them in batches(like 5 for each level and notify me that a player had to generte puzzles through email)  But send it in a daily email that says blank players had to make new puzzles, in that same email just give some sort of design report of whats going on. If new puzzles have to be generated, make a special screen for it like with the logo, a progress bar, and letters rising in the back like the start up animation screen.
+
+also the send feature, when you send the link to someone and has a picture and text doesnt work
