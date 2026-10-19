@@ -35,7 +35,7 @@ The leaderboard should not require last name
 
 In the daily and unlimited when the player selects reveal puzzle it should finish the puzzle in the background because it shows the answer
 
-Add a multiplayer mode(call it online and make it work through 8 digit codes)(Format it like ____-____) Also for multiplayer make it so you can see everyones hero and how far they are(add cool animations) Make it a max of 10 players and it just shows a greyed out board, if its filled out reuse the red pulse thing below, this doesnt have to be perfect we'll refine it a lot though you will have to run test for this(prepare)
+Add a multiplayer mode(call it online and make it work through 8 digit codes)(Format it like ____-____) Also for multiplayer make it so you can see everyones hero and how far they are(add cool animations) Make it a max of 10 players and it just shows a greyed out board, if its filled out reuse the red pulse thing below, this doesnt have to be perfect we'll refine it a lot though you will have to run test for this(prepare) You should also allow the owner to have some settings, like what difficulty, if youre playing for second and third, etc.
 
 Add a glowing red pulse that fades in and out around the board when the board is finished but has errors 
 Make the pop ups for skills(like what u learn in the level) and boss attacks be dismissable. Be able to click on it to dismiss 
@@ -51,8 +51,26 @@ When it comes to making the frontend static and backend work through render, im 
 
 Make proper error messages, for EVERYTHING. Error messages that even nontechnical people could understand
 
-Remove the /10 limit because we are changing to browser AI. Give a unlimited pre load option that allows the user to generate 5-10-25-50 puzzles for offline use or just not to wait, And for each one it generates all 5. Example: Selecting preload 5 will save to their browser an easy medium hard challenge and boss. The problem with this is for this to be worth it it has to work offline. If this is a problem tell me first. Pre load should have a progress bar and a time remaining estimation. No more than 50 saved on browser at one time 
+if you can make it store puzzles for offline play, like 5-10-25-50 store of each difficulty so someone can play, that would be great, but talk to me why it may be an issue and what could be done to fix it 
 
 Make the classic world, theme/world button more recognizable so users know instantly how to change their design(especially dark mode) Make it go off of the system by default 
 
 make every world and winning animaton just as detailed as the celestial rift one 
+
+For unlimited, study more of what the pkayer is doing and provide additional statistics to help them improve
+
+Allow people to make challenges with custom layouts, and they can put whatever words and clues in there as they want 
+
+make a dev dashboard 
+
+Feature	Additional improvement
+Shared puzzle bank	Track puzzle popularity and quality, not just inventory. Avoid serving a disproportionately large number of players the same puzzle if plenty of alternatives exist.
+Puzzle reports	Add categories such as incorrect answer, ambiguous clue, typo, offensive content, and technical issue. Allow temporary disabling while you investigate.
+AI puzzle generation	Give each generation job a status, retry count, timeout, and failure reason. Allow a failed job to resume safely rather than restarting the whole batch.
+Browser AI	Download models only when needed, cache them where supported, show storage usage, allow cancellation, and provide a fallback when WebGPU is unavailable.
+Preloading puzzles	Clarify whether preloading five means five puzzles total or five complete sets of five difficulties. Track downloaded models separately from saved puzzles because model files may consume far more storage.
+Daily puzzles	Preserve the exact daily puzzle for each date, including its clues and answer key. A regenerated puzzle must never silently replace a daily that players have already started.
+Multiplayer	Make the server authoritative for room membership, puzzle identity, completion state, and timers. Reconnects should restore a player's session rather than create a second player.
+Error messages	Give each error a useful action: retry, reload, continue offline, report a problem, or return to the menu. Keep technical details in developer logs.
+Achievements	Use automated tests to verify that each achievement triggers once, survives reloads, and works across daily, unlimited, and campaign modes.
+Animations and audio	Add a reduced-motion option, ensure music loops cleanly, and respect system accessibility settings.
