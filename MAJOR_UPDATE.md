@@ -382,7 +382,15 @@ These are optional expansions to consider after core work:
 - A collection gallery for heroes, companions, themes, and cosmetic unlocks.
 - A crossword skill encyclopedia that explains techniques learned in campaign lessons and links to practice puzzles.
 - A puzzle-of-the-week mode.
-- A world map that clearly shows completion and optional challenges.
+- A world map that clearly shows completion and optional challenges. 
+- Improve the entire campaign level selection screen
+- Enough Secret Bosses and Levels to make the campaign 100 levels (currently sitting at 80) So that means 4 new world, 4 new bosses, 20 new levels 
+- The new bosses should all be secert worlds with their own animation to enter them
+- Secret Boss 1: Large Squirrel Boss, secret world in a hidden part of acorn woods unlocked after completing acorn woods. One ability Idea is to two roll one large acorn across the board that deletes 3 rows. Another ability idea is to have small squirrels steal letters and then follow the mouse, then the user must lead the squirrel back to where the letter went(have a dashed track from the squirrel to the letter) 2 Phases, 10 Boss Abilities. 
+- Secret Boss 2: Posiedon, Secret world in the city of Atlantis unlocked after the ocean section, One Posiedon Ability is To throw a trident that attches to 5 letters and if you dont break the trident, it steals the letters and adds 5 letters to the bosses board, Does not mark if the letter was taken. 3 Phases, 10 Boss Abilities 
+- Secret Boss 3: Sandworm, secret world found after finishing the desert section, One ability idea is a sand tornado that travels across the board scrambling letters. Another idea is the earth worm covers the board in sand then dives in deleting letters from the users board. Another idea is the worm forms a sand ball that turns into letters that they put on their board, the player must click to destroy the ball and instead get letters of their own. 3 Phases, 10 Boss Abilities 
+- Secret Boss 4: Some sort of Lava Beast, in the Lava Cave, secret world after the volcano section. One Ability is lava columns which covers columns of the users board with flowing lava preventing them from typing or click there. 5 Phases, Boss 10 Abilities 
+- Each Secret world has 4 new player abilities for the player organized just like how celestial rift is organized 
 
 Keep new progression systems connected to the existing campaign, achievements, and rewards. Prefer extending existing systems rather than introducing overlapping currencies or progression tracks.
 
