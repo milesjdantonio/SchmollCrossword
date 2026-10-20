@@ -392,6 +392,7 @@ These are optional expansions to consider after core work:
 - Secret Boss 4: Some sort of Lava Beast, in the Lava Cave, secret world after the volcano section. One Ability is lava columns which covers columns of the users board with flowing lava preventing them from typing or click there. 5 Phases, Boss 10 Abilities 
 - Each Secret world has 4 new player abilities for the player organized just like how celestial rift is organized 
 - For each Secret world, put them in the lore somehow(and show how through an animation) so it makes sense to the player why they have to go kill that boss (but it shouldn't be required that they do it now, they can come back to it)
+- Implement Corruption(From Celestial Rift) but for every secret level 
 
 Keep new progression systems connected to the existing campaign, achievements, and rewards. Prefer extending existing systems rather than introducing overlapping currencies or progression tracks.
 
