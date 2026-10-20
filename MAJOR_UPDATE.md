@@ -214,6 +214,12 @@ Send a **daily operational summary email** to the configured developer contact w
 - Add a Predicted Time to take for boss battles, for however how many phases and their average time on those types of puzzles, if they dont have a saved average time then just put an approximate average, also save how many phases the boss has before starting the boss
 - The Zoom doesnt do anything on screens already too small, Also make the default 50(but make 50 look like 100) so a player can soom in further as well
 - Make sure letters are visible when typing them, several worlds remove this
+- Lower the slope of difficulty (Difficuty ramps up too fast and gets incredibly difficult by later levels) As needed, predict the slope of difficulty and ill tell you what to change it to
+- Change the check cost to 1 points per sqaure
+- Change the reveal cost to 5 points per square. If there is a wrong letter in the revealed word, count it as a square revealed and cost them, replace the letter too. If the letter is correct, lock that letter at no additional cost.
+- Change the point values to adjust per game to be by square add difficulty. Easy: 5 Points Per Square; Medium: 8 Points per Square; Hard: 10 Points per Square, Challenge & Boss are 8 per Square
+- Make the time penalty work more like bonus points, so it will say plus 50 if you completed in above 4 minutes but under 5 minutes. 
+- Make a custom sprite for coins and points, they shouldn't change between devices as it does now
 
 ### 5.2 Visual fixes and polish
 
