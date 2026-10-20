@@ -391,6 +391,7 @@ These are optional expansions to consider after core work:
 - Secret Boss 3: Sandworm, secret world found after finishing the desert section, One ability idea is a sand tornado that travels across the board scrambling letters. Another idea is the earth worm covers the board in sand then dives in deleting letters from the users board. Another idea is the worm forms a sand ball that turns into letters that they put on their board, the player must click to destroy the ball and instead get letters of their own. 3 Phases, 10 Boss Abilities 
 - Secret Boss 4: Some sort of Lava Beast, in the Lava Cave, secret world after the volcano section. One Ability is lava columns which covers columns of the users board with flowing lava preventing them from typing or click there. 5 Phases, Boss 10 Abilities 
 - Each Secret world has 4 new player abilities for the player organized just like how celestial rift is organized 
+- For each Secret world, put them in the lore somehow(and show how through an animation) so it makes sense to the player why they have to go kill that boss (but it shouldn't be required that they do it now, they can come back to it)
 
 Keep new progression systems connected to the existing campaign, achievements, and rewards. Prefer extending existing systems rather than introducing overlapping currencies or progression tracks.
 
