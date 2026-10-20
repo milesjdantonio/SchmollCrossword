@@ -382,6 +382,7 @@ These are optional expansions to consider after core work:
 - A collection gallery for heroes, companions, themes, and cosmetic unlocks.
 - A crossword skill encyclopedia that explains techniques learned in campaign lessons and links to practice puzzles.
 - A puzzle-of-the-week mode.
+- Improve the visuals to tell if a player is going down or across
 - A world map that clearly shows completion and optional challenges. 
 - Improve the entire campaign level selection screen
 - Enough Secret Bosses and Levels to make the campaign 100 levels (currently sitting at 80) So that means 4 new world, 4 new bosses, 20 new levels 
