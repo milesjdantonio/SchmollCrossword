@@ -549,3 +549,4 @@ These are specific tasks from the original notes. Keep them here so consolidatin
 - Preserve the current Claude API-key approach. Do not migrate to browser AI/WebGPU unless a separate decision is made later.
 
 - Theres a bug in the background of the credits after beating the Angel Boss
+- Make it so theres only 10 reveals of a word per boss phase
