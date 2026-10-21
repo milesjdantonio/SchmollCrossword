@@ -550,3 +550,4 @@ These are specific tasks from the original notes. Keep them here so consolidatin
 
 - Theres a bug in the background of the credits after beating the Angel Boss
 - Make it so theres only 10 reveals of a word per boss phase
+- Clue Writing writes a lot of clues that are synonyms, they are mostly unfair, fix this
