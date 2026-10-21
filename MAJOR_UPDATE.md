@@ -548,3 +548,4 @@ These are specific tasks from the original notes. Keep them here so consolidatin
 - If a puzzle needs to be generated, show a branded loading screen with progress and the existing rising-letter visual motif; provide a graceful failure state and retry path.
 - Preserve the current Claude API-key approach. Do not migrate to browser AI/WebGPU unless a separate decision is made later.
 
+- Theres a bug in the background of the credits after beating the Angel Boss
