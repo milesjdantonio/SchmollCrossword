@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
 
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java</artifactId>
-            <version>2.34.0</version>
+            <version>3.3.0</version>
         </dependency>
 
         <!-- Step 18: a web server (Spring Boot + an embedded Tomcat) so the website can ask for puzzles -->
