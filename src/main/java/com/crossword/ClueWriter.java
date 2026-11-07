@@ -260,11 +260,34 @@ public class ClueWriter {
             if (!answers.contains(answer)) problems.add("unexpected answer " + answer);
             if (clueText.isEmpty()) problems.add("empty clue for " + answer);
             else if (!answer.isEmpty() && givesAway(clueText, answer)) problems.add("clue for " + answer + " gives away the answer");
+            else if (unfitWord(clueText) != null) problems.add("clue for " + answer + " isn't for a family puzzle (it says \"" + unfitWord(clueText) + "\")");
         }
         for (String answer : answers) {
             if (!cluedAnswers.contains(answer)) problems.add("missing clue for " + answer);
         }
         return problems;
+    }
+
+    /*
+     * A word a family puzzle's clue shouldn't use, or null: the blocked words, the family list (which keeps them out of
+     * the answers too) and a few more about drinking. The prompt already asks for this; Claude still wrote "Whisky
+     * served without ice" for NEAT once, and the review let it through, so it's checked here as well. Whole words.
+     */
+    static final Set<String> CLUE_ONLY_UNFIT = Set.of("wine", "wines", "cocktail", "cocktails", "alcohol", "alcoholic", "hangover", "hungover");
+    private static volatile Set<String> unfit;
+    static String unfitWord(String clue) {
+        if (unfit == null) {
+            Set<String> all = new HashSet<>(CLUE_ONLY_UNFIT);
+            try {
+                for (String w : App.loadBlockedWords()) all.add(w.toLowerCase());
+                for (String w : App.loadFamilyWords()) all.add(w.toLowerCase());
+            } catch (IOException e) {
+                LOG.warn("Couldn't read the word lists for the family check ({})", e.getMessage());
+            }
+            unfit = all;
+        }
+        for (String word : clue.toLowerCase().split("[^a-z]+")) if (!word.isEmpty() && unfit.contains(word)) return word;
+        return null;
     }
 
     // True if a clue contains its answer as a word, or a form of it (DESKS for DESK). Whole words only, so ERA
@@ -428,7 +451,7 @@ public class ClueWriter {
             for (Clue c : fixes.clues()) {
                 if (c == null || c.answer() == null || c.clue() == null || c.clue().isBlank()) continue;
                 String a = c.answer().trim().toUpperCase();
-                if (flagged.contains(a) && !givesAway(c.clue(), a)) better.put(a, c.clue());
+                if (flagged.contains(a) && !givesAway(c.clue(), a) && unfitWord(c.clue()) == null) better.put(a, c.clue());
             }
         }
         List<Clue> out = new ArrayList<>();

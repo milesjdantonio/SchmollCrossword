@@ -210,4 +210,18 @@ class ClueWriterTest {
         assertTrue(problems.get(1).startsWith("DESK"));
         assertEquals(0, ClueWriter.reviewProblems(null, twoAnswers).size());
     }
+
+    @Test
+    void aClueThatIsntForAFamilyPuzzleIsSentBack() {
+        ClueWriter.ClueSet set = new ClueWriter.ClueSet(List.of(new ClueWriter.Clue("NEAT", "Whisky served without ice"), new ClueWriter.Clue("TIDY", "Neat and orderly")));
+        List<String> problems = ClueWriter.findProblems(set, List.of("NEAT", "TIDY"));
+        assertEquals(1, problems.size(), problems.toString());
+        assertTrue(problems.get(0).contains("whisky"));
+        assertEquals("wine", ClueWriter.unfitWord("Red or white, with dinner: wine"));
+        assertEquals(null, ClueWriter.unfitWord("Pause in a piece of music"));
+        assertEquals(null, ClueWriter.unfitWord("Sharp intake of breath, often in shock"), "whole words only (no 'sex' inside 'Essex')");
+        // a rewrite that brings in such a word isn't used
+        ClueWriter.ClueSet fixed = ClueWriter.merge(set, new ClueWriter.ClueSet(List.of(new ClueWriter.Clue("NEAT", "Like a beer with no foam"))), List.of("NEAT"));
+        assertEquals("Whisky served without ice", fixed.clues().get(0).clue());
+    }
 }

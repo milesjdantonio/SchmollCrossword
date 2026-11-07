@@ -437,12 +437,14 @@ public class PuzzleStore {
     static final int DAYS_BACK = 30;
 
     // A daily stays away from the answers of the other dailies of its day and of the 30 days before, saved or shipped
+    // (the Daily Boss's puzzle, "boss", counts as one of them: it used to repeat answers, even a whole earlier grid)
     static Set<String> recentDailyAnswers(Path folder, LocalDate date, String difficulty) throws IOException {
         Set<String> answers = new HashSet<>();
         for (int back = 0; back <= DAYS_BACK; back++) {
-            for (String kind : DAILY_KINDS) {
+            for (String kind : DAILY_KINDS_AND_BOSS) {
                 if (back == 0 && kind.equals(difficulty)) continue;
-                Path file = dailyFile(folder, date.minusDays(back), kind);
+                LocalDate day = date.minusDays(back);
+                Path file = kind.equals("boss") ? dailyBossFile(folder, day, false) : dailyFile(folder, day, kind);
                 String json = readSaved(file);
                 if (json == null) json = shippedDaily(file.getFileName().toString());
                 if (json != null) answers.addAll(answersIn(json));
@@ -450,6 +452,7 @@ public class PuzzleStore {
         }
         return answers;
     }
+    static final String[] DAILY_KINDS_AND_BOSS = {"easy", "medium", "hard", "challenge", "boss"};
 
     // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
     static String generateDaily(LocalDate date, String difficulty, Map<Integer, List<String>> wordsByLength, Set<String> avoid) {
@@ -564,7 +567,10 @@ public class PuzzleStore {
         if (shipped != null && !isDisabled(shipped)) return shipped;
         Campaign.Section section = dailyBossSection(date);
         long seed = seedForDate(date) * 10 + (bossBoard ? 6 : 5);       // the dailies use 1-4
-        return generateOnce(file, () -> bossPuzzle(seed, section, wordsByLength, !bossBoard));
+        // your board stays away from the recent dailies' answers like any daily; the boss's own board (no clues,
+        // nobody reads it) doesn't need to
+        Set<String> avoid = bossBoard ? new HashSet<>() : recentDailyAnswers(folder, date, "boss");
+        return generateOnce(file, () -> bossPuzzle(seed, section, wordsByLength, !bossBoard, avoid));
     }
     static Path dailyBossFile(Path folder, LocalDate date, boolean bossBoard) {
         return folder.resolve(date + "-boss" + (bossBoard ? "-board" : "") + ".json");
@@ -596,10 +602,13 @@ public class PuzzleStore {
     }
     // a boss puzzle at a section's boss settings
     static String bossPuzzle(long seed, Campaign.Section section, Map<Integer, List<String>> wordsByLength, boolean withClues) {
+        return bossPuzzle(seed, section, wordsByLength, withClues, new HashSet<>());
+    }
+    static String bossPuzzle(long seed, Campaign.Section section, Map<Integer, List<String>> wordsByLength, boolean withClues, Set<String> avoid) {
         String difficulty = section.bossDifficulty();
         return Campaign.bigGrid(difficulty)
-                ? generateBig(seed, "campaign", difficulty, section.bossSize(), wordsByLength, new HashSet<>(), "", "", withClues)
-                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), new HashSet<>(), "", "", withClues, true);
+                ? generateBig(seed, "campaign", difficulty, section.bossSize(), wordsByLength, avoid, "", "", withClues)
+                : generateSmall(seed, "campaign", difficulty, campaignSmallWords(difficulty, wordsByLength), avoid, "", "", withClues, true);
     }
 
     static Path campaignFile(Path folder, Campaign.Section section, int level, boolean boss) {

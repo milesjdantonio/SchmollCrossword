@@ -77,6 +77,16 @@ class RepeatsTest {
         assertEquals(Set.of("REST", "MEDIUM", "CROP"), PuzzleStore.recentDailyAnswers(folder, day, "hard"));
     }
 
+    @Test
+    void theDailyBossCountsAsADailyAndAvoidsTheOthers(@TempDir Path folder) throws IOException {
+        LocalDate day = LocalDate.of(2026, 9, 1);
+        saveDaily(folder, day, "easy", "REST");
+        Files.writeString(PuzzleStore.dailyBossFile(folder, day.minusDays(3), false), "{\"solution\":[],\"across\":[{\"answer\": \"OGRE\"}],\"down\":[]}");
+        Files.writeString(PuzzleStore.dailyBossFile(folder, day.minusDays(3), true), "{\"solution\":[],\"across\":[{\"answer\": \"BOARD\"}],\"down\":[]}");
+        assertEquals(Set.of("REST", "OGRE"), PuzzleStore.recentDailyAnswers(folder, day, "boss"), "the boss's own board doesn't count");
+        assertEquals(Set.of("OGRE"), PuzzleStore.recentDailyAnswers(folder, day, "easy"), "an easy daily avoids the boss too");
+    }
+
     private static void saveDaily(Path folder, LocalDate day, String kind, String answer) throws IOException {
         Files.writeString(PuzzleStore.dailyFile(folder, day, kind), "{\"solution\":[],\"across\":[{\"answer\": \"" + answer + "\"}],\"down\":[]}");
     }
