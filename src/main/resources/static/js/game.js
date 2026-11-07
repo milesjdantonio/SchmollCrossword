@@ -568,6 +568,10 @@ const Game = (() => {
             info.breakdown = scoreBreakdown(p, game.seconds, game.squaresChecked, game.squaresRevealed);
             info.points = info.breakdown.total;
             info.counted = saveDailyScore(p, info.points);
+            info.day = seedDay(p.seed);
+            info.grace = dailyStanding(info.day) === "grace";
+            const day3 = ["easy", "medium", "hard"].map(d => scores()[info.day + "-" + d]);     // the day's three, for Triple Time
+            if (day3.every(r => r && !r.surrendered && typeof r.seconds === "number")) info.trio = day3.reduce((a, r) => a + r.seconds, 0);
             info.scoreKey = scoreKey(p);
             info.firstToday = info.counted && !dayWasDone;
             info.streak = calculateStreaks(scores()).current;

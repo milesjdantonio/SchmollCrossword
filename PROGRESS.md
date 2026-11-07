@@ -202,8 +202,15 @@ deleted after everything is done.
       fight's notice box ("It Hit You", "Enraged"; `.can-close`); an incoming attack's warning stays
 - [x] Items: all six share one row in equal buttons; the shop and Give Up together below; under 380 px two even
       rows of three (checked at 1366, 700, 390, 340 px)
-- [ ] Achievements fire correctly (and once) in every mode, boss fights included; progress survives reloads
-- [ ] 10 time-based achievements with tests
+- [x] Achievements fire correctly (and once) in every mode, boss fights included; progress survives reloads.
+      Found: the speed ones could be earned by revealing every word fast; they now need no Reveal. Practice and the
+      Daily Boss don't earn daily-only ones. Tests: `src/test/js/achievements.test.mjs` (node --test, with a stand-in
+      for browser storage; a "reload" loads the script again on the same storage)
+- [x] 10 time-based achievements (Hard Charger, Sprint Summit, Bonus Collector, Quick Week, Hourglass, Ten Hours,
+      Triple Time, Getting Faster, Just in Time, Weekend Warrior); the clock's rules are in the comment above them
+      (runs only while the puzzle is on screen, saved with the game, grace after midnight counts). game.js gives the
+      win `day`, `grace` and `trio`. 10 node tests; `src/test/js/score.test.mjs` (points = the server's, the grace in
+      5 time zones, streaks). README says how to run them
 - [ ] Coin and point icons drawn as our own SVG (no emoji that changes between devices)
 - [ ] Zoom works on small screens; the slider's middle (50) looks like today's 100%, so players can zoom in too
 - [x] Typed letters visible in every world: measured in all 17 worlds, light and dark (contrast 9.5:1 or more). The

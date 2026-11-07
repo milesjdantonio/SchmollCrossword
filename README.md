@@ -44,6 +44,7 @@ You need **Java 17 or newer** and **Maven**.
 ```bash
 mvn spring-boot:run        # then open http://localhost:8080
 mvn test                   # the test suite (the paid Claude checks only run with -Dlive=true)
+node --test "src/test/js/**/*.test.mjs"   # the browser game's scoring and achievement tests (Node 20+)
 ```
 
 New puzzles (dailies past the shipped ones) need an Anthropic API key. The server reads it from the
@@ -72,6 +73,7 @@ src/main/resources/
     campaign/, daily/            puzzles made ahead of time
     words.txt and *-words.txt    the answer list and its difficulty filters
 src/test/java/com/crossword/     JUnit tests
+src/test/js/                     tests for the game's own scripts (node --test)
 ```
 
 ## Credits and licenses

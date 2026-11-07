@@ -31,6 +31,19 @@ const Achievements = (() => {
         { id: "streak14", icon: "\u{1F4C5}", name: "Two Weeks Strong", desc: "Reach a 14-day streak." },
         { id: "grand", icon: "\u{1F3DF}️", name: "Grand Slam", desc: "Solve all five dailies in one day, the boss included." },
         { id: "points1000", icon: "\u{1F4B0}", name: "Big Scorer", desc: "Earn 1,000 daily points in total." },
+        // time: the solve time is the puzzle's clock, which runs only while the puzzle is on screen (it stops while the
+        // page is hidden or an animation plays) and is saved with the game, so a reload carries on from where it was.
+        // Speed ones need a solve with no Reveal. "Dailies" means ones that count (not practice after midnight's grace).
+        { id: "t-hard120", icon: "\u{1F3C3}", name: "Hard Charger", desc: "Solve a Hard daily in under 2 minutes, with no Reveal." },
+        { id: "t-sprint", icon: "\u{1F6A9}", name: "Sprint Summit", desc: "Solve a Challenge daily in its first time band, with no Reveal." },
+        { id: "t-bonus10", icon: "⏲️", name: "Bonus Collector", desc: "Earn the full time bonus on 10 dailies." },
+        { id: "t-week", icon: "\u{1F5D3}️", name: "Quick Week", desc: "Solve a daily in under 2 minutes, with no Reveal, on 7 different days." },
+        { id: "t-hour", icon: "⌛", name: "Hourglass", desc: "Spend an hour solving puzzles, all together." },
+        { id: "t-tenhours", icon: "⏳", name: "Ten Hours", desc: "Spend ten hours solving puzzles, all together." },
+        { id: "t-trio", icon: "\u{1F947}", name: "Triple Time", desc: "Solve a day's Easy, Medium and Hard dailies in under 5 minutes combined." },
+        { id: "t-best5", icon: "\u{1F4C8}", name: "Getting Faster", desc: "Set a new personal best time 5 times." },
+        { id: "t-grace", icon: "\u{1F55B}", name: "Just in Time", desc: "Finish a daily in the 15 minutes after midnight, so it still counts." },
+        { id: "t-weekend", icon: "\u{1F3D6}️", name: "Weekend Warrior", desc: "Solve a daily on a Saturday and on the Sunday after it." },
         // the campaign
         { id: "cm-first", icon: "\u{1F97E}", name: "First Steps", desc: "Clear your first campaign level.", campaign: true },
         { id: "cm-boss", icon: "⚔️", name: "Boss Buster", desc: "Beat your first boss.", campaign: true },
@@ -77,9 +90,14 @@ const Achievements = (() => {
         unlock("first");
         if (info.difficulty === "hard") unlock("hard");
         if (info.difficulty === "challenge") unlock("challenger");
-        if (info.seconds < 60) unlock("speed60");
-        if (info.seconds < 30) unlock("speed30");
-        if (info.seconds < 20) unlock("speed20");
+        const fair = !info.revealed;                          // speed only counts without Reveal
+        if (fair && info.seconds < 60) unlock("speed60");
+        if (fair && info.seconds < 30) unlock("speed30");
+        if (fair && info.seconds < 20) unlock("speed20");
+        // all the time spent on solved puzzles, any mode
+        data.counts.seconds = (data.counts.seconds || 0) + Math.max(0, info.seconds || 0);
+        if (data.counts.seconds >= 3600) unlock("t-hour");
+        if (data.counts.seconds >= 36000) unlock("t-tenhours");
         if (info.difficulty === "easy") unlock("easy1");
         if (info.difficulty === "medium") unlock("medium1");
         data.counts.solves = (data.counts.solves || 0) + 1;
@@ -109,9 +127,41 @@ const Achievements = (() => {
             data.counts.points = (data.counts.points || 0) + (info.points || 0);
             if (data.counts.points >= 1000) unlock("points1000");
             if (info.streak >= 30) unlock("streak30");
+            if (info.mode === "daily") dailyTime(info, data, unlock);
         }
         U.store.set("achievements", data);
         return got;
+    }
+
+    // The time achievements for a daily that counted (info.day: its day, "20261107"; info.trio: that day's Easy +
+    // Medium + Hard seconds once all three are done; info.best: set when it's a new personal best; info.grace: won in
+    // the 15 minutes after midnight)
+    function dailyTime(info, data, unlock) {
+        const fair = !info.revealed, fast = fair && info.seconds < 120;
+        if (fast && info.difficulty === "hard") unlock("t-hard120");
+        if (fair && info.difficulty === "challenge" && info.breakdown && info.breakdown.speed === SCORING.timeBonusTop) unlock("t-sprint");
+        if (info.breakdown && info.breakdown.speed === SCORING.timeBonusTop) {
+            data.counts.fullBonus = (data.counts.fullBonus || 0) + 1;
+            if (data.counts.fullBonus >= 10) unlock("t-bonus10");
+        }
+        const day = /^\d{8}$/.test(info.day || "") ? info.day : null;
+        if (fast && day) {
+            data.fastDays = [...new Set([...(data.fastDays || []), day])].sort().slice(-60);
+            if (data.fastDays.length >= 7) unlock("t-week");
+        }
+        if (info.trio != null && info.trio < 300) unlock("t-trio");
+        if (info.best != null) {
+            data.counts.bests = (data.counts.bests || 0) + 1;
+            if (data.counts.bests >= 5) unlock("t-best5");
+        }
+        if (info.grace) unlock("t-grace");
+        if (day) {
+            data.days = [...new Set([...(data.days || []), day])].sort().slice(-60);
+            const d = new Date(+day.slice(0, 4), +day.slice(4, 6) - 1, +day.slice(6));
+            const other = new Date(d.getFullYear(), d.getMonth(), d.getDate() + (d.getDay() === 6 ? 1 : -1));
+            const otherKey = String(other.getFullYear() * 10000 + (other.getMonth() + 1) * 100 + other.getDate());
+            if ((d.getDay() === 6 || d.getDay() === 0) && data.days.includes(otherKey)) unlock("t-weekend");
+        }
     }
 
     // Campaign achievements: checked after a campaign win
