@@ -495,7 +495,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Check and Reveal", len: 11000, text: "Check a square, a word or the whole puzzle: wrong letters turn red and right ones lock. Reveal fills letters in. Check costs 5 points a square and Reveal 10. Revealing the whole puzzle counts as giving up.",
+            title: "Check and Reveal", len: 11000, text: "Check a square, a word or the whole puzzle: wrong letters turn red and right ones lock. Reveal fills letters in, and locks right ones for free. Check costs 1 point a square and Reveal 5. Revealing the whole puzzle counts as giving up.",
             async demo(s) {
                 const b = s.board({ x: 40, y: 62 });
                 s.clueBar(b, { x: 40, y: 12, w: 242 });
@@ -522,9 +522,9 @@ const HowTo = (() => {
                     else { b.mark(r, c, "locked"); U.restart(b.cell(r, c), "lock-in"); }
                 }));
                 await s.wait(500);
-                lost(25);
+                lost(5);
                 const p = s.pos(pen);
-                s.float("−25", p.x + 60, p.y - 20, "bad");
+                s.float("−5", p.x + 60, p.y - 20, "bad");
                 s.sub("Wrong letters turn red. Right ones lock");
                 await s.wait(1700);
                 s.sub("Fix it and keep going");
@@ -534,14 +534,14 @@ const HowTo = (() => {
                 b.type(2, 4, "E");
                 b.wave(snake);
                 await s.wait(1000);
-                s.sub("Reveal fills a letter in, for 10 points a square");
+                s.sub("Reveal fills a letter in, for 5 points a square");
                 b.select(3, 0, "across");
                 await s.cursor.click(btn.RevealSquare);
                 b.type(3, 0, "S");
                 b.mark(3, 0, "revealed");
                 U.restart(b.cell(3, 0), "flip");
-                lost(35);
-                s.float("−10", p.x + 60, p.y - 20, "bad");
+                lost(10);
+                s.float("−5", p.x + 60, p.y - 20, "bad");
                 await s.wait(1600);
                 s.sub("Revealing the whole puzzle counts as giving up");
                 await s.cursor.to(btn.RevealPuzzle);
@@ -578,7 +578,7 @@ const HowTo = (() => {
                 await s.wait(1400);
                 s.sub("Solve any one to keep your streak");
                 chips[1].classList.add("done");
-                chips[1].querySelector("small").textContent = "✓ 180 pts";
+                chips[1].querySelector("small").textContent = "✓ 238 pts";
                 s.pop(chips[1]);
                 await s.wait(500);
                 num.textContent = "5";
@@ -595,38 +595,38 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Points", len: 10800, text: "Easy 100, Medium 150, Hard 200 and Challenge 300, plus a speed bonus that shrinks every minute. Only your first solve of each daily counts.",
+            title: "Points", len: 10800, text: "Every square is worth points: Easy 5, Medium 8, Hard 10, Challenge 8. A time bonus starts at +90 and drops 10 every minute (longer on bigger grids). Only your first solve of each daily counts.",
             async demo(s) {
                 const tiers = s.add("ht-tiers", { x: 40, y: 22, w: 560 });
-                const tierEls = [["Easy", 100], ["Medium", 150], ["Hard", 200], ["Challenge", 300]].map(([n, p]) => { const t = s.add("ht-tier", {}, tiers); t.append(U.el("small", { text: n }), U.el("b", { text: String(p) })); return t; });
-                s.sub("Each daily has its own points");
+                const tierEls = [["Easy", 5], ["Medium", 8], ["Hard", 10], ["Challenge", 8]].map(([n, p]) => { const t = s.add("ht-tier", {}, tiers); t.append(U.el("small", { text: n }), U.el("b", { text: p + " a Square" })); return t; });
+                s.sub("Every square is worth points");
                 for (const t of tierEls) { s.pop(t); await s.wait(220); }
                 await s.wait(800);
                 tierEls[1].classList.add("on");
                 const card = s.add("ht-score", { x: 170, y: 110, w: 300 });
                 const rows = {};
-                for (const [k, label] of [["base", "Medium"], ["time", "Time"], ["bonus", "Speed Bonus"], ["check", "Check"], ["total", "Total"]]) {
+                for (const [k, label] of [["base", "21 Squares × 8"], ["time", "Time"], ["bonus", "Time Bonus"], ["check", "Check"], ["total", "Total"]]) {
                     const r = s.add("ht-srow " + k, {}, card);
                     r.append(U.el("span", { text: label }), rows[k] = U.el("b", { text: "" }));
                     if (k === "check") r.style.opacity = "0";
                 }
-                rows.base.textContent = "150"; rows.time.textContent = "0:00"; rows.bonus.textContent = "+100"; rows.total.textContent = "250";
-                s.sub("Plus a speed bonus that shrinks every minute");
-                let shown = 100;
+                rows.base.textContent = "168"; rows.time.textContent = "0:00"; rows.bonus.textContent = "+90"; rows.total.textContent = "258";
+                s.sub("Plus a time bonus that drops every minute");
+                let shown = 90;
                 await s.tween(3600, k => {
                     const sec = Math.round(k * 160);
                     rows.time.textContent = U.fmtTime(sec);
-                    const bonus = 100 - 10 * Math.floor(sec / 60);
+                    const bonus = 90 - 10 * Math.floor(sec / 60);
                     if (bonus !== shown) { shown = bonus; s.pop(rows.bonus.parentNode, "ht-flash"); }
                     rows.bonus.textContent = "+" + bonus;
-                    rows.total.textContent = String(150 + bonus);
+                    rows.total.textContent = String(168 + bonus);
                 }, k => k);
                 await s.wait(500);
                 s.sub("Check and Reveal cost points");
                 rows.check.parentNode.style.opacity = "";
-                rows.check.textContent = "−10";
+                rows.check.textContent = "−5";
                 s.pop(rows.check.parentNode);
-                rows.total.textContent = "220";
+                rows.total.textContent = "233";
                 s.pop(rows.total.parentNode, "ht-flash");
                 await s.wait(1500);
                 s.sub("Only your first solve of each daily counts");
@@ -1078,7 +1078,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "The Boss on Daily", len: 9700, text: "Today's boss and the fifth daily. A win scores 250 plus 50 a star, minus Check and Reveal. Your right words stay locked in for your next attempt. Every earlier attempt takes 50 off, and your best of the day is kept.",
+            title: "The Boss on Daily", len: 9700, text: "Today's boss and the fifth daily. A win scores 8 a square plus 50 a star, minus Check and Reveal. Your right words stay locked in for your next attempt. Every earlier attempt takes 50 off, and your best of the day is kept.",
             async demo(s) {
                 const sc = scene();
                 const a1 = s.add("ht-attempt lost", { x: 30, y: 22, w: 180 });
@@ -1100,9 +1100,9 @@ const HowTo = (() => {
                     e.cells.forEach(([r, c], i) => { b2.type(r, c, e.answer[i]); b2.mark(r, c, "locked"); U.restart(b2.cell(r, c), "lock-in"); });
                 }
                 await s.wait(1500);
-                s.sub("A win scores 250 plus 50 a star");
+                s.sub("A win scores 8 a square plus 50 a star");
                 const score = s.add("ht-score small", { x: 222, y: 112, w: 196 });
-                const rows = [["Win", "250"], ["★★", "+100"], ["Attempt 2", "−50"], ["Total", "300"]].map(([a, v], i) => { const r = s.add("ht-srow" + (i === 3 ? " total" : ""), {}, score); r.append(U.el("span", { text: a }), U.el("b", { text: v })); r.style.opacity = "0"; return r; });
+                const rows = [["21 Squares", "168"], ["★★", "+100"], ["Attempt 2", "−50"], ["Total", "218"]].map(([a, v], i) => { const r = s.add("ht-srow" + (i === 3 ? " total" : ""), {}, score); r.append(U.el("span", { text: a }), U.el("b", { text: v })); r.style.opacity = "0"; return r; });
                 for (const r of rows.slice(0, 2)) { r.style.opacity = ""; s.pop(r); await s.wait(350); }
                 await s.wait(500);
                 s.sub("Every earlier attempt takes 50 off");
@@ -1111,7 +1111,7 @@ const HowTo = (() => {
                 rows[3].style.opacity = ""; s.pop(rows[3]);
                 await s.wait(900);
                 s.sub("Your best of the day is kept");
-                const best = s.add("ht-tag good", { x: 254, y: 262, text: "Best Today · 310" });
+                const best = s.add("ht-tag good", { x: 254, y: 262, text: "Best Today · 218" });
                 s.pop(best);
                 await s.wait(1800);
             }

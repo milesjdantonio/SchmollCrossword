@@ -20,12 +20,12 @@ const Mascot = (() => {
         tips: [
             "Click a square twice (or press Space) to switch between Across and Down.",
             "Tab and Enter jump to the next clue. Shift+Tab goes back.",
-            "Check a square costs 5 points; Reveal costs 10. Use them wisely!",
+            "Checking a square costs 1 point; revealing one costs 5. Use them wisely!",
             "Revealing the whole puzzle counts as giving up: no points, no streak.",
             "Solve any one of today's dailies to keep your streak alive.",
-            "Faster solves earn a speed bonus: 100 points, minus 10 for each full minute.",
+            "Faster solves earn a time bonus: 90 points, minus 10 for each full minute.",
             "Try a different world in Settings. Each one has its own win animation!",
-            "Hard puzzles use rarer words, and they're worth 200 points."
+            "Hard puzzles use rarer words, and every square is worth 10 points."
         ],
         word: ["Nice!", "Got one!", "Good word!"],
         wrong: ["A few of those need another look."],

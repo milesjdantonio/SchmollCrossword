@@ -521,6 +521,19 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .ring-fg { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset .45s cubic-bezier(.2, 1.2, .4, 1); }
 .timer { min-width: 3.2ch; font: 900 1.3rem var(--font-body); font-variant-numeric: tabular-nums; }
 .no-timer .timer { display: none; }
+/* The daily's time bonus right now and how long until it drops (score.js timeBonusNow) */
+.time-bonus {
+    display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px;
+    background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.time-bonus small { color: var(--muted); font-size: .72rem; font-weight: 800; }
+.time-bonus b { font-size: .95rem; font-weight: 900; color: var(--accent); }
+.time-bonus span { color: var(--muted); font-size: .78rem; font-weight: 800; }
+.time-bonus.soon span { color: var(--wrong); }
+.time-bonus.gone b { color: var(--muted); }
+.no-timer .time-bonus { display: none; }
+@media (max-width: 560px) { .time-bonus small { display: none; } }
 .pct { color: var(--muted); font-size: .75rem; font-weight: 900; }
 .points-today { flex: 1; color: var(--muted); font-size: .84rem; font-weight: 800; text-align: right; }
 .world-hud:empty { display: none; }

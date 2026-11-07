@@ -58,8 +58,8 @@ import jakarta.servlet.http.HttpServletRequest;
  *   - the name is only letters, with an apostrophe or hyphen inside ("O'Neil", "Anne-Marie"), at most 12, plus an
  *     optional one-letter initial; anything else is refused. Names with a blocked word in them are refused too,
  *     after accents are taken off and look-alike letters from other alphabets are read as Latin ones.
- *   - the server works the points out itself from the time, Checks, Reveals and stars (the same formula as
- *     score.js); a "points" number sent by the browser is never trusted
+ *   - the server works the points out itself from the daily's own grid, the time, Checks, Reveals and stars (the
+ *     same rules as score.js); a "points" number sent by the browser is never trusted
  *   - solve times: when a daily starts, the browser asks for a start ticket (POST /api/leaderboard/start), signed
  *     by the server with the time it was given. A post that brings it back can't claim more time than has passed
  *     since then; a post without a valid ticket still counts, but gets no speed bonus. A time faster than anyone
@@ -237,7 +237,9 @@ public class LeaderboardController {
         if (!limiter.allow(person, nowMillis)) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "too many posts, try again later");
 
         List<String[]> lines = lines(day.toString());
-        int points = points(difficulty, seconds, checked, revealed, stars, attempts);
+        int[] shape = shapes.of(day, difficulty);
+        if (shape == null) shape = usualShape(difficulty);
+        int points = points(difficulty, shape[0], shape[1], seconds, checked, revealed, stars, attempts);
         int best = lines.stream().filter(l -> l[1].equals(e.player()) && l[4].equals(difficulty)).mapToInt(l -> Integer.parseInt(l[5])).max().orElse(-1);
         boolean already = best >= 0 && !(difficulty.equals("boss") && points > best);
         if (!already) {
@@ -372,18 +374,32 @@ public class LeaderboardController {
         return initial == null || initial.isEmpty() ? first : first + " " + initial + ".";
     }
 
-    // Points, worked out here (the same formula as score.js: the browser's own number is never trusted)
-    static int points(String difficulty, int seconds, int checked, int revealed, int stars) {
-        return points(difficulty, seconds, checked, revealed, stars, 1);
+    /*
+     * Points, worked out here with the same rules as score.js (the browser's own number is never trusted):
+     *   white squares x points a square (Easy 5, Medium 8, Hard 10, Challenge 8, Boss 8)
+     *   + a time bonus: 90, then 10 less per time band (a minute on a 5x5 grid, longer in proportion to the area)
+     *   - 1 per square checked, - 5 per square revealed
+     *   The Daily Boss: + 50 a star instead of the time bonus, - 50 per attempt lost before the win.
+     */
+    static final Map<String, Integer> PER_SQUARE = Map.of("easy", 5, "medium", 8, "hard", 10, "challenge", 8, "boss", 8);
+    static int band(int size) {
+        return Math.round(60f * size * size / 25);
     }
-    // (the Daily Boss: every lost attempt before the win costs 40)
-    static int points(String difficulty, int seconds, int checked, int revealed, int stars, int attempts) {
-        int penalties = checked * 5 + revealed * 10;
-        if (difficulty.equals("boss")) return Math.max(0, 250 + 50 * stars - penalties - 50 * (attempts - 1));
-        int base = switch (difficulty) { case "easy" -> 100; case "medium" -> 150; case "hard" -> 200; default -> 300; };
-        int speedStart = difficulty.equals("challenge") ? 200 : 100;
-        int speed = Math.max(0, speedStart - (seconds / 60) * 10);
-        return Math.max(0, base + speed - penalties);
+    static int timeBonus(int size, int seconds) {
+        return Math.max(0, 90 - (seconds / band(size)) * 10);
+    }
+    static int points(String difficulty, int size, int squares, int seconds, int checked, int revealed, int stars, int attempts) {
+        int base = squares * PER_SQUARE.getOrDefault(difficulty, 0), penalties = checked + revealed * 5;
+        if (difficulty.equals("boss")) return Math.max(0, base + 50 * stars - penalties - 50 * (attempts - 1));
+        return Math.max(0, base + timeBonus(size, seconds) - penalties);
+    }
+
+    // Each daily's grid size and white squares, read from the daily itself; the tests hand in their own
+    interface Shapes { int[] of(LocalDate day, String kind) throws IOException; }
+    Shapes shapes = (day, kind) -> PuzzleStore.dailyShape(PuzzleStore.DAILY_FOLDER, day, kind);
+    // (if the daily can't be found: the most common shape)
+    static int[] usualShape(String kind) {
+        return kind.equals("challenge") ? new int[] { 7, 38 } : new int[] { 5, 21 };
     }
 
     // "miles" -> "Miles"; refused unless it's letters (with ' or - between letters), 1 to 12 of them

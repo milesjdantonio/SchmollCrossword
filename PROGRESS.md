@@ -177,12 +177,17 @@ deleted after everything is done.
       collide
 
 ### Phase 4: Rule changes and gameplay fixes
-- [ ] Re-check the point-based achievements (Perfect Score = 300 on a daily, Big Scorer = 1,000) against the new
-      points
-- [ ] Scoring: per-square points, Check 1, Reveal 5 (wrong/empty replaced and charged, right letters locked free),
-      the +10-a-minute time bonus with size-scaled bands, Daily Boss 8 a square + stars - lost tries; the server's
-      `LeaderboardController.points` matches; tests
-- [ ] The daily's timer shows the current bonus and the time left before it drops
+- [x] Re-check the point-based achievements: Perfect Score is now "every point a Hard daily offers" (full time
+      bonus, no Check or Reveal), since 300 depended on the puzzle's square count; Big Scorer (1,000) still fits
+- [x] Scoring (score.js `SCORING`, `scoreBreakdown(puzzle, ...)`, `bossScoreBreakdown(puzzle, ...)`): white squares
+      x 5/8/10/8, time bonus 90 - 10 a band (a band = 60 s x size²/25: 1:00, 1:58 on 7x7, 3:14 on 9x9), Check 1,
+      Reveal 5 (right letters locked free, as before), Daily Boss 8 a square + 50 a star - 50 a lost try. Server:
+      `LeaderboardController.points(difficulty, size, squares, ...)` reads the daily's own grid
+      (`PuzzleStore.dailyShape`, never makes one). Checked in node (15 cases match the server) and in the browser
+      (a Hard daily: 319 in the browser and on the leaderboard). How to Play, the mascot tips and the results tally
+      ("23 Squares × 10", "Time Bonus") updated
+- [x] The daily's timer shows the current bonus and the time left before it drops (`#time-bonus`, `timeBonusNow`;
+      red in the last 10 s; hidden for practice, campaign and after the win)
 - [ ] Reveal Puzzle completes the puzzle's state consistently (Daily, Archive, Daily Boss)
 - [ ] At most 10 Reveal Words per boss phase
 - [ ] Boss enrage at 2.5x the boss's progress (with a small floor so the first letters don't set it off)

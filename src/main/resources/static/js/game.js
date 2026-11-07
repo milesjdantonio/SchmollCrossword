@@ -151,8 +151,20 @@ const Game = (() => {
         if (game.seconds % 5 === 0) saveProgress();
         if (!idleSaid && performance.now() - lastInput > 50000) { idleSaid = true; Bus.emit("idle"); }
     }, 1000);
+    const bonusEl = $("#time-bonus"), bonusPts = $("#time-bonus-pts"), bonusLeft = $("#time-bonus-left");
     function drawTimer() {
         timerEl.textContent = U.fmtTime(game.seconds);
+        // a daily that still counts: the time bonus now, and how long until it drops
+        const p = game.puzzle;
+        const show = !!p && p.mode === "daily" && !game.solved && dailyStanding(seedDay(p.seed)) !== "past";
+        bonusEl.hidden = !show;
+        if (!show) return;
+        const { bonus, left } = timeBonusNow(p.size, game.seconds);
+        bonusPts.textContent = "+" + bonus;
+        bonusLeft.textContent = left == null ? "" : U.fmtTime(left);
+        bonusEl.classList.toggle("soon", left != null && left <= 10);
+        bonusEl.classList.toggle("gone", bonus === 0);
+        bonusEl.title = left == null ? "No time bonus left" : `Time bonus: +${bonus}. It drops to +${Math.max(0, bonus - SCORING.timeBonusStep)} in ${U.fmtTime(left)}.`;
     }
 
     // Midnight with a daily on screen: say so once when the day changes (the puzzle still counts for its own day for
@@ -537,6 +549,7 @@ const Game = (() => {
         if (game.solved || !isSolved()) return false;
         if (game.puzzle.mode === "campaign" && Campaign.nextPhase(game)) return false;     // a boss's phase 2 starts instead
         game.solved = true;
+        drawTimer();
         const p = game.puzzle;
         const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks };
         if (p.mode === "daily" && dailyStanding(seedDay(p.seed)) === "past") {
@@ -544,7 +557,7 @@ const Game = (() => {
             Object.assign(info, { practice: true, counted: false, left: [], note: "This was an earlier day's daily, so it was practice: no points or streak." });
         } else if (p.mode === "daily") {
             const dayWasDone = todayIsDone(scores()), before = bestTime(p.difficulty);
-            info.breakdown = scoreBreakdown(p.difficulty, game.seconds, game.squaresChecked, game.squaresRevealed);
+            info.breakdown = scoreBreakdown(p, game.seconds, game.squaresChecked, game.squaresRevealed);
             info.points = info.breakdown.total;
             info.counted = saveDailyScore(p, info.points);
             info.scoreKey = scoreKey(p);
@@ -565,7 +578,7 @@ const Game = (() => {
                 const dayWasDone = todayIsDone(scores());
                 info.daily = true;
                 const lost = info.campaign.priorTries || 0;                 // the attempts before this one
-                info.breakdown = bossScoreBreakdown(info.campaign.stars, game.squaresChecked, game.squaresRevealed, lost);
+                info.breakdown = bossScoreBreakdown(p, info.campaign.stars, game.squaresChecked, game.squaresRevealed, lost);
                 info.points = info.breakdown.total;
                 const before = scores()[day + "-boss"];
                 info.counted = saveScore(day + "-boss", "boss", info.points, false, info.campaign.stars, lost + 1, true);
@@ -648,8 +661,9 @@ const Game = (() => {
         card.appendChild(tally);
         if (info.breakdown && (info.counted || info.daily)) {           // (a Daily Boss rematch shows what it scored even when it isn't a new best)
             const b = info.breakdown;
-            const rows = b.boss ? [["Beat the Boss", b.base, "+"], [`Stars (${"★".repeat(b.stars)}${"☆".repeat(3 - b.stars)})`, b.speed, "+"]]
-                : [["Solved (" + cap(p.difficulty) + ")", b.base, "+"], ["Speed Bonus", b.speed, "+"]];
+            const per = SCORING.perSquare[b.boss ? "boss" : p.difficulty];
+            const rows = b.boss ? [[`${b.squares} Squares × ${per}`, b.base, "+"], [`Stars (${"★".repeat(b.stars)}${"☆".repeat(3 - b.stars)})`, b.speed, "+"]]
+                : [[`${b.squares} Squares × ${per}`, b.base, "+"], ["Time Bonus", b.speed, "+"]];
             if (b.tries) rows.push([`Earlier Attempts (${b.lostTries})`, b.tries, "−"]);
             if (b.check) rows.push(["Check Penalty", b.check, "−"]);
             if (b.reveal) rows.push(["Reveal Penalty", b.reveal, "−"]);
@@ -814,9 +828,8 @@ const Game = (() => {
         for (let row = 0; row < game.puzzle.size; row++) for (let col = 0; col < game.puzzle.size; col++) if (!isBlock(row, col)) cells.push([row, col]);
         return cells;
     }
-    // Check: mark wrong letters (empty squares aren't marked). 5 points per square in the scope.
     // Check: wrong letters get crossed out; right ones are LOCKED in (a check mark in the corner) so they can't
-    // be changed. Squares that are already locked aren't checked (or charged for) again.
+    // be changed. 1 point per square in the scope; squares that are already locked aren't checked (or charged) again.
     function check(scope) {
         const cells = scopeCells(scope).filter(([row, col]) => !isLocked(row, col));
         if (!cells.length) { Sound.play("right"); return; }      // all locked already (so all right): nothing to check, and no charge
@@ -834,7 +847,8 @@ const Game = (() => {
         Bus.emit("check", { anyWrong, anyFilled });
         render();
     }
-    // Reveal: fill in the right letter wherever it's empty or wrong. 10 points per square. All = surrender.
+    // Reveal: fill in the right letter wherever it's empty or wrong, 5 points per square; a right letter is locked for
+    // free. All = surrender.
     async function reveal(scope) {
         if (scope === "puzzle" && !(await U.ask({ title: "Reveal the Whole Puzzle?", text: "This counts as giving up: 0 points, and it won't count toward your streak.", yes: "Reveal it", no: "Keep trying" }))) return;
         let n = 0;
@@ -864,6 +878,7 @@ const Game = (() => {
     function surrender() {
         game.solved = true;
         game.surrendered = true;
+        drawTimer();
         let text = game.puzzle.mode === "campaign" ? "Level not cleared. Play it again from the map." : "Better luck next time.";
         if (game.puzzle.mode === "daily") {
             const counted = saveDailyScore(game.puzzle, 0, true);

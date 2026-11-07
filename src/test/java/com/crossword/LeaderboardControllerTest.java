@@ -29,6 +29,12 @@ class LeaderboardControllerTest {
     static LeaderboardController.Entry entry(String player, String first, String initial, String difficulty, int seconds, int checked, int revealed, Integer stars) {
         return new LeaderboardController.Entry(player, first, initial, "2026-10-09", difficulty, seconds, checked, revealed, stars, null);
     }
+    // a leaderboard whose dailies are all 5x5 with 21 white squares (Challenge 7x7 with 40), whatever is on disk
+    static LeaderboardController make(Path folder) {
+        LeaderboardController lb = new LeaderboardController(folder);
+        lb.shapes = (day, kind) -> kind.equals("challenge") ? new int[] { 7, 40 } : new int[] { 5, 21 };
+        return lb;
+    }
     // the same entry with a start ticket from long ago, so its time counts
     static LeaderboardController.Entry timed(LeaderboardController lb, LeaderboardController.Entry e) {
         String t = lb.ticket(new LeaderboardController.Start(e.date(), e.difficulty()), "ticket", DAY, -10_000_000L);
@@ -37,7 +43,7 @@ class LeaderboardControllerTest {
 
     @Test
     void aPlayerCanRemoveTheirName() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         lb.post(entry(A, "Miles", "D", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
         lb.post(entry(A, "Miles", "D", "hard", 90, 0, 0, null), "1.1.1.1", DAY, 1);
         lb.post(entry(B, "Ann", "B", "easy", 90, 0, 0, null), "2.2.2.2", DAY, 2);
@@ -73,7 +79,7 @@ class LeaderboardControllerTest {
     // Hate figures, family-list words and look-alike spellings are refused; real names still work
     @Test
     void theNameFilterSeesThroughAccentsAndLookAlikes() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         for (String bad : List.of("Hitler", "Hítlér", "Nаzi", "Moron", "Sexy")) {   // (an accented i and e; a Cyrillic a)
             assertTrue(lb.isBlocked(LeaderboardController.cleanFirst(bad), ""), bad);
         }
@@ -99,7 +105,7 @@ class LeaderboardControllerTest {
     // A day's board is deleted once it's older than KEEP_DAYS
     @Test
     void oldDaysAreDeleted() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         lb.post(entry(A, "Ann", "B", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
         assertEquals(0, lb.deleteDaysBefore(DAY));
         assertEquals(1, lb.deleteDaysBefore(DAY.plusDays(1)));
@@ -108,7 +114,7 @@ class LeaderboardControllerTest {
 
     @Test
     void offensiveNamesAreRefusedButRealNamesAreNot() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         assertThrows(ResponseStatusException.class, () -> lb.post(entry(A, "Shitty", "Q", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0));
         lb.post(entry(A, "Cassie", "D", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);              // contains a short blocked word: fine
         lb.post(entry(B, "Dickens", "W", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
@@ -117,36 +123,54 @@ class LeaderboardControllerTest {
 
     @Test
     void theServerWorksOutThePointsLikeScoreJs() {
-        assertEquals(100 + 100, LeaderboardController.points("easy", 59, 0, 0, 0));
-        assertEquals(150 + 90 - 10 - 10, LeaderboardController.points("medium", 61, 2, 1, 0));
-        assertEquals(200 + 0, LeaderboardController.points("hard", 3600, 0, 0, 0));
-        assertEquals(300 + 180, LeaderboardController.points("challenge", 120, 0, 0, 0));
-        assertEquals(250 + 150, LeaderboardController.points("boss", 999, 0, 0, 3));
-        assertEquals(0, LeaderboardController.points("easy", 5000, 100, 100, 0));
-        assertEquals(250 + 150 - 100, LeaderboardController.points("boss", 999, 0, 0, 3, 3));      // two lost attempts first
+        assertEquals(60, LeaderboardController.band(5));
+        assertEquals(118, LeaderboardController.band(7), "a 7x7 band: 60 s x 49/25");
+        assertEquals(194, LeaderboardController.band(9));
+        assertEquals(21 * 5 + 90, LeaderboardController.points("easy", 5, 21, 59, 0, 0, 0, 1));
+        assertEquals(21 * 8 + 80 - 2 - 5, LeaderboardController.points("medium", 5, 21, 61, 2, 1, 0, 1));
+        assertEquals(21 * 10 + 50, LeaderboardController.points("hard", 5, 21, 4 * 60 + 59, 0, 0, 0, 1), "4-5 minutes: +50");
+        assertEquals(21 * 10 + 10, LeaderboardController.points("hard", 5, 21, 8 * 60 + 59, 0, 0, 0, 1), "8-9 minutes: +10");
+        assertEquals(21 * 10, LeaderboardController.points("hard", 5, 21, 9 * 60, 0, 0, 0, 1), "9 minutes and up: no bonus");
+        assertEquals(40 * 8 + 90, LeaderboardController.points("challenge", 7, 40, 117, 0, 0, 0, 1));
+        assertEquals(40 * 8 + 80, LeaderboardController.points("challenge", 7, 40, 118, 0, 0, 0, 1));
+        assertEquals(21 * 8 + 150, LeaderboardController.points("boss", 5, 21, 999, 0, 0, 3, 1), "no time bonus for the boss");
+        assertEquals(21 * 8 + 150 - 100, LeaderboardController.points("boss", 5, 21, 999, 0, 0, 3, 3), "two lost attempts first");
+        assertEquals(0, LeaderboardController.points("easy", 5, 21, 5000, 100, 100, 0, 1), "never below 0");
+    }
+
+    @Test
+    void theServerReadsTheGridOfTheRealDaily() throws Exception {
+        assertEquals(List.of(5, 3), java.util.Arrays.stream(PuzzleStore.shapeOf("{\"size\":5,\"solution\":[\"AB.\",\".C.\"]}")).boxed().toList());
+        // the first shipped daily: a 5x5 with some black squares
+        int[] shape = PuzzleStore.dailyShape(folder, LocalDate.of(2026, 11, 8), "easy");
+        if (shape != null) {
+            assertEquals(5, shape[0]);
+            assertTrue(shape[1] > 15 && shape[1] <= 25, "white squares: " + shape[1]);
+        }
+        assertNull(PuzzleStore.dailyShape(folder, LocalDate.of(2031, 1, 1), "easy"), "never makes a daily");
     }
 
     @Test
     void totalsAreRankedAndEachDailyCountsOnce() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
-        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 0);        // 200
+        LeaderboardController lb = make(folder);
+        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 0);        // 105 + 90 = 195
         lb.post(timed(lb, entry(A, "Miles", "D", "easy", 10, 0, 0, null)), "1.1.1.1", DAY, 1);        // a second Easy: ignored
-        lb.post(timed(lb, entry(B, "Ana", "R", "hard", 50, 0, 0, null)), "2.2.2.2", DAY, 2);          // 300
-        LeaderboardController.Board board = lb.post(entry(A, "Miles", "D", "boss", 400, 0, 0, 2), "1.1.1.1", DAY, 3);   // 200 + 350
+        lb.post(timed(lb, entry(B, "Ana", "R", "hard", 50, 0, 0, null)), "2.2.2.2", DAY, 2);          // 210 + 90 = 300
+        LeaderboardController.Board board = lb.post(entry(A, "Miles", "D", "boss", 400, 0, 0, 2), "1.1.1.1", DAY, 3);   // 195 + 168 + 100
         assertEquals(2, board.players());
         assertEquals("Miles D.", board.top().get(0).name());
-        assertEquals(550, board.top().get(0).points());
+        assertEquals(463, board.top().get(0).points());
         assertEquals(List.of("easy", "boss"), board.top().get(0).dailies());
         assertEquals(1, board.you().rank());
         assertEquals(2, lb.standings("2026-10-09", B).you().rank());
         assertNull(lb.standings("2026-10-09", "cccccccc-1111-2222-3333-444444444444").you());
         // saved to disk: a fresh controller (a server restart) sees the same board
-        assertEquals(550, new LeaderboardController(folder).standings("2026-10-09", null).top().get(0).points());
+        assertEquals(463, new LeaderboardController(folder).standings("2026-10-09", null).top().get(0).points());
     }
 
     @Test
     void removingANameFromTheFileTakesEffectAtOnce() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         lb.post(entry(A, "Miles", "D", "easy", 50, 0, 0, null), "1.1.1.1", DAY, 0);
         lb.post(entry(B, "Ana", "R", "easy", 50, 0, 0, null), "2.2.2.2", DAY, 1);
         assertEquals(2, lb.standings("2026-10-09", null).players());
@@ -159,21 +183,21 @@ class LeaderboardControllerTest {
 
     @Test
     void theDailyBossKeepsYourBestAttempt() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 2), "1.1.1.1", DAY, 0);    // 300 - 50 = 250
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 3), "1.1.1.1", DAY, 1);    // 300 - 100 = 200: lower, ignored
-        assertEquals(250, lb.standings("2026-10-09", A).you().points());
-        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 3, 3), "1.1.1.1", DAY, 2);    // 400 - 100 = 300: better
+        LeaderboardController lb = make(folder);
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 2), "1.1.1.1", DAY, 0);    // 168 + 50 - 50 = 168
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 1, 3), "1.1.1.1", DAY, 1);    // 168 + 50 - 100 = 118: lower, ignored
+        assertEquals(168, lb.standings("2026-10-09", A).you().points());
+        lb.post(new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "boss", 200, 0, 0, 3, 3), "1.1.1.1", DAY, 2);    // 168 + 150 - 100 = 218: better
         LeaderboardController.Board b = lb.standings("2026-10-09", A);
-        assertEquals(300, b.you().points());
+        assertEquals(218, b.you().points());
         assertEquals(List.of("boss"), b.you().dailies());
-        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 3);                                  // + 200
-        assertEquals(500, lb.standings("2026-10-09", A).you().points());
+        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 3);                                  // + 195
+        assertEquals(413, lb.standings("2026-10-09", A).you().points());
     }
 
     @Test
     void solveTimesAreCheckedAgainstTheStartTicket() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         long started = 1_000_000_000L;
         String ticket = lb.ticket(new LeaderboardController.Start("2026-10-09", "easy"), "1.1.1.1", DAY, started);
         assertTrue(lb.secondsSinceStart(ticket, DAY, "easy", started + 30_000) == 30);
@@ -190,15 +214,15 @@ class LeaderboardControllerTest {
         assertThrows(ResponseStatusException.class, () -> lb.post(slow, "1.1.1.1", DAY, started + 180_000));
         // claiming 50 s after 3 minutes is fine (the clock stops while the page is hidden): full speed bonus
         LeaderboardController.Entry ok = new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "easy", 50, 0, 0, null, null, ticket);
-        assertEquals(200, lb.post(ok, "1.1.1.1", DAY, started + 180_000).you().points());
-        // no ticket: it counts, without the speed bonus
-        assertEquals(100, lb.post(entry(B, "Ann", "", "easy", 50, 0, 0, null), "2.2.2.2", DAY, started + 1000).you().points());
+        assertEquals(105 + 90, lb.post(ok, "1.1.1.1", DAY, started + 180_000).you().points());
+        // no ticket: it counts, without the time bonus
+        assertEquals(105, lb.post(entry(B, "Ann", "", "easy", 50, 0, 0, null), "2.2.2.2", DAY, started + 1000).you().points());
         assertThrows(ResponseStatusException.class, () -> lb.ticket(new LeaderboardController.Start("2026-10-09", "boss"), "1.1.1.1", DAY, started), "the Daily Boss needs no ticket");
     }
 
     @Test
     void badEntriesAreRefused() {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         assertThrows(ResponseStatusException.class, () -> lb.post(entry("short", "Miles", "D", "easy", 50, 0, 0, null), "1", DAY, 0));
         assertThrows(ResponseStatusException.class, () -> lb.post(entry(A, "Miles", "D", "expert", 50, 0, 0, null), "1", DAY, 0));
         assertThrows(ResponseStatusException.class, () -> lb.post(entry(A, "Miles", "D", "easy", 0, 0, 0, null), "1", DAY, 0));
@@ -209,7 +233,7 @@ class LeaderboardControllerTest {
 
     @Test
     void onePersonCanOnlyPostSoOften() throws Exception {
-        LeaderboardController lb = new LeaderboardController(folder);
+        LeaderboardController lb = make(folder);
         for (int i = 0; i < 20; i++) lb.post(entry("player-" + "x".repeat(10) + i, "Miles", "D", "easy", 50, 0, 0, null), "9.9.9.9", DAY, i);
         ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> lb.post(entry(B, "Miles", "D", "easy", 50, 0, 0, null), "9.9.9.9", DAY, 30));
         assertEquals(429, e.getStatusCode().value());

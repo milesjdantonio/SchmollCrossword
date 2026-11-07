@@ -17,7 +17,7 @@ const Achievements = (() => {
         { id: "archive10", icon: "\u{1F570}️", name: "Time Traveler", desc: "Solve 10 puzzles from the Daily Archive." },
         { id: "worlds", icon: "\u{1F5FA}️", name: "World Traveler", desc: "Solve a puzzle in every world." },
         { id: "comeback", icon: "\u{1FA79}", name: "Never Give Up", desc: "Solve a puzzle after 3 or more Checks." },
-        { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a normal daily." },
+        { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score every point a Hard daily offers: the full time bonus, no Check or Reveal." },
         { id: "challenger", icon: "\u{1F3D4}️", name: "Challenger", desc: "Solve a Challenge puzzle." },
         { id: "summit", icon: "\u{1F9D7}", name: "Summit", desc: "Solve a daily Challenge without Check or Reveal." },
         // 18 more, to make 50
@@ -99,7 +99,7 @@ const Achievements = (() => {
         data.worlds[worldId] = true;
         if (Worlds.list.every(w => w.plain || w.secret || data.worlds[w.id])) unlock("worlds");      // (the secret world doesn't count)
         if ((info.mode === "daily" || info.daily) && info.counted) {
-            if (info.mode === "daily" && info.points >= 300 && info.difficulty !== "challenge") unlock("perfect");
+            if (info.mode === "daily" && info.difficulty === "hard" && info.breakdown && info.breakdown.speed === SCORING.timeBonusTop && !info.checked && !info.revealed) unlock("perfect");
             if (info.left && !info.left.some(d => ["easy", "medium", "hard"].includes(d))) unlock("hat");   // the three normal dailies
             if (info.mode === "daily" && info.difficulty === "challenge" && !info.checked && !info.revealed) unlock("summit");
             if (info.streak >= 3) unlock("streak3");

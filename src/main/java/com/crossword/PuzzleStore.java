@@ -569,6 +569,31 @@ public class PuzzleStore {
     static Path dailyBossFile(Path folder, LocalDate date, boolean bossBoard) {
         return folder.resolve(date + "-boss" + (bossBoard ? "-board" : "") + ".json");
     }
+
+    /*
+     * A daily's grid size and white squares, for the leaderboard's points: { size, squares }, read from the saved or
+     * shipped daily ("easy" ... "challenge", or "boss" for the player's Daily Boss board). Never makes one: null if
+     * there isn't one.
+     */
+    static int[] dailyShape(Path folder, LocalDate date, String kind) throws IOException {
+        Path file = kind.equals("boss") ? dailyBossFile(folder, date, false) : dailyFile(folder, date, kind);
+        String json = readSaved(file);
+        if (json == null) {
+            json = shippedDaily(file.getFileName().toString());
+            if (json != null && isDisabled(json)) json = null;
+        }
+        return json == null ? null : shapeOf(json);
+    }
+    private static final java.util.regex.Pattern SIZE = java.util.regex.Pattern.compile("\"size\":(\\d+)");
+    private static final java.util.regex.Pattern SOLUTION = java.util.regex.Pattern.compile("\"solution\":\\[([^\\]]*)\\]");
+    static int[] shapeOf(String json) {
+        var size = SIZE.matcher(json);
+        var solution = SOLUTION.matcher(json);
+        if (!size.find() || !solution.find()) return null;
+        int squares = 0;
+        for (char c : solution.group(1).toCharArray()) if (Character.isLetter(c)) squares++;
+        return new int[] { Integer.parseInt(size.group(1)), squares };
+    }
     // a boss puzzle at a section's boss settings
     static String bossPuzzle(long seed, Campaign.Section section, Map<Integer, List<String>> wordsByLength, boolean withClues) {
         String difficulty = section.bossDifficulty();
