@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-world="candy" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>The Everbook</title>
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/worlds.css">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="b.css">
+</head>
+<body class="eb">
+    <canvas id="world-bg" aria-hidden="true"></canvas>
+    <div id="overlay"></div>
+    <div class="eb-dim" aria-hidden="true"></div>
+
+    <header class="eb-top">
+        <button type="button" class="eb-round" id="eb-back" aria-label="Back to Home"></button>
+        <div class="eb-status">
+            <span class="eb-chip" id="eb-stars" title="Campaign stars"></span>
+            <span class="eb-chip" id="eb-coins" title="Coins"></span>
+        </div>
+    </header>
+
+    <main class="eb-desk">
+        <div class="eb-book" id="eb-book">
+            <nav class="eb-tabs" id="eb-tabs" aria-label="The book's sections"></nav>
+            <section class="eb-page eb-left" id="eb-left" aria-live="polite"></section>
+            <div class="eb-spine" aria-hidden="true"></div>
+            <section class="eb-page eb-right" id="eb-right"></section>
+        </div>
+        <div class="eb-turns">
+            <button type="button" class="eb-turn" id="eb-prev"></button>
+            <button type="button" class="eb-turn" id="eb-next"></button>
+        </div>
+    </main>
+
+    <p class="di-demo-mark">Demo · Sample Progress</p>
+
+    <script src="/js/util.js"></script>
+    <script src="/js/sound.js"></script>
+    <script src="/js/fx.js"></script>
+    <script src="/js/worlds.js"></script>
+    <script src="/js/worlds/classic.js"></script>
+    <script src="/js/worlds/paper.js"></script>
+    <script src="/js/worlds/space.js"></script>
+    <script src="/js/worlds/garden.js"></script>
+    <script src="/js/worlds/arcade.js"></script>
+    <script src="/js/worlds/snow.js"></script>
+    <script src="/js/worlds/squirrel.js"></script>
+    <script src="/js/worlds/ocean.js"></script>
+    <script src="/js/worlds/candy.js"></script>
+    <script src="/js/worlds/library.js"></script>
+    <script src="/js/worlds/volcano.js"></script>
+    <script src="/js/worlds/sky.js"></script>
+    <script src="/js/worlds/desert.js"></script>
+    <script src="/js/worlds/robot.js"></script>
+    <script src="/js/worlds/carnival.js"></script>
+    <script src="/js/worlds/rain.js"></script>
+    <script src="/js/worlds/rift.js"></script>
+    <script src="/js/companions.js"></script>
+    <script src="/js/bosses.js"></script>
+    <script src="/js/hero.js"></script>
+    <script src="/js/powers.js"></script>
+    <script src="common.js"></script>
+    <script src="b.js"></script>
+</body>
+</html>
