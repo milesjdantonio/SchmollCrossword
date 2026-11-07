@@ -58,13 +58,13 @@ deleted after everything is done.
 ### Phase 0: Set up
 - [x] Read MAJOR_UPDATE.md, the code, TerraSim, RhythmArchitect and the review zip; ask every question
 - [x] PROGRESS.md (this file)
-- [ ] REVIEW.md
-- [ ] Update page (looks like the intro, Play the Current Version button) on `main`; fix the two broken `<meta>`
+- [x] REVIEW.md
+- [x] Update page (looks like the intro, Play the Current Version button) on `main`; fix the two broken `<meta>`
       tags that stop link previews showing the image; test in the browser; commit and push `main`
-- [ ] Branch `major-update` from `main`, push it
-- [ ] MAJOR_UPDATE.md: remove Unlimited and online multiplayer, write in the decisions
-- [ ] Copy TerraSim's design skills into `.claude/skills/` (local, git-ignored); no hooks without asking
-- [ ] CLAUDE.md "current work" note + a memory pointing here
+- [x] Branch `major-update` from `main`, push it
+- [x] MAJOR_UPDATE.md: remove Unlimited and online multiplayer, write in the decisions
+- [x] Copy TerraSim's design skills into `.claude/skills/` (local, git-ignored); no hooks without asking
+- [x] CLAUDE.md "current work" note + a memory pointing here
 
 ### Phase 1: Remove Unlimited
 - [ ] Frontend: Home card, menu tab, `#unlimited` route, picker (`showPicker`, `#un-picker`), New Puzzle button,
@@ -214,3 +214,6 @@ deleted after everything is done.
 ## Log
 
 - 2026-11-07: questions asked and answered; plan written. Paid calls so far: $0.
+- 2026-11-07: update page pushed to `main` (6b0ee02); branch `major-update` made. The test browser helper was broken
+  by Edge 156 (its launcher process exits at once and the watchdog then killed the real browser); fixed in
+  `tools/browser-test/` (local), see CLAUDE.md "Running things safely".
