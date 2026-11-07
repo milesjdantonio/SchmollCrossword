@@ -83,7 +83,7 @@ public class PuzzleStore {
         String saved = readSaved(file);
         if (saved != null) return saved;
         String shipped = shippedDaily(file.getFileName().toString());
-        if (shipped != null) return shipped;
+        if (shipped != null && !isDisabled(shipped)) return shipped;
         return generateOnce(file, () -> generateDaily(date, difficulty, wordsByLength, recentDailyAnswers(folder, date, difficulty)));
     }
 
@@ -184,6 +184,60 @@ public class PuzzleStore {
     static void resetForTests() {
         FAILED_UNTIL.clear();
         UNSAVED.clear();
+        disabled = null;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Switching a daily off (moderation): a daily with a bad clue or answer is replaced by a new one. A saved copy
+    // is moved aside (name.disabled); a shipped one is skipped from then on, by the hash of its text kept in
+    // disabled.txt, so the next request makes a fresh daily for that day.
+    // ---------------------------------------------------------------------------------------
+    static final Path DISABLED_FILE = Path.of(System.getenv().getOrDefault("PUZZLE_DIR", "puzzles"), "disabled.txt");
+    static volatile Path disabledFile = DISABLED_FILE;           // (the tests point it at a temporary folder)
+    private static volatile Set<String> disabled;
+
+    static boolean isDisabled(String json) throws IOException {
+        return disabledHashes().contains(hash(json));
+    }
+    private static synchronized Set<String> disabledHashes() throws IOException {
+        if (disabled == null) {
+            Set<String> set = ConcurrentHashMap.newKeySet();
+            if (Files.exists(disabledFile)) {
+                for (String line : Files.readAllLines(disabledFile, StandardCharsets.UTF_8)) {
+                    String h = line.split("\\s+")[0].trim();
+                    if (!h.isEmpty()) set.add(h);
+                }
+            }
+            disabled = set;
+        }
+        return disabled;
+    }
+
+    // Switches off a daily ("easy", "medium", "hard", "challenge", "boss" or "boss-board"); true if there was one
+    static synchronized boolean disableDaily(Path folder, LocalDate date, String kind) throws IOException {
+        Path file = kind.startsWith("boss") ? dailyBossFile(folder, date, kind.equals("boss-board")) : dailyFile(folder, date, kind);
+        String current = readSaved(file);
+        if (current == null) current = shippedDaily(file.getFileName().toString());
+        if (current == null) return false;
+        Files.createDirectories(disabledFile.toAbsolutePath().getParent());
+        Files.writeString(disabledFile, hash(current) + "  " + file.getFileName() + "\n", StandardCharsets.UTF_8,
+                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
+        disabledHashes().add(hash(current));
+        if (Files.exists(file)) Files.move(file, file.resolveSibling(file.getFileName() + ".disabled"), StandardCopyOption.REPLACE_EXISTING);
+        UNSAVED.remove(file);
+        LOG.info("Moderation: switched off {}", file.getFileName());
+        return true;
+    }
+
+    static String hash(String text) {
+        try {
+            byte[] d = java.security.MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+            StringBuilder b = new StringBuilder();
+            for (byte x : d) b.append(String.format("%02x", x));
+            return b.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     // ---------------------------------------------------------------------------------------
@@ -507,7 +561,7 @@ public class PuzzleStore {
         String saved = readSaved(file);
         if (saved != null) return saved;
         String shipped = shippedDaily(file.getFileName().toString());
-        if (shipped != null) return shipped;
+        if (shipped != null && !isDisabled(shipped)) return shipped;
         Campaign.Section section = dailyBossSection(date);
         long seed = seedForDate(date) * 10 + (bossBoard ? 6 : 5);       // the dailies use 1-4
         return generateOnce(file, () -> bossPuzzle(seed, section, wordsByLength, !bossBoard));

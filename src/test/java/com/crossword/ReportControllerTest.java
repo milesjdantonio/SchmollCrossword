@@ -66,4 +66,19 @@ class ReportControllerTest {
         assertEquals(429, e.getStatusCode().value());
         assertThrows(ResponseStatusException.class, () -> controller.reports("wrong key"));
     }
+
+    // The kind of problem is saved; a kind that says enough by itself needs no message, "other" still does
+    @Test
+    void theKindOfProblemIsSaved() throws Exception {
+        Path file = folder.resolve("kinds.jsonl");
+        ReportController controller = new ReportController(file, "k");
+        controller.save(new ReportController.Report(1L, "daily", "easy", "5A: Toss", "", null, "unclear-clue"), "a", 0);
+        controller.save(new ReportController.Report(2L, "daily", "easy", null, "The timer froze", null, null), "b", 0);
+        List<String> lines = Files.readAllLines(file);
+        assertEquals("unclear-clue", new ObjectMapper().readTree(lines.get(0)).get("category").asText());
+        assertEquals("other", new ObjectMapper().readTree(lines.get(1)).get("category").asText(), "an older page sends no kind");
+        assertThrows(ResponseStatusException.class, () -> controller.save(new ReportController.Report(3L, "daily", "easy", null, "", null, "other"), "c", 0));
+        assertThrows(ResponseStatusException.class, () -> controller.save(new ReportController.Report(3L, "daily", "easy", null, "hi", null, "<script>"), "c", 0));
+        assertEquals(2, controller.count());
+    }
 }

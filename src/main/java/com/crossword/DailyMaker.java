@@ -111,10 +111,12 @@ public class DailyMaker {
         return days;
     }
 
-    // True if that daily is saved or shipped with the app
+    // True if that daily is saved, or shipped with the app and not switched off
     boolean exists(LocalDate date, String kind) throws IOException {
         Path file = file(date, kind);
-        return Files.exists(file) || PuzzleStore.shippedDaily(file.getFileName().toString()) != null;
+        if (Files.exists(file)) return true;
+        String shipped = PuzzleStore.shippedDaily(file.getFileName().toString());
+        return shipped != null && !PuzzleStore.isDisabled(shipped);
     }
 
     Path file(LocalDate date, String kind) {

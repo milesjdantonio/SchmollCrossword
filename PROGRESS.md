@@ -122,20 +122,30 @@ deleted after everything is done.
 - [ ] Share links: correct preview tags (title, description, image) for crawlers; answer-free result text;
       copy-link fallback
 - [ ] Saves: recover from missing or damaged local saves instead of crashing; document what's stored where
-- [ ] Reports: categories (wrong answer, unclear clue, typo, offensive, technical); abuse limits; an admin page
-      (key-protected) to read reports, switch a puzzle off and hide a leaderboard name
-- [ ] Health: logging, a key-protected developer dashboard (dailies in stock, failures, API use and estimated cost,
-      reports), a daily email (SMTP settings from env vars, off when not set, never breaks the game)
+- [x] Reports: categories (wrong answer, unclear clue, typo, offensive, technical, other; details optional unless
+      "other"), 10 an hour per person, and the email address in the dialog. Admin page `/admin.html` (`ADMIN_KEY`,
+      `REPORTS_KEY` still works; the key goes in the `X-Admin-Key` header, kept in sessionStorage; without a key
+      every admin URL is 404): reads reports (filter by kind; a daily's report has "Switch Off This Daily"),
+      switches a daily off (`POST /api/admin/daily/disable`: a saved one is moved to `.disabled`, a shipped one is
+      skipped by its hash in `$PUZZLE_DIR/disabled.txt`, the next request or the made-ahead job makes a new one),
+      hides a name from a day's board (`POST /api/admin/leaderboard/hide`)
+- [x] Health: `GET /api/health` (no key) for the host; `GET /api/admin/status` (`HealthReport`: dailies in stock,
+      the last made-ahead run and its error, Claude calls and estimated cost by model, API key set or not, players
+      today/yesterday, reports, uptime); a daily email at 08:00 (`DailyEmail`, spring-boot-starter-mail; off unless
+      `SPRING_MAIL_HOST`/`USERNAME`/`PASSWORD` and `REPORT_EMAIL_TO` are set; failures only logged). Logging is SLF4J
+      throughout (made, failed, moderation)
 - [x] Content: family-friendly answer filter (`family-words.txt`, 42 words: sex, nudity, drinking, crude words,
       insults; `App.loadFamilyWords`, skipped at every difficulty; the clue prompt asks for family-friendly clues).
       Campaign pool: 77 variants with those answers removed (each level keeps 20-25; `PuzzleStore.poolPuzzleOrNext`
       falls through to the next variant), 56 files re-clued (PEE "Letter between O and Q", BRA "Support group
       member?"). Shipped dailies left as played (the Daily Archive should hide ones with family-list answers).
-- [ ] A bigger leaderboard name blocklist (and the family words in names too)
+- [x] A bigger leaderboard name blocklist (`name-blocklist.txt`: hate terms; plus the family words), and it sees
+      through accents and look-alike letters (`plain()`: NFD, Cyrillic/Greek look-alikes to Latin)
 - [ ] Security: anything that costs money is a JSON POST; rate limiter keys IPv6 by /64, doesn't leak memory,
       caps survive restarts; Docker non-root user, health check
-- [ ] Leaderboard: no last-name requirement; server-side timing check (a start token) so faked times are caught;
-      cache standings; faster forget; retention stated
+- [x] Leaderboard: the initial is optional ("Miles" or "Miles D."); standings cached until the day's file
+      changes; days older than 30 are deleted every night (`KEEP_DAYS`, stated in the Privacy Notice)
+- [ ] Leaderboard: server-side timing check (a start token) so faked times are caught; faster forget
 
 ### Phase 4: Rule changes and gameplay fixes
 - [ ] Re-check the point-based achievements (Perfect Score = 300 on a daily, Big Scorer = 1,000) against the new

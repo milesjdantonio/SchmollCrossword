@@ -1,5 +1,5 @@
-// The World Leaderboard: today's dailies, posted under a first
-// name and a last-name initial ("Miles D."), ranked by each player's total points for the day.
+// The World Leaderboard: today's dailies, posted under a first name and, if the player likes, a last initial
+// ("Miles" or "Miles D."), ranked by each player's total points for the day.
 //
 //   Leaderboard.after(record, box)   on the results screen: post this daily (asks for a name the first time)
 //   Leaderboard.drawHome(el, count)  the Home card: today's top 50 in two columns, your place, and the player count
@@ -21,7 +21,7 @@ const Leaderboard = (() => {
     }
     const me = () => U.store.get("leaderboard", {});
     const saveMe = o => U.store.set("leaderboard", { ...me(), ...o });
-    const display = n => (n && n.first ? `${n.first} ${n.initial}.` : "");
+    const display = n => (n && n.first ? (n.initial ? `${n.first} ${n.initial}.` : n.first) : "");
     const dateOf = day => `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
     const todayKey = () => { const d = new Date(); return String(d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()); };
 
@@ -29,7 +29,7 @@ const Leaderboard = (() => {
     async function post(rec) {
         const n = me(), [day, difficulty] = rec.key.split("-");
         const r = await fetch("/api/leaderboard", { method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ player: playerId(), first: n.first, initial: n.initial, date: dateOf(day), difficulty, seconds: rec.seconds,
+            body: JSON.stringify({ player: playerId(), first: n.first, initial: n.initial || "", date: dateOf(day), difficulty, seconds: rec.seconds,
                 checked: rec.checked || 0, revealed: rec.revealed || 0, stars: rec.stars || undefined, attempts: rec.attempts || undefined }) });
         if (!r.ok) {
             let msg = r.status === 429 ? "Too many posts. Try again later." : "Couldn't post your score.";
@@ -76,11 +76,11 @@ const Leaderboard = (() => {
         if (after) after();
     }
 
-    // a name form: First name + Initial
+    // a name form: First name, and an optional last initial
     function nameForm(onDone, { label = "Post", note = "" } = {}) {
         const n = me();
         const first = U.el("input", { type: "text", class: "lb-first", maxlength: 12, autocomplete: "given-name", placeholder: "First name", "aria-label": "First name", value: n.first || "" });
-        const init = U.el("input", { type: "text", class: "lb-init", maxlength: 1, autocomplete: "off", placeholder: "L", "aria-label": "Last name initial", value: n.initial || "" });
+        const init = U.el("input", { type: "text", class: "lb-init", maxlength: 1, autocomplete: "off", placeholder: "Initial", "aria-label": "Last initial (optional)", value: n.initial || "" });
         const err = U.el("small", { class: "lb-err", "aria-live": "polite" });
         const btn = U.el("button", { type: "submit", class: "btn primary small", text: label });
         const form = U.el("form", { class: "lb-form" }, first, init, btn, err);
@@ -91,7 +91,7 @@ const Leaderboard = (() => {
             e.preventDefault();
             const f = first.value.trim(), i = init.value.trim().replace(".", "");
             if (!LETTERS.test(f)) { err.textContent = "First name: letters only, up to 12."; first.focus(); return; }
-            if (!/^\p{L}$/u.test(i)) { err.textContent = "Initial: one letter."; init.focus(); return; }
+            if (i && !/^\p{L}$/u.test(i)) { err.textContent = "Initial: one letter, or leave it empty."; init.focus(); return; }
             saveMe({ first: f[0].toUpperCase() + f.slice(1), initial: i.toUpperCase() });
             btn.disabled = true; err.textContent = "";
             try { await onDone(); }
@@ -140,7 +140,7 @@ const Leaderboard = (() => {
             box.append(U.el("small", { class: "lb-kicker", text: "WORLD LEADERBOARD" }), U.el("p", { class: "lb-line", text: "Posting…" }));
             go().catch(e => { box.innerHTML = ""; box.append(U.el("small", { class: "lb-kicker", text: "WORLD LEADERBOARD" }), U.el("p", { class: "lb-line", text: e.message })); });
         } else {
-            box.append(U.el("small", { class: "lb-kicker", text: "WORLD LEADERBOARD" }), nameForm(go, { note: "Post your score under your first name and last initial." }));
+            box.append(U.el("small", { class: "lb-kicker", text: "WORLD LEADERBOARD" }), nameForm(go, { note: "Post your score under your first name. A last initial is optional." }));
         }
     }
 

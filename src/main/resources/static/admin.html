@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Schmoll Admin</title>
+  <link rel="stylesheet" href="css/admin.css">
+  <script src="js/admin.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <h1>Schmoll Admin</h1>
+    <button id="sign-out" class="quiet" type="button" hidden>Sign Out</button>
+  </header>
+
+  <main>
+    <form id="sign-in" class="card narrow" autocomplete="off">
+      <h2>Sign In</h2>
+      <label for="key">Admin Key</label>
+      <input id="key" type="password" required spellcheck="false">
+      <button type="submit">Sign In</button>
+      <p id="sign-in-error" class="error" role="alert"></p>
+    </form>
+
+    <div id="panel" hidden>
+      <section class="card" aria-labelledby="status-h">
+        <div class="row-head">
+          <h2 id="status-h">Status</h2>
+          <button id="refresh" class="quiet" type="button">Refresh</button>
+        </div>
+        <div id="tiles" class="tiles"></div>
+        <p id="status-note" class="note"></p>
+      </section>
+
+      <section class="card" aria-labelledby="reports-h">
+        <div class="row-head">
+          <h2 id="reports-h">Reports</h2>
+          <label class="inline">Kind
+            <select id="report-kind">
+              <option value="">All</option>
+              <option value="wrong-answer">Wrong Answer</option>
+              <option value="unclear-clue">Unclear Clue</option>
+              <option value="typo">Typo</option>
+              <option value="offensive">Offensive</option>
+              <option value="technical">Technical</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+        </div>
+        <ol id="reports" class="reports"></ol>
+        <p id="reports-empty" class="note" hidden>No reports.</p>
+      </section>
+
+      <div class="two">
+        <form id="disable" class="card" aria-labelledby="disable-h">
+          <h2 id="disable-h">Switch Off a Daily</h2>
+          <p class="note">The next request makes a new one. Players who already played keep their score.</p>
+          <label for="disable-date">Date</label>
+          <input id="disable-date" type="date" required>
+          <label for="disable-kind">Daily</label>
+          <select id="disable-kind">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+            <option value="challenge">Challenge</option>
+            <option value="boss">Boss</option>
+            <option value="boss-board">Boss's Board</option>
+          </select>
+          <button type="submit" class="danger">Switch Off</button>
+          <p id="disable-result" class="note" role="status"></p>
+        </form>
+
+        <form id="hide" class="card" aria-labelledby="hide-h">
+          <h2 id="hide-h">Hide a Name</h2>
+          <p class="note">Takes every entry under that name off the day's leaderboard.</p>
+          <label for="hide-date">Date</label>
+          <input id="hide-date" type="date" required>
+          <label for="hide-name">Name as Shown</label>
+          <input id="hide-name" type="text" required maxlength="20" spellcheck="false" placeholder="Miles D.">
+          <button type="submit" class="danger">Hide</button>
+          <p id="hide-result" class="note" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

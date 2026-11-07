@@ -634,7 +634,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "World Leaderboard", len: 8400, text: "Post your day's total under your first name and last initial. Everyone's ranked by their total for the day.",
+            title: "World Leaderboard", len: 8400, text: "Post your day's total under your first name. Everyone's ranked by their total for the day.",
             async demo(s) {
                 const list = s.add("ht-lb", { x: 150, y: 14, w: 340 });
                 const people = [["Ava R.", 640], ["Ben K.", 590], ["Cleo M.", 505], ["Dev S.", 470], ["Eli T.", 410]];
@@ -655,7 +655,7 @@ const HowTo = (() => {
                 init.textContent = "P";
                 await s.wait(400);
                 init.classList.remove("on");
-                s.sub("Just your first name and last initial");
+                s.sub("Just your first name, and a last initial if you like");
                 await s.cursor.click(post);
                 s.pop(post, "ht-flash");
                 await s.wait(400);

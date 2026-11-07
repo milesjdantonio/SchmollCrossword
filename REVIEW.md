@@ -55,9 +55,21 @@ These aren't ready yet. Each one moves up when it is.
 - [ ] **New music.** The songs picked or composed for the four secret worlds (boss phases and levels).
 - [ ] **"Giant Steps but Smooth"** (Rainy City level 3). It may be an arrangement of John Coltrane's "Giant Steps",
       which is still under copyright. Only listening can tell; if it is, it should be replaced.
-- [ ] **Daily email.** It needs an email account to send from. For schmollcrossword@gmail.com: turn on 2-Step
-      Verification, make an App Password, and put it in your host's settings as environment variables (names to
-      come). Never paste the password into chat.
+- [ ] **Daily email and the admin page** (built; they switch on when you set these in the host's environment
+      settings, not in chat). For schmollcrossword@gmail.com: turn on 2-Step Verification, make an App Password, then:
+
+      | Name | Value |
+      |---|---|
+      | `SPRING_MAIL_HOST` | `smtp.gmail.com` |
+      | `SPRING_MAIL_PORT` | `587` |
+      | `SPRING_MAIL_USERNAME` | `schmollcrossword@gmail.com` |
+      | `SPRING_MAIL_PASSWORD` | the App Password |
+      | `REPORT_EMAIL_TO` | where the summary goes (any address) |
+      | `ADMIN_KEY` | a long random password for `/admin.html` (your old `REPORTS_KEY` also works) |
+      | `MAKE_DAILIES_AHEAD` | `7` (keeps a week of dailies ready; each day is a few cents) |
+
+      The email comes at 8:00 each morning: dailies ready, failures, what Claude cost, players, reports.
+      `/admin.html` shows the same, lists reports, and can switch off a bad daily or hide a name.
 - [ ] **Secret worlds.** Each one's look, boss, story scene and arrival animation, as they're finished.
 - [ ] **The Beta strip** (+500 Coins, Unlock All, on the campaign map). Keep it for the relaunch or switch it off?
 - [ ] **Before the merge.** A play-through checklist of the finished update before it replaces the live site.

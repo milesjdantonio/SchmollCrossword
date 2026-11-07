@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Step 18: Spring Boot. The "parent" gives sensible defaults and picks compatible library versions for us -->
+    <!-- Spring Boot. The "parent" gives sensible defaults and picks compatible library versions -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -24,21 +24,26 @@
     </properties>
 
     <dependencies>
-        <!-- Official Anthropic SDK for calling the Claude API (Step 15: AI-written clues) -->
+        <!-- The official Anthropic SDK, for the Claude API that writes clues -->
         <dependency>
             <groupId>com.anthropic</groupId>
             <artifactId>anthropic-java</artifactId>
             <version>3.3.0</version>
         </dependency>
 
-        <!-- Step 18: a web server (Spring Boot + an embedded Tomcat) so the website can ask for puzzles -->
+        <!-- The web server (Spring Boot with an embedded Tomcat): the website and its API -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Step 25: JUnit (the test framework) plus Spring's test helpers. "test" scope = only used by
-             "mvn test", never shipped inside the website's jar -->
+        <!-- Email, for the developer's daily summary (only sends when the host sets the mail settings) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- JUnit and Spring's test helpers. "test" scope: only used by "mvn test", never shipped in the jar -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

@@ -988,7 +988,12 @@ const Game = (() => {
                 text: `${e.number} ${e.direction === "across" ? "Across" : "Down"}: ${e.clue}` })));
         const current = game.direction === "across" ? game.acrossAt[game.row][game.col] : game.downAt[game.row][game.col];
         if (current) select.value = `${current.number}${current.direction === "across" ? "A" : "D"}: ${current.clue}`;
-        const text = U.el("textarea", { id: "report-text", maxlength: "1000", placeholder: "What's wrong? (a clue that fits another word, a misspelling, an offensive word...)" });
+        const kind = U.el("select", { id: "report-kind" },
+            ...[["wrong-answer", "The answer is wrong"], ["unclear-clue", "The clue is unclear or fits another word"], ["typo", "A typo"],
+                ["offensive", "Something offensive"], ["technical", "Something isn't working"], ["other", "Something else"]]
+                .map(([value, label]) => U.el("option", { value, text: label })));
+        kind.value = "unclear-clue";
+        const text = U.el("textarea", { id: "report-text", maxlength: "1000", placeholder: "Anything else we should know? (optional)" });
         const count = U.el("small", { class: "count", text: "0 / 1000" });
         const err = U.el("p", { class: "report-err", "aria-live": "polite" });
         const cancel = U.el("button", { type: "button", class: "btn ghost", text: "Cancel" });
@@ -996,8 +1001,12 @@ const Game = (() => {
         modal.appendChild(U.el("div", { class: "res-card ask-card report-card" },
             U.el("h2", { id: "report-title", class: "res-title ask-title", text: "Report a Problem" }),
             U.el("label", { for: "report-clue", text: "Which Part?" }), select,
-            U.el("label", { for: "report-text", text: "What's Wrong?" }), text, count, err,
-            U.el("div", { class: "res-actions" }, cancel, send)));
+            U.el("label", { for: "report-kind", text: "What Kind of Problem?" }), kind,
+            U.el("label", { for: "report-text", text: "Details" }), text, count, err,
+            U.el("div", { class: "res-actions" }, cancel, send),
+            U.el("p", { class: "report-mail" }, "Or write to ", U.el("a", { href: "mailto:schmollcrossword@gmail.com", text: "schmollcrossword@gmail.com" }))));
+        const needsText = () => kind.value === "other";
+        kind.addEventListener("change", () => { text.placeholder = needsText() ? "What's wrong?" : "Anything else we should know? (optional)"; });
         const close = () => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
         const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } };
         addEventListener("keydown", onKey, true);
@@ -1005,13 +1014,13 @@ const Game = (() => {
         cancel.addEventListener("click", close);
         modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
         send.addEventListener("click", async () => {
-            if (!text.value.trim()) { err.textContent = "Please say what's wrong first."; text.focus(); return; }
+            if (needsText() && !text.value.trim()) { err.textContent = "Please say what's wrong first."; text.focus(); return; }
             send.disabled = true;
             send.textContent = "Sending…";
             err.textContent = "";
             try {
                 const response = await fetch("/api/report", { method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ seed: p.seed, mode: p.mode, difficulty: p.difficulty, clue: select.value, message: text.value.trim(), world: Worlds.current.id }) });
+                    body: JSON.stringify({ seed: p.seed, mode: p.mode, difficulty: p.difficulty, clue: select.value, message: text.value.trim(), world: Worlds.current.id, category: kind.value }) });
                 if (response.status === 429) throw new Error("You've sent a lot of reports recently. Please try again later.");
                 if (!response.ok) throw new Error("The report couldn't be saved (" + response.status + ").");
                 close();

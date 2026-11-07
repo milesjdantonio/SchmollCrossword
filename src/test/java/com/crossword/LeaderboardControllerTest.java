@@ -52,12 +52,53 @@ class LeaderboardControllerTest {
         assertEquals("Anne-Marie", LeaderboardController.cleanFirst("Anne-Marie"));
         assertEquals("José", LeaderboardController.cleanFirst("José"));
         assertEquals("D", LeaderboardController.cleanInitial("d."));
+        assertEquals("", LeaderboardController.cleanInitial(""), "the initial is optional");
+        assertEquals("", LeaderboardController.cleanInitial(" "));
+        assertEquals("", LeaderboardController.cleanInitial(null));
         for (String bad : List.of("", "<script>", "<b>x</b>", "Miles1", "Mi les", "'quote", "dash-", "a\"b", "abcdefghijklm", "x;y", "&amp;")) {
             assertThrows(ResponseStatusException.class, () -> LeaderboardController.cleanFirst(bad), bad);
         }
-        for (String bad : List.of("", "DD", "1", "<", " ")) {
+        for (String bad : List.of("DD", "1", "<", "x y")) {
             assertThrows(ResponseStatusException.class, () -> LeaderboardController.cleanInitial(bad), bad);
         }
+        assertEquals("Miles D.", LeaderboardController.displayName("Miles", "D"));
+        assertEquals("Miles", LeaderboardController.displayName("Miles", ""));
+    }
+
+    // Hate figures, family-list words and look-alike spellings are refused; real names still work
+    @Test
+    void theNameFilterSeesThroughAccentsAndLookAlikes() throws Exception {
+        LeaderboardController lb = new LeaderboardController(folder);
+        for (String bad : List.of("Hitler", "Hítlér", "Nаzi", "Moron", "Sexy")) {   // (an accented i and e; a Cyrillic a)
+            assertTrue(lb.isBlocked(LeaderboardController.cleanFirst(bad), ""), bad);
+        }
+        for (String fine : List.of("Annalise", "Peter", "Nazira", "Cassie")) {
+            assertFalse(lb.isBlocked(LeaderboardController.cleanFirst(fine), ""), fine);
+        }
+        assertEquals("hitler", LeaderboardController.plain("Hítlér"));
+    }
+
+    // Moderation needs the admin key and takes one name off one day's board
+    @Test
+    void anAdminCanHideAName() throws Exception {
+        LeaderboardController lb = new LeaderboardController(folder, "s3cret-key");
+        lb.post(entry(A, "Ann", "B", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
+        lb.post(entry(B, "Bea", "", "easy", 90, 0, 0, null), "1.1.1.2", DAY, 1);
+        assertThrows(ResponseStatusException.class, () -> lb.hide(new LeaderboardController.Hide("2026-10-09", "Ann B."), "wrong"));
+        assertEquals(java.util.Map.of("removed", 1), lb.hide(new LeaderboardController.Hide("2026-10-09", "Ann B."), "s3cret-key"));
+        var board = lb.standings("2026-10-09", null);
+        assertEquals(1, board.players());
+        assertEquals("Bea", board.top().get(0).name(), "no initial: just the name");
+    }
+
+    // A day's board is deleted once it's older than KEEP_DAYS
+    @Test
+    void oldDaysAreDeleted() throws Exception {
+        LeaderboardController lb = new LeaderboardController(folder);
+        lb.post(entry(A, "Ann", "B", "easy", 90, 0, 0, null), "1.1.1.1", DAY, 0);
+        assertEquals(0, lb.deleteDaysBefore(DAY));
+        assertEquals(1, lb.deleteDaysBefore(DAY.plusDays(1)));
+        assertEquals(0, lb.standings("2026-10-09", null).players());
     }
 
     @Test
