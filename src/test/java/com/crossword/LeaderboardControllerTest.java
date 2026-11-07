@@ -29,6 +29,11 @@ class LeaderboardControllerTest {
     static LeaderboardController.Entry entry(String player, String first, String initial, String difficulty, int seconds, int checked, int revealed, Integer stars) {
         return new LeaderboardController.Entry(player, first, initial, "2026-10-09", difficulty, seconds, checked, revealed, stars, null);
     }
+    // the same entry with a start ticket from long ago, so its time counts
+    static LeaderboardController.Entry timed(LeaderboardController lb, LeaderboardController.Entry e) {
+        String t = lb.ticket(new LeaderboardController.Start(e.date(), e.difficulty()), "ticket", DAY, -10_000_000L);
+        return new LeaderboardController.Entry(e.player(), e.first(), e.initial(), e.date(), e.difficulty(), e.seconds(), e.checked(), e.revealed(), e.stars(), e.attempts(), t);
+    }
 
     @Test
     void aPlayerCanRemoveTheirName() throws Exception {
@@ -124,9 +129,9 @@ class LeaderboardControllerTest {
     @Test
     void totalsAreRankedAndEachDailyCountsOnce() throws Exception {
         LeaderboardController lb = new LeaderboardController(folder);
-        lb.post(entry(A, "Miles", "D", "easy", 50, 0, 0, null), "1.1.1.1", DAY, 0);        // 200
-        lb.post(entry(A, "Miles", "D", "easy", 10, 0, 0, null), "1.1.1.1", DAY, 1);        // a second Easy: ignored
-        lb.post(entry(B, "Ana", "R", "hard", 50, 0, 0, null), "2.2.2.2", DAY, 2);          // 300
+        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 0);        // 200
+        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 10, 0, 0, null)), "1.1.1.1", DAY, 1);        // a second Easy: ignored
+        lb.post(timed(lb, entry(B, "Ana", "R", "hard", 50, 0, 0, null)), "2.2.2.2", DAY, 2);          // 300
         LeaderboardController.Board board = lb.post(entry(A, "Miles", "D", "boss", 400, 0, 0, 2), "1.1.1.1", DAY, 3);   // 200 + 350
         assertEquals(2, board.players());
         assertEquals("Miles D.", board.top().get(0).name());
@@ -162,8 +167,33 @@ class LeaderboardControllerTest {
         LeaderboardController.Board b = lb.standings("2026-10-09", A);
         assertEquals(300, b.you().points());
         assertEquals(List.of("boss"), b.you().dailies());
-        lb.post(entry(A, "Miles", "D", "easy", 50, 0, 0, null), "1.1.1.1", DAY, 3);                                             // + 200
+        lb.post(timed(lb, entry(A, "Miles", "D", "easy", 50, 0, 0, null)), "1.1.1.1", DAY, 3);                                  // + 200
         assertEquals(500, lb.standings("2026-10-09", A).you().points());
+    }
+
+    @Test
+    void solveTimesAreCheckedAgainstTheStartTicket() throws Exception {
+        LeaderboardController lb = new LeaderboardController(folder);
+        long started = 1_000_000_000L;
+        String ticket = lb.ticket(new LeaderboardController.Start("2026-10-09", "easy"), "1.1.1.1", DAY, started);
+        assertTrue(lb.secondsSinceStart(ticket, DAY, "easy", started + 30_000) == 30);
+        assertEquals(-1, lb.secondsSinceStart(ticket, DAY, "medium", started), "a ticket is for one daily");
+        assertEquals(-1, lb.secondsSinceStart(ticket, DAY.plusDays(1), "easy", started), "and one day");
+        assertEquals(-1, lb.secondsSinceStart(ticket.replace(Long.toString(started), Long.toString(started - 600_000)), DAY, "easy", started), "a moved start time breaks the signature");
+        assertEquals(-1, lb.secondsSinceStart("1.2026-10-09.easy.00", DAY, "easy", started), "a made-up ticket");
+        assertEquals(-1, lb.secondsSinceStart(null, DAY, "easy", started));
+        // a server restart keeps the secret, so the ticket still works
+        assertEquals(30, new LeaderboardController(folder).secondsSinceStart(ticket, DAY, "easy", started + 30_000));
+
+        // 3 minutes after the start, claiming 10 minutes is impossible
+        LeaderboardController.Entry slow = new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "easy", 600, 0, 0, null, null, ticket);
+        assertThrows(ResponseStatusException.class, () -> lb.post(slow, "1.1.1.1", DAY, started + 180_000));
+        // claiming 50 s after 3 minutes is fine (the clock stops while the page is hidden): full speed bonus
+        LeaderboardController.Entry ok = new LeaderboardController.Entry(A, "Miles", "D", "2026-10-09", "easy", 50, 0, 0, null, null, ticket);
+        assertEquals(200, lb.post(ok, "1.1.1.1", DAY, started + 180_000).you().points());
+        // no ticket: it counts, without the speed bonus
+        assertEquals(100, lb.post(entry(B, "Ann", "", "easy", 50, 0, 0, null), "2.2.2.2", DAY, started + 1000).you().points());
+        assertThrows(ResponseStatusException.class, () -> lb.ticket(new LeaderboardController.Start("2026-10-09", "boss"), "1.1.1.1", DAY, started), "the Daily Boss needs no ticket");
     }
 
     @Test

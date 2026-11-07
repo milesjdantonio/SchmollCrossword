@@ -5,18 +5,25 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +49,8 @@ import jakarta.servlet.http.HttpServletRequest;
  * day, under a first name and, if the player likes, a last initial ("Miles" or "Miles D."). A player's points for
  * the day are added up across the dailies they posted, and the board ranks everyone by that total.
  *
- *   POST /api/leaderboard   { player, first, initial, date, difficulty, seconds, checked, revealed, stars, attempts }
+ *   POST /api/leaderboard/start  { date, difficulty }   -> { ticket }: when a daily starts (see "solve times" below)
+ *   POST /api/leaderboard   { player, first, initial, date, difficulty, seconds, checked, revealed, stars, attempts, ticket }
  *   GET  /api/leaderboard?date=2026-10-09&player=...   -> the top 50, how many played, and your own place
  *   POST /api/admin/leaderboard/hide { date, name }     -> moderation (X-Admin-Key): takes a name off a day's board
  *
@@ -52,6 +60,10 @@ import jakarta.servlet.http.HttpServletRequest;
  *     after accents are taken off and look-alike letters from other alphabets are read as Latin ones.
  *   - the server works the points out itself from the time, Checks, Reveals and stars (the same formula as
  *     score.js); a "points" number sent by the browser is never trusted
+ *   - solve times: when a daily starts, the browser asks for a start ticket (POST /api/leaderboard/start), signed
+ *     by the server with the time it was given. A post that brings it back can't claim more time than has passed
+ *     since then; a post without a valid ticket still counts, but gets no speed bonus. A time faster than anyone
+ *     could type the letters counts as that fastest time.
  *   - one entry per player, daily and day (the first one counts, like the dailies themselves); the Daily Boss keeps
  *     your BEST score of the day, since every attempt is scored (a rematch can improve it)
  *   - "player" is a random id the browser makes once; it's never shown to anyone
@@ -75,7 +87,12 @@ public class LeaderboardController {
 
     // What the website sends (Spring turns the JSON body into this record; unknown fields are ignored)
     public record Entry(String player, String first, String initial, String date, String difficulty,
-                        Integer seconds, Integer checked, Integer revealed, Integer stars, Integer attempts) {}
+                        Integer seconds, Integer checked, Integer revealed, Integer stars, Integer attempts, String ticket) {
+        Entry(String player, String first, String initial, String date, String difficulty,
+              Integer seconds, Integer checked, Integer revealed, Integer stars, Integer attempts) {
+            this(player, first, initial, date, difficulty, seconds, checked, revealed, stars, attempts, null);
+        }
+    }
     // What the board shows: no ids, just names and points
     public record Row(int rank, String name, int points, List<String> dailies) {}
     public record Board(String date, int players, List<Row> top, Row you) {}
@@ -133,7 +150,7 @@ public class LeaderboardController {
             if (keep.size() == all.size()) continue;
             removed += all.size() - keep.size();
             Files.writeString(f, keep.isEmpty() ? "" : String.join("\n", keep) + "\n", StandardCharsets.UTF_8);
-            days.remove(f.getFileName().toString().replace(".tsv", ""));
+            changed(f.getFileName().toString().replace(".tsv", ""));
         }
         return removed;
     }
@@ -162,7 +179,7 @@ public class LeaderboardController {
         }).toList();
         if (keep.size() != all.size()) {
             Files.writeString(f, keep.isEmpty() ? "" : String.join("\n", keep) + "\n", StandardCharsets.UTF_8);
-            days.remove(date);
+            changed(date);
             LOG.info("Moderation: took {} entries under '{}' off {}'s leaderboard", all.size() - keep.size(), name.strip(), date);
         }
         return all.size() - keep.size();
@@ -188,8 +205,7 @@ public class LeaderboardController {
             try {
                 if (LocalDate.parse(date).isBefore(cutoff)) {
                     Files.delete(f);
-                    days.remove(date);
-                    rankings.remove(date);
+                    changed(date);
                     removed++;
                 }
             } catch (DateTimeParseException e) {
@@ -208,11 +224,16 @@ public class LeaderboardController {
         LocalDate day = PuzzleController.dailyDate(e.date(), serverToday);
         String difficulty = e.difficulty() == null ? "" : e.difficulty().toLowerCase(Locale.ROOT);
         if (!DAILIES.contains(difficulty)) throw bad("unknown daily");
-        int seconds = range(e.seconds(), 1, 86_400, "seconds");
+        int seconds = range(e.seconds(), 1, UNTIMED, "seconds");
         int checked = range(e.checked(), 0, 400, "checked");
         int revealed = range(e.revealed(), 0, 400, "revealed");
         int stars = difficulty.equals("boss") ? range(e.stars(), 1, 3, "stars") : 0;
         int attempts = difficulty.equals("boss") && e.attempts() != null ? range(e.attempts(), 1, 99, "attempts") : 1;
+        if (!difficulty.equals("boss")) {                  // (the Daily Boss's points don't depend on time)
+            long elapsed = secondsSinceStart(e.ticket(), day, difficulty, nowMillis);
+            if (elapsed >= 0 && seconds > elapsed + TICKET_SLACK) throw bad("That time doesn't match when the puzzle was started.");
+            seconds = elapsed < 0 ? UNTIMED : Math.max(seconds, FASTEST.get(difficulty));
+        }
         if (!limiter.allow(person, nowMillis)) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "too many posts, try again later");
 
         List<String[]> lines = lines(day.toString());
@@ -224,9 +245,81 @@ public class LeaderboardController {
             Files.createDirectories(folder);
             Files.writeString(folder.resolve(day + ".tsv"), String.join("\t", line) + "\n", StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            days.remove(day.toString());                   // read back from the file next time (it just changed)
+            changed(day.toString());
         }
         return standings(day.toString(), e.player());
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Start tickets: "<start millis>.<date>.<daily>.<signature>". The signature is an HMAC with a secret only the
+    // server knows (kept in the leaderboard folder so tickets survive a restart), so a ticket can't be made up or
+    // moved to another start time. It holds nothing about the player.
+    // ---------------------------------------------------------------------------------------
+    static final int UNTIMED = 86_400;                 // the time used without a ticket: no speed bonus
+    static final long TICKET_SLACK = 120;              // seconds of leeway between the browser's clock and ours
+    static final Map<String, Integer> FASTEST = Map.of("easy", 6, "medium", 6, "hard", 6, "challenge", 12);
+    private final RateLimiter starts = new RateLimiter(60, 3_600_000L, 1_000_000);
+    private byte[] secret;
+
+    public record Start(String date, String difficulty) {}
+    @PostMapping(value = "/api/leaderboard/start", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, String> start(@RequestBody Start s, HttpServletRequest request) {
+        return Map.of("ticket", ticket(s, request.getRemoteAddr(), LocalDate.now(), System.currentTimeMillis()));
+    }
+    String ticket(Start s, String person, LocalDate serverToday, long nowMillis) {
+        if (s == null) throw bad("missing start");
+        LocalDate day = PuzzleController.dailyDate(s.date(), serverToday);
+        String difficulty = s.difficulty() == null ? "" : s.difficulty().toLowerCase(Locale.ROOT);
+        if (!FASTEST.containsKey(difficulty)) throw bad("unknown daily");
+        if (!starts.allow(person, nowMillis)) throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "too many requests, try again later");
+        String body = nowMillis + "." + day + "." + difficulty;
+        return body + "." + sign(body);
+    }
+    // Seconds since a ticket's start, or -1 if it isn't a real ticket for this day and daily
+    long secondsSinceStart(String ticket, LocalDate day, String difficulty, long nowMillis) {
+        if (ticket == null || ticket.length() > 200) return -1;
+        String[] p = ticket.split("\\.");
+        if (p.length != 4 || !p[1].equals(day.toString()) || !p[2].equals(difficulty)) return -1;
+        String body = p[0] + "." + p[1] + "." + p[2];
+        if (!MessageDigest.isEqual(sign(body).getBytes(StandardCharsets.UTF_8), p[3].getBytes(StandardCharsets.UTF_8))) return -1;
+        try {
+            long start = Long.parseLong(p[0]);
+            return start > nowMillis + 5_000 ? -1 : Math.max(0, (nowMillis - start) / 1000);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+    private synchronized String sign(String body) {
+        try {
+            if (secret == null) secret = loadSecret();
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret, "HmacSHA256"));
+            return HexFormat.of().formatHex(mac.doFinal(body.getBytes(StandardCharsets.UTF_8)));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+    // The signing secret: read from the leaderboard folder, or made (32 random bytes) and saved there. If it can't
+    // be saved, a new one is used until the server restarts (tickets from before then just lose their bonus).
+    private byte[] loadSecret() {
+        Path file = folder.resolve("ticket-secret.txt");
+        try {
+            if (Files.exists(file)) {
+                String hex = Files.readString(file, StandardCharsets.UTF_8).strip();
+                if (hex.matches("[0-9a-f]{64}")) return HexFormat.of().parseHex(hex);
+            }
+        } catch (IOException e) {
+            LOG.warn("Couldn't read the ticket secret ({})", e.getMessage());
+        }
+        byte[] made = new byte[32];
+        new SecureRandom().nextBytes(made);
+        try {
+            Files.createDirectories(folder);
+            Files.writeString(file, HexFormat.of().formatHex(made) + "\n", StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOG.warn("Couldn't save the ticket secret ({}); tickets last until the server restarts", e.getMessage());
+        }
+        return made;
     }
 
     // A day's board worked out once (until its file changes): every player in order, and where each one is
@@ -338,10 +431,19 @@ public class LeaderboardController {
     static final String LOOKALIKES = "\u0430\u0435\u043e\u0440\u0441\u0443\u0445\u0456\u0458\u0455\u04cf\u03b1\u03b5\u03b9\u03ba\u03bd\u03bf\u03c1\u03c4\u03c5\u03c7";
     static final String LATIN      = "aeopcyxijslaeikvoptux";
 
+    // This server just changed a day's file: read it again and rank it again next time
+    private void changed(String date) {
+        days.remove(date);
+        stamps.remove(date);
+        rankings.remove(date);
+    }
+
     // A day's lines, read again whenever its file changes (so deleting a line by hand, to remove a name, works at once)
     private List<String[]> lines(String date) throws IOException {
         Path file = folder.resolve(date + ".tsv");
-        long stamp = Files.exists(file) ? Files.getLastModifiedTime(file).toMillis() * 31 + Files.size(file) : -1;
+        // when the file last changed, and its size (a day's file stays far under a million bytes, so two different
+        // versions can't give the same number)
+        long stamp = Files.exists(file) ? Files.getLastModifiedTime(file).toMillis() * 1_000_003L + Files.size(file) : -1;
         List<String[]> list = days.get(date);
         if (list != null && stamps.getOrDefault(date, -2L) == stamp) return list;
         list = new ArrayList<>();

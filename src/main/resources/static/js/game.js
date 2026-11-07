@@ -57,7 +57,8 @@ const Game = (() => {
         if (all[key] && !(keepBest && points > (all[key].points || 0))) return false;   // already completed (and not beaten)
         // (Checks, Reveals and stars too: the leaderboard's server works the points out from them)
         all[key] = { date: new Date().toISOString().slice(0, 10), difficulty, seconds: game.seconds, points, surrendered,
-            checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}) };
+            checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}),
+            ...(game.ticket && difficulty !== "boss" ? { ticket: game.ticket } : {}) };
         U.saveRaw(SCORES_KEY, JSON.stringify(all));      // (says so if it couldn't)
         return true;
     }
@@ -124,7 +125,7 @@ const Game = (() => {
             seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked,
             seconds: game.seconds, solved: game.solved, surrendered: game.surrendered, checks: game.checks,
             squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed, typos: game.typos, itemsUsed: game.itemsUsed,
-            row: game.row, col: game.col, direction: game.direction, result: game.result
+            row: game.row, col: game.col, direction: game.direction, result: game.result, ticket: game.ticket || null
         }));
     }
     function restore(saved) {
@@ -133,7 +134,7 @@ const Game = (() => {
             locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
             squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0, typos: saved.typos || 0, itemsUsed: saved.itemsUsed || 0,
-            row: saved.row, col: saved.col, direction: saved.direction, celebrating: false
+            row: saved.row, col: saved.col, direction: saved.direction, celebrating: false, ticket: saved.ticket || null
         });
         // games saved before the redesign kept the banner text instead of a result
         game.result = saved.result || (saved.winShown ? { title: saved.winTitle, text: saved.winText, kind: saved.surrendered ? "surrender" : "win" } : null);
@@ -219,8 +220,13 @@ const Game = (() => {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
                 letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
-                squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null
+                squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null, ticket: null
             });
+        }
+        // today's daily: a start ticket from the server, so the leaderboard can trust the time (a game restored without
+        // one gets one only if it has hardly started, or its time wouldn't match)
+        if (puzzle.mode === "daily" && !game.solved && !game.ticket && game.seconds < 90 && dailyStanding(seedDay(puzzle.seed)) === "today" && typeof Leaderboard !== "undefined") {
+            Leaderboard.ticket(seedDay(puzzle.seed), puzzle.difficulty).then(t => { if (t && game.puzzle === puzzle && !game.ticket) { game.ticket = t; saveProgress(); } });
         }
         drawTimer();
         drawPointsToday();

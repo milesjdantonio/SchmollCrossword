@@ -25,12 +25,24 @@ const Leaderboard = (() => {
     const dateOf = day => `${day.slice(0, 4)}-${day.slice(4, 6)}-${day.slice(6, 8)}`;
     const todayKey = () => { const d = new Date(); return String(d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate()); };
 
-    // post one saved daily ({ key: "20261009-easy", seconds, checked, revealed, stars }); resolves to the board
+    // A start ticket for a daily that's just begun (the server signs when it started, so a posted time can be
+    // checked); null if the server can't be reached (the score still counts, without the speed bonus)
+    async function ticket(day, difficulty) {
+        try {
+            const r = await fetch("/api/leaderboard/start", { method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ date: dateOf(day), difficulty }) });
+            return r.ok ? (await r.json()).ticket || null : null;
+        } catch (err) {
+            return null;
+        }
+    }
+
+    // post one saved daily ({ key: "20261009-easy", seconds, checked, revealed, stars, ticket }); resolves to the board
     async function post(rec) {
         const n = me(), [day, difficulty] = rec.key.split("-");
         const r = await fetch("/api/leaderboard", { method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ player: playerId(), first: n.first, initial: n.initial || "", date: dateOf(day), difficulty, seconds: rec.seconds,
-                checked: rec.checked || 0, revealed: rec.revealed || 0, stars: rec.stars || undefined, attempts: rec.attempts || undefined }) });
+                checked: rec.checked || 0, revealed: rec.revealed || 0, stars: rec.stars || undefined, attempts: rec.attempts || undefined, ticket: rec.ticket || undefined }) });
         if (!r.ok) {
             let msg = r.status === 429 ? "Too many posts. Try again later." : "Couldn't post your score.";
             try { const j = await r.json(); if (j && typeof j.message === "string" && r.status === 400) msg = j.message; } catch (err) { /* not JSON */ }
@@ -176,5 +188,5 @@ const Leaderboard = (() => {
         } catch (err) { body.textContent = "The leaderboard is offline right now."; }
     }
 
-    return { after, drawHome, drawFull, playerId, askForget, eraseAll, hasName: () => !!me().first };
+    return { after, drawHome, drawFull, playerId, askForget, eraseAll, ticket, hasName: () => !!me().first };
 })();

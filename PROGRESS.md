@@ -166,7 +166,15 @@ deleted after everything is done.
       only serve saved or shipped dailies, never make one (Phase 7)
 - [x] Leaderboard: the initial is optional ("Miles" or "Miles D."); standings cached until the day's file
       changes; days older than 30 are deleted every night (`KEEP_DAYS`, stated in the Privacy Notice)
-- [ ] Leaderboard: server-side timing check (a start token) so faked times are caught; faster forget
+- [x] Leaderboard timing check: `POST /api/leaderboard/start` gives a signed start ticket (HMAC, secret in
+      `$PUZZLE_DIR/leaderboard/ticket-secret.txt`, survives restarts; nothing about the player). game.js asks for one
+      when today's daily starts (or a restored one under 90 s), keeps it in the saved game and the score; the post
+      sends it. Server: a time longer than the time since the start (+120 s) is refused; no valid ticket = no speed
+      bonus; faster than 6 s (12 s Challenge) counts as that. FAQ and Privacy Notice updated. Forget is quick enough
+      now that only 30 days are kept
+- [x] Found while testing: the leaderboard's cached board could miss a change (its file stamp could collide), so a
+      removed name sometimes stayed for a moment. Own writes now drop the cache (`changed`), and the stamp can't
+      collide
 
 ### Phase 4: Rule changes and gameplay fixes
 - [ ] Re-check the point-based achievements (Perfect Score = 300 on a daily, Big Scorer = 1,000) against the new
