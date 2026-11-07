@@ -81,6 +81,15 @@ function dayKey(date) {
     return String(date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate());
 }
 
+// Where a daily from `day` ("20261007") stands now: "today"; "grace" in the first 15 minutes after midnight (a
+// puzzle started before midnight still counts for its own day); "past" after that (practice: no points or streak).
+const GRACE_MINUTES = 15;
+function dailyStanding(day, now = new Date()) {
+    if (day === dayKey(now)) return "today";
+    if (day === dayKey(new Date(now.getTime() - GRACE_MINUTES * 60000))) return "grace";
+    return "past";
+}
+
 // { current, best }: current = consecutive days up to today (or up to yesterday, if today isn't done yet,
 // so a streak doesn't look broken in the morning); best = the longest run ever.
 function calculateStreaks(scores, today = new Date()) {

@@ -154,6 +154,27 @@ const Game = (() => {
         timerEl.textContent = U.fmtTime(game.seconds);
     }
 
+    // Midnight with a daily on screen: say so once when the day changes (the puzzle still counts for its own day for
+    // 15 minutes) and again when those minutes are up (from then on it's practice). A tab left open overnight asks
+    // the same when it's looked at again. A finished daily is simply replaced by today's.
+    let midnightAsked = "";
+    async function checkMidnight() {
+        const p = game.puzzle;
+        if (!p || p.mode !== "daily" || U.view() !== "daily" || puzzleEl.hidden || document.hidden || FX.playing) return;
+        const day = seedDay(p.seed), standing = dailyStanding(day);
+        if (standing === "today" || game.celebrating) return;
+        if (document.querySelector(".results, .ask-modal, .lg-modal")) return;      // after the open dialog closes
+        if (game.solved) { show("daily", { fresh: true }); return; }                 // nothing to lose: today's replaces it
+        if (midnightAsked === day + standing) return;
+        midnightAsked = day + standing;
+        const yes = await U.ask(standing === "grace"
+            ? { title: "It's a New Day", text: "Today's puzzles are ready. Finish this one in the next 15 minutes and it still counts for its day. After that it's practice.", yes: "Go to Today's", no: "Keep Playing" }
+            : { title: "This Puzzle Is From an Earlier Day", text: "Today's puzzles are ready. You can finish this one for practice, with no points or streak.", yes: "Go to Today's", no: "Keep Playing" });
+        if (yes && U.view() === "daily" && game.puzzle === p) show("daily", { fresh: true });
+    }
+    setInterval(checkMidnight, 15000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) setTimeout(checkMidnight, 800); });
+
     // ---------------------------------------------------------------------------------------------
     // Loading puzzles
     // ---------------------------------------------------------------------------------------------
@@ -512,7 +533,10 @@ const Game = (() => {
         game.solved = true;
         const p = game.puzzle;
         const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks };
-        if (p.mode === "daily") {
+        if (p.mode === "daily" && dailyStanding(seedDay(p.seed)) === "past") {
+            // an earlier day's daily finished after the 15 minutes past midnight: practice
+            Object.assign(info, { practice: true, counted: false, left: [], note: "This was an earlier day's daily, so it was practice: no points or streak." });
+        } else if (p.mode === "daily") {
             const dayWasDone = todayIsDone(scores()), before = bestTime(p.difficulty);
             info.breakdown = scoreBreakdown(p.difficulty, game.seconds, game.squaresChecked, game.squaresRevealed);
             info.points = info.breakdown.total;
@@ -527,8 +551,11 @@ const Game = (() => {
             Object.assign(info, Campaign.onWin(game, p));
             // the Daily Boss is the 5th daily: points, the streak, the week. Every attempt costs 40, and the day's BEST
             // score is kept, so a rematch can still improve it
-            if (info.campaign && info.campaign.special === "daily") {
-                const day = (Campaign.playing.date || "").replace(/-/g, "") || dayKey(new Date());
+            const bossDay = info.campaign && info.campaign.special === "daily" ? (Campaign.playing.date || "").replace(/-/g, "") || dayKey(new Date()) : null;
+            if (bossDay && dailyStanding(bossDay) === "past") {
+                Object.assign(info, { practice: true, counted: false, note: "This was an earlier day's Boss, so it was practice: no points or streak." });
+            } else if (bossDay) {
+                const day = bossDay;
                 const dayWasDone = todayIsDone(scores());
                 info.daily = true;
                 const lost = info.campaign.priorTries || 0;                 // the attempts before this one
@@ -604,7 +631,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase() }),
+            U.el("small", { class: "res-kicker", text: (info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase()) + (info.practice ? " · PRACTICE" : "") }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         if (info.best != null) {
@@ -1064,7 +1091,7 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     // Showing the game screen (called by app.js for #daily and campaign levels)
     // ---------------------------------------------------------------------------------------------
-    function show(view) {
+    function show(view, opts) {
         const level = view === "level" ? Campaign.titles() : null;
         $("#game-title").textContent = level ? level.title : "Daily Puzzle";
         $("#game-subtitle").textContent = level ? level.sub
@@ -1072,12 +1099,15 @@ const Game = (() => {
         $("#boss-mode").hidden = view !== "daily";
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
         drawDifficultyMarks();
-        showPuzzleFor(view);
+        showPuzzleFor(view, opts);
     }
-    function showPuzzleFor(view) {
+    // fresh: today's daily even if an earlier day's is still in its 15 minutes (the midnight question's Go to Today's)
+    function showPuzzleFor(view, { fresh = false } = {}) {
         const slot = slotFor(view, difficultyFor[view]);
-        // past the player's midnight with the page still open: yesterday's dailies are replaced by today's
-        const stale = p => view === "daily" && p && seedDay(p.seed) !== dayKey(new Date());
+        // past the player's midnight with the page still open: yesterday's dailies are replaced by today's, except the
+        // one being played in its 15 minutes after midnight (it still counts for its day)
+        const inGrace = p => p === game.puzzle && !game.solved && dailyStanding(seedDay(p.seed)) === "grace";
+        const stale = p => view === "daily" && p && seedDay(p.seed) !== dayKey(new Date()) && (fresh || !inGrace(p));
         if (stale(lastPuzzle[slot])) { delete lastPuzzle[slot]; delete savedGames[slot]; }
         if (game.puzzle && slotOf(game.puzzle) === slot && !stale(game.puzzle)) {
             loadCounter++;

@@ -123,8 +123,13 @@ deleted after everything is done.
       the report dialog, the FAQ and the Privacy Notice (Contact)
 - [x] Found while testing: leaving the map during the story intro or an arrival scene left it playing over the next
       page and froze that page's clock. `FX.cinematic(run, { stayOn })` skips it on leaving; it plays next visit
-- [ ] Midnight rollover: notice with Exit / Continue; 15-minute grace counts for the day before, then practice;
-      a stale daily (tab left open) asks to reload; tests for time zones, DST and server/browser disagreement
+- [x] Midnight rollover: `dailyStanding(day)` in score.js (today / grace for 15 minutes / past). A daily or Daily
+      Boss won after the grace is practice (no score, streak, leaderboard or daily achievements; "PRACTICE" on the
+      results). `checkMidnight` in game.js asks "It's a New Day" (Keep Playing / Go to Today's) once at midnight and
+      again when the grace ends; also when a tab left open is looked at again; a finished old daily is simply
+      replaced. Visiting another screen during the grace keeps the puzzle. Checked in the test browser with a moved
+      clock, and `dailyStanding` in 5 time zones across clock changes and the new year. (Server/browser
+      disagreement: the server already accepts a date within a day of its own.)
 - [ ] Share links: correct preview tags (title, description, image) for crawlers; answer-free result text;
       copy-link fallback
 - [x] Saves: boot.js moves any unreadable save (or one that should be an object and isn't) to
