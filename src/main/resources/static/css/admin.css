@@ -9,6 +9,7 @@
   --danger: #b3261e;
   --good: #1f7a3d;
   --chip: #efebe4;
+  --on-fill: #ffffff;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -22,6 +23,7 @@
     --danger: #ff8a80;
     --good: #6fd08f;
     --chip: #2a2e33;
+    --on-fill: #14161a;
     color-scheme: dark;
   }
 }
@@ -81,7 +83,7 @@ button {
   border-radius: 8px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #fff;
+  color: var(--on-fill);
   cursor: pointer;
   min-height: 40px;
 }
