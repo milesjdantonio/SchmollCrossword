@@ -1,6 +1,8 @@
 package com.crossword;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class HealthReport {
         m.put("serverDate", today.toString());
         m.put("upMinutes", Duration.between(started, Instant.now()).toMinutes());
         m.put("apiKeySet", ClueWriter.hasApiKey());
+        m.put("dataFolderWritable", writable(PuzzleStore.DAILY_FOLDER.toAbsolutePath().getParent()));
 
         Map<String, Object> dailies = new LinkedHashMap<>();
         dailies.put("makeAheadDays", maker.daysAhead());
@@ -67,6 +70,18 @@ public class HealthReport {
         return m;
     }
 
+    // Can the app save puzzles, reports and the leaderboard? (Tries a small file; a read-only disk says no.)
+    static boolean writable(Path folder) {
+        try {
+            Files.createDirectories(folder);
+            Path probe = Files.createTempFile(folder, ".write-check", ".tmp");
+            Files.delete(probe);
+            return true;
+        } catch (IOException | SecurityException e) {
+            return false;
+        }
+    }
+
     // The same as plain text, for the email
     String text(LocalDate today) {
         Map<String, Object> s = status(today);
@@ -80,6 +95,7 @@ public class HealthReport {
         b.append("\n");
         b.append("Claude since the server started: ").append(c.get("calls")).append(" calls, about $").append(c.get("estimatedCostUsd")).append("\n");
         b.append("API key set: ").append(Boolean.TRUE.equals(s.get("apiKeySet")) ? "yes" : "NO").append("\n");
+        b.append("Data folder writable: ").append(Boolean.TRUE.equals(s.get("dataFolderWritable")) ? "yes" : "NO").append("\n");
         b.append("Players: ").append(s.get("playersYesterday")).append(" yesterday, ").append(s.get("playersToday")).append(" so far today\n");
         b.append("Reports (all time): ").append(s.get("reports")).append("\n");
         if (s.containsKey("error")) b.append("Problem: ").append(s.get("error")).append("\n");

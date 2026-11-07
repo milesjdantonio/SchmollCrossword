@@ -79,4 +79,31 @@ class RateLimiterTest {
         assertEquals(1, limiter.remaining("me", DAY + 1));
         assertEquals(3, limiter.limit());
     }
+
+    @Test
+    void oneIpv6BlockIsOnePerson() {
+        assertEquals("2001:db8:1:2::/64", RateLimiter.person("2001:db8:1:2::1"));
+        assertEquals("2001:db8:1:2::/64", RateLimiter.person("2001:0DB8:0001:0002:ffff:0:0:9"));
+        assertEquals("2001:db8:0:0::/64", RateLimiter.person("[2001:db8::5%eth0]"));
+        assertEquals("0:0:0:0::/64", RateLimiter.person("::1"));
+        assertEquals("1.2.3.4", RateLimiter.person("::ffff:1.2.3.4"), "IPv4 written as IPv6");
+        assertEquals("1.2.3.4", RateLimiter.person("1.2.3.4"));
+        assertEquals("not:an:address::x::", RateLimiter.person("not:an:address::x::"), "anything odd is used as it is");
+
+        RateLimiter limiter = new RateLimiter(2, 100);
+        assertTrue(limiter.allow("2001:db8:1:2::1", 0));
+        assertTrue(limiter.allow("2001:db8:1:2::2", 0));
+        assertFalse(limiter.allow("2001:db8:1:2:aaaa::3", 0), "a third address in the same block");
+        assertTrue(limiter.allow("2001:db8:1:3::1", 0), "the next block is someone else");
+        assertEquals(0, limiter.remaining("2001:db8:1:2::99", 0));
+    }
+
+    @Test
+    void refusedRequestsDontAddAnyone() {
+        RateLimiter limiter = new RateLimiter(5, 2);
+        assertTrue(limiter.allow("a", 0));
+        assertTrue(limiter.allow("b", 0));
+        for (int i = 0; i < 1000; i++) assertFalse(limiter.allow("10.0." + (i / 250) + "." + (i % 250), 1000), "everyone's cap is reached");
+        assertEquals(2, limiter.peopleTracked(), "a flood of refused addresses isn't remembered");
+    }
 }

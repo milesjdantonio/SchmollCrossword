@@ -95,6 +95,7 @@
       tile("Last Run", ago(d.lastRun), d.lastRun ? d.lastMade + " made, " + d.lastFailed + " failed" : "", d.lastFailed > 0),
       tile("Claude Cost", "$" + (c.estimatedCostUsd ?? 0).toFixed(3), (c.calls ?? 0) + " calls since start"),
       tile("API Key", s.apiKeySet ? "Set" : "Missing", "", !s.apiKeySet),
+      tile("Saving", s.dataFolderWritable ? "Works" : "Can't Write", s.dataFolderWritable ? "" : "Check the disk's owner", !s.dataFolderWritable),
       tile("Players Today", s.playersToday ?? "?", (s.playersYesterday ?? "?") + " yesterday"),
       tile("Reports", s.reports ?? "?", "All time"),
       tile("Up For", upFor(s.upMinutes), "Server date " + s.serverDate)

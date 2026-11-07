@@ -141,8 +141,12 @@ deleted after everything is done.
       member?"). Shipped dailies left as played (the Daily Archive should hide ones with family-list answers).
 - [x] A bigger leaderboard name blocklist (`name-blocklist.txt`: hate terms; plus the family words), and it sees
       through accents and look-alike letters (`plain()`: NFD, Cyrillic/Greek look-alikes to Latin)
-- [ ] Security: anything that costs money is a JSON POST; rate limiter keys IPv6 by /64, doesn't leak memory,
-      caps survive restarts; Docker non-root user, health check
+- [x] Security: the rate limiter counts an IPv6 /64 as one person (`RateLimiter.person`), never remembers a
+      refused request, and sweeps at most once a minute. Docker runs as user `schmoll` (uid 10001, owns `/data`)
+      with a `HEALTHCHECK` on `/api/health`; the status page and email say if the data folder can't be written
+      (a host disk owned by root would). With Unlimited gone no player request pays for Claude (dailies are made
+      once; campaign puzzles come from the pool), so the caps don't need to survive restarts. Daily Archive must
+      only serve saved or shipped dailies, never make one (Phase 7)
 - [x] Leaderboard: the initial is optional ("Miles" or "Miles D."); standings cached until the day's file
       changes; days older than 30 are deleted every night (`KEEP_DAYS`, stated in the Privacy Notice)
 - [ ] Leaderboard: server-side timing check (a start token) so faked times are caught; faster forget
