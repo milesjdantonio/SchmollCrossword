@@ -14,10 +14,12 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       Reply with A, B or C (or a mix, like "B with A's stamps") and anything you'd change. Or say "standard" for a
       plain, familiar puzzle-app look. The redesign isn't built until you choose; I'm working on the fixes meanwhile.
 
-- [ ] **The live site.** schmollcrossword.com answered "503 unavailable" on 2026-11-07, before any change. After
-      the update page is pushed, check that your host deployed it (it should look like the intro, with a
-      Play the Current Version button). If the site is still 503, the host itself needs a look (a paused or
-      out-of-credit service, or a failed deploy).
+- [x] **The live site.** It answered "503 unavailable" before any change, but it's up again and serving the update
+      page (checked 2026-11-07).
+- [ ] **Your API key on the host.** The shipped dailies end on November 29. The live version (the one behind the
+      update page) then writes each day's puzzles with your Anthropic API key the first time someone opens them,
+      about 4 cents a day. Make sure the key is set on the host and has a spending limit. The update replaces this
+      with dailies made weeks ahead.
 
 ## Coming up
 

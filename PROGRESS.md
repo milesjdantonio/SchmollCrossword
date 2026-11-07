@@ -98,17 +98,21 @@ deleted after everything is done.
 - [ ] Wait for the user's pick (don't build the redesign before it)
 
 ### Phase 3: Reliability and backend (P0)
-- [ ] **Dailies made ahead:** a scheduled job (`DailyMaker`) writes and checks the next N days of all five dailies
+- [x] **Dailies made ahead:** a scheduled job (`DailyMaker`) writes and checks the next N days of all five dailies
       plus the boss board, saves them atomically, retries with backoff, never two at once, can be turned off;
       requests never wait on Claude if a made-ahead daily exists; a spare-puzzle fallback when generation fails
-- [ ] `PuzzleStore`: per-puzzle locks instead of one global lock; lock-free reads of shipped/saved files; ignore
+      Done: `DailyMaker` (@Scheduled hourly; MAKE_DAILIES_AHEAD days, default 0 = off; MAX_DAILIES_PER_RUN 12; makes yesterday to today+N, all 6 kinds). Not done: a spare-puzzle fallback (the made-ahead stock is the protection; revisit if needed).
+- [x] `PuzzleStore`: per-puzzle locks instead of one global lock; lock-free reads of shipped/saved files; ignore
       damaged files; remember a failure for a short time and answer 503 + Retry-After
-- [ ] `ClueWriter`: one shared client, timeouts, 1 SDK retry, fall back to Haiku only on overload/5xx/timeouts,
+      Done: `generateOnce` (lock per file, lock-free reads, 2-minute failure pause -> `Unavailable` -> 503 + Retry-After in PuzzleController), `save` (atomic), `readSaved` (damaged files moved to .damaged). The solver keeps its class lock (shared caches).
+- [x] `ClueWriter`: one shared client, timeouts, 1 SDK retry, fall back to Haiku only on overload/5xx/timeouts,
       skip the review if it fails, tidy clue text, "gives away the answer" by whole word, rewrite only flagged clues,
       throw instead of returning bad clues; a fake Claude for tests
-- [ ] Dailies avoid 30 days of answers (not 3); fix the shipped dailies that repeat (review zip: 9 pairs) and add
-      `dailiesDontRepeat` / `everyDailyHasEveryClue` tests
-- [ ] Synonym-clue fix in the AI prompt (and the review step checks it); test live, within the $5
+      Done: shared client (90 s, 1 retry), `ClueWriter.asker` for tests, `fallsBack` (429/5xx/IO/no answer), review skipped on failure, `buildFixPrompt` + `merge` (only flagged clues), `givesAway` whole words, `tidy`, `CluesFailed`, model IDs from CLAUDE_FAST_MODEL / CLAUDE_STRONG_MODEL / CLAUDE_REVIEW_MODEL, per-model `USAGE` and `estimatedCost()`.
+- [x] Dailies avoid 30 days of answers (not 3), saved or shipped
+- [ ] Fix the shipped dailies that repeat (review zip: 9 pairs) and add `dailiesDontRepeat` / `everyDailyHasEveryClue` tests
+- [x] Synonym-clue rule in the AI prompt and the review prompt
+- [ ] Test the new prompt live (within the $5) and put sample clues in REVIEW.md
 - [ ] Rewrite the bare-synonym clues in the shipped dailies still to come
 - [ ] Clear error messages everywhere (load, save, limits, offline, unexpected), with Retry / Reload / Report /
       Home; schmollcrossword@gmail.com in the contact, report and legal pages; never claim a save that failed
@@ -236,3 +240,4 @@ deleted after everything is done.
   `UNLIMITED_*` settings are gone; boot.js drops their saved data once (`schmoll.noUnlimited`). 118 JUnit tests pass;
   the browser check found no errors. Home's Daily and Your Streak now sit side by side.
 - 2026-11-07: Phase 2 directions published for the user to pick (REVIEW.md). Waiting on the pick; Phase 3 next.
+- 2026-11-07: Phase 3 backend core done (ClueWriter, PuzzleStore, DailyMaker); 138 JUnit tests pass.

@@ -5,8 +5,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -137,6 +140,16 @@ public class PuzzleController {
         LocalDate day = dailyDate(date, LocalDate.now());
         Campaign.Section section = PuzzleStore.dailyBossSection(day);
         return PuzzleStore.getDailyBoss(PuzzleStore.DAILY_FOLDER, day, boss, wordsFor(Campaign.bigGrid(section.bossDifficulty()) ? "challenge" : section.bossDifficulty()));
+    }
+
+    // A puzzle that can't be made right now (Claude is down, or it just failed): HTTP 503 with when to try again,
+    // so the page can say so and retry instead of showing a broken board
+    @ExceptionHandler(PuzzleStore.Unavailable.class)
+    public ResponseEntity<String> unavailable(PuzzleStore.Unavailable e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(e.retryAfterSeconds))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":\"unavailable\",\"retryAfter\":" + e.retryAfterSeconds + "}");
     }
 
     // The error sent back for a bad difficulty. HTTP status 400 means "bad request: your fault, not ours"

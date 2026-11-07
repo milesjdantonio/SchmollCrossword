@@ -64,15 +64,21 @@ class RepeatsTest {
         assertTrue(most <= 60 / 8, "the most common word came up " + most + " times: " + count);
     }
 
+    // A daily stays away from the answers of the other dailies of its day and the 30 days before
+    // (a date before the shipped dailies, so only these files count)
     @Test
-    void aDailyAvoidsTheOtherDailiesOfTheLastFewDays(@TempDir Path folder) throws IOException {
-        LocalDate day = LocalDate.of(2026, 10, 8);
-        Files.writeString(PuzzleStore.dailyFile(folder, day, "easy"), "{\"answer\": \"REST\"}");
-        Files.writeString(PuzzleStore.dailyFile(folder, day, "medium"), "{\"answer\": \"MEDIUM\"}");
-        Files.writeString(PuzzleStore.dailyFile(folder, day.minusDays(3), "hard"), "{\"answer\": \"CROP\"}");
-        Files.writeString(PuzzleStore.dailyFile(folder, day.minusDays(4), "hard"), "{\"answer\": \"OLD\"}");
+    void aDailyAvoidsTheOtherDailiesOfTheLastMonth(@TempDir Path folder) throws IOException {
+        LocalDate day = LocalDate.of(2026, 9, 1);
+        saveDaily(folder, day, "easy", "REST");
+        saveDaily(folder, day, "medium", "MEDIUM");
+        saveDaily(folder, day.minusDays(30), "hard", "CROP");
+        saveDaily(folder, day.minusDays(31), "hard", "OLD");
         assertEquals(Set.of("REST", "CROP"), PuzzleStore.recentDailyAnswers(folder, day, "medium"));
         assertEquals(Set.of("REST", "MEDIUM", "CROP"), PuzzleStore.recentDailyAnswers(folder, day, "hard"));
+    }
+
+    private static void saveDaily(Path folder, LocalDate day, String kind, String answer) throws IOException {
+        Files.writeString(PuzzleStore.dailyFile(folder, day, kind), "{\"solution\":[],\"across\":[{\"answer\": \"" + answer + "\"}],\"down\":[]}");
     }
 
     @Test
