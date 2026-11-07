@@ -599,7 +599,11 @@ const FX = (() => {
                 text ? U.el("span", { text }) : null));
         toasts.appendChild(node);
         requestAnimationFrame(() => node.classList.add("in"));
-        setTimeout(() => { node.classList.remove("in"); node.classList.add("out"); setTimeout(() => node.remove(), 500); }, ms);
+        let gone = false;
+        const close = () => { if (gone) return; gone = true; node.classList.remove("in"); node.classList.add("out"); setTimeout(() => node.remove(), 500); };
+        setTimeout(close, ms);
+        // a click or tap closes it at once (and doesn't reach what's underneath)
+        node.addEventListener("pointerdown", e => { e.stopPropagation(); close(); });
         return node;
     }
 

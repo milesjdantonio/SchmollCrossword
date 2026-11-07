@@ -196,14 +196,20 @@ deleted after everything is done.
       `render()` used to re-enable it, now `drawRevealWords` decides)
 - [x] Boss enrage at 2.5x the boss's progress, once you've done 15% (`RAGE_RATIO`, `RAGE_FLOOR`); How to Play says so
 - [x] Later phases attack more often: `PHASE_PACE` = 1, .86, .74, .64, .56 of phase 1's gap (was 0.88 each)
-- [ ] Boss sheet: number of phases and a predicted time (your average on those puzzles, or a typical one)
-- [ ] Skill-learned and boss-attack pop-ups close when clicked or tapped
-- [ ] Items on one row where it fits; wraps cleanly on narrow screens
+- [x] Boss sheet: "2 Phases · About 14 Minutes" (`fightEstimate`: each phase at your average on levels of the same
+      difficulty and size, else par, capped at the boss's own time; the tooltip says which)
+- [x] Pop-ups close when clicked or tapped: every toast (achievements, new abilities, items, lessons...), and the
+      fight's notice box ("It Hit You", "Enraged"; `.can-close`); an incoming attack's warning stays
+- [x] Items: all six share one row in equal buttons; the shop and Give Up together below; under 380 px two even
+      rows of three (checked at 1366, 700, 390, 340 px)
 - [ ] Achievements fire correctly (and once) in every mode, boss fights included; progress survives reloads
 - [ ] 10 time-based achievements with tests
 - [ ] Coin and point icons drawn as our own SVG (no emoji that changes between devices)
 - [ ] Zoom works on small screens; the slider's middle (50) looks like today's 100%, so players can zoom in too
-- [ ] Typed letters visible in every world (some worlds hide them)
+- [x] Typed letters visible in every world: measured in all 17 worlds, light and dark (contrast 9.5:1 or more). The
+      thing that hid them: Shatter's `translateX(var(--sx, 0px))` was on every square all the time, which put each
+      square on its own layer, so board decorations (the Garden's vines) drew over the letters. It's now only on
+      while Shatter is (`.shattered`), and the deal animation's class comes off once the squares are dealt
 - [ ] Difficulty slope: measure the curve across all levels, chart it in REVIEW.md, wait for the user's numbers,
       then apply them
 - [ ] The world-arrival animation plays when you move on after a boss or pick the next world's level; the

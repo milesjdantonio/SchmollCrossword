@@ -321,7 +321,13 @@ const Game = (() => {
             }
         }
         U.restart(boardEl, "deal");
+        // the deal over, take its animation off: while it's on, every square is its own layer, so a world's board
+        // decorations (the Garden's vines) were drawn over the letters
+        const dealt = boardEl.firstChild;
+        clearTimeout(dealTimer);
+        dealTimer = setTimeout(() => { if (boardEl.firstChild === dealt) boardEl.classList.remove("deal"); }, 600 + puzzle.size * puzzle.size * 20);
     }
+    let dealTimer = 0;
     function drawClues(puzzle) {
         game.clueItems = new Map();
         fillClueList(acrossEl, puzzle.across);

@@ -546,6 +546,24 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     // The level sheet: what a level is, and Play
     // ---------------------------------------------------------------------------------------------
+    // About how long a boss fight takes: each phase's puzzle at your own average on levels like it (same difficulty
+    // and size), or its par time if you haven't played one, but never longer than the boss itself takes
+    function fightEstimate(si) {
+        const s = map[si], phases = [[s.levels[4], sizeOf(s, 5)], ...laterPhases(s)];
+        const mine = {};
+        map.forEach((sec, i) => LV(i).forEach(L => {
+            const r = L < 5 && record(i, L);
+            if (r && r.seconds > 0) (mine[sec.levels[L - 1] + "x" + sizeOf(sec, L)] = mine[sec.levels[L - 1] + "x" + sizeOf(sec, L)] || []).push(r.seconds);
+        }));
+        let total = 0, yours = false;
+        phases.forEach(([d, size], k) => {
+            const t = mine[d + "x" + size];
+            if (t) yours = true;
+            total += Math.min(t ? t.reduce((a, b) => a + b, 0) / t.length : par(d, size), botTimeFor(d, size, si, k + 1));
+        });
+        return { phases: phases.length, minutes: Math.max(1, Math.round(total / 60)), yours };
+    }
+
     let sheetOpen = false;
     function drawDetail() {
         const si = data.section, s = map[si], l = data.sel, boss = l === 5, rec = record(si, l), open = unlocked(si, l);
@@ -573,6 +591,9 @@ const Campaign = (() => {
         if (boss) {
             const th = Powers.threat(si, MAIN), moves = Powers.MOVES[s.world] || [];
             body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)}` }));
+            const est = fightEstimate(si);
+            body.appendChild(U.el("p", { class: "cm-fight-length", title: est.yours ? "From your own times on levels like these" : "A typical time",
+                text: `${est.phases} Phase${est.phases > 1 ? "s" : ""} · About ${est.minutes} Minute${est.minutes > 1 ? "s" : ""}` }));
             // its moves, in a menu on the left of the sheet
             box.classList.toggle("many-moves", moves.length > 6);          // (the Cursed Angel's ten: two columns)
             box.insertBefore(U.el("div", { class: "cm-moves-menu" + (moves.length > 6 ? " many" : "") }, U.el("small", { text: "ITS MOVES" }),
@@ -1414,6 +1435,13 @@ const Campaign = (() => {
     const meStatus = U.el("div", { class: "me-status", "aria-live": "polite" });
     document.querySelector(".hud-row").after(meStatus);
     const warnEl = U.el("div", { class: "me-warn", hidden: true, "aria-live": "polite" });
+    // a notice ("It Hit You", "Enraged"...) closes when clicked or tapped; an incoming attack's warning doesn't
+    warnEl.addEventListener("pointerdown", e => {
+        if (!warnEl.classList.contains("can-close") || !fight || fight.pending) return;
+        e.stopPropagation();
+        note = null;
+        drawWarn();
+    });
     raceEl.querySelector(".rb-track").appendChild(warnEl);           // right under the race bar's "who's ahead" label
     document.body.appendChild(U.el("div", { class: "close-edge", "aria-hidden": "true" }));   // red edges when the boss is almost done (.boss-close)
     const flareEl = U.el("div", { class: "fx-flare-screen", "aria-hidden": "true" });
@@ -1749,7 +1777,7 @@ const Campaign = (() => {
         }
         // a new message pops in again (its animation restarts); the same one only updates its numbers
         const key = mode + "|" + (f.pending ? f.pending.kind : noteOn ? note.at : "");
-        if (key !== warnKey) { warnKey = key; warnEl.dataset.tone = mode; warnEl.hidden = true; void warnEl.offsetWidth; }
+        if (key !== warnKey) { warnKey = key; warnEl.dataset.tone = mode; warnEl.hidden = true; void warnEl.offsetWidth; warnEl.classList.toggle("can-close", !f.pending && noteOn); }
         if (warnEl.hidden) warnEl.hidden = false;
         setText(warnEl.querySelector(".mw-name"), name);
         setText(warnEl.querySelector("em"), time);
@@ -3272,6 +3300,7 @@ const Campaign = (() => {
             cell.classList.toggle("ray-target", !!(f && f.pending && f.pending.kind === "judgment" && f.rays && f.rays.includes(r)));
             cell.classList.toggle("lance-target", !!(f && f.pending && f.pending.kind === "lance" && f.lanceCol === c));
             setVar(cell, "--sx", on("shatter") ? ((r % 2 ? 1 : -1) * (6 + (c % 3) * 3)) + "px" : "0px");
+            cell.classList.toggle("shattered", on("shatter"));
             // Haunting: fake letters in empty squares that look exactly like real ones
             const ghost = cell.querySelector(".ghost-ltr");
             if (on("haunting") && !g.letters[r][c] && !(f.banished && f.banished.has(id))) { if (!ghost) cell.appendChild(U.el("span", { class: "ghost-ltr", text: String.fromCharCode(65 + Math.floor(Math.random() * 26)) })); }
@@ -3315,7 +3344,7 @@ const Campaign = (() => {
         if (fight) fight.rays = null;
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target", "shattered"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
         document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });

@@ -259,6 +259,7 @@
 .me-warn > span { display: block; font: 700 .72rem/1.25 var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me-warn i { position: absolute; left: 0; bottom: 0; height: 4px; background: #ff5c6c; }
 @keyframes me-warn-shake { from { transform: rotate(-.4deg); } to { transform: rotate(.4deg); } }
+.me-warn.can-close { pointer-events: auto; cursor: pointer; }     /* a notice: a click or tap closes it */
 .board-area.fx-blind .board-wrap, .clues.fx-blind { filter: blur(7px); transition: filter .3s; }
 #board.fx-smudge .ltr { color: transparent !important; text-shadow: 0 0 9px rgba(80, 80, 90, .6); }
 #board.fx-frozen { box-shadow: 0 0 0 5px #9fd8ff, 0 0 26px #9fd8ff; filter: saturate(.55) brightness(1.06); }
@@ -361,10 +362,15 @@
 .cm-item-icon { font-size: 1.15rem; }
 .cm-item.shop { margin-left: auto; font-size: 1.1rem; }
 /* the items themselves: always one row, the buttons share it (they shrink on a narrow screen instead of wrapping) */
-.cm-item-row { display: flex; align-items: center; gap: 6px; flex: 1 0 100%; min-width: 0; flex-wrap: nowrap; }
-.cm-item-row .cm-item { flex: 1 1 0; min-width: 0; justify-content: center; padding: 5px 4px; }
+/* the items share one row in equal buttons (wrapping into tidy rows only when a screen is too narrow for them all);
+   the shop and Give Up sit together on the line below, at the right */
+.cm-item-row { display: flex; align-items: center; gap: 6px; flex: 1 0 100%; min-width: 0; flex-wrap: wrap; }
+.cm-item-row .cm-item { flex: 1 1 0; min-width: 50px; min-height: 36px; justify-content: center; padding: 5px 4px; }
 .cm-item-row .helper-label { flex: none; }
-@media (max-width: 480px) { .cm-item-row { gap: 4px; } .cm-item-row .cm-item-icon { font-size: 1rem; } .cm-item-row .cm-item { font-size: .78rem; } }
+.cm-item-row + .cm-item.shop { margin-left: auto; }
+.cm-item.shop + .cm-item.giveup { margin-left: 0; }
+@media (max-width: 480px) { .cm-item-row { gap: 4px; } .cm-item-row .helper-label { flex-basis: 100%; } .cm-item-row .cm-item-icon { font-size: 1rem; } .cm-item-row .cm-item { font-size: .78rem; } }
+@media (max-width: 380px) { .cm-item-row .cm-item { flex: 0 0 calc((100% - 8px) / 3); } }      /* two even rows of three */
 
 /* ======================= the results card ======================= */
 .res-stars { display: flex; justify-content: center; gap: 10px; margin: 6px 0 4px; }
@@ -436,6 +442,7 @@
 .bp-ab { border-color: var(--c, var(--accent)); }
 .bp-ab:not(:disabled) .bp-ab-icon { filter: drop-shadow(0 0 6px var(--c, transparent)); }
 .cm-threat { margin: 4px 0; font-weight: 800; color: #c0283c; }
+.cm-fight-length { margin: 0 0 6px; font-weight: 800; font-size: .9rem; color: var(--muted); }
 .cm-moves { margin: 2px 0 6px; font-size: .86rem; color: var(--muted); }
 .bh-dmg.small { font-size: 1.3rem; color: #ff5c6c; }
 .bh-dmg.small.good { color: #4fdf6b; }
@@ -560,7 +567,10 @@
 .shop-item-card.pick:hover { transform: translateY(-2px); }
 
 /* ---- the boss moves added when every boss got 5 ---- */
-#board .cell { transform: translateX(var(--sx, 0px)); transition: transform .3s; }
+/* Shatter slides the rows apart. Only while it's on: a transform (even a zero one) makes each square its own layer,
+   and a world's board decorations were then drawn over the letters */
+#board .cell { transition: transform .3s; }
+#board .cell.shattered { transform: translateX(var(--sx, 0px)); }
 #board .cell.folded::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: linear-gradient(135deg, #d9d2c4, #a89f8e 50%, #e9e3d6); box-shadow: inset 0 0 8px rgba(0, 0, 0, .35); }
 #board .cell.piled::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit;
     background: radial-gradient(circle at 20% 30%, #ff5c6c 0 12%, transparent 13%), radial-gradient(circle at 70% 25%, #ffd23f 0 14%, transparent 15%), radial-gradient(circle at 40% 75%, #4fc3f7 0 13%, transparent 14%),
