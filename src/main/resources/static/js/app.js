@@ -532,39 +532,55 @@ const App = (() => {
     const paradeBosses = () => Bosses.list.filter(w => !(Worlds.byId[w] && Worlds.byId[w].secret)
         || (typeof Campaign !== "undefined" && Campaign.secretEarned()));
 
-    async function intro(force = false) {
-        const box = $("#intro");
-        // the very first visit always gets the intro; after that only with the "Play Intro on Open" setting (off by default)
-        const firstVisit = !U.store.get("introSeen", false);
-        if (!force && ((!firstVisit && !Settings.get("intro")) || U.motion() === "still")) { box.hidden = true; return false; }
-        U.store.set("introSeen", true);
-        root.classList.add("intro-on");
-        box.hidden = false;
-        box.classList.remove("go");
-        const ticker = TICKER.map(t => `<span>&#9733; ${U.esc(t)}</span>`).join("");
-        box.innerHTML = `
+    // the start screen's backdrop, shared by the intro and the update notice: rays, rising tiles, the boss parade and a
+    // ticker, around the middle part (`press`)
+    function startScreen(press, ticker) {
+        const items = ticker.map(t => `<span>&#9733; ${U.esc(t)}</span>`).join("");
+        const tiles = { still: 0, lite: 12 }[U.motion()] ?? 26;
+        return `
             <div class="intro-rays" aria-hidden="true"></div>
-            <div class="intro-tiles" aria-hidden="true">${floatingTiles(U.motion() === "lite" ? 12 : 26)}</div>
-            <div class="intro-press">
-                <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
-                <button type="button" class="intro-start">PRESS START</button>
-            </div>
+            <div class="intro-tiles" aria-hidden="true">${floatingTiles(tiles)}</div>
+            ${press}
             <div class="intro-bosses" aria-hidden="true">${typeof Bosses !== "undefined" ? paradeBosses().map((w, i) => `<span class="ib" style="--i:${i}">${Bosses.svg(w)}</span>`).join("") : ""}</div>
-            <div class="intro-ticker" aria-hidden="true"><div>${ticker}${ticker}</div></div>`;
-        Mascot.away = true;
-        await new Promise(resolve => {
-            const go = () => { removeEventListener("keydown", go, true); box.removeEventListener("pointerdown", go); resolve(); };
-            addEventListener("keydown", go, true);
-            box.addEventListener("pointerdown", go);
-        });
-        Sound.init();
-        Sound.play("start");
-        const css = getComputedStyle(root), colors = ["--accent", "--accent-2", "--ink"].map(v => css.getPropertyValue(v).trim() || "#ffffff");
-        const bp = U.center(box.querySelector(".intro-start"));
+            <div class="intro-ticker" aria-hidden="true"><div>${items}${items}</div></div>`;
+    }
+    const burstColors = () => { const css = getComputedStyle(root); return ["--accent", "--accent-2", "--ink"].map(v => css.getPropertyValue(v).trim() || "#ffffff"); };
+    // pressing start: a shockwave and a burst of stars from the button
+    function pressBurst(box) {
+        const colors = burstColors(), bp = U.center(box.querySelector(".intro-start"));
         FX.ring({ x: bp.x, y: bp.y, color: colors[0], r1: Math.hypot(innerWidth, innerHeight) * 0.6, dur: 0.9, width: 16, glow: false });
         FX.burst({ x: bp.x, y: bp.y, n: 40, colors, shape: "star", speed: [200, 700], gravity: 300, drag: 1.2, life: [0.6, 1.1], size: [3, 7] });
         FX.shake(6, 260);
         box.classList.add("go");
+    }
+
+    // pressed: the update notice already showed the start screen and its button was pressed, so the logo comes next
+    async function intro(force = false, pressed = false) {
+        const box = $("#intro");
+        // the very first visit always gets the intro; after that only with the "Play Intro on Open" setting (off by default)
+        const firstVisit = !U.store.get("introSeen", false);
+        if (!pressed && !force && ((!firstVisit && !Settings.get("intro")) || U.motion() === "still")) { box.hidden = true; return false; }
+        U.store.set("introSeen", true);
+        root.classList.add("intro-on");
+        box.hidden = false;
+        Mascot.away = true;
+        if (!pressed) {
+            box.classList.remove("go");
+            box.innerHTML = startScreen(`
+                <div class="intro-press">
+                    <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
+                    <button type="button" class="intro-start">PRESS START</button>
+                </div>`, TICKER);
+            await new Promise(resolve => {
+                const go = () => { removeEventListener("keydown", go, true); box.removeEventListener("pointerdown", go); resolve(); };
+                addEventListener("keydown", go, true);
+                box.addEventListener("pointerdown", go);
+            });
+            Sound.init();
+            Sound.play("start");
+            pressBurst(box);
+        }
+        const colors = burstColors();
 
         // the logo builds itself over a self-drawing grid
         box.querySelector(".intro-press").remove();
@@ -623,6 +639,65 @@ const App = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // The update notice. While the big update is being built, the site opens on this start screen with one button that
+    // plays the current version (on a first visit, the intro's logo comes next). Once per visit: a reload skips it.
+    // Set UPDATE_NOTICE to false to turn it off.
+    // ---------------------------------------------------------------------------------------------
+    const UPDATE_NOTICE = true;
+    const NOTICE_TICKER = ["A New Look", "Four Secret Worlds", "A Daily Archive", "Weekly Quests", "A Puzzle of the Week", "Friend Challenges", "Make Your Own Puzzles"];
+    const NOTICE_SEEN = "schmoll.noticeSeen";
+
+    // resolves to false (not shown), "intro" (the intro's logo should follow) or "done" (the game is showing)
+    async function updateNotice() {
+        if (!UPDATE_NOTICE) return false;
+        try { if (sessionStorage.getItem(NOTICE_SEEN)) return false; } catch (err) { /* storage blocked: show it */ }
+        const box = $("#intro");
+        root.classList.add("intro-on");
+        box.hidden = false;
+        box.classList.remove("go");
+        box.classList.add("notice");
+        box.innerHTML = startScreen(`
+            <div class="intro-press notice-press" role="dialog" aria-modal="true" aria-labelledby="notice-title" aria-describedby="notice-text">
+                <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
+                <p class="notice-kicker">Under Development</p>
+                <h1 class="notice-title" id="notice-title">A Big Update Is on the Way</h1>
+                <p class="notice-text" id="notice-text">Schmoll Crossword is being rebuilt. Until the new version is ready, you can still play the current one.</p>
+                <button type="button" class="intro-start notice-play">Play the Current Version</button>
+            </div>`, NOTICE_TICKER);
+        Mascot.away = true;
+        const play = box.querySelector(".notice-play");
+        play.focus({ preventScroll: true });
+        await new Promise(resolve => {
+            // every key stays here (nothing types into the game behind); Enter or Space presses the button
+            const keys = e => {
+                e.stopPropagation();
+                if (e.key === "Enter" || e.key === " ") { e.preventDefault(); done(); }
+                else if (e.key === "Tab") { e.preventDefault(); play.focus({ preventScroll: true }); }
+            };
+            const done = () => { removeEventListener("keydown", keys, true); play.removeEventListener("click", done); resolve(); };
+            addEventListener("keydown", keys, true);
+            play.addEventListener("click", done);
+        });
+        try { sessionStorage.setItem(NOTICE_SEEN, "1"); } catch (err) { /* it only shows again on the next reload */ }
+        Sound.init();
+        Sound.play("start");
+        pressBurst(box);
+        box.classList.remove("notice");
+        const firstVisit = !U.store.get("introSeen", false);
+        if ((firstVisit || Settings.get("intro")) && U.motion() !== "still") return "intro";
+        await FX.transition(Worlds.current.transition, () => {
+            box.hidden = true;
+            box.innerHTML = "";
+            box.classList.remove("go");
+            root.classList.remove("intro-on");
+            Mascot.away = mascotInTheWay();
+        });
+        Game.playTitleCard();
+        Mascot.react("hello", { mood: "happy" });
+        return "done";
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Start
     // ---------------------------------------------------------------------------------------------
     // a secret world picked while it was open for testing goes back to Classic until it's really unlocked
@@ -633,7 +708,10 @@ const App = (() => {
     drawTools();
     addEventListener("hashchange", showView);
     showView();
-    intro().then(played => { if (!played) setTimeout(() => Mascot.react("hello", { mood: "happy" }), 900); });
+    updateNotice().then(shown => {
+        if (shown === "done") return;
+        intro(false, shown === "intro").then(played => { if (!played) setTimeout(() => Mascot.react("hello", { mood: "happy" }), 900); });
+    });
 
     return { switchWorld, showView, intro };
 })();
