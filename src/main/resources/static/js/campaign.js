@@ -64,8 +64,7 @@ const Campaign = (() => {
     function fetchMap() {
         if (map) return Promise.resolve(map);
         if (!loading) {
-            loading = fetch("/api/campaign/map")
-                .then(r => { if (!r.ok) throw new Error("the server answered " + r.status); return r.json(); })
+            loading = U.fetchJson("/api/campaign/map")
                 .then(list => { full = list.filter(s => Worlds.byId[s.world]); map = visibleMap(); migrate(); return map; })
                 .catch(err => { loading = null; throw err; });
         }
@@ -454,11 +453,12 @@ const Campaign = (() => {
             if (!(await editHero(true))) return;
         }
         if (f.si > data.arrived && U.view() === "campaign") {
-            const from = data.arrived >= 0 ? map[data.arrived].world : null, to = map[f.si].world;
+            const from = data.arrived >= 0 ? map[data.arrived].world : null, to = map[f.si].world, before = data.arrived;
             data.arrived = f.si;
             data.heroAt = { si: f.si, level: 1 };
             save();
-            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }));
+            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }), { stayOn: "campaign" });
+            if (U.view() !== "campaign") { data.arrived = before; save(); return; }    // left the map: it plays next time
             drawHero();
             return;
         }
@@ -637,8 +637,9 @@ const Campaign = (() => {
         try {
             await fetchMap();
         } catch (err) {
-            mapEl.innerHTML = "";
-            mapEl.appendChild(U.el("p", { class: "status error", text: "Couldn't load the map: " + err.message }));
+            const box = U.el("div", { class: "status" });
+            mapEl.replaceChildren(box);
+            U.failCard(box, err, { retry: () => { if (U.view() === "campaign") showMap(); } });
             return;
         }
         if (U.view() !== "campaign") return;
@@ -662,8 +663,9 @@ const Campaign = (() => {
             save();
             setTimeout(async () => {
                 if (U.view() !== "campaign") return;
-                await FX.cinematic(c => Story.intro(c, storyPages()));
-                heroOnMap();
+                await FX.cinematic(c => Story.intro(c, storyPages()), { stayOn: "campaign" });
+                if (U.view() === "campaign") heroOnMap();
+                else { data.storySeen = false; save(); }            // left the map during it: it plays next time
             }, 400);
         } else setTimeout(heroOnMap, 450);
         if (!shownOnce) {
@@ -707,10 +709,11 @@ const Campaign = (() => {
             enterLevel();
             return;
         }
-        await fetchMap().catch(() => null);
-        if (!map) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Reach the Server", text: "Try again in a moment.", ms: 3000 }); return; }
-        const world = await fetch(`/api/boss/daily?date=${dayStr()}`).then(r => (r.ok ? r.json() : null)).then(r => r && r.world).catch(() => null);
-        if (!world || !map.some(s => s.world === world)) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Find Today's Boss", text: "Try again in a moment.", ms: 3000 }); return; }
+        const problem = err => { const d = U.describe(err); FX.toast({ icon: "⚠️", kicker: "BOSS", title: d.title, text: d.text, ms: 4000 }); };
+        try { await fetchMap(); } catch (err) { problem(err); return; }
+        let world = null;
+        try { world = (await U.fetchJson(`/api/boss/daily?date=${dayStr()}`)).world; } catch (err) { problem(err); return; }
+        if (!world || !map.some(s => s.world === world)) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Find Today's Boss", text: "Reload the page and try again.", ms: 4000 }); return; }
         if (data.playing && !data.playing.special) data.lastPlaying = data.playing;          // where the campaign map lands next time
         data.playing = { world, level: 5, special: "daily", date: dayStr(), sid: Date.now() };
         save();
@@ -3825,7 +3828,16 @@ const Campaign = (() => {
         drawHomeBoss();
         const el = $("#home-campaign");
         if (!el) return;
-        try { await fetchMap(); } catch (err) { el.textContent = "The campaign map couldn't be loaded."; return; }
+        try {
+            await fetchMap();
+        } catch (err) {
+            el.textContent = U.describe(err).title === "You're Offline" ? "The campaign needs a connection." : "The campaign couldn't be loaded. Trying again…";
+            let fired = false;
+            const again = () => { if (fired) return; fired = true; removeEventListener("online", again); clearTimeout(timer); if (U.view() === "home") drawHomeCard(); };
+            const timer = setTimeout(again, 20000);
+            addEventListener("online", again);
+            return;
+        }
         const t = totals(), f = frontier(), w = Worlds.byId[map[f.si].world];
         el.innerHTML = "";
         const done = t.levels >= t.max;

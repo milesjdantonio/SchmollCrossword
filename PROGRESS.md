@@ -115,13 +115,22 @@ deleted after everything is done.
 - [x] Synonym-clue rule in the AI prompt and the review prompt
 - [x] Test the new prompt live (within the $5) and put sample clues in REVIEW.md
 - [ ] Rewrite the bare-synonym clues in the shipped dailies still to come (same: only on `main`, only on the OK)
-- [ ] Clear error messages everywhere (load, save, limits, offline, unexpected), with Retry / Reload / Report /
-      Home; schmollcrossword@gmail.com in the contact, report and legal pages; never claim a save that failed
+- [x] Clear error messages: `U.fetchJson` (knows offline / network / status / Retry-After), `U.describe` (the
+      words) and `U.failCard` (Try Again, Home, Report by email; a 503 counts down and retries by itself, offline
+      retries when the connection is back). Used by the Daily and campaign puzzle loader, the campaign map, the Home
+      campaign card (retries every 20 s) and the Boss button. Saving: `U.saveRaw` tells the player once a visit
+      if storage is blocked or full (progress first drops finished puzzles to make room). The email address is in
+      the report dialog, the FAQ and the Privacy Notice (Contact)
+- [x] Found while testing: leaving the map during the story intro or an arrival scene left it playing over the next
+      page and froze that page's clock. `FX.cinematic(run, { stayOn })` skips it on leaving; it plays next visit
 - [ ] Midnight rollover: notice with Exit / Continue; 15-minute grace counts for the day before, then practice;
       a stale daily (tab left open) asks to reload; tests for time zones, DST and server/browser disagreement
 - [ ] Share links: correct preview tags (title, description, image) for crawlers; answer-free result text;
       copy-link fallback
-- [ ] Saves: recover from missing or damaged local saves instead of crashing; document what's stored where
+- [x] Saves: boot.js moves any unreadable save (or one that should be an object and isn't) to
+      `schmoll-damaged.<name>` and the game starts that part fresh with a notice; a saved game that doesn't fit its
+      puzzle is skipped (`sane` in game.js). What's stored where: the Privacy Notice lists it for players
+- [ ] Saves: document the storage keys for developers (README or a comment block in boot.js)
 - [x] Reports: categories (wrong answer, unclear clue, typo, offensive, technical, other; details optional unless
       "other"), 10 an hour per person, and the email address in the dialog. Admin page `/admin.html` (`ADMIN_KEY`,
       `REPORTS_KEY` still works; the key goes in the `X-Admin-Key` header, kept in sessionStorage; without a key

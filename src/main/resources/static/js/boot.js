@@ -17,6 +17,28 @@ try {
     }
 } catch (err) { /* storage blocked: nothing saved anyway */ }
 
+// Damaged saves: a value that isn't readable (a crash mid-write, an edited save, a browser bug) would stop the game
+// from starting, so it's moved aside to "schmoll-damaged.<name>" (kept, not lost) and the game starts that part
+// fresh. app.js tells the player which part was reset.
+try {
+    const OBJECTS = ["settings", "progress", "dailyScores", "achievements", "campaign", "companions", "leaderboard"];
+    const damaged = [];
+    for (const k of Object.keys(localStorage)) {
+        if (!k.startsWith("schmoll.")) continue;
+        const raw = localStorage.getItem(k);
+        let ok = true;
+        try {
+            const v = JSON.parse(raw);
+            if (OBJECTS.includes(k.slice(8)) && (v === null || typeof v !== "object" || Array.isArray(v))) ok = false;
+        } catch (err) { ok = false; }
+        if (ok) continue;
+        localStorage.setItem("schmoll-damaged." + k.slice(8), raw);
+        localStorage.removeItem(k);
+        damaged.push(k.slice(8));
+    }
+    if (damaged.length) window.SCHMOLL_DAMAGED = damaged;
+} catch (err) { /* storage blocked: nothing saved anyway */ }
+
 // Older saves can hold Unlimited's puzzle, its counts and achievements, an Unlimited Boss fight and the Allow
 // Harder Words setting, a mode the game no longer has. Drop them, once per browser.
 try {

@@ -619,8 +619,10 @@ const FX = (() => {
 
     // ---- cinematics: skippable sequences. run(c) is an async function that uses `await c.wait(ms)` between
     //      beats and c.cleanup(fn) to register clean-up. A click or key press skips straight to the end. ----
+    // stayOn: the screen it belongs to ("campaign"...); leaving that screen (the Back button) skips it, so it can't
+    // keep playing over the next page and hold that page's clock
     let playing = 0;
-    function cinematic(run) {
+    function cinematic(run, { stayOn } = {}) {
         return new Promise(resolve => {
             const timers = [], cleanups = [];
             let finished = false;
@@ -638,6 +640,8 @@ const FX = (() => {
                 parts = [];
             };
             const onKey = e => { if (!e.ctrlKey && !e.metaKey && !e.altKey) skip(); };
+            const onLeave = () => { if (U.view() !== stayOn) skip(); };
+            if (stayOn) addEventListener("hashchange", onLeave);
             const armId = setTimeout(() => {
                 addEventListener("pointerdown", skip, true);
                 addEventListener("keydown", onKey, true);
@@ -652,6 +656,7 @@ const FX = (() => {
                     clearTimeout(armId);
                     removeEventListener("pointerdown", skip, true);
                     removeEventListener("keydown", onKey, true);
+                    removeEventListener("hashchange", onLeave);
                     for (const fn of cleanups) { try { fn(); } catch (err) { console.error(err); } }
                     playing--;
                     if (!playing) document.documentElement.classList.remove("cinematic");

@@ -58,7 +58,7 @@ const Game = (() => {
         // (Checks, Reveals and stars too: the leaderboard's server works the points out from them)
         all[key] = { date: new Date().toISOString().slice(0, 10), difficulty, seconds: game.seconds, points, surrendered,
             checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}) };
-        try { localStorage.setItem(SCORES_KEY, JSON.stringify(all)); } catch (err) { /* storage blocked */ }
+        U.saveRaw(SCORES_KEY, JSON.stringify(all));      // (says so if it couldn't)
         return true;
     }
 
@@ -81,16 +81,31 @@ const Game = (() => {
         saveTimer = 0;
         if (!game.puzzle || savingOff) return;
         const all = loadProgress();
-        all[slotOf(game.puzzle)] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
-        try { localStorage.setItem(PROGRESS_KEY, JSON.stringify(all)); } catch (err) { /* storage blocked or full */ }
+        const mine = slotOf(game.puzzle);
+        all[mine] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
+        try {
+            localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+        } catch (err) {
+            // full: finished puzzles are only kept to show their board again, so they go first
+            for (const k of Object.keys(all)) if (k !== mine && all[k] && all[k].state && all[k].state.solved) delete all[k];
+            U.saveRaw(PROGRESS_KEY, JSON.stringify(all));
+        }
     }
     // A short fingerprint of a puzzle's answers and clues: saved letters only go back onto the exact same puzzle
     const fingerprint = p => U.hash(JSON.stringify([p.solution, p.across.map(e => e.clue), p.down.map(e => e.clue)]));
+    // A saved game that doesn't fit its puzzle (damaged, or from an old version) is skipped instead of restored
+    const grid = (g, n) => Array.isArray(g) && g.length === n && g.every(r => Array.isArray(r) && r.length === n);
+    function sane(saved) {
+        const p = saved && saved.puzzle, s = saved && saved.state;
+        if (!p || !s || typeof s !== "object" || !Array.isArray(p.solution) || !Array.isArray(p.across) || !Array.isArray(p.down)) return false;
+        const n = p.solution.length;
+        return n > 0 && grid(s.letters, n) && grid(s.wrong, n) && grid(s.revealed, n) && (s.locked == null || grid(s.locked, n));
+    }
     function restoreProgress() {
         const all = loadProgress();
         for (const slot of ["daily-easy", "daily-medium", "daily-hard", "daily-challenge"]) {
             const saved = all[slot];
-            if (!saved || !saved.puzzle || !saved.state) continue;
+            if (!sane(saved)) continue;
             if (seedDay(saved.puzzle.seed) !== dayKey(new Date())) continue;                       // an old daily
             if (saved.state.print == null) saved.state.print = fingerprint(saved.puzzle);           // saved before fingerprints
             // dailies are always fetched again (the server just reads its saved file), so a daily that was
@@ -99,7 +114,7 @@ const Game = (() => {
         }
         // campaign levels are fixed puzzles: keep them (and their games), except boss fights, which always start over
         for (const [slot, saved] of Object.entries(all)) {
-            if (!slot.startsWith("campaign-") || !saved || !saved.puzzle || !saved.state) continue;
+            if (!slot.startsWith("campaign-") || !sane(saved)) continue;
             lastPuzzle[slot] = saved.puzzle;
             if (!slot.endsWith("-5")) savedGames[slot] = saved.state;
         }
@@ -153,9 +168,7 @@ const Game = (() => {
         try {
             let url = mode === "level" ? Campaign.apiUrl() : "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
             if (mode === "daily") { const d = dayKey(new Date()); url += `&date=${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`; }   // the player's own date (time zones)
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("the server answered " + response.status);
-            const puzzle = await response.json();
+            const puzzle = await U.fetchJson(url);
             if (myLoad !== loadCounter) return;
             if (mode === "level") Object.assign(puzzle, { world: Campaign.playing.world, level: Campaign.playing.level, special: Campaign.playing.special || undefined });   // which level it is
             lastPuzzle[slotOf(puzzle)] = puzzle;
@@ -166,8 +179,7 @@ const Game = (() => {
             playTitleCard();
         } catch (err) {
             if (myLoad !== loadCounter || U.view() !== mode) return;
-            statusEl.textContent = "Couldn't load the puzzle: " + err.message;
-            statusEl.classList.add("error");
+            U.failCard(statusEl, err, { retry: () => { if (U.view() === mode) loadPuzzle(mode, difficulty); } });
         }
     }
 

@@ -484,6 +484,16 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .difficulty button.given-up::after { content: " \00D7"; }
 .status { padding: 50px 0; color: var(--muted); font-weight: 700; text-align: center; }
 .status.error { color: var(--wrong); }
+/* A problem (couldn't load, offline, not ready yet), with what to do about it: U.failCard */
+.fail-card {
+    max-width: 440px; margin: 0 auto; padding: 22px 22px 18px;
+    background: var(--surface-solid); color: var(--ink); border: 1px solid var(--line); border-radius: 14px;
+    text-align: center; font-weight: 400;
+}
+.fail-title { margin: 0 0 6px; font-size: 1.25rem; }
+.fail-text { margin: 0 0 16px; color: var(--muted); }
+.fail-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.fail-actions .btn { min-height: 44px; }
 .spinner { display: inline-block; width: 20px; height: 20px; margin-right: 10px; vertical-align: -4px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 
 .puzzle { display: flex; align-items: flex-start; justify-content: center; gap: 34px; }

@@ -67,6 +67,26 @@ const U = (() => {
         return h;
     }
 
+    // Saving failed (storage blocked in a private window, or full): the player is told once a visit, so the game
+    // never seems to have saved something it didn't. Returns false, for the caller to pass on.
+    let saveWarned = false;
+    function saveFailed(err) {
+        if (saveWarned) return false;
+        saveWarned = true;
+        const full = err && (err.name === "QuotaExceededError" || err.code === 22 || err.code === 1014);
+        setTimeout(() => typeof FX !== "undefined" && FX.toast({
+            icon: "⚠️", kicker: "SAVING", ms: 9000,
+            title: full ? "Browser Storage Is Full" : "Progress Isn't Being Saved",
+            text: full ? "Free some space for this site in your browser's settings, or a reload may lose this puzzle."
+                : "This browser is blocking storage, as private windows can. You can keep playing, but a reload starts over."
+        }), 0);
+        return false;
+    }
+    // Writes a value to browser storage; false (and the notice above) if it couldn't
+    function saveRaw(fullKey, text) {
+        try { localStorage.setItem(fullKey, text); return true; } catch (err) { return saveFailed(err); }
+    }
+
     // Browser storage under "schmoll.<key>". Storage can be blocked (private mode): then nothing is saved.
     const store = {
         get(key, fallback) {
@@ -78,7 +98,7 @@ const U = (() => {
             }
         },
         set(key, value) {
-            try { localStorage.setItem("schmoll." + key, JSON.stringify(value)); } catch (err) { /* storage blocked */ }
+            return saveRaw("schmoll." + key, JSON.stringify(value));
         },
         remove(key) {
             try { localStorage.removeItem("schmoll." + key); } catch (err) { /* storage blocked */ }
@@ -188,7 +208,78 @@ const U = (() => {
     // The page's zoom (Settings > Zoom; app.js puts it on #app). Measurements (getBoundingClientRect) are on-screen
     // sizes, so a position measured on screen and then set as CSS INSIDE #app is divided by this.
     const zoom = () => parseFloat(document.getElementById("app")?.style.zoom) || 1;
-    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom };
+
+    // ---------------------------------------------------------------------------------------------
+    // Things going wrong: fetchJson throws an error that knows what happened (offline, the server's status, how
+    // long it asked us to wait), describe() turns it into words for the player, and failCard() shows them with
+    // Try Again, Home and Report.
+    // ---------------------------------------------------------------------------------------------
+    const CONTACT = "schmollcrossword@gmail.com";
+    async function fetchJson(url, opts) {
+        let r;
+        try {
+            r = await fetch(url, opts);
+        } catch (e) {
+            throw Object.assign(new Error(navigator.onLine === false ? "offline" : "network"), { offline: navigator.onLine === false, network: true });
+        }
+        if (!r.ok) {
+            const err = Object.assign(new Error("the server answered " + r.status), { status: r.status, retryAfter: parseInt(r.headers.get("Retry-After"), 10) || 0 });
+            try { const j = await r.json(); err.reason = j.error || j.message || ""; } catch (e) { /* not JSON */ }
+            throw err;
+        }
+        try {
+            return await r.json();
+        } catch (e) {
+            throw Object.assign(new Error("a damaged answer"), { status: 0 });
+        }
+    }
+    function describe(err) {
+        const s = err && err.status;
+        if (err && (err.offline || navigator.onLine === false)) return { title: "You're Offline", text: "Connect to the internet and it will try again." };
+        if (err && err.network) return { title: "Couldn't Reach the Server", text: "Check your connection, then try again." };
+        if (s === 503) return { title: "This Puzzle Isn't Ready Yet", text: "It's still being made.", retryIn: Math.min(120, Math.max(5, err.retryAfter || 30)) };
+        if (s === 429) return { title: "Too Many Requests", text: "Wait a minute, then try again.", retryIn: Math.min(300, err.retryAfter || 0) || undefined };
+        if (s === 404) return { title: "Puzzle Not Found", text: "This puzzle isn't available." };
+        if (s === 400) return { title: "This Puzzle Can't Be Opened", text: "Reload the page. If your device's date is wrong, fix it first." };
+        if (s >= 500) return { title: "Something Went Wrong on Our Side", text: "Try again in a moment. If it keeps happening, let us know." };
+        return { title: "Something Went Wrong", text: "Try again. If it keeps happening, let us know." };
+    }
+    // Fills `box` with the problem and its buttons. retry: what Try Again does (and what runs by itself when a
+    // countdown ends or the connection comes back). Returns the card.
+    function failCard(box, err, { retry, home = true } = {}) {
+        const d = describe(err);
+        const text = el("p", { class: "fail-text", text: d.text });
+        const actions = el("div", { class: "fail-actions" });
+        const card = el("div", { class: "fail-card", role: "alert" }, el("h2", { class: "fail-title", text: d.title }), text, actions);
+        let timer = 0, onOnline = null;
+        const stop = () => { clearInterval(timer); if (onOnline) removeEventListener("online", onOnline); };
+        const again = () => { stop(); if (retry) retry(); };
+        if (retry) actions.append(el("button", { type: "button", class: "btn primary", text: "Try Again", onclick: again }));
+        if (home) actions.append(el("a", { class: "btn ghost", href: "#", text: "Home", onclick: stop }));
+        const subject = encodeURIComponent("Schmoll Crossword: " + d.title);
+        const body = encodeURIComponent(`What I was doing:\n\n\n(${location.hash || "#"} · ${err && err.status ? "status " + err.status : err && err.message || ""} · ${new Date().toISOString()})`);
+        actions.append(el("a", { class: "btn ghost", href: `mailto:${CONTACT}?subject=${subject}&body=${body}`, text: "Report" }));
+        box.replaceChildren(card);
+        if (retry && d.retryIn) {
+            let left = d.retryIn;
+            const tick = () => {
+                if (!card.isConnected) return stop();
+                if (left <= 0) return again();
+                text.textContent = `${d.text} Trying again in ${left} s.`;
+                left--;
+            };
+            tick();
+            timer = setInterval(tick, 1000);
+        }
+        if (retry && (err && (err.offline || err.network))) {
+            onOnline = () => { if (card.isConnected) again(); else stop(); };
+            addEventListener("online", onOnline);
+        }
+        return card;
+    }
+
+    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, saveRaw, saveFailed, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom,
+        CONTACT, fetchJson, describe, failCard };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
@@ -254,11 +345,11 @@ const Settings = (() => {
         v.bossMusicVolume = raw.bossMusic === false ? 0 : music;
         delete v.musicVolume; delete v.bossMusic; delete v.levelMusic;
         v.soundV = 2;
-        try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (err) { /* storage blocked */ }
+        U.saveRaw(KEY, JSON.stringify(v));
         return v;
     }
     function save() {
-        try { localStorage.setItem(KEY, JSON.stringify(values)); } catch (err) { /* storage blocked */ }
+        U.saveRaw(KEY, JSON.stringify(values));
     }
     return {
         get: key => values[key],

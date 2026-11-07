@@ -712,5 +712,14 @@ const App = (() => {
         intro(false, shown === "intro").then(played => { if (!played) setTimeout(() => Mascot.react("hello", { mood: "happy" }), 900); });
     });
 
+    // boot.js moved a damaged save aside: say which part started fresh
+    if (window.SCHMOLL_DAMAGED) {
+        const NAMES = { settings: "Your settings", progress: "Puzzles in progress", dailyScores: "Daily scores", achievements: "Achievements",
+            campaign: "Campaign progress", companions: "Companion stories", leaderboard: "Your leaderboard name" };
+        const parts = window.SCHMOLL_DAMAGED.map(k => NAMES[k] || k);
+        setTimeout(() => FX.toast({ icon: "⚠️", kicker: "SAVING", title: "A Damaged Save Was Reset", ms: 9000,
+            text: parts.join(", ") + (parts.length === 1 ? " couldn't be read, so it starts fresh." : " couldn't be read, so they start fresh.") }), 2500);
+    }
+
     return { switchWorld, showView, intro };
 })();
