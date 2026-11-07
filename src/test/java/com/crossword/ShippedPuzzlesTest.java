@@ -1,5 +1,6 @@
 package com.crossword;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -18,8 +19,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 // Checks on the puzzles that ship with the game (src/main/resources/campaign and daily):
-//   - no clue uses a word from the blocked list
-//   - each level has 25 puzzles of its own, with boards no other level has
+//   - no clue uses a word from the blocked list, and no campaign answer is on the family list
+//   - each level has at least 20 puzzles of its own (25 variant numbers), with boards no other level has
+//   - every daily a player solves has all its clues
 class ShippedPuzzlesTest {
 
     static final Path CAMPAIGN = Path.of("src", "main", "resources", "campaign");
@@ -51,6 +53,50 @@ class ShippedPuzzlesTest {
             }
         }
         assertTrue(found.isEmpty(), "clues with a blocked word: " + found);
+    }
+
+    // No answer in the campaign's pool is on the family list (family-words.txt)
+    @Test
+    void noCampaignAnswerIsOnTheFamilyList() throws IOException {
+        Set<String> family = App.loadFamilyWords();
+        List<String> found = new ArrayList<>();
+        for (Path f : files(CAMPAIGN)) {
+            JsonNode p = JSON.readTree(f.toFile());
+            for (String dir : List.of("across", "down")) {
+                for (JsonNode e : p.path(dir)) {
+                    if (family.contains(e.path("answer").asText())) found.add(f.getFileName() + ": " + e.path("answer").asText());
+                }
+            }
+        }
+        assertTrue(found.isEmpty(), "family-list answers: " + found);
+    }
+
+    // Each level keeps most of its 25 puzzles (a few were taken out of the pool), and every variant number still
+    // finds one
+    @Test
+    void everyLevelHasPlentyOfPuzzles() throws IOException {
+        Map<String, Integer> count = new HashMap<>();
+        for (Path f : files(CAMPAIGN)) count.merge(f.getFileName().toString().replaceAll("-v\\d+\\.json$", ""), 1, Integer::sum);
+        for (Map.Entry<String, Integer> e : count.entrySet()) {
+            assertTrue(e.getValue() >= 20, e.getKey() + " has only " + e.getValue() + " puzzles");
+            for (int v = 0; v < Campaign.VARIANTS; v++) assertNotNull(PuzzleStore.poolPuzzleOrNext(e.getKey(), v), e.getKey() + " v" + v);
+        }
+    }
+
+    // Every shipped daily a player solves has a clue for each answer (the boss's own board has none, by design)
+    @Test
+    void everyDailyHasEveryClue() throws IOException {
+        List<String> missing = new ArrayList<>();
+        for (Path f : files(DAILY)) {
+            if (f.getFileName().toString().endsWith("-boss-board.json")) continue;
+            JsonNode p = JSON.readTree(f.toFile());
+            for (String dir : List.of("across", "down")) {
+                for (JsonNode e : p.path(dir)) {
+                    if (e.path("clue").asText().isBlank()) missing.add(f.getFileName() + " " + e.path("answer").asText());
+                }
+            }
+        }
+        assertTrue(missing.isEmpty(), "answers with no clue: " + missing);
     }
 
     @Test

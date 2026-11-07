@@ -126,8 +126,12 @@ deleted after everything is done.
       (key-protected) to read reports, switch a puzzle off and hide a leaderboard name
 - [ ] Health: logging, a key-protected developer dashboard (dailies in stock, failures, API use and estimated cost,
       reports), a daily email (SMTP settings from env vars, off when not set, never breaks the game)
-- [ ] Content: family-friendly answer filter for every shipped puzzle (fix the ones with SEX, NAKED...); a
-      bigger leaderboard name blocklist
+- [x] Content: family-friendly answer filter (`family-words.txt`, 42 words: sex, nudity, drinking, crude words,
+      insults; `App.loadFamilyWords`, skipped at every difficulty; the clue prompt asks for family-friendly clues).
+      Campaign pool: 77 variants with those answers removed (each level keeps 20-25; `PuzzleStore.poolPuzzleOrNext`
+      falls through to the next variant), 56 files re-clued (PEE "Letter between O and Q", BRA "Support group
+      member?"). Shipped dailies left as played (the Daily Archive should hide ones with family-list answers).
+- [ ] A bigger leaderboard name blocklist (and the family words in names too)
 - [ ] Security: anything that costs money is a JSON POST; rate limiter keys IPv6 by /64, doesn't leak memory,
       caps survive restarts; Docker non-root user, health check
 - [ ] Leaderboard: no last-name requirement; server-side timing check (a start token) so faked times are caught;
@@ -243,3 +247,4 @@ deleted after everything is done.
 - 2026-11-07: Phase 2 directions published for the user to pick (REVIEW.md). Waiting on the pick; Phase 3 next.
 - 2026-11-07: Phase 3 backend core done (ClueWriter, PuzzleStore, DailyMaker); 138 JUnit tests pass.
 - 2026-11-07: live clue test: 9 calls, about $0.04. Paid calls so far: about $0.04 of $5.
+- 2026-11-07: family filter done; 142 JUnit tests pass (3 skipped: paid).

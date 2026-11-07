@@ -174,6 +174,8 @@ public class ClueWriter {
                 + "otherwise fit. \"Hot drink, in London\" for TEA and \"Ran fast, like a cheetah\" for SPED add nothing: "
                 + "tea is drunk everywhere, and \"Ran fast\" already says it. Never tie an everyday word to one place: "
                 + "METRO is any city's subway, so don't clue it as Paris's.\n");
+        sb.append("- Every clue must suit a family puzzle that children play: nothing about sex, bodily functions, drugs or "
+                + "drinking. If an answer has a clean meaning, clue that one (PEE is the letter P).\n");
         sb.append("- Keep each clue short: never over 10 words.\n");
         sb.append("- Never put the answer, or a form of it (like DESKS for DESK), in its own clue. That gives it away.\n");
         sb.append("- Write original, creative clues. Don't copy clues from published crosswords.\n");

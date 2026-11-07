@@ -36,6 +36,12 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       update branch would do nothing (the branch isn't live), so it would mean a small push to `main`. Reply "fix
       the live dailies" if you want that; otherwise they stay as they are.
 
+- [ ] **The family word list.** Answers that never appear now, at any difficulty (`src/main/resources/family-words.txt`):
+      sex and nudity words (SEX, SEXY, NAKED, NUDE...), drinking (BEER, BOOZE, DRUNK, VODKA, TIPSY...), crude words
+      (CRAP, DAMN) and playground insults (MORON, SISSY, PANSY). 77 campaign puzzles that used them were taken out
+      (every level still has 20 to 25). PEE and BRA stay, with clean clues ("Letter between O and Q", "Support group
+      member?"). Tell me any word to add or take off.
+
 ## Coming up
 
 These aren't ready yet. Each one moves up when it is.

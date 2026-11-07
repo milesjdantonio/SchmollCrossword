@@ -107,6 +107,7 @@ public class App {
         }
 
         Set<String> blocked = loadBlockedWords();
+        blocked.addAll(loadFamilyWords());
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
@@ -126,6 +127,12 @@ public class App {
     // Offensive words the generator must never use (blocked-words.txt)
     static Set<String> loadBlockedWords() throws IOException {
         return loadWordSet("blocked-words.txt");
+    }
+
+    // Words that are fine in a dictionary but not as answers in a game children play: sex, nudity, drinking,
+    // crude words and playground insults (family-words.txt). Never answers at any difficulty.
+    static Set<String> loadFamilyWords() throws IOException {
+        return loadWordSet("family-words.txt");
     }
 
     // Words harder than everyday level (archaic, jargon, crossword-only). Edit too-hard-words.txt to change it.

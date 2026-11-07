@@ -436,9 +436,19 @@ public class PuzzleStore {
         return section.world() + "-" + Campaign.LEVELS + "-p" + phase;
     }
 
+    // A level's puzzle from the shipped pool. A variant taken out of the pool (one whose answers didn't suit a
+    // family game) falls through to the next one, so every variant number still gets a puzzle.
+    static String poolPuzzleOrNext(String name, int variant) throws IOException {
+        for (int k = 0; k < Campaign.VARIANTS; k++) {
+            String json = poolPuzzle(name, (variant + k) % Campaign.VARIANTS);
+            if (json != null) return json;
+        }
+        return null;
+    }
+
     static String getCampaign(Path folder, Campaign.Section section, int level, boolean boss, int variant,
                               Map<Integer, List<String>> wordsByLength) throws IOException {
-        String pooled = poolPuzzle(poolName(section, level, boss), variant);
+        String pooled = poolPuzzleOrNext(poolName(section, level, boss), variant);
         if (pooled != null) return pooled;
         Path file = variantFile(campaignFile(folder, section, level, boss), variant);
         return generateOnce(file, () -> makeCampaign(folder, section, level, boss, variant, wordsByLength));
@@ -460,7 +470,7 @@ public class PuzzleStore {
     // Each stays away from the boss's earlier puzzles in the same fight and the boards before them.
     static String getBossPhase(Path folder, Campaign.Section section, int phase, int variant,
                                Map<Integer, List<String>> wordsByLength) throws IOException {
-        String pooled = poolPuzzle(poolPhaseName(section, phase), variant);
+        String pooled = poolPuzzleOrNext(poolPhaseName(section, phase), variant);
         if (pooled != null) return pooled;
         Path file = variantFile(phaseFile(folder, section, phase), variant);
         return generateOnce(file, () -> makeBossPhase(folder, section, phase, variant, wordsByLength));

@@ -69,23 +69,27 @@ class RiftTest {
                 for (int level = 1; level <= Campaign.LEVELS + 5; level++) assertTrue(seeds.add(Campaign.seed(s, level, v)), s.world() + " " + level + " " + v);
     }
 
-    // every level, the angel's own board and every phase has its 25 puzzles in the pool, with hand-written clues
+    // every level, the angel's own board and every phase finds a puzzle for each variant number (a few variants
+    // were taken out of the pool and fall through to the next), all with hand-written clues
     @Test
     void thePoolIsComplete() throws IOException {
-        int n = 0;
+        int own = 0;
         for (int v = 0; v < Campaign.VARIANTS; v++) {
             for (int level : Campaign.levels(rift())) {
-                String json = PuzzleStore.poolPuzzle(PuzzleStore.poolName(rift(), level, false), v);
+                String json = PuzzleStore.poolPuzzleOrNext(PuzzleStore.poolName(rift(), level, false), v);
                 assertNotNull(json, "rift " + level + " v" + v);
                 JsonNode p = JSON.readTree(json);
                 assertEquals(Campaign.size(rift(), level), p.get("size").asInt());
                 for (JsonNode e : p.get("across")) assertFalse(e.get("clue").asText().isBlank());
-                n++;
+                if (PuzzleStore.poolPuzzle(PuzzleStore.poolName(rift(), level, false), v) != null) own++;
             }
-            assertNotNull(PuzzleStore.poolPuzzle(PuzzleStore.poolName(rift(), 5, true), v), "the angel's board v" + v);
-            n++;
-            for (int phase = 2; phase <= 5; phase++) { assertNotNull(PuzzleStore.poolPuzzle(PuzzleStore.poolPhaseName(rift(), phase), v), "phase " + phase); n++; }
+            assertNotNull(PuzzleStore.poolPuzzleOrNext(PuzzleStore.poolName(rift(), 5, true), v), "the angel's board v" + v);
+            if (PuzzleStore.poolPuzzle(PuzzleStore.poolName(rift(), 5, true), v) != null) own++;
+            for (int phase = 2; phase <= 5; phase++) {
+                assertNotNull(PuzzleStore.poolPuzzleOrNext(PuzzleStore.poolPhaseName(rift(), phase), v), "phase " + phase);
+                if (PuzzleStore.poolPuzzle(PuzzleStore.poolPhaseName(rift(), phase), v) != null) own++;
+            }
         }
-        assertEquals(250, n);
+        assertTrue(own >= 230, own + " of the rift's 250 puzzles");
     }
 }
