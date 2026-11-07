@@ -688,47 +688,40 @@ const Campaign = (() => {
         enterLevel();
     }
 
-    // Into the level view. From inside a level (a new Unlimited Boss from its lose card, the next level) the hash
+    // Into the level view. From inside a level (a rematch from a lose card, the next level) the hash
     // doesn't change, so onView doesn't run: put on the level's world here, or the last one's scene, board and win stay
     function enterLevel() {
         if (U.view() === "level") { Worlds.use(data.playing.world); Game.show("level"); }
         else location.hash = "#level";
     }
     const slotName = () => !data.playing ? "campaign-none" : data.playing.special ? "special-" + data.playing.special : "campaign-" + keyOf(data.playing.world, data.playing.level);
-    // Daily Boss / Unlimited Boss: a boss fight outside the campaign. data.playing.special
-    // says which; it's that boss's own race (its moves, music and arena) at its campaign boss puzzle, one phase.
+    // The Daily Boss: a boss fight outside the campaign (data.playing.special = "daily"). It's that boss's own race
+    // (its moves, music and arena) at its campaign boss puzzle, one phase.
     // Nothing in the campaign changes: no stars or records, no rerolls, no pages for the book.
     const special = () => (data.playing && data.playing.special) || null;
     const dayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-    async function playSpecial(kind, { rematch = false } = {}) {
-        // a fight that's still going (you went back to the Daily or Unlimited page): carry on with it, so starting
+    async function playSpecial(kind = "daily", { rematch = false } = {}) {
+        // a fight that's still going (you went back to the Daily page): carry on with it, so starting
         // over can't skip an attempt or refill the abilities. Giving up ends it.
-        if (!rematch && fight && !fight.over && !fight.attemptCounted && special() === kind && fight.key === "sp-" + data.playing.sid && (kind !== "daily" || data.playing.date === dayStr())) {
+        if (!rematch && fight && !fight.over && !fight.attemptCounted && special() === kind && fight.key === "sp-" + data.playing.sid && data.playing.date === dayStr()) {
             enterLevel();
             return;
         }
         await fetchMap().catch(() => null);
         if (!map) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Reach the Server", text: "Try again in a moment.", ms: 3000 }); return; }
-        // the same Unlimited Boss again: its puzzle is kept (nothing new to pay for) and its attempts go on
-        const again = rematch && kind === "unlimited" && special() === "unlimited" && map.some(s => s.world === data.playing.world);
-        let world = null;
-        if (again) world = data.playing.world;
-        else if (kind === "daily") world = await fetch(`/api/boss/daily?date=${dayStr()}`).then(r => (r.ok ? r.json() : null)).then(r => r && r.world).catch(() => null);
-        else world = U.pick(map.map(s => s.world).filter(w => !data.playing || data.playing.world !== w || map.length < 2));
+        const world = await fetch(`/api/boss/daily?date=${dayStr()}`).then(r => (r.ok ? r.json() : null)).then(r => r && r.world).catch(() => null);
         if (!world || !map.some(s => s.world === world)) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Find Today's Boss", text: "Try again in a moment.", ms: 3000 }); return; }
         if (data.playing && !data.playing.special) data.lastPlaying = data.playing;          // where the campaign map lands next time
-        const tries = again ? data.playing.tries || 0 : 0, carry = again ? data.playing.carry : null;
-        data.playing = { world, level: 5, special: kind, date: kind === "daily" ? dayStr() : null, sid: Date.now(), ...(kind === "unlimited" ? { tries } : {}), ...(carry ? { carry } : {}) };
+        data.playing = { world, level: 5, special: "daily", date: dayStr(), sid: Date.now() };
         save();
         fight = null;
         prefetchBoss(world);
         Sound.play("start");
-        if (again) Game.restartSlot(slotName());          // the same puzzle, from a clean board
-        else Game.forgetSlot(slotName());                 // a new boss (or today's, fetched again): a new copy of its puzzle
+        Game.forgetSlot(slotName());                      // today's boss, fetched again: a new copy of its puzzle
         enterLevel();
     }
-    const specialUrl = () => { const p = data.playing; return p.special === "daily" ? `/api/boss?kind=daily&date=${p.date || dayStr()}` : `/api/boss?kind=unlimited&world=${encodeURIComponent(p.world)}`; };
-    const backToMode = () => { const k = special(); location.hash = k === "daily" ? "#daily" : k === "unlimited" ? "#unlimited" : "#campaign"; };
+    const specialUrl = () => `/api/boss?kind=daily&date=${data.playing.date || dayStr()}`;
+    const backToMode = () => { location.hash = special() ? "#daily" : "#campaign"; };
     // A boss fight needs three puzzles: yours, the boss's own board and phase 2. New ones take a while (Claude writes
     // their clues, one at a time on the server), so they're asked for the moment you press Fight, not after your
     // puzzle has arrived (the intro used to start ~10 seconds late, after you could already type).
@@ -762,7 +755,7 @@ const Campaign = (() => {
     function titles() {
         const c = current(), w = c && Worlds.byId[c.world];
         if (!w) return { title: "Campaign", sub: "" };
-        if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // just "Boss" on Daily and Unlimited
+        if (c.special) return { title: `Boss: ${bossOf(c.world).name}`, sub: w.name };       // the Daily Boss
         const where = isSecret(c.si) ? "Secret World" : `World ${c.si + 1}`;
         if (c.level === 5) return { title: "Boss: " + bossOf(c.world).name, sub: `${where} · ${w.name}` };
         return { title: `${w.name} · Level ${c.level}`, sub: (isSecret(c.si) ? where : `${where} of ${MAIN}`) + (c.difficulty ? ` · ${label(c.difficulty, c.size)}` : "") };
@@ -781,8 +774,8 @@ const Campaign = (() => {
     }
 
     // Called by app.js for every screen: campaign screens wear the campaign's world; the rest wear the player's own
-    // Check and Reveal: never in the campaign (levels and bosses alike), always on the Daily and
-    // Unlimited Boss and everywhere else. ONE class decides it, set whenever the screen or the puzzle changes, so it
+    // Check and Reveal: never in the campaign (levels and bosses alike), always on the Daily Boss and
+    // everywhere else. ONE class decides it, set whenever the screen or the puzzle changes, so it
     // can't be left over from an earlier screen or wait for a fight's panel (it used to be three classes set at
     // different moments, so Check and Reveal sometimes showed and sometimes didn't)
     function syncHelp() {
@@ -874,7 +867,7 @@ const Campaign = (() => {
                 epilogue: boss && c.world === "rift", heroGifts: boss && firstClear && typeof Hero !== "undefined" && Hero.giftNames ? Hero.giftNames(c.world) : null, newAbility, freeUses: FREE_USES }
         };
     }
-    // a Daily or Unlimited Boss beaten: stars and coins, nothing else (the daily's first win each day pays the most)
+    // the Daily Boss beaten: stars and coins, nothing else (the first win each day pays the most)
     function specialWin(game, c) {
         const stars = bossStars(), close = fight ? Math.round(Math.max(fight.closest, bossPct()) * 100) : 0;
         const earned = [["Won the Race", true], [`Boss Kept Under ${Math.round(STAR_CLOSE[0] * 100)}%`, stars >= 2], [`Boss Kept Under ${Math.round(STAR_CLOSE[1] * 100)}%`, stars >= 3], [`Closest It Got: ${close}%`, true]];
@@ -882,10 +875,9 @@ const Campaign = (() => {
         const dailyKey = "daily-" + (data.playing.date || dayStr()), firstToday = c.special === "daily" && !data.specials[dailyKey];
         if (c.special === "daily") data.specials[dailyKey] = Math.max(stars, data.specials[dailyKey] || 0);
         data.specials.wins = (data.specials.wins || 0) + 1;
-        const priorTries = triesNow();                  // the attempts before this one (Daily: points; Unlimited: coins)
+        const priorTries = triesNow();                  // the attempts before this one (each costs points, see score.js)
         countAttempt(true);
-        const fullCoins = c.special === "daily" ? (firstToday ? 60 : 10) + stars * 5 : 60 + stars * 20;
-        const coins = c.special === "unlimited" ? Math.max(10, fullCoins - priorTries * UNLIMITED_TRY_COINS) : fullCoins;
+        const coins = (firstToday ? 60 : 10) + stars * 5;
         data.coins = (data.coins || 0) + coins;
         if (firstToday) earned.push(["Today's Boss Beaten", true]);
         save();
@@ -894,8 +886,7 @@ const Campaign = (() => {
         const campaignStats = { special: c.special, boss: true, world: c.world, totalCoins: data.coins, bossStars: stars, difficulty: game.puzzle && game.puzzle.difficulty };
         if (fight) Object.assign(campaignStats, { hits: fight.hits, blocks: fight.blocks, combo: fight.bestCombo, kinds: fight.kinds.size, used: fight.used + fight.itemsUsed,
             closest: Math.max(fight.closest, bossPct()), lifeUsed: fight.lifeUsed, phases: 1, phaseReached: 1, counters: fight.counters || 0 });
-        const note = c.special === "unlimited" && priorTries ? `Attempt ${priorTries + 1}: ${fullCoins - coins} fewer coins.` : null;
-        return { campaignStats, ...(note ? { note } : {}), campaign: { stars, best: stars, earned, boss: true, firstClear: false, next: null, world: c.world, level: 5, si: c.si, coins, totalCoins: data.coins, special: c.special, priorTries } };
+        return { campaignStats, campaign: { stars, best: stars, earned, boss: true, firstClear: false, next: null, world: c.world, level: 5, si: c.si, coins, totalCoins: data.coins, special: c.special, priorTries } };
     }
     function bestLine() {
         const c = current();
@@ -964,12 +955,12 @@ const Campaign = (() => {
     // Which abilities a boss fight brings, on keys 1-3:
     //   - campaign bosses: any 3 you've unlocked, from any world, picked on the boss's sheet or in the shop (data.loadout). Empty slots fill
     //     with this world's unlocked ones first, then the newest you've unlocked.
-    //   - the Boss on Daily and Unlimited: its own world's three, all unlocked, 3 uses each every attempt (fight.uses;
+    //   - the Daily Boss: its own world's three, all unlocked, 3 uses each every attempt (fight.uses;
     //     the campaign's uses aren't touched)
     // (shopWorld: in a level, that level's world; on the map, the world in view)
     const shopWorld = () => (U.view() === "level" && data.playing ? data.playing.world : map && map[data.section || 0] ? map[data.section || 0].world : data.playing ? data.playing.world : "paper");
     const worldAbilities = world => ABILITIES.filter(a => a.world === world).map(a => a.id);
-    const ownUses = () => !!(U.view() === "level" && special() && fight && fight.uses);      // a Daily or Unlimited fight
+    const ownUses = () => !!(U.view() === "level" && special() && fight && fight.uses);      // a Daily Boss fight
     function loadout(world = shopWorld()) {
         if (U.view() === "level" && special()) return worldAbilities(data.playing.world);
         const list = [...new Set((data.loadout || []).filter(id => abilityById[id] && unlockedAbility(abilityById[id])))].slice(0, 3);
@@ -978,37 +969,34 @@ const Campaign = (() => {
     }
     function equip(list) { data.loadout = list.filter(Boolean).slice(0, 3); save(); }
     const readyAbilities = (world) => loadout(world).filter(id => abilityOpen(abilityById[id]));
-    const DAILY_USES = 3, DAILY_TRY_COST = 50, UNLIMITED_TRY_COINS = 50;   // 50 per earlier attempt
+    const DAILY_USES = 3, DAILY_TRY_COST = 50;   // 50 points per earlier attempt
     const abilityOpen = a => (ownUses() ? a.world === fight.world : unlockedAbility(a));
     const usesOf = id => (ownUses() ? fight.uses[id] || 0 : data.owned[id] || 0);
     function spendUse(id) { if (ownUses()) fight.uses[id] = Math.max(0, (fight.uses[id] || 0) - 1); else { data.owned[id] = Math.max(0, (data.owned[id] || 0) - 1); save(); } }
     // Attempts: every finished fight (a loss, giving up, Reveal puzzle, or a win) counts. The Daily Boss saves them
-    // per day and each earlier one costs points when you win (see score.js; your best of the day is kept). The
-    // Unlimited Boss counts them per boss (a Rematch keeps it) and each earlier one pays 5 fewer coins.
+    // per day and each earlier one costs points when you win (see score.js; your best of the day is kept).
     const triesKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-tries";
     const dailyTries = () => ((data.specials || {})[triesKey()]) || 0;
-    const triesNow = () => (special() === "daily" ? dailyTries() : special() === "unlimited" ? data.playing.tries || 0 : 0);
+    const triesNow = () => (special() === "daily" ? dailyTries() : 0);
     function countAttempt(won = false) {
         if (!fight || fight.attemptCounted || !special()) return;
         fight.attemptCounted = true;
-        if (special() === "daily") {
-            data.specials = data.specials || {};
-            data.specials[triesKey()] = dailyTries() + 1;
-        } else data.playing.tries = (data.playing.tries || 0) + 1;
+        data.specials = data.specials || {};
+        data.specials[triesKey()] = dailyTries() + 1;
         saveCarry(won);
         save();
     }
     // The words you got right carry over to your next attempt, filled in and locked. Only words you finished right yourself count
-    // (fight.credited: Reveal Puzzle's letters never do), saved with the puzzle's seed: per day on Daily, per boss on
-    // Unlimited (a Rematch keeps them; a New Boss starts clean). A win clears them, so a Daily rematch starts empty.
+    // (fight.credited: Reveal Puzzle's letters never do), saved per day with the puzzle's seed. A win clears them,
+    // so a rematch after a win starts empty.
     const carryKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-carry";
     function getCarry() {
-        if (special() === "daily") return (data.specials || {})[carryKey()] || null;
-        return special() === "unlimited" ? data.playing.carry || null : null;
+        return special() === "daily" ? (data.specials || {})[carryKey()] || null : null;
     }
     function setCarry(v) {
-        if (special() === "daily") { data.specials = data.specials || {}; if (v) data.specials[carryKey()] = v; else delete data.specials[carryKey()]; }
-        else if (special() === "unlimited") { if (v) data.playing.carry = v; else delete data.playing.carry; }
+        if (special() !== "daily") return;
+        data.specials = data.specials || {};
+        if (v) data.specials[carryKey()] = v; else delete data.specials[carryKey()];
     }
     function saveCarry(won) {
         const p = Game.state.puzzle;
@@ -1090,7 +1078,7 @@ const Campaign = (() => {
                         U.el("button", { type: "button", class: "btn small primary", text: `Buy · 🪙 ${it.price}`, disabled: data.coins < it.price, onclick: buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }) }))));
                 scroll.appendChild(grid);
             } else {
-                scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Boss on Daily and Unlimited always brings its own world's three." }));
+                scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Daily Boss always brings its own world's three." }));
                 // (what you bring is shown in the equipped bar at the top of the shop)
                 for (const world of WORLD_ORDER) {
                     if (world === "rift" && !secretOpen()) continue;        // the secret world stays a secret
@@ -1194,7 +1182,7 @@ const Campaign = (() => {
         itemBar.hidden = U.view() !== "level";
         if (itemBar.hidden) return;
         itemBar.innerHTML = "";
-        const noItems = !!special();                           // the Daily and Unlimited Boss: no items, just Give Up
+        const noItems = !!special();                           // the Daily Boss: no items, just Give Up
         itemBar.classList.toggle("only-giveup", noItems);
         // every item on one row, then the shop
         // and Give Up under it
@@ -1264,9 +1252,7 @@ const Campaign = (() => {
                 special() ? U.el("button", { type: "button", class: "btn primary", text: "Rematch", onclick: () => { modal.remove(); playSpecial(special(), { rematch: true }); } })
                     : U.el("button", { type: "button", class: "btn primary", text: level === 5 ? "Rematch" : "Try Again", onclick: () => { modal.remove(); play(world, level); } }),
                 special() ? null : U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(level === 5 ? "abilities" : "items") }),
-                U.el("button", { type: "button", class: special() ? "btn" : "btn ghost", text: special() ? "Return" : "Map", onclick: () => { modal.remove(); if (special()) backToMode(); else location.hash = "#campaign"; } }),
-                // the Unlimited Boss: Rematch, Return or New Boss
-                special() === "unlimited" ? U.el("button", { type: "button", class: "btn", text: "New Boss", onclick: () => { modal.remove(); playSpecial("unlimited"); } }) : null));
+                U.el("button", { type: "button", class: special() ? "btn" : "btn ghost", text: special() ? "Return" : "Map", onclick: () => { modal.remove(); if (special()) backToMode(); else location.hash = "#campaign"; } })));
         modal.appendChild(card);
         document.getElementById("overlay").appendChild(modal);
         requestAnimationFrame(() => modal.classList.add("in"));
@@ -1473,7 +1459,7 @@ const Campaign = (() => {
                 if (kept && fight && fight.key === key) notice("🔒", kept === 1 ? "1 Word Kept" : `${kept} Words Kept`, "Your right words from last time are filled in and locked.", "good", 4200);
             }
             else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
-            if (fight && fight.key === key && special()) setChaos(1);     // the Daily and Unlimited Boss's arena goes wild too
+            if (fight && fight.key === key && special()) setChaos(1);     // the Daily Boss's arena goes wild too
         } catch (err) {
             waiting(false, "Couldn't load the boss's puzzle: " + err.message);
             const l = panel.querySelector(".bp-loading");
@@ -1524,7 +1510,7 @@ const Campaign = (() => {
     }
     function showPanel() {
         panel.hidden = false;
-        root.classList.toggle("special-boss", !!special());                 // the Daily and Unlimited Boss keep Check and Reveal
+        root.classList.toggle("special-boss", !!special());                 // the Daily Boss keeps Check and Reveal
         raceEl.hidden = false;
         raceShown = -1;
         raceFaceFor = "";
@@ -2125,7 +2111,7 @@ const Campaign = (() => {
             f.close = close;
             root.classList.toggle("boss-close", close);
             if (close) {
-                if (special() && (f.chaos || 0) < 2) setChaos(2);            // the Daily and Unlimited Boss's arena: wilder near the end
+                if (special() && (f.chaos || 0) < 2) setChaos(2);            // the Daily Boss's arena: wilder near the end
                 Sound.custom(() => { for (const t of [0, 0.24]) Sound.tone({ f: 988, f2: 740, type: "triangle", t, d: 0.2, v: 0.045 }); });
                 FX.shake(5, 300);
                 speak(U.pick(["Almost done...", "Nearly there!", "Too slow!"]), 2200);
@@ -3366,7 +3352,7 @@ const Campaign = (() => {
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
         if (e.target.closest && e.target.closest("input, select, textarea")) return;
         if (document.querySelector("#overlay .results")) return;
-        // (4 too: the Celestial Rift's Boss on Unlimited brings all four of its abilities)
+        // (4 too, for a loadout of four abilities)
         if (/^[1-4]$/.test(e.key)) { const id = loadout(fight && fight.world)[+e.key - 1]; if (id && abilityOpen(abilityById[id])) { e.preventDefault(); useAbility(id); } return; }
         const f = fight;
         if (/^[a-zA-Z]$/.test(e.key)) {
@@ -3636,8 +3622,7 @@ const Campaign = (() => {
         Sound.music("lose", { loop: false, v: 0.42, fade: 1 });           // game-over music
         FX.shake(10, 420);
         const sp = special(), tries = triesNow();
-        const tryNote = sp === "daily" ? `Attempt ${tries} used. Your right words stay locked in for the next one. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.`
-            : sp === "unlimited" ? `Attempt ${tries} used. A Rematch keeps this boss, its puzzle and your right words; each attempt takes ${UNLIMITED_TRY_COINS} coins off a win.` : null;
+        const tryNote = sp === "daily" ? `Attempt ${tries} used. Your right words stay locked in for the next one. A win now scores ${tries * DAILY_TRY_COST} fewer points; your best of the day is kept.` : null;
         loseCard({ world: f.world, level: 5, kicker: sp ? `BOSS · ATTEMPT ${tries}` : why !== "boss" ? "BOSS FIGHT · GAVE UP" : "BOSS FIGHT · LOST", title: text[1], note: tryNote || text[2], art: bossSvg(f.world) });
         speak(why !== "boss" ? U.pick(["Running away?", "Ha! I knew it!", "Come back when you're ready!"]) : U.pick(["Better luck next time!", "Too slow!", "Ha! Rematch?"]), 5000);
         drawFight();
@@ -3818,7 +3803,7 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     // The home screen's campaign card
     // ---------------------------------------------------------------------------------------------
-    // the Home screen: today's boss, under the Challenge in the Daily card (and a random boss in the Unlimited card)
+    // the Home screen: today's boss, under the Challenge in the Daily card
     async function drawHomeBoss() {
         const chip = $("#home-daily-boss");
         if (!chip) return;

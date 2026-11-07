@@ -13,7 +13,7 @@ public class Puzzle {
     // row/col/length let the website highlight the right squares when the player clicks a clue.
     public record Entry(int number, String direction, int row, int col, int length, String answer, String clue) {}
 
-    String mode;              // "daily" (same for everyone) or "unlimited"
+    String mode;              // "daily" (the same for everyone) or "campaign"
     long seed;                // the random seed that built the grid (for a daily: made from the date)
     String difficulty;        // "easy", "medium" or "hard"
     int size;                 // 5 for a 5x5 grid

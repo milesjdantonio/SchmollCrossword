@@ -1,5 +1,5 @@
 // Schmoll Crossword: the screens around the game (redesign).
-//   Home: today's five dailies, Unlimited, the streak (with fire) and this week, the worlds
+//   Home: today's five dailies, the campaign, the streak (with fire) and this week, the leaderboard
 //   Stats: tiles that count up, a calendar heatmap, best/average times, achievements, history
 //   Settings: the world picker (live previews), mode, sound, effects, timer, intro, difficulty
 //   The top bar (How to Play, world and sound buttons, each next to Settings), screen switching (#daily, #stats...),
@@ -77,9 +77,9 @@ const App = (() => {
     let firstShow = true;
     function showView() {
         const view = U.view();
-        const gameView = view === "daily" || view === "unlimited" || view === "level";
+        const gameView = view === "daily" || view === "level";
         if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
-        // a level lights up Campaign, but the Daily and Unlimited Boss belong to their own screens
+        // a level lights up Campaign, but the Daily Boss belongs to Daily
         const tab = view === "level" ? (Campaign.playing && Campaign.playing.special) || "campaign" : view;
         document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === tab));
         for (const [name, el] of Object.entries(screens)) {
@@ -105,7 +105,7 @@ const App = (() => {
     // on a phone-sized game screen the mascot and its speech bubble would cover the board
     function mascotInTheWay() {
         const v = U.view();
-        return (v === "daily" || v === "unlimited" || v === "level") && innerWidth < 900 && (U.touch() || innerWidth < 780);
+        return (v === "daily" || v === "level") && innerWidth < 900 && (U.touch() || innerWidth < 780);
     }
     addEventListener("resize", U.debounce(() => { if (!root.classList.contains("intro-on")) Mascot.away = mascotInTheWay(); }, 200));
 
@@ -280,7 +280,6 @@ const App = (() => {
         const w = Worlds.current, locked = w.modes.length < 2;
         for (const input of f.theme) { input.checked = input.value === (locked ? w.modes[0] : s.theme); input.disabled = locked; }
         for (const input of f.effects) input.checked = input.value === s.effects;
-        f.hardWords.checked = s.hardWords;
         f.showTimer.checked = s.showTimer;
         f.intro.checked = s.intro;
         syncSound();

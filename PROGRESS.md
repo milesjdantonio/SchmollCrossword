@@ -67,16 +67,17 @@ deleted after everything is done.
 - [x] CLAUDE.md "current work" note + a memory pointing here
 
 ### Phase 1: Remove Unlimited
-- [ ] Frontend: Home card, menu tab, `#unlimited` route, picker (`showPicker`, `#un-picker`), New Puzzle button,
+- [x] Frontend: Home card, menu tab, `#unlimited` route, picker (`showPicker`, `#un-picker`), New Puzzle button,
       "x of 10 left", Unlimited Boss (`playSpecial("unlimited")`, Rematch/New Boss, `UNLIMITED_TRY_COINS`),
       Allow Harder Words setting, Unlimited stats rows, How to Play, legal.js text, CSS
-- [ ] Erase saved Unlimited data in players' browsers (progress slot `unlimited`, `counts.unlimited`, the
+- [x] Erase saved Unlimited data in players' browsers (progress slot `unlimited`, `counts.unlimited`, the
       `unlimited10`/`unlimited50` achievements, `data.playing` Unlimited Boss state) with a one-time migration
-- [ ] Two new achievements in place of Can't Stop and Marathon (keep 50)
-- [ ] Backend: `/api/unlimited`, `/api/unlimited/left`, `/api/boss?kind=unlimited` (keep the Daily Boss and its free
+- [x] Two new achievements in place of Can't Stop and Marathon: Time Traveler and Archivist (10 and 50 Daily
+      Archive solves; they unlock once the Archive exists in Phase 7)
+- [x] Backend: `/api/unlimited`, `/api/unlimited/left`, `/api/boss?kind=unlimited` (keep the Daily Boss and its free
       board), `RateLimiter` use for Unlimited, `PuzzleStore` recent-Unlimited code, `hardWords`, the
       `UNLIMITED_*` settings, README, tests
-- [ ] `mvn test` passes; browser check of Home, Daily, Campaign, Stats, Settings with no errors
+- [x] `mvn test` passes; browser check of Home, Daily, Campaign, Stats, Settings with no errors
 
 ### Phase 2: Redesign directions (early, so the user can pick while the fixes go on)
 - [ ] Read the design skills (taste-skill, Impeccable, UI UX Pro Max); screenshot every current screen (desktop
@@ -116,6 +117,8 @@ deleted after everything is done.
       cache standings; faster forget; retention stated
 
 ### Phase 4: Rule changes and gameplay fixes
+- [ ] Re-check the point-based achievements (Perfect Score = 300 on a daily, Big Scorer = 1,000) against the new
+      points
 - [ ] Scoring: per-square points, Check 1, Reveal 5 (wrong/empty replaced and charged, right letters locked free),
       the +10-a-minute time bonus with size-scaled bands, Daily Boss 8 a square + stars - lost tries; the server's
       `LeaderboardController.points` matches; tests
@@ -217,3 +220,6 @@ deleted after everything is done.
 - 2026-11-07: update page pushed to `main` (6b0ee02); branch `major-update` made. The test browser helper was broken
   by Edge 156 (its launcher process exits at once and the watchdog then killed the real browser); fixed in
   `tools/browser-test/` (local), see CLAUDE.md "Running things safely".
+- 2026-11-07: Phase 1 done. Unlimited, the Unlimited Boss, Allow Harder Words, `/api/unlimited*` and the
+  `UNLIMITED_*` settings are gone; boot.js drops their saved data once (`schmoll.noUnlimited`). 118 JUnit tests pass;
+  the browser check found no errors. Home's Daily and Your Streak now sit side by side.

@@ -306,8 +306,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .home-grid > .card:nth-child(3) { animation-delay: .14s; }
 .home-grid > .card:nth-child(4) { animation-delay: .21s; }
 @keyframes card-in { from { opacity: 0; transform: translateY(26px) scale(.96); } }
-.daily-card { grid-row: span 2; }      /* Unlimited and your streak stack beside it; the streak card reaches down to its bottom */
-/* the streak card is as tall as the rest of Daily, so its pieces spread out down it */
+/* the streak card sits beside Daily and is as tall as it, so its pieces spread out down it */
 .streak-card { display: flex; flex-direction: column; }
 .streak-card .streak-line { margin-top: auto; }
 .streak-card .home-ach { margin-bottom: auto; }
@@ -350,8 +349,6 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .card-status { margin: 6px 0 0; font-weight: 900; }
 .countdown { margin: 4px 0 0; color: var(--muted); font-size: .9rem; font-weight: 600; }
 .countdown b { color: var(--ink); font-variant-numeric: tabular-nums; }
-.unlimited-card { display: flex; flex-direction: column; gap: 14px; }
-.unlimited-card .btn { margin-top: auto; align-self: flex-start; }
 .streak-line, .stats-streak, .res-streak { display: flex; justify-content: center; }
 .week { display: flex; justify-content: center; gap: 8px; margin: 16px 0 6px; }
 .wk-day { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: .74rem; font-weight: 900; }
@@ -485,7 +482,6 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .difficulty button.active { background: var(--accent); color: var(--accent-ink); }
 .difficulty button.done::after { content: " \2713"; }
 .difficulty button.given-up::after { content: " \00D7"; }
-.difficulty .new-puzzle { border: 1.5px dashed var(--accent); }
 .status { padding: 50px 0; color: var(--muted); font-weight: 700; text-align: center; }
 .status.error { color: var(--wrong); }
 .spinner { display: inline-block; width: 20px; height: 20px; margin-right: 10px; vertical-align: -4px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
@@ -591,10 +587,6 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .board.big .cell .num { top: 2px; left: 3px; font-size: calc(.72rem * 6 / var(--size)); }
 .report-btn { justify-self: center; padding: 4px 10px; border: 0; background: none; color: var(--muted); font: 700 .8rem var(--font-body); cursor: pointer; text-decoration: underline dotted; }
 .report-btn:hover { color: var(--accent); }
-.unlimited-left { align-self: center; padding: 4px 10px; border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--muted); font: 800 .78rem var(--font-body); white-space: nowrap; }
-.unlimited-left:empty { display: none; }
-.unlimited-left.low { color: var(--accent); border-color: var(--accent); }
-.unlimited-left.out { color: var(--wrong); border-color: var(--wrong); }
 .link-btn { padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-decoration: underline; cursor: pointer; }
 .report-card { width: min(460px, 100%); text-align: left; }
 .report-card .ask-title { text-align: center; }
@@ -1333,7 +1325,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .hero-title, .greeting, #game-title, .game-titles .subtitle, .page-head h1, .page-head .subtitle, .hero .subtitle {
     text-shadow: 0 0 2px var(--bg), 0 0 6px var(--bg), 0 0 12px var(--bg), 0 0 20px var(--bg);
 }
-/* Daily Boss / Unlimited Boss: a boss race from the Daily and Unlimited pages */
+/* The Daily Boss: a boss race from the Daily page */
 .difficulty .boss-mode-btn { margin-left: 6px; color: #fff; border-color: transparent; background: linear-gradient(135deg, #e2483c, #8a2bbf); box-shadow: 0 3px 0 rgba(43, 34, 51, .35), 0 0 14px rgba(226, 72, 60, .35); font-weight: 900; }
 .difficulty .boss-mode-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 .difficulty .boss-mode-btn[hidden] { display: none; }
@@ -1352,7 +1344,6 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 .boss-chip.done { border-color: var(--good); }
 .boss-chip.done .chip-state { color: var(--good); }
 @keyframes hb-bob { to { transform: translateY(-4px) rotate(-2deg); } }
-.unlimited-card .hb-btns { display: flex; gap: 10px; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) { .boss-chip .bchip-art { animation: none; } }
 .daily-chips .boss-chip, .daily-chips .boss-chip .bchip-text, .daily-chips .boss-chip .chip-name { color: var(--ink); }
 .daily-chips .boss-chip .chip-sub, .daily-chips .boss-chip .chip-state { color: var(--muted); }
@@ -1417,26 +1408,3 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .lb-line { margin: 4px 0; font-weight: 700; }
 .lb-link { color: var(--accent); font-weight: 800; text-decoration: none; }
 @media (max-width: 370px) { .modes a { padding: 5px 5px; font-size: .74rem; } }
-
-/* Unlimited: the picker it opens on (game.js showPicker). While playing, the difficulty buttons are replaced by
-   New Puzzle, which brings the picker back, so no puzzle is ever loaded by a stray click */
-#game-view.unlimited .difficulty button[data-difficulty], #game-view.unlimited #boss-mode { display: none; }
-#game-view.picking #new-puzzle { display: none; }
-.un-picker { margin: 8px 0 0; }
-.un-title { margin: 0 0 14px; font-size: 1.15rem; }
-.un-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-.un-card { display: grid; gap: 4px; justify-items: start; padding: 18px 18px 16px; border: 1px solid var(--line); border-radius: 16px;
-    background: var(--surface); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .15s, box-shadow .15s, border-color .15s; }
-.un-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
-.un-card:active { transform: translateY(0) scale(.99); }
-.un-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.un-card b { font-size: 1.1rem; font-weight: 900; }
-.un-card small { color: var(--muted); font-weight: 700; }
-.un-card::before { content: ""; width: 28px; height: 6px; border-radius: 999px; background: var(--surface-2); margin-bottom: 6px; }
-.un-card.easy::before { background: var(--good); }
-.un-card.medium::before { background: #f2c230; }
-.un-card.hard::before { background: #e5484d; }
-.un-card.challenge::before { background: linear-gradient(135deg, #f6c445, #f08a24); }
-.un-card.boss::before { background: linear-gradient(135deg, #8a6bff, #c06bff); }
-.un-card.continue { grid-column: 1 / -1; border-color: var(--accent); }
-.un-card.continue::before { background: var(--accent); }

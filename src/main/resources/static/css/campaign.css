@@ -860,7 +860,7 @@ html.cm-boss-sheet .cm-beta { display: none; }
 .in-level .hud-row .points-today { flex: 1 1 0; min-width: 0; }
 @media (max-width: 960px) { .cm-rail .cm-dot { --dot: clamp(16px, calc((100vh - 150px) / 15 - 4px), 24px); } }
 /* the campaign has no Check or Reveal: you solve it
-   yourself, with the shop's items as the only help. The Daily and Unlimited Boss keep them (and have no items, only
+   yourself, with the shop's items as the only help. The Daily Boss keeps them (and has no items, only
    Give Up). One class decides it: no-help, set by syncHelp() in campaign.js */
 .no-help #helpers .helper-row { display: none; }
 /* ...and the bar with only Give Up in it centres it */

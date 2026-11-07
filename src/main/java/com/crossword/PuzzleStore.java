@@ -7,9 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -156,7 +154,7 @@ public class PuzzleStore {
     }
 
     // Easier words in the campaign. Every campaign
-    // puzzle (and the Daily and Unlimited Boss, which use the campaign's settings) fills from the word list one step
+    // puzzle (and the Daily Boss, which uses the campaign's settings) fills from the word list one step
     // easier than its difficulty; the clues stay at the level's own difficulty.
     //   medium 5x5:  Easy's words (was Medium's)
     //   challenge:   Easy's words first, then Medium's (was Medium's, then Hard's)
@@ -216,7 +214,7 @@ public class PuzzleStore {
     static String generateBig(long seed, String mode, String difficulty, int size,
                               Map<Integer, List<String>> wordsByLength, Set<String> avoid, String favors, String focus, boolean withClues) {
         boolean expert = difficulty.equals("expert"), campaign = mode.equals("campaign");
-        // which words fill it: see "Easier words in the campaign" above (the dailies and Unlimited are unchanged)
+        // which words fill it: see "Easier words in the campaign" above (the dailies are unchanged)
         Map<Integer, List<String>> first = campaign ? (expert ? mediumWords() : easyWords()) : (expert ? wordsByLength : mediumWords());
         Map<Integer, List<String>> second = campaign && !expert ? mediumWords() : wordsByLength;
         ChallengeGrid.Filled filled = null;
@@ -265,7 +263,7 @@ public class PuzzleStore {
     // ---------------------------------------------------------------------------------------
     // Fewer repeats: the solver likes some words far more than others
     // (REST was in 1 of every 3 easy grids, ERROR in 1 of 4), so a new puzzle stays away from the answers of
-    // recent puzzles: the last few days' dailies, the campaign levels just before it, the last Unlimited puzzles.
+    // recent puzzles: the last few days' dailies and the campaign levels just before it.
     // ---------------------------------------------------------------------------------------
     private static final Pattern ANSWER = Pattern.compile("\"answer\"\\s*:\\s*\"([A-Z]+)\"");
 
@@ -298,19 +296,6 @@ public class PuzzleStore {
             }
         }
         return answersIn(files);
-    }
-
-    // Unlimited: the answers of the last few puzzles made (kept in memory; a restart forgets them)
-    static final int UNLIMITED_MEMORY = 12;
-    private static final Deque<Set<String>> recentUnlimited = new ArrayDeque<>();
-    private static synchronized Set<String> recentUnlimitedAnswers() {
-        Set<String> all = new HashSet<>();
-        for (Set<String> answers : recentUnlimited) all.addAll(answers);
-        return all;
-    }
-    private static synchronized void rememberUnlimited(String json) {
-        recentUnlimited.addLast(answersIn(json));
-        while (recentUnlimited.size() > UNLIMITED_MEMORY) recentUnlimited.removeFirst();
     }
 
     // Makes a brand-new daily puzzle as JSON: grid from the date, clues from Claude. COSTS MONEY (one API call).
@@ -402,7 +387,7 @@ public class PuzzleStore {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Daily Boss and Unlimited Boss:
+    // The Daily Boss:
     // a boss fight outside the campaign, with the boss's campaign puzzle settings (one phase).
     // ---------------------------------------------------------------------------------------
     // Today's boss: 4 bosses along the map each day, so it's never the same two days running and every boss
@@ -426,7 +411,7 @@ public class PuzzleStore {
         Files.writeString(file, json);
         return json;
     }
-    // a boss puzzle at a section's boss settings (Unlimited Boss calls this with a random seed; not saved)
+    // a boss puzzle at a section's boss settings
     static String bossPuzzle(long seed, Campaign.Section section, Map<Integer, List<String>> wordsByLength, boolean withClues) {
         String difficulty = section.bossDifficulty();
         return Campaign.bigGrid(difficulty)
@@ -466,15 +451,5 @@ public class PuzzleStore {
             }
         }
         return answersIn(all.subList(Math.max(0, here - CAMPAIGN_BACK), here));
-    }
-
-    // Makes a brand-new unlimited puzzle as JSON (not saved: every unlimited puzzle is new). COSTS MONEY (one API call).
-    static String generateUnlimited(long seed, String difficulty, Map<Integer, List<String>> wordsByLength) {
-        Set<String> avoid = recentUnlimitedAnswers();
-        String json = difficulty.equals("challenge")
-                ? generateChallenge(seed, "unlimited", wordsByLength, avoid)
-                : generateSmall(seed, "unlimited", difficulty, wordsByLength, avoid);
-        rememberUnlimited(json);
-        return json;
     }
 }

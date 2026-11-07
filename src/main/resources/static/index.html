@@ -52,7 +52,6 @@
                     <a href="#" data-view="home">Home</a>
                     <a href="#campaign" data-view="campaign">Campaign</a>
                     <a href="#daily" data-view="daily">Daily</a>
-                    <a href="#unlimited" data-view="unlimited">Unlimited</a>
                     <a href="#stats" data-view="stats">Stats</a>
                     <a href="#settings" data-view="settings">Settings</a>
                 </nav>
@@ -106,10 +105,6 @@
                         <p class="card-status" id="daily-status"></p>
                         <p class="countdown" id="countdown"></p>
                     </article>
-                    <article class="card unlimited-card">
-                        <header class="card-head"><h2>Unlimited</h2></header>
-                        <div class="hb-btns"><a class="btn primary big" href="#unlimited">Play Unlimited</a></div>
-                    </article>
                     <article class="card streak-card">
                         <header class="card-head"><h2>Your Streak</h2><a class="kicker link" href="#stats">All Stats &rsaquo;</a></header>
                         <div class="streak-line" id="home-streak"></div>
@@ -135,14 +130,11 @@
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
                         <button type="button" class="challenge-btn" data-difficulty="challenge" title="A bigger grid, 6&times;6 to 9&times;9, with longer words and more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
-                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race a campaign boss: today's boss on Daily, a random one on Unlimited">Boss</button>
-                        <span class="unlimited-left" id="unlimited-left" hidden></span>
-                        <button type="button" class="new-puzzle" id="new-puzzle" hidden>New Puzzle</button>
+                        <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race today's boss">Boss</button>
                     </nav>
                 </div>
 
                 <p id="status" class="status"></p>
-                <div class="un-picker" id="un-picker" hidden></div>
 
                 <div class="puzzle" id="puzzle" hidden>
                     <div class="board-area">
@@ -284,9 +276,6 @@
                             <label class="opt"><input type="radio" name="difficulty" value="easy"><span>Easy</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="medium"><span>Medium</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="hard"><span>Hard</span></label>
-                        </div>
-                        <div class="options col">
-                            <label class="switch"><input type="checkbox" name="hardWords"><span class="track"></span>Allow Very Hard Words in Unlimited</label>
                         </div>
                     </fieldset>
                     <fieldset class="card">

@@ -17,6 +17,25 @@ try {
     }
 } catch (err) { /* storage blocked: nothing saved anyway */ }
 
+// Older saves can hold Unlimited's puzzle, its counts and achievements, an Unlimited Boss fight and the Allow
+// Harder Words setting, a mode the game no longer has. Drop them, once per browser.
+try {
+    if (localStorage.getItem("schmoll.noUnlimited") !== "1") {
+        const edit = (key, fn) => {
+            const v = JSON.parse(localStorage.getItem(key) || "null");
+            if (v && typeof v === "object") { fn(v); localStorage.setItem(key, JSON.stringify(v)); }
+        };
+        edit("schmoll.progress", p => { delete p.unlimited; delete p["special-unlimited"]; });
+        edit("schmoll.achievements", a => {
+            if (a.unlocked) { delete a.unlocked.unlimited10; delete a.unlocked.unlimited50; }
+            if (a.counts) delete a.counts.unlimited;
+        });
+        edit("schmoll.campaign", c => { if (c.playing && c.playing.special === "unlimited") c.playing = c.lastPlaying || null; });
+        edit("schmoll.settings", s => { delete s.hardWords; });
+        localStorage.setItem("schmoll.noUnlimited", "1");
+    }
+} catch (err) { /* storage blocked or a damaged save: nothing to clean */ }
+
 // Apply the saved world and mode before the page is drawn, so nothing flashes
 try {
     const s = JSON.parse(localStorage.getItem("schmoll.settings")) || {};

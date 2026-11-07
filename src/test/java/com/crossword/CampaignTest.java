@@ -20,8 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 class CampaignTest {
 
     private final PuzzleController controller =
-            new PuzzleController(java.util.Map.of("easy", TestWords.easy(), "medium", TestWords.everyday(), "hard", TestWords.hard()),
-                    TestWords.withHardWords(), new RateLimiter(0, 0));
+            new PuzzleController(java.util.Map.of("easy", TestWords.easy(), "medium", TestWords.everyday(), "hard", TestWords.hard()));
 
     @Test
     void fifteenDifferentWorldsStartingEasy() {
@@ -169,8 +168,7 @@ class CampaignTest {
         // the boss's own board for any boss is free (no clues, no Claude)
         String board = PuzzleStore.bossPuzzle(7_000_000_099L, Campaign.SECTIONS.get(0), TestWords.easy(), false);
         assertTrue(!board.matches("(?s).*\"clue\"\s*:\s*\"[^\"]+\".*"));
-        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("weekly", null, null, false, null)).getStatusCode().value());
-        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("unlimited", null, "banana", false, null)).getStatusCode().value());
+        assertEquals(400, assertThrows(ResponseStatusException.class, () -> controller.bossFight("weekly", null, false)).getStatusCode().value());
     }
 
     // Losing or giving up rerolls the level: each try has its own seed and file

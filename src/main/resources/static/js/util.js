@@ -116,8 +116,8 @@ const U = (() => {
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
     const touch = () => matchMedia("(pointer: coarse)").matches;
 
-    // The screen from the part of the URL after "#": "", "daily", "unlimited", "campaign" (the map), "level" (a campaign level), "stats", "settings"
-    const VIEWS = ["daily", "unlimited", "campaign", "level", "stats", "settings"];
+    // The screen from the part of the URL after "#": "", "daily", "campaign" (the map), "level" (a campaign level), "stats", "settings"
+    const VIEWS = ["daily", "campaign", "level", "stats", "settings"];
     function view() {
         const v = location.hash.replace("#", "");
         return VIEWS.includes(v) ? v : "home";
@@ -206,8 +206,7 @@ const Bus = {
 const Settings = (() => {
     const KEY = "schmoll.settings";
     const DEFAULTS = {
-        difficulty: "medium",   // what Daily and Unlimited start on
-        hardWords: false,       // Unlimited Hard: allow the extremely hard words
+        difficulty: "medium",   // what Daily starts on
         showTimer: true,
         theme: "light",         // light / dark (each world decides what that looks like)
         design: "classic",      // the world: the id of one of js/worlds/*.js (new players start on the plain Classic page)

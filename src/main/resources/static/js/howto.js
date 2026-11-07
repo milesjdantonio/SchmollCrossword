@@ -595,7 +595,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Points", len: 10800, text: "Easy 100, Medium 150, Hard 200 and Challenge 300, plus a speed bonus that shrinks every minute. Only your first solve of each daily counts. Unlimited is for practice, so it has no points.",
+            title: "Points", len: 10800, text: "Easy 100, Medium 150, Hard 200 and Challenge 300, plus a speed bonus that shrinks every minute. Only your first solve of each daily counts.",
             async demo(s) {
                 const tiers = s.add("ht-tiers", { x: 40, y: 22, w: 560 });
                 const tierEls = [["Easy", 100], ["Medium", 150], ["Hard", 200], ["Challenge", 300]].map(([n, p]) => { const t = s.add("ht-tier", {}, tiers); t.append(U.el("small", { text: n }), U.el("b", { text: String(p) })); return t; });
@@ -630,10 +630,7 @@ const HowTo = (() => {
                 s.pop(rows.total.parentNode, "ht-flash");
                 await s.wait(1500);
                 s.sub("Only your first solve of each daily counts");
-                await s.wait(1500);
-                const un = s.add("ht-tag", { x: 236, y: 296, text: "Unlimited · Practice, No Points" });
-                s.pop(un);
-                await s.wait(1600);
+                await s.wait(3100);
             }
         },
         {
@@ -1120,45 +1117,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "The Boss on Unlimited", len: 8300, text: "A random boss. Rematch keeps the same boss, its puzzle and your right words, and every earlier attempt takes 50 coins off a win. New Boss picks another one and counts as an Unlimited puzzle.",
-            async demo(s) {
-                const sc = scene();
-                const card = s.add("ht-losecard", { x: 190, y: 26, w: 260 });
-                const art = s.bossArt(sc.bw, "", card);
-                card.append(U.el("small", { text: "Boss · Attempt 1" }), U.el("b", { text: `${sc.boss.name} Wins` }));
-                const btns = s.add("ht-btns", {}, card);
-                const rematch = s.add("ht-btn primary", { tag: "button", text: "Rematch", attrs: { type: "button", tabindex: "-1" } }, btns);
-                const fresh = s.add("ht-btn", { tag: "button", text: "New Boss", attrs: { type: "button", tabindex: "-1" } }, btns);
-                s.cursor.show(560, 330);
-                await s.wait(300);
-                s.sub("Rematch keeps the same boss, puzzle and right words");
-                await s.cursor.click(rematch);
-                s.pop(card, "ht-flip");
-                card.querySelector("small").textContent = "Boss · Attempt 2";
-                card.querySelector("b").textContent = "You Won";
-                art.classList.add("ko");
-                await s.wait(400);
-                const coins = s.add("ht-tag good", { x: 236, y: 252, text: "🪙 50 Coins · 50 Fewer for Attempt 2" });
-                s.pop(coins);
-                s.sub("Each earlier attempt takes 50 coins off a win");
-                await s.wait(2100);
-                coins.remove();
-                card.querySelector("b").textContent = `${sc.boss.name} Wins`;
-                card.querySelector("small").textContent = "Boss · Attempt 2";
-                art.classList.remove("ko");
-                s.sub("New Boss picks another one");
-                await s.cursor.click(fresh);
-                const others = Bosses.list.filter(w => w !== sc.bw && !(Worlds.byId[w] && Worlds.byId[w].secret));   // (never the secret world's boss)
-                for (let i = 0; i < 6; i++) { art.innerHTML = Bosses.svg(others[(i * 5) % others.length]); await s.wait(110 + i * 25); }
-                card.querySelector("small").textContent = "Boss · Attempt 1";
-                card.querySelector("b").textContent = Bosses.info(others[25 % others.length]).name;
-                s.pop(card);
-                s.cursor.hide();
-                await s.wait(1800);
-            }
-        },
-        {
-            title: "Their Abilities", len: 8700, text: "On Daily and Unlimited you get the boss's own world's three abilities, with 3 uses each, every attempt. There are no items, but Check and Reveal work.",
+            title: "Their Abilities", len: 8700, text: "Against the Daily Boss you get its own world's three abilities, with 3 uses each, every attempt. There are no items, but Check and Reveal work.",
             async demo(s) {
                 const sc = scene();
                 const head = s.add("ht-tag", { x: 252, y: 12, text: "Boss · Attempt 1" });

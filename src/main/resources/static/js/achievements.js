@@ -14,7 +14,7 @@ const Achievements = (() => {
         { id: "streak30", icon: "\u{1F451}", name: "Royalty", desc: "Reach a 30-day streak." },
         { id: "night", icon: "\u{1F989}", name: "Night Owl", desc: "Solve a puzzle between midnight and 5 AM." },
         { id: "early", icon: "\u{1F413}", name: "Early Bird", desc: "Solve a puzzle between 5 and 7 AM." },
-        { id: "unlimited10", icon: "♾️", name: "Can't Stop", desc: "Solve 10 Unlimited puzzles." },
+        { id: "archive10", icon: "\u{1F570}️", name: "Time Traveler", desc: "Solve 10 puzzles from the Daily Archive." },
         { id: "worlds", icon: "\u{1F5FA}️", name: "World Traveler", desc: "Solve a puzzle in every world." },
         { id: "comeback", icon: "\u{1FA79}", name: "Never Give Up", desc: "Solve a puzzle after 3 or more Checks." },
         { id: "perfect", icon: "\u{1F4AF}", name: "Perfect Score", desc: "Score 300 points on a normal daily." },
@@ -26,7 +26,7 @@ const Achievements = (() => {
         { id: "speed20", icon: "\u{1F3CE}️", name: "Blink and You'll Miss It", desc: "Solve a puzzle in under 20 seconds." },
         { id: "solves25", icon: "\u{1F4DA}", name: "Regular", desc: "Solve 25 puzzles." },
         { id: "solves100", icon: "\u{1F9E0}", name: "Crossword Fan", desc: "Solve 100 puzzles." },
-        { id: "unlimited50", icon: "\u{1F3C3}", name: "Marathon", desc: "Solve 50 Unlimited puzzles." },
+        { id: "archive50", icon: "\u{1F5C3}️", name: "Archivist", desc: "Solve 50 puzzles from the Daily Archive." },
         { id: "hard10", icon: "\u{1FAA8}", name: "Hard Worker", desc: "Solve 10 Hard puzzles." },
         { id: "streak14", icon: "\u{1F4C5}", name: "Two Weeks Strong", desc: "Reach a 14-day streak." },
         { id: "grand", icon: "\u{1F3DF}️", name: "Grand Slam", desc: "Solve all five dailies in one day, the boss included." },
@@ -91,10 +91,10 @@ const Achievements = (() => {
         if (hour < 5) unlock("night");
         if (hour >= 5 && hour < 7) unlock("early");
         if (info.checks >= 3) unlock("comeback");
-        if (info.mode === "unlimited") {
-            data.counts.unlimited = (data.counts.unlimited || 0) + 1;
-            if (data.counts.unlimited >= 10) unlock("unlimited10");
-            if (data.counts.unlimited >= 50) unlock("unlimited50");
+        if (info.mode === "archive") {
+            data.counts.archive = (data.counts.archive || 0) + 1;
+            if (data.counts.archive >= 10) unlock("archive10");
+            if (data.counts.archive >= 50) unlock("archive50");
         }
         data.worlds[worldId] = true;
         if (Worlds.list.every(w => w.plain || w.secret || data.worlds[w.id])) unlock("worlds");      // (the secret world doesn't count)

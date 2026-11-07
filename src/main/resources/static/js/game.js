@@ -1,5 +1,5 @@
 // The game itself: loading puzzles from the server, the board, typing, Check/Reveal, the timer, scoring,
-// saving progress, and the results screen. (Steps 19-24 and the design pass, rebuilt for the worlds.)
+// saving progress, and the results screen.
 //
 // It tells the rest of the page what happens through the Bus:
 //   "puzzle" (a puzzle started), "type", "erase", "word" (a word was filled), "check", "reveal", "idle",
@@ -32,15 +32,15 @@ const Game = (() => {
         celebrating: false,  // the win cinematic is playing
         result: null         // what the result banner says once the puzzle is finished
     };
-    const difficultyFor = { daily: Settings.get("difficulty"), unlimited: Settings.get("difficulty") };
+    const difficultyFor = { daily: Settings.get("difficulty") };
     const lastPuzzle = {};   // slot -> the last puzzle loaded, so coming back to it doesn't fetch a new one
     const savedGames = {};   // slot -> a copy of that slot's game
     let loadCounter = 0;     // ignore a slow answer if the player has already asked for something else
     let lastInput = performance.now(), idleSaid = false, clockStoppedUntil = 0, clockHeld = false;
 
-    // Each daily difficulty is its own puzzle, so its own "slot"; Unlimited has one slot
+    // Each daily difficulty is its own puzzle, so its own "slot"
     // Campaign levels (#level) each have their own slot too: "campaign-garden-3"
-    const slotFor = (mode, difficulty) => (mode === "level" ? Campaign.slotName() : mode === "daily" ? "daily-" + difficulty : "unlimited");
+    const slotFor = (mode, difficulty) => (mode === "level" ? Campaign.slotName() : "daily-" + difficulty);
     const slotOf = puzzle => (puzzle.special ? `special-${puzzle.special}` : puzzle.mode === "campaign" ? `campaign-${puzzle.world}-${puzzle.level}` : slotFor(puzzle.mode, puzzle.difficulty));
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -88,16 +88,14 @@ const Game = (() => {
     const fingerprint = p => U.hash(JSON.stringify([p.solution, p.across.map(e => e.clue), p.down.map(e => e.clue)]));
     function restoreProgress() {
         const all = loadProgress();
-        for (const slot of ["daily-easy", "daily-medium", "daily-hard", "daily-challenge", "unlimited"]) {
+        for (const slot of ["daily-easy", "daily-medium", "daily-hard", "daily-challenge"]) {
             const saved = all[slot];
             if (!saved || !saved.puzzle || !saved.state) continue;
-            if (slot !== "unlimited" && seedDay(saved.puzzle.seed) !== dayKey(new Date())) continue;   // an old daily
+            if (seedDay(saved.puzzle.seed) !== dayKey(new Date())) continue;                       // an old daily
             if (saved.state.print == null) saved.state.print = fingerprint(saved.puzzle);           // saved before fingerprints
             // dailies are always fetched again (the server just reads its saved file), so a daily that was
-            // regenerated on the server replaces the old copy; Unlimited puzzles can't be fetched again, so keep them
-            if (slot === "unlimited") lastPuzzle[slot] = saved.puzzle;
+            // regenerated on the server replaces the old copy
             savedGames[slot] = saved.state;
-            if (slot === "unlimited" && saved.difficulty) difficultyFor.unlimited = saved.difficulty;
         }
         // campaign levels are fixed puzzles: keep them (and their games), except boss fights, which always start over
         for (const [slot, saved] of Object.entries(all)) {
@@ -144,50 +142,7 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     // Loading puzzles
     // ---------------------------------------------------------------------------------------------
-    // Unlimited: each player gets 10 a day (they're paid Claude calls); the server says how many are left
-    async function drawUnlimitedLeft() {
-        const el = $("#unlimited-left");
-        try {
-            const r = await (await fetch("/api/unlimited/left")).json();
-            if (r.left > 0) el.textContent = `${r.left} of ${r.limit} Left Today`;
-            else {
-                const m = Math.ceil(r.nextInSeconds / 60), h = Math.floor(m / 60);
-                el.textContent = `0 of ${r.limit} Left · Next in ${h ? h + "h " : ""}${m % 60}m`;
-            }
-            el.classList.toggle("out", r.left === 0);
-            el.classList.toggle("low", r.left > 0 && r.left <= 3);
-        } catch (err) {
-            el.textContent = "";
-        }
-    }
-
-    // Unlimited opens on a picker, not a puzzle: a new Unlimited puzzle only starts when the player picks one, and an
-    // unfinished one can be picked up again for free.
-    const pickerEl = $("#un-picker");
-    function hidePicker() { pickerEl.hidden = true; gameViewEl.classList.remove("picking"); }
-    function unlimitedUnfinished() {
-        if (!lastPuzzle.unlimited) return false;
-        const st = game.puzzle && slotOf(game.puzzle) === "unlimited" ? game : savedGames.unlimited;
-        return !st || !st.solved;
-    }
-    function showPicker() {
-        loadCounter++;                                         // a load still on its way won't open over the picker
-        statusEl.hidden = true;
-        puzzleEl.hidden = true;
-        gameViewEl.classList.add("picking");
-        pickerEl.innerHTML = "";
-        const grid = U.el("div", { class: "un-cards" });
-        const card = (cls, title, sub, onclick) => grid.appendChild(U.el("button", { type: "button", class: "un-card " + cls, onclick: e => { e.currentTarget.blur(); Sound.play("select"); onclick(); } },
-            U.el("b", { text: title }), sub ? U.el("small", { text: sub }) : null));
-        if (unlimitedUnfinished()) card("continue", "Continue", cap(lastPuzzle.unlimited.difficulty), () => { hidePicker(); difficultyFor.unlimited = lastPuzzle.unlimited.difficulty; showPuzzleFor("unlimited"); });
-        for (const d of ["easy", "medium", "hard", "challenge"]) card(d, cap(d), d === "challenge" ? "6×6 to 9×9" : "5×5", () => { hidePicker(); difficultyFor.unlimited = d; loadPuzzle("unlimited", d); });
-        card("boss", "Boss", "A Random Boss", () => { hidePicker(); Campaign.playSpecial("unlimited"); });
-        pickerEl.append(U.el("h2", { class: "un-title", text: "Pick a Puzzle" }), grid);
-        pickerEl.hidden = false;
-    }
-
     async function loadPuzzle(mode, difficulty) {
-        hidePicker();
         const myLoad = ++loadCounter;
         statusEl.innerHTML = "";
         statusEl.append(U.el("span", { class: "spinner", "aria-hidden": "true" }),
@@ -197,16 +152,13 @@ const Game = (() => {
         puzzleEl.hidden = true;
         try {
             let url = mode === "level" ? Campaign.apiUrl() : "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
-            if (mode === "unlimited" && difficulty === "hard" && Settings.get("hardWords")) url += "&hardWords=true";
             if (mode === "daily") { const d = dayKey(new Date()); url += `&date=${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`; }   // the player's own date (time zones)
             const response = await fetch(url);
-            if (response.status === 429) { drawUnlimitedLeft(); throw new Error("you've used today's Unlimited puzzles. Come back later, or play today's Daily (those are always free)."); }
             if (!response.ok) throw new Error("the server answered " + response.status);
             const puzzle = await response.json();
             if (myLoad !== loadCounter) return;
             if (mode === "level") Object.assign(puzzle, { world: Campaign.playing.world, level: Campaign.playing.level, special: Campaign.playing.special || undefined });   // which level it is
             lastPuzzle[slotOf(puzzle)] = puzzle;
-            if (mode === "unlimited") drawUnlimitedLeft();
             if (U.view() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty) || (mode === "level" && slotOf(puzzle) !== Campaign.slotName())) return;   // they moved on
             startGame(puzzle);
             statusEl.hidden = true;
@@ -265,9 +217,9 @@ const Game = (() => {
         const d = new Date();
         return {
             mode: puzzle.mode, difficulty: puzzle.difficulty,
-            kicker: puzzle.mode === "daily" ? "TODAY'S DAILY" : "UNLIMITED",
-            title: (puzzle.mode === "daily" ? "Daily" : "Unlimited") + " · " + cap(puzzle.difficulty),
-            sub: puzzle.mode === "daily" ? d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "A brand-new puzzle, just for you",
+            kicker: "TODAY'S DAILY",
+            title: "Daily · " + cap(puzzle.difficulty),
+            sub: d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
             stardate: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`
         };
     }
@@ -579,8 +531,6 @@ const Game = (() => {
                 info.left = dailiesLeft(Number(day + "0"));
                 if (!info.counted) info.note = `Your best today is still ${before ? before.points : 0} points.`;
             }
-        } else {
-            info.note = "Unlimited puzzles don't earn points.";
         }
         info.unlocked = Achievements.onWin(info, Worlds.current.id);
         game.result = {
@@ -615,7 +565,7 @@ const Game = (() => {
         // (they wait behind the board's Results button for when they come back)
         if (game.puzzle !== puzzle) return;
         game.celebrating = false;
-        if (!["daily", "unlimited", "level"].includes(U.view())) { render(); return; }
+        if (!["daily", "level"].includes(U.view())) { render(); return; }
         render();
         if (info.firstToday && info.streak > 0) Sound.play("streak");
         showResults(info);                 // new achievements are shown on the results card
@@ -642,7 +592,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : (p.mode === "daily" ? "DAILY" : "UNLIMITED") + " · " + p.difficulty.toUpperCase() }),
+            U.el("small", { class: "res-kicker", text: info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase() }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         if (info.best != null) {
@@ -693,8 +643,8 @@ const Game = (() => {
         card.appendChild(actions);
         if (info.campaign && info.campaign.special) {
             const k = info.campaign.special;
-            actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: k === "daily" ? "Fight Again" : "New Boss", onclick: () => { closeResults(); Campaign.playSpecial(k); } }));
-            actions.appendChild(U.el("button", { type: "button", class: "btn", text: k === "daily" ? "Back to Daily" : "Back to Unlimited", onclick: () => { closeResults(); Campaign.backToMode(); } }));
+            actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Fight Again", onclick: () => { closeResults(); Campaign.playSpecial(k); } }));
+            actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Back to Daily", onclick: () => { closeResults(); Campaign.backToMode(); } }));
         } else if (info.campaign) {
             const n = info.campaign.next;
             if (n) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: n.level === 1 ? `On to ${Worlds.byId[n.world].name}` : n.level === 5 ? "Boss" : `Level ${n.level}`, onclick: () => { closeResults(); Campaign.next(n); } }));
@@ -703,8 +653,6 @@ const Game = (() => {
             const next = info.left[0];
             if (next === "boss") actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Fight Today's Boss", onclick: () => { closeResults(); Campaign.playSpecial("daily"); } }));
             else actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: `Play ${cap(next)}`, onclick: () => { closeResults(); switchDifficulty("daily", next); } }));
-        } else if (p.mode === "unlimited") {
-            actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "New Puzzle", onclick: () => { closeResults(); showPicker(); } }));
         }
         if (!info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
         // after a boss fight there's no going back to the board: the buttons above move you on
@@ -756,7 +704,7 @@ const Game = (() => {
     }
     function share(info, button) {
         const p = game.puzzle;
-        const lines = [`Schmoll Crossword · ${p.mode === "daily" ? "Daily" : "Unlimited"} (${cap(p.difficulty)})`, `✅ Solved in ${U.fmtTime(info.seconds)}` + (info.counted ? ` · ${info.points} pts` : "")];
+        const lines = [`Schmoll Crossword · Daily (${cap(p.difficulty)})`, `✅ Solved in ${U.fmtTime(info.seconds)}` + (info.counted ? ` · ${info.points} pts` : "")];
         if (info.streak > 1) lines.push(`\u{1F525} ${info.streak}-Day Streak`);
         if (!info.checked && !info.revealed) lines.push("\u{1F9E0} No hints");
         const text = lines.join("\n");
@@ -1080,39 +1028,30 @@ const Game = (() => {
         setTimeout(() => text.focus({ preventScroll: true }), 80);
     }
 
-    // Difficulty buttons. Daily: switch to that difficulty's daily. Unlimited: a new puzzle.
+    // Difficulty buttons: switch to that difficulty's daily
     function switchDifficulty(view, difficulty) {
         difficultyFor[view] = difficulty;
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficulty));
-        if (view === "daily") showPuzzleFor("daily");
-        else loadPuzzle(view, difficulty);
+        showPuzzleFor(view);
     }
     for (const button of document.querySelectorAll(".difficulty button[data-difficulty]")) {
         button.addEventListener("click", () => { button.blur(); Sound.play("select"); switchDifficulty(U.view(), button.dataset.difficulty); });
     }
-    $("#new-puzzle").addEventListener("click", e => { e.currentTarget.blur(); Sound.play("select"); showPicker(); });   // back to the picker, not straight into a paid puzzle
-    // Daily Boss / Unlimited Boss: a boss race against today's boss, or a random one (campaign.js)
-    $("#boss-mode").addEventListener("click", e => { e.currentTarget.blur(); Sound.play("select"); Campaign.playSpecial(U.view() === "unlimited" ? "unlimited" : "daily"); });
+    // The Daily Boss: a race against today's boss (campaign.js)
+    $("#boss-mode").addEventListener("click", e => { e.currentTarget.blur(); Sound.play("select"); Campaign.playSpecial("daily"); });
 
     // ---------------------------------------------------------------------------------------------
-    // Showing the game screen (called by app.js for #daily and #unlimited)
+    // Showing the game screen (called by app.js for #daily and campaign levels)
     // ---------------------------------------------------------------------------------------------
     function show(view) {
         const level = view === "level" ? Campaign.titles() : null;
-        $("#game-title").textContent = level ? level.title : view === "daily" ? "Daily Puzzle" : "Unlimited";
-        $("#game-subtitle").textContent = level ? level.sub : view === "daily"
-            ? new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })
-            : "";
-        $("#new-puzzle").hidden = view !== "unlimited";
-        $("#boss-mode").hidden = view !== "daily" && view !== "unlimited";
-        $("#boss-mode").textContent = "Boss";                // just "Boss", on Daily and on Unlimited
-        $("#unlimited-left").hidden = view !== "unlimited";
-        if (view === "unlimited") drawUnlimitedLeft();
+        $("#game-title").textContent = level ? level.title : "Daily Puzzle";
+        $("#game-subtitle").textContent = level ? level.sub
+            : new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+        $("#boss-mode").hidden = view !== "daily";
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
         drawDifficultyMarks();
-        gameViewEl.classList.toggle("unlimited", view === "unlimited");
-        if (view === "unlimited") showPicker();
-        else { hidePicker(); showPuzzleFor(view); }
+        showPuzzleFor(view);
     }
     function showPuzzleFor(view) {
         const slot = slotFor(view, difficultyFor[view]);
@@ -1147,10 +1086,7 @@ const Game = (() => {
         if (game.solved && !game.surrendered) Worlds.board("restoreSolved", boardEl, game);
     });
     Settings.on(key => {
-        if (key === "difficulty") {
-            difficultyFor.daily = Settings.get("difficulty");
-            if (!lastPuzzle.unlimited) difficultyFor.unlimited = Settings.get("difficulty");
-        }
+        if (key === "difficulty") difficultyFor.daily = Settings.get("difficulty");
         if (key === "showTimer") document.documentElement.classList.toggle("no-timer", !Settings.get("showTimer"));
     });
     document.documentElement.classList.toggle("no-timer", !Settings.get("showTimer"));
@@ -1164,7 +1100,7 @@ const Game = (() => {
         if (game.puzzle && slotOf(game.puzzle) === slot) game.puzzle = null;
         return true;
     }
-    // Daily / Unlimited Boss: a new fight gets a new copy of its puzzle (a Rematch keeps the one it has: restartSlot)
+    // The Daily Boss: a new fight gets a new copy of its puzzle (a Rematch keeps the one it has: restartSlot)
     function forgetSlot(slot) {
         delete savedGames[slot];
         delete lastPuzzle[slot];

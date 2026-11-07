@@ -78,19 +78,14 @@ public class App {
      *   easy   -> only the most common words (SCOWL levels 10-20): skips too-hard and not-easy words
      *   medium -> the everyday list: skips too-hard words
      *   hard   -> adds the less common words, but skips the extremely hard ones (very-hard-words.txt)
-     *   hard + "Allow harder words" (Unlimited only) -> everything except offensive words
      */
     static Map<Integer, List<String>> loadWordsFor(String difficulty) throws IOException {
-        return loadWordsFor(difficulty, false);
-    }
-
-    static Map<Integer, List<String>> loadWordsFor(String difficulty, boolean allowVeryHardWords) throws IOException {
         switch (difficulty) {
             case "easy":   return loadWords(true, true);
             case "medium": return loadWords(true, false);
-            case "hard":   return allowVeryHardWords ? loadWords(false, false) : loadWordsSkipping(loadWordSet("very-hard-words.txt"));
+            case "hard":   return loadWordsSkipping(loadWordSet("very-hard-words.txt"));
             // Challenge mode: the bigger grids need plenty of 6- and 7-letter words, so it uses Hard's list
-            case "challenge": return loadWordsFor("hard", false);
+            case "challenge": return loadWordsFor("hard");
             default: throw new IllegalArgumentException("difficulty must be easy, medium, hard or challenge: " + difficulty);
         }
     }

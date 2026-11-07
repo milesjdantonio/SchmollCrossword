@@ -70,8 +70,8 @@ public class ReportController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "that report is too long");
         }
         boolean campaign = "campaign".equals(report.mode());          // campaign levels and boss fights can be reported too
-        if (!"daily".equals(report.mode()) && !"unlimited".equals(report.mode()) && !campaign) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mode must be daily, unlimited or campaign");
+        if (!"daily".equals(report.mode()) && !campaign) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mode must be daily or campaign");
         }
         if (!PuzzleController.isValidDifficulty(report.difficulty()) && !(campaign && "expert".equalsIgnoreCase(report.difficulty()))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "unknown difficulty");

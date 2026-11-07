@@ -62,7 +62,7 @@ class RateLimiterTest {
         assertEquals(1, limiter.peopleTracked(), "only c is left");
     }
 
-    // Unlimited: 10 per person per DAY, and the website can ask how many are left
+    // A window of a whole day, and how many are left in it
     @Test
     void aDailyWindowCountsWhatsLeft() {
         long DAY = RateLimiter.DAY;

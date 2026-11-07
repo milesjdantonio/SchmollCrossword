@@ -3,7 +3,7 @@
 // Written to match what the code really does (LeaderboardController, ReportController, RateLimiter, game storage).
 // If that changes, change these too, and the "Last updated" date.
 const Legal = (() => {
-    const UPDATED = "October 14, 2026";
+    const UPDATED = "November 7, 2026";
     const REPO = "https://github.com/milesjdantonio/SchmollCrossword";
     const p = (...parts) => U.el("p", {}, ...parts);
     const a = (text, href) => U.el("a", { href, text, target: "_blank", rel: "noopener" });
@@ -19,8 +19,6 @@ const Legal = (() => {
                 p("It's free, with no ads and nothing to buy. The word list it's built from is licensed for non-commercial use only, so it will stay that way.")),
             qa("Do I need an account?",
                 p("No. Your progress, stats and settings are saved in your browser on this device. Clearing your browser's site data, or Settings > Reset > Erase All Data, removes them. Erase Campaign Data removes just the campaign.")),
-            qa("Why is Unlimited limited to 10 a day?",
-                p("Every new Unlimited puzzle has its clues written by an AI model on our server, and each one costs money to make. The dailies and the campaign are always free to play as much as you like.")),
             qa("Is this the New York Times Mini?",
                 p("No. Schmoll Crossword is an independent project. It isn't affiliated with or endorsed by The New York Times or any other publisher. Its puzzles, clues, art and music are its own or credited in the Credits.")),
             qa("A clue is wrong or unfair. What do I do?",
@@ -60,7 +58,7 @@ const Legal = (() => {
             h("Report a Problem"),
             p("If you send a report, we store what you typed, the puzzle and clue it's about, and which world you were in. No name or IP address is saved with it. Please don't include personal details in the message."),
             h("Server Logs and Limits"),
-            p("To stop abuse (the daily Unlimited limit and limits on posting and reports), the server keeps your IP address in its memory for at most 24 hours. It's never written to disk, and it's gone when the server restarts. The company that hosts the site may keep standard access logs, such as IP addresses and times, for its own security."),
+            p("To stop abuse (limits on posting and reports), the server keeps your IP address in its memory for at most 24 hours. It's never written to disk, and it's gone when the server restarts. The company that hosts the site may keep standard access logs, such as IP addresses and times, for its own security."),
             h("What We Don't Do"),
             ul("No cookies, analytics, ads or third-party trackers.", "No selling or sharing of your information.",
                 "No emails or accounts.", "Fonts, music and sounds come from this site, not from other companies."),

@@ -1,7 +1,6 @@
 # Schmoll Crossword
 
-A free crossword game for the browser: small daily puzzles, unlimited puzzles on demand, and a campaign through sixteen
-worlds with boss fights. The puzzles are made by the game itself, and it stays free, with no ads and no accounts.
+A free crossword game for the browser: small daily puzzles and a campaign through sixteen worlds with boss fights. The puzzles are made by the game itself, and it stays free, with no ads and no accounts.
 
 Inspired by daily mini crosswords such as the NYT Mini. Not affiliated with The New York Times.
 
@@ -9,9 +8,6 @@ Inspired by daily mini crosswords such as the NYT Mini. Not affiliated with The 
 
 **Daily.** Five puzzles a day, the same for everyone, new at each player's midnight: Easy, Medium and Hard 5×5 grids,
 a bigger Challenge grid (6×6 up to 9×9), and the Daily Boss. Scores count toward a streak and a world leaderboard.
-
-**Unlimited.** A new Easy, Medium, Hard or Challenge puzzle whenever you want, or a race against any boss you've met.
-Ten a day per player.
 
 **Campaign.** A map of fifteen worlds, five levels each, from the Notebook to Deep Space, plus a secret sixteenth world
 that opens once the final boss falls. Every level teaches a crossword skill (fill-in-the-blanks, wordplay,
@@ -50,7 +46,7 @@ mvn spring-boot:run        # then open http://localhost:8080
 mvn test                   # the test suite (the paid Claude checks only run with -Dlive=true)
 ```
 
-New puzzles (Unlimited, and dailies past the shipped ones) need an Anthropic API key. The server reads it from the
+New puzzles (dailies past the shipped ones) need an Anthropic API key. The server reads it from the
 `ANTHROPIC_API_KEY` environment variable, or from `~/.schmoll-crossword/anthropic-api-key.txt`. Keep the key out of
 the repository. Everything that ships with the game works without one.
 
@@ -64,8 +60,6 @@ so saved puzzles, the leaderboard and reports survive restarts, and set a spendi
 | `ANTHROPIC_API_KEY` | (none) | The Claude API key, for new puzzles |
 | `PORT` | `8080` | The port the server listens on |
 | `PUZZLE_DIR` | `/data` in Docker, `puzzles` locally | Where generated puzzles, the leaderboard and reports are saved |
-| `UNLIMITED_PER_PERSON_PER_DAY` | `10` | Unlimited puzzles one player can make in 24 hours |
-| `UNLIMITED_EVERYONE_PER_DAY` | `200` | Unlimited puzzles everyone together can make in 24 hours |
 | `REPORTS_KEY` | (none) | Lets you read player reports at `/api/reports?key=...` |
 | `TZ` | `America/New_York` | The server's time zone |
 

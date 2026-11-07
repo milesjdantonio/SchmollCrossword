@@ -6,20 +6,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 /*
- * Rate limits for Unlimited.
+ * Rate limits for anything a player can send many times (reports, leaderboard posts), so one person (or a bot)
+ * can't flood the server. Two limits:
  *
- * Every unlimited puzzle is one paid Claude API call, and the game is free, so once the site is public
- * someone (or a bot) could press "New puzzle" thousands of times and run up the bill. Two limits:
- *
- *   - per person: at most `perPersonPerHour` puzzles in any 60 minutes (a "person" is an IP address)
- *   - everyone together: at most `everyonePerDay` puzzles in any 24 hours, a hard cap on the daily cost
+ *   - per person: at most `perPersonPerHour` requests in any 60 minutes (a "person" is an IP address)
+ *   - everyone together: at most `everyonePerDay` requests in any 24 hours, a hard cap
  *
  * It's a "sliding window":
  * keep the times of recent requests in a queue, drop the ones older than the window from the front,
  * and allow a new request only if the queue is still shorter than the limit.
  *
  * The time is passed in (nowMillis) instead of read from the clock, so tests can pretend an hour went by.
- * The daily puzzle doesn't need this: it's generated at most once per difficulty per day.
  */
 public class RateLimiter {
 
@@ -36,7 +33,7 @@ public class RateLimiter {
         this(perPersonPerHour, HOUR, everyonePerDay);
     }
 
-    // The per-person window can be longer, e.g. 10 Unlimited puzzles per day
+    // The per-person window can be longer, e.g. 10 a day
     RateLimiter(int perPerson, long personWindowMillis, int everyonePerDay) {
         this.perPersonPerHour = perPerson;
         this.personWindow = personWindowMillis;

@@ -26,7 +26,7 @@ class ReportControllerTest {
         Path file = folder.resolve("reports.jsonl");
         ReportController controller = new ReportController(file, "secret");
         controller.save(new ReportController.Report(202610082L, "daily", "Medium", "5A: Sound before \"Bless you!\"", "The clue says\tit's wrong\r\nhere", "snow"), "1.2.3.4", 0);
-        controller.save(new ReportController.Report(42L, "unlimited", "challenge", null, "Too hard!", null), "1.2.3.4", 1000);
+        controller.save(new ReportController.Report(42L, "campaign", "challenge", null, "Too hard!", null), "1.2.3.4", 1000);
         List<String> lines = Files.readAllLines(file);
         assertEquals(2, lines.size());
         JsonNode first = new ObjectMapper().readTree(lines.get(0));
