@@ -138,7 +138,7 @@ deleted after everything is done.
 - [x] Saves: boot.js moves any unreadable save (or one that should be an object and isn't) to
       `schmoll-damaged.<name>` and the game starts that part fresh with a notice; a saved game that doesn't fit its
       puzzle is skipped (`sane` in game.js). What's stored where: the Privacy Notice lists it for players
-- [ ] Saves: document the storage keys for developers (README or a comment block in boot.js)
+- [x] Saves: the storage keys are listed at the top of boot.js
 - [x] Reports: categories (wrong answer, unclear clue, typo, offensive, technical, other; details optional unless
       "other"), 10 an hour per person, and the email address in the dialog. Admin page `/admin.html` (`ADMIN_KEY`,
       `REPORTS_KEY` still works; the key goes in the `X-Admin-Key` header, kept in sessionStorage; without a key
@@ -287,3 +287,8 @@ deleted after everything is done.
 - 2026-11-07: Phase 3 backend core done (ClueWriter, PuzzleStore, DailyMaker); 138 JUnit tests pass.
 - 2026-11-07: live clue test: 9 calls, about $0.04. Paid calls so far: about $0.04 of $5.
 - 2026-11-07: family filter done; 142 JUnit tests pass (3 skipped: paid).
+- 2026-11-07: Phase 3 done except the two `main`-only daily fixes (waiting on the user's OK in REVIEW.md): admin
+  page, health/status, daily email, report kinds, leaderboard moderation/tickets/retention, rate limiter, Docker
+  user + health check, error cards, save recovery, midnight grace, share. 155 JUnit tests pass (3 skipped: paid).
+  Browser checks (admin, errors, midnight, share, ticket) found and fixed: `window.FX` (always undefined: FX is a
+  `const`), the story intro playing on after leaving the map, a flaky leaderboard cache. Paid calls: still $0.04.

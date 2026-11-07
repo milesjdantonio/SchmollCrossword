@@ -1,5 +1,18 @@
 // Runs in the page's <head>, before anything is drawn (an external file, so the Content-Security-Policy can forbid
 // inline scripts: see SecurityHeaders.java).
+//
+// Everything the game keeps in the browser (localStorage, all JSON, all under "schmoll."):
+//   settings       Settings in util.js: difficulty, world, light/dark, sound levels, zoom...
+//   progress       game.js: each puzzle slot's puzzle and game in progress ("daily-easy", "campaign-garden-3"...)
+//   dailyScores    game.js: finished dailies, "20261107-easy" -> { points, seconds, checked, revealed, ticket... }
+//   achievements   achievements.js: unlocked ones and the counts behind them
+//   campaign       campaign.js: levels, stars, coins, items, abilities, the hero, story flags, Daily Boss attempts
+//   companions     companions.js: how far each mascot's story has got
+//   rift           corruption.js: a Celestial Rift corruption level in progress
+//   leaderboard    leaderboard.js: your name and which dailies were posted;  player: your random leaderboard id
+//   introSeen, restoreTip, arcade.hi, fresh, noUnlimited: small flags
+// "schmoll-damaged.<name>" holds a save that couldn't be read (below). sessionStorage: schmoll.noticeSeen (the
+// update page) and schmoll.adminKey (admin.html). Nothing is ever sent to the server except leaderboard posts.
 // A fresh start, once per browser: every score,
 // streak, saved game, achievement and the campaign go; settings, the intro and your leaderboard name stay.
 // (Raise FRESH to wipe everyone's stats again; a brand-new player has nothing to wipe.)
