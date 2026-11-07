@@ -80,9 +80,19 @@ deleted after everything is done.
 - [x] `mvn test` passes; browser check of Home, Daily, Campaign, Stats, Settings with no errors
 
 ### Phase 2: Redesign directions (early, so the user can pick while the fixes go on)
-- [ ] Read the design skills (taste-skill, Impeccable, UI UX Pro Max); screenshot every current screen (desktop
+- [x] Read the design skills (taste-skill, Impeccable, UI UX Pro Max); screenshot every current screen (desktop
       and phone); write a UX audit of today's game (what's confusing, slow or hard to find)
+      (audit, in short: no clear next step on Home; Check/Reveal below the fold; Across/Down hard to see; the map shows
+      ~4 levels at a time with tiny unlabeled world icons and an 8-button top bar; the boss screen is overloaded and the
+      companion's bubble covers the abilities; emoji icons differ by device; kickers, hard offset shadows, glows)
 - [ ] 2-3 directions as clickable mockups (Home, a puzzle, the campaign map), desktop and phone; add to REVIEW.md
+      IN PROGRESS: Design canvas https://claude.ai/artifact/LzQzyKbpcskqALsXQzCaAM (local files in the session
+      scratchpad `redesign-canvas/`; if lost, rebuild from this note). Directions: A Passport (tickets, stamps,
+      Big Shoulders Display + Figtree), B Transit (departures board, line diagram, Atkinson Hyperlegible; my pick),
+      C Storybook (the Everbook, spreads, table of contents, Alegreya + Alegreya Sans). Stylesheets uploaded as
+      assets: a.css /_blob/f6068e7ae09e1ddc49f167c02fb96be6, b.css /_blob/d546a5f2effa8760a8b5e30722a40d24,
+      c.css /_blob/4290894908d6e860f2bf63a369264d23. Boards done: Main (overview), A-Home. To do: A-Puzzle, A-Map,
+      the 3 A phone wrappers (dc-import of the desktop board with sfx="-Phone"), then B and C the same way.
 - [ ] Wait for the user's pick (don't build the redesign before it)
 
 ### Phase 3: Reliability and backend (P0)
