@@ -1,0 +1,54 @@
+/* The /demo pages: the list of options, and the phone frame. A plain reading page in the game's UI face. */
+:root {
+    --ground: #eef1f5; --card: #ffffff; --ink: #1f2430; --soft: #5b6475; --line: #dce1e8; --accent: #2f5fd0; --accent-ink: #ffffff; --pick: #c2410c;
+    color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+    :root { --ground: #14171c; --card: #1d2128; --ink: #eceef2; --soft: #a3abb8; --line: #2f3540; --accent: #8fb0ff; --accent-ink: #10131a; --pick: #fb923c; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 500 1rem/1.55 "Nunito", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+::selection { background: color-mix(in srgb, var(--accent) 30%, transparent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+a { color: var(--accent); }
+
+/* ---- the list of options ---- */
+.dx-main { max-width: 1180px; margin: 0 auto; padding: 48px clamp(16px, 4vw, 40px) 80px; }
+.dx-intro { max-width: 70ch; }
+.dx-intro h1 { margin: 0 0 12px; font: 900 clamp(2.2rem, 4vw, 3.2rem)/1.05 "Nunito", system-ui, sans-serif; letter-spacing: -.02em; }
+.dx-intro p { margin: 0 0 28px; color: var(--soft); font-size: 1.08rem; }
+.dx-main h2 { margin: 0 0 10px; font: 900 1.35rem/1.2 "Nunito", system-ui, sans-serif; }
+.dx-fixes { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.dx-opt {
+    display: grid; grid-template-columns: minmax(280px, 1fr) 1.45fr; gap: clamp(20px, 3vw, 44px); align-items: center;
+    margin-top: 56px; padding-top: 48px; border-top: 1px solid var(--line);
+}
+.dx-opt h2 { display: flex; align-items: center; gap: 12px; font-size: clamp(1.6rem, 2.4vw, 2rem); }
+.dx-letter { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 12px; background: var(--ink); color: var(--ground); font-size: 1.4rem; }
+.dx-pick { padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--pick) 14%, transparent); color: var(--pick); font: 900 .8rem "Nunito", system-ui, sans-serif; }
+.dx-text p { margin: 0 0 16px; }
+.dx-text dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0 0 20px; }
+.dx-text dt { font-weight: 900; }
+.dx-text dd { margin: 0; color: var(--soft); }
+.dx-go { display: flex; flex-wrap: wrap; gap: 10px; }
+.dx-btn { display: inline-flex; align-items: center; height: 46px; padding: 0 20px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 900; text-decoration: none; box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent); }
+.dx-btn.quiet { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1.5px var(--line); }
+.dx-btn:hover { filter: brightness(1.06); }
+.dx-pics { position: relative; padding-bottom: 6%; }
+.dx-pics img { display: block; width: 88%; height: auto; border-radius: 12px; box-shadow: 0 18px 40px rgba(20, 25, 40, .22); }
+.dx-pics img.phone { position: absolute; right: 0; bottom: 0; width: 24%; border-radius: 16px; box-shadow: 0 14px 30px rgba(20, 25, 40, .3), 0 0 0 4px var(--card); }
+.dx-foot { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); max-width: 70ch; }
+.dx-foot p { margin: 0; color: var(--soft); }
+@media (max-width: 860px) {
+    .dx-opt { grid-template-columns: 1fr; }
+    .dx-pics { order: -1; }
+}
+
+/* ---- the phone frame ---- */
+.dp { min-height: 100dvh; display: grid; grid-template-rows: auto 1fr; }
+.dp-head { display: flex; align-items: center; gap: 16px; padding: 14px 20px; }
+.dp-head h1 { margin: 0 auto; font: 900 1.1rem "Nunito", system-ui, sans-serif; }
+.dp-back, .dp-open { font-weight: 800; text-decoration: none; }
+.dp-stage { display: grid; place-items: start center; padding: 8px; overflow: hidden; }
+.dp-phone { width: 410px; height: 864px; padding: 10px; border-radius: 48px; background: #11141a; box-shadow: 0 24px 60px rgba(0, 0, 0, .35); transform-origin: top center; }
+.dp-phone iframe { display: block; width: 390px; height: 844px; border: 0; border-radius: 38px; background: #fff; }

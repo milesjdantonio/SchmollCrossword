@@ -232,10 +232,21 @@ deleted after everything is done.
       Rift's plays after the Void
 
 ### Phase 5: The redesign (the user's answer: the campaign screen, big; Home stays)
-- [ ] `/demo` on the local server: a page listing options to pick from, off in production (the Dockerfile)
-- [ ] Campaign redesign options at `/demo` (2-3 working directions for the whole campaign screen: the map, level
-      selection, level sheets, the boss sheet, the shop), desktop and phone, using the design skills (TerraSim)
-      and RhythmArchitect's renderer ideas; tell the user; wait for the pick
+- [x] `/demo` on the local server (`DemoPages`, `src/main/resources/demo/`): served when `SHOW_DEMO` is on (default
+      on; the Dockerfile sets it off), never cached; `/demo/` pages may be framed by the site itself (the phone frame)
+- [x] Campaign redesign options at `/demo` (Impeccable followed by hand: its launcher downloads a program, so it
+      wasn't run; code-led, no image generation). All three load the game's own scripts (worlds, bosses, hero,
+      powers, companions) on the real `/api/campaign/map` with sample progress (`demo/campaign/common.js`), wear
+      each world's tokens and faces, and work on a computer and a phone (checked in the test browser):
+      **A World Stage** (`a.*`: one world per screen, its road of five stops, a level panel beside it / a peeking
+      sheet on a phone, a strip of named worlds, one Pack for shop/skills/hero/book/help; my pick),
+      **B The Everbook** (`b.*`: the story's book; a contents spread, a two-page spread per world, bookmark tabs),
+      **C Journey Line** (`c.*`: today's scroll, one screen per world, a named world rail, details beside the
+      stop, Continue always there). Front page `demo/index.html` with screenshots, phone frame `demo/phone.html`.
+      Found while building: the game's `main { margin: auto }` and `body { min-height: 100vh }` (on phones 100vh
+      is taller than the screen) both need overriding on full-screen pages; a grid column needs `minmax(0, 1fr)`
+      or a long title widens the page
+- [ ] Wait for the user's pick (REVIEW.md), then build it into the game
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
 - [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher

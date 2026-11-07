@@ -5,9 +5,13 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
-- [x] **Redesign direction.** Answered: the campaign screen gets the big redesign; Home stays (with touches from
-      the other repos' resources). Options to pick from will be at http://localhost:8080/demo (run the game locally
-      with `mvn spring-boot:run`); I'll say here and in chat when they're ready.
+- [ ] **Pick a campaign design.** Three working options are ready at **http://localhost:8080/demo**: A World Stage
+      (my pick), B The Everbook, C Journey Line. Start the game with `mvn spring-boot:run` first. (If another
+      project is already using port 8080, as your RhythmArchitect backend was today, use another port:
+      `$env:PORT = "8090"; mvn spring-boot:run`, then http://localhost:8090/demo.) Each has Open It and On a Phone.
+      Reply with A, B, C or a mix, and anything you'd change. Home's refresh comes after, as its own demo.
+- [x] **Redesign direction.** Answered: the campaign screen gets the big redesign; Home gets a refresh, not a
+      remake; options to pick go at a local /demo page.
 
 - [x] **The live site.** It answered "503 unavailable" before any change, but it's up again and serving the update
       page (checked 2026-11-07).

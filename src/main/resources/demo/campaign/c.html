@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-world="candy" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Journey Line</title>
+    <link rel="stylesheet" href="/css/fonts.css">
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/worlds.css">
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="c.css">
+</head>
+<body class="jl">
+    <canvas id="world-bg" aria-hidden="true"></canvas>
+    <div id="overlay"></div>
+
+    <header class="jl-bar">
+        <button type="button" class="jl-round" id="jl-back" aria-label="Back to Home"></button>
+        <h1 class="jl-h1">Campaign</h1>
+        <button type="button" class="jl-where" id="jl-where" aria-haspopup="true" aria-expanded="false"></button>
+        <div class="jl-status">
+            <span class="jl-chip" id="jl-stars" title="Campaign stars"></span>
+            <span class="jl-chip" id="jl-coins" title="Coins"></span>
+            <div class="jl-more-wrap">
+                <button type="button" class="jl-more" id="jl-more" aria-haspopup="true" aria-expanded="false">More</button>
+                <div class="jl-menu" id="jl-menu" hidden></div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="jl-rail" id="jl-rail" aria-label="Worlds"></nav>
+    <main class="jl-map" id="jl-map"></main>
+    <button type="button" class="jl-continue" id="jl-continue"></button>
+
+    <p class="di-demo-mark">Demo · Sample Progress</p>
+
+    <script src="/js/util.js"></script>
+    <script src="/js/sound.js"></script>
+    <script src="/js/fx.js"></script>
+    <script src="/js/worlds.js"></script>
+    <script src="/js/worlds/classic.js"></script>
+    <script src="/js/worlds/paper.js"></script>
+    <script src="/js/worlds/space.js"></script>
+    <script src="/js/worlds/garden.js"></script>
+    <script src="/js/worlds/arcade.js"></script>
+    <script src="/js/worlds/snow.js"></script>
+    <script src="/js/worlds/squirrel.js"></script>
+    <script src="/js/worlds/ocean.js"></script>
+    <script src="/js/worlds/candy.js"></script>
+    <script src="/js/worlds/library.js"></script>
+    <script src="/js/worlds/volcano.js"></script>
+    <script src="/js/worlds/sky.js"></script>
+    <script src="/js/worlds/desert.js"></script>
+    <script src="/js/worlds/robot.js"></script>
+    <script src="/js/worlds/carnival.js"></script>
+    <script src="/js/worlds/rain.js"></script>
+    <script src="/js/worlds/rift.js"></script>
+    <script src="/js/companions.js"></script>
+    <script src="/js/bosses.js"></script>
+    <script src="/js/hero.js"></script>
+    <script src="/js/powers.js"></script>
+    <script src="common.js"></script>
+    <script src="c.js"></script>
+</body>
+</html>
