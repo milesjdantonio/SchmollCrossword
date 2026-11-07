@@ -130,8 +130,11 @@ deleted after everything is done.
       replaced. Visiting another screen during the grace keeps the puzzle. Checked in the test browser with a moved
       clock, and `dailyStanding` in 5 time zones across clock changes and the new year. (Server/browser
       disagreement: the server already accepts a date within a day of its own.)
-- [ ] Share links: correct preview tags (title, description, image) for crawlers; answer-free result text;
-      copy-link fallback
+- [x] Share: the preview tags and `preview.png` (1200x630) were right; added `og:site_name` and a canonical link.
+      Share text (`shareText` in game.js): date, difficulty, time and points (or Practice), an answer-free grid
+      (🟩 typed, 🟨 checked, 🟦 revealed, ⬛️ black), No Hints, streak, schmollcrossword.com. The Daily Boss can share
+      too (stars). Touch screens use the share sheet; elsewhere the clipboard; if that's refused, a "Copy Your
+      Result" box with the text selected (instead of `prompt()`)
 - [x] Saves: boot.js moves any unreadable save (or one that should be an object and isn't) to
       `schmoll-damaged.<name>` and the game starts that part fresh with a notice; a saved game that doesn't fit its
       puzzle is skipped (`sane` in game.js). What's stored where: the Privacy Notice lists it for players

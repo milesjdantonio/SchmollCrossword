@@ -693,7 +693,7 @@ const Game = (() => {
             if (next === "boss") actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Fight Today's Boss", onclick: () => { closeResults(); Campaign.playSpecial("daily"); } }));
             else actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: `Play ${cap(next)}`, onclick: () => { closeResults(); switchDifficulty("daily", next); } }));
         }
-        if (!info.campaign) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
+        if (!info.campaign || info.daily) actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Share", onclick: e => share(info, e.currentTarget) }));
         // after a boss fight there's no going back to the board: the buttons above move you on
         const bossEnd = !!(info.campaign && info.campaign.boss);
         if (!bossEnd) {
@@ -741,15 +741,61 @@ const Game = (() => {
         m.classList.add("out");
         setTimeout(() => m.remove(), 300);
     }
-    function share(info, button) {
+    // The result as text to paste anywhere. It never gives away an answer: the grid only shows how each square was
+    // done (🟩 typed, 🟨 checked, 🟦 revealed, ⬛ a black square).
+    const SITE = "schmollcrossword.com";
+    function shareText(info) {
         const p = game.puzzle;
-        const lines = [`Schmoll Crossword · Daily (${cap(p.difficulty)})`, `✅ Solved in ${U.fmtTime(info.seconds)}` + (info.counted ? ` · ${info.points} pts` : "")];
-        if (info.streak > 1) lines.push(`\u{1F525} ${info.streak}-Day Streak`);
-        if (!info.checked && !info.revealed) lines.push("\u{1F9E0} No hints");
-        const text = lines.join("\n");
-        const done = () => { button.textContent = "Copied"; setTimeout(() => { button.textContent = "Share"; }, 1600); };
-        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, () => prompt("Copy your result:", text));
-        else prompt("Copy your result:", text);
+        const key = info.daily ? (Campaign.playing.date || "").replace(/-/g, "") : seedDay(p.seed);
+        const date = /^\d{8}$/.test(key) ? new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6)).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+        const score = info.practice ? " · Practice" : info.counted || info.daily ? ` · ${info.points} pts` : "";
+        const lines = [`Schmoll Crossword${date ? " · " + date : ""}`];
+        if (info.daily) {
+            const stars = info.campaign && info.campaign.stars || 0;
+            lines.push(`Boss: ${Campaign.titles().title.replace(/^Boss: /, "")} ⚔️ ${"★".repeat(stars)}${"☆".repeat(3 - stars)}${score}`);
+        } else {
+            lines.push(`${cap(p.difficulty)} ✅ ${U.fmtTime(info.seconds)}${score}`);
+            for (let r = 0; r < p.size; r++) {
+                let row = "";
+                for (let c = 0; c < p.size; c++) row += isBlock(r, c) ? "⬛️" : game.revealed[r][c] ? "\u{1F7E6}" : game.locked[r][c] ? "\u{1F7E8}" : "\u{1F7E9}";
+                lines.push(row);
+            }
+            if (!info.checked && !info.revealed) lines.push("\u{1F9E0} No Hints");
+        }
+        if (info.streak > 1 && !info.practice) lines.push(`\u{1F525} ${info.streak}-Day Streak`);
+        lines.push(SITE);
+        return lines.join("\n");
+    }
+    async function share(info, button) {
+        const text = shareText(info);
+        const said = t => { button.textContent = t; setTimeout(() => { if (button.isConnected) button.textContent = "Share"; }, 1600); };
+        // phones and tablets: the system's share sheet (messages, apps); a cancelled share does nothing
+        if (navigator.share && U.touch()) {
+            try { await navigator.share({ text }); return; } catch (err) { if (err && err.name === "AbortError") return; }
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            said("Copied");
+        } catch (err) {
+            copyBox(text);                                   // no clipboard (an old browser, or permission refused)
+        }
+    }
+    // The text in a box, selected, to copy by hand
+    function copyBox(text) {
+        const area = U.el("textarea", { class: "copy-text", readonly: true, rows: String(text.split("\n").length), "aria-label": "Your result" });
+        area.value = text;
+        const close = U.el("button", { type: "button", class: "btn primary", text: "Done" });
+        const modal = U.el("div", { class: "results ask-modal", role: "dialog", "aria-modal": "true", "aria-labelledby": "copy-title" },
+            U.el("div", { class: "res-card ask-card" }, U.el("h2", { id: "copy-title", class: "res-title ask-title", text: "Copy Your Result" }),
+                U.el("p", { class: "ask-text", text: U.touch() ? "Press and hold the text to copy it." : "It's selected: press Ctrl+C (⌘C on a Mac)." }),
+                area, U.el("div", { class: "res-actions" }, close)));
+        const done = () => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(); } };
+        close.addEventListener("click", done);
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) done(); });
+        addEventListener("keydown", onKey, true);
+        overlay.appendChild(modal);
+        requestAnimationFrame(() => { modal.classList.add("in"); area.focus(); area.select(); });
     }
 
     // ---------------------------------------------------------------------------------------------
