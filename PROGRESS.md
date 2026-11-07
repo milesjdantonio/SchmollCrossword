@@ -188,10 +188,14 @@ deleted after everything is done.
       ("23 Squares × 10", "Time Bonus") updated
 - [x] The daily's timer shows the current bonus and the time left before it drops (`#time-bonus`, `timeBonusNow`;
       red in the last 10 s; hidden for practice, campaign and after the win)
-- [ ] Reveal Puzzle completes the puzzle's state consistently (Daily, Archive, Daily Boss)
-- [ ] At most 10 Reveal Words per boss phase
-- [ ] Boss enrage at 2.5x the boss's progress (with a small floor so the first letters don't set it off)
-- [ ] Later phases shorten boss attack cooldowns more (phases 3-5 very busy but fair)
+- [x] Reveal Puzzle completes the puzzle's state consistently: checked in the browser on a daily (board = answers,
+      saved game solved + surrendered, the score, Home's "Revealed" chip, all the same after a reload). The Daily
+      Boss treats it as a lost attempt (`lose("reveal")`). After the midnight grace a surrender saves nothing. The
+      Daily Archive must do the same when it's built (Phase 7)
+- [x] At most 10 Reveal Words per boss phase (`REVEAL_WORDS_PER_PHASE` in game.js; the button reads "Word · 7";
+      `render()` used to re-enable it, now `drawRevealWords` decides)
+- [x] Boss enrage at 2.5x the boss's progress, once you've done 15% (`RAGE_RATIO`, `RAGE_FLOOR`); How to Play says so
+- [x] Later phases attack more often: `PHASE_PACE` = 1, .86, .74, .64, .56 of phase 1's gap (was 0.88 each)
 - [ ] Boss sheet: number of phases and a predicted time (your average on those puzzles, or a typical one)
 - [ ] Skill-learned and boss-attack pop-ups close when clicked or tapped
 - [ ] Items on one row where it fits; wraps cleanly on narrow screens

@@ -484,7 +484,7 @@ const App = (() => {
     });
     // every button and link gets a little "select" sound
     document.addEventListener("pointerdown", e => {
-        if (e.target.closest("#board, .key, .m-face")) return;
+        if (!e.target.closest || e.target.closest("#board, .key, .m-face")) return;
         if (e.target.closest("button, a, label, .clues li")) Sound.play("select");
     }, true);
 

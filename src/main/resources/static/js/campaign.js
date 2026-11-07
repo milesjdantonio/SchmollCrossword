@@ -1313,8 +1313,12 @@ const Campaign = (() => {
     const botTimeFor = (d, size, si, phase = 1) => bossPar(d, size) * (BOT_PACE[d] || 1) * (1.15 - 0.43 * Math.max(0, si) / 14) * Math.pow(0.94, phase - 1) * BOSS_SPEEDUP;
     // the boss pushes harder when it's behind: up to +45% speed when you lead by 35% of the board
     const CATCH_UP = lead => 1 + Math.min(0.45, Math.max(0, lead - 0.08) * 1.6);
-    const RAGE_LEAD = 0.25;           // you're this far ahead: the boss gets ENRAGED
+    // the boss gets ENRAGED when you've done 2.5 times as much of your board as it has of its own (once you've done at
+    // least 15%, so the first few letters don't set it off)
+    const RAGE_RATIO = 2.5, RAGE_FLOOR = 0.15;
     const RAGE_COOLDOWN = 0.65;                    // an enraged boss's attack cooldown: 35% shorter
+    // the time between attacks in each phase, against phase 1 (the Void's 5th phase: about 8 s, 5.5 s enraged)
+    const PHASE_PACE = [1, 1, 0.86, 0.74, 0.64, 0.56];
     // timers on the boss (seconds left), and what the status line calls them
     const BOSS_TIMERS = { freeze: "❄️ Frozen", slow: "🍬 Sticky", blind: "🥧 Can't see", stutter: "🤧 Sneezing", hypno: "🤹 Hypnotized", crash: "🍡 Sugar crash",
         bubble: "🫧 Bubbled", dig: "🍂 Digging", quick: "⏳ Sinking", sand: "🏜️ Sandstorm", lava: "🌋 Lava floor", reverse: "⏪ Reversed", worm: "🌀 Wormhole", ghost: "🖊️ Ghost writer",
@@ -2122,7 +2126,8 @@ const Campaign = (() => {
                 drawWarn();
             }
         }
-        if (!f.enraged && !(f.buff.calm > 0) && f.lead >= RAGE_LEAD && !Game.state.solved && !f.switching) {
+        const mine = myPct() - (f.headStart || 0);
+        if (!f.enraged && !(f.buff.calm > 0) && mine >= RAGE_FLOOR && mine >= RAGE_RATIO * bp && !Game.state.solved && !f.switching) {
             f.enraged = true;
             root.classList.add("boss-enraged");
             Bosses.enrage(true);
@@ -3705,8 +3710,9 @@ const Campaign = (() => {
         Game.startPhase(f.next[k]);
         f.phase = k;
         f.switching = false;
-        // every phase is angrier than the one before: it attacks more often, winds up faster and hits harder
-        f.th = { ...f.th, every: f.th.every * 0.88, windup: Math.max(1.6, f.th.windup * 0.92), power: f.th.power * 1.08 };
+        // every phase is angrier than the one before: it attacks more often (more so in the last phases), winds up
+        // faster and hits harder
+        f.th = { ...f.th, every: f.th.every * PHASE_PACE[k] / PHASE_PACE[k - 1], windup: Math.max(1.6, f.th.windup * 0.92), power: f.th.power * 1.08 };
         setBossPuzzle(p1, p1.seed + 7);                 // the boss's new board: the one you just solved
         f.boss = {};
         f.myLog = [];

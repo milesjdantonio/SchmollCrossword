@@ -1015,7 +1015,7 @@ const HowTo = (() => {
             }
         },
         {
-            title: "Close Calls", len: 12000, text: "When the boss is 85% done, the screen turns red and the warning box says so. Get far ahead and it gets angry: faster, with more attacks.",
+            title: "Close Calls", len: 12000, text: "When the boss is 85% done, the screen turns red and the warning box says so. Get two and a half times as far as the boss and it gets angry: faster, with more attacks.",
             async demo(s) {
                 const sc = scene(), race = s.race(), warn = s.warn();
                 const b = s.board({ x: 224, y: 112, cell: 36 });

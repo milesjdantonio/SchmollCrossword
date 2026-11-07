@@ -125,7 +125,7 @@ const Game = (() => {
             seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked,
             seconds: game.seconds, solved: game.solved, surrendered: game.surrendered, checks: game.checks,
             squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed, typos: game.typos, itemsUsed: game.itemsUsed,
-            row: game.row, col: game.col, direction: game.direction, result: game.result, ticket: game.ticket || null
+            row: game.row, col: game.col, direction: game.direction, result: game.result, ticket: game.ticket || null, revealWords: game.revealWords || 0
         }));
     }
     function restore(saved) {
@@ -134,7 +134,7 @@ const Game = (() => {
             locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
             squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0, typos: saved.typos || 0, itemsUsed: saved.itemsUsed || 0,
-            row: saved.row, col: saved.col, direction: saved.direction, celebrating: false, ticket: saved.ticket || null
+            row: saved.row, col: saved.col, direction: saved.direction, celebrating: false, ticket: saved.ticket || null, revealWords: saved.revealWords || 0
         });
         // games saved before the redesign kept the banner text instead of a result
         game.result = saved.result || (saved.winShown ? { title: saved.winTitle, text: saved.winText, kind: saved.surrendered ? "surrender" : "win" } : null);
@@ -232,9 +232,10 @@ const Game = (() => {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
                 letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
-                squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null, ticket: null
+                squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null, ticket: null, revealWords: 0
             });
         }
+        drawRevealWords();
         // today's daily: a start ticket from the server, so the leaderboard can trust the time (a game restored without
         // one gets one only if it has hardly started, or its time wouldn't match)
         if (puzzle.mode === "daily" && !game.solved && !game.ticket && game.seconds < 90 && dailyStanding(seedDay(puzzle.seed)) === "today" && typeof Leaderboard !== "undefined") {
@@ -421,6 +422,7 @@ const Game = (() => {
         boardEl.dataset.dir = game.direction;
         boardEl.classList.toggle("surrendered", game.surrendered);
         document.querySelectorAll("#helpers button:not(#report-btn)").forEach(b => { b.disabled = game.solved; });
+        drawRevealWords();                     // (Reveal Word stays off once a boss phase's 10 are used)
         // which words are full now? Any that weren't before were just finished
         const key = game.puzzle.mode + ":" + game.puzzle.seed;
         const full = new Set(), justDone = [];
@@ -849,8 +851,24 @@ const Game = (() => {
     }
     // Reveal: fill in the right letter wherever it's empty or wrong, 5 points per square; a right letter is locked for
     // free. All = surrender.
+    // In a boss fight, Reveal Word can be used at most this many times a phase (it would otherwise win the race)
+    const REVEAL_WORDS_PER_PHASE = 10;
+    const revealWordsCapped = () => !!game.puzzle && Campaign.isBossLevel(game.puzzle);
+    function drawRevealWords() {
+        const btn = document.querySelector('#helpers button[data-action="reveal"][data-scope="word"]');
+        if (!btn) return;
+        const capped = revealWordsCapped(), left = REVEAL_WORDS_PER_PHASE - (game.revealWords || 0);
+        btn.textContent = capped ? `Word · ${left}` : "Word";
+        btn.disabled = !!game.solved || (capped && left <= 0);
+        btn.title = capped ? `${left} Reveal Word${left === 1 ? "" : "s"} left this phase` : "";
+    }
     async function reveal(scope) {
         if (scope === "puzzle" && !(await U.ask({ title: "Reveal the Whole Puzzle?", text: "This counts as giving up: 0 points, and it won't count toward your streak.", yes: "Reveal it", no: "Keep trying" }))) return;
+        if (scope === "word" && revealWordsCapped() && (game.revealWords || 0) >= REVEAL_WORDS_PER_PHASE) {
+            FX.toast({ icon: "🔒", kicker: "REVEAL", title: "No Reveal Words Left", text: `You've used all ${REVEAL_WORDS_PER_PHASE} for this phase.`, ms: 2400 });
+            return;
+        }
+        const before = game.squaresRevealed;
         let n = 0;
         for (const [row, col] of scopeCells(scope)) {
             if (game.letters[row][col] !== game.puzzle.solution[row][col]) {
@@ -869,6 +887,7 @@ const Game = (() => {
                 U.restart(game.cells[row][col], "lock-in");
             }
         }
+        if (scope === "word" && game.squaresRevealed > before) { game.revealWords = (game.revealWords || 0) + 1; drawRevealWords(); }
         Sound.play("reveal");
         Bus.emit("reveal", { scope });
         if (scope === "puzzle") surrender();
@@ -880,7 +899,9 @@ const Game = (() => {
         game.surrendered = true;
         drawTimer();
         let text = game.puzzle.mode === "campaign" ? "Level not cleared. Play it again from the map." : "Better luck next time.";
-        if (game.puzzle.mode === "daily") {
+        if (game.puzzle.mode === "daily" && dailyStanding(seedDay(game.puzzle.seed)) === "past") {
+            text = "This was an earlier day's daily, so nothing was saved.";
+        } else if (game.puzzle.mode === "daily") {
             const counted = saveDailyScore(game.puzzle, 0, true);
             text = counted ? "0 points, and it doesn't count toward your streak." : "This daily was already completed earlier.";
         }
@@ -1355,7 +1376,8 @@ const Game = (() => {
         Worlds.board("reset");
         game.puzzle = puzzle;
         const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
-        Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, celebrating: false, result: null });
+        Object.assign(game, { letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), solved: false, surrendered: false, celebrating: false, result: null, revealWords: 0 });
+        drawRevealWords();
         indexEntries(puzzle);
         drawBoard(puzzle);
         drawClues(puzzle);

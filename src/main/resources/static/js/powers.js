@@ -422,7 +422,7 @@ const Powers = (() => {
     // k goes from 0 (world 1) to 1 (world 15); everything scales smoothly between the two ends.
     //   every     seconds between attacks              windup  seconds of warning before an attack lands
     //   power     how long its effects last (x)        rageSpeed  how much faster it writes when enraged
-    //   (how fast it solves is campaign.js's botTimeFor; it gets enraged when you lead the race by RAGE_LEAD)
+    //   (how fast it solves is campaign.js's botTimeFor; it gets enraged when you've done RAGE_RATIO times as much as it has)
     //   double    enraged, it chains two moves at once  first   seconds before its first attack
     // ---------------------------------------------------------------------------------------------
     const lerp = (a, b, k) => a + (b - a) * k;
