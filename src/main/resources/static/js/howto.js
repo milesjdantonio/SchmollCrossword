@@ -686,7 +686,8 @@ const HowTo = (() => {
                     if (i === 4) s.bossArt(sc.bw, "", n); else n.textContent = String(i + 1);
                     return n;
                 });
-                const coins = s.add("ht-coins", { x: 24, y: 18, text: "🪙 120" });
+                const coins = s.add("ht-coins", { x: 24, y: 18 }), coinNum = U.el("span", { text: " 120" });
+                coins.append(U.icon("coin"), coinNum);
                 const token = s.face(sc.w.id, 46, "happy", map, { x: spots[0][0], y: spots[0][1] - 40 });
                 token.classList.add("ht-token");
                 await s.wait(300);
@@ -701,7 +702,7 @@ const HowTo = (() => {
                     const st = s.add("ht-stars", { x, y: y - 74, text: "★".repeat(stars) + "☆".repeat(3 - stars) }, map);
                     s.pop(st);
                     nodes[i].classList.add("done");
-                    c += 20; coins.textContent = "🪙 " + c; s.pop(coins, "ht-flash");
+                    c += 20; coinNum.textContent = " " + c; s.pop(coins, "ht-flash");
                     await s.wait(500);
                     const [nx, ny] = spots[i + 1];
                     await s.tween(560, k => { token.style.left = U.lerp(x, nx, k) + "px"; token.style.top = (U.lerp(y, ny, k) - 40 - Math.sin(k * Math.PI) * 40) + "px"; });

@@ -526,7 +526,7 @@ const Campaign = (() => {
         $("#cm-tag").textContent = `${diffs} · Boss: ${bossOf(s.world).name}`;
         const t = totals();
         $("#cm-total").textContent = `★ ${t.stars} / ${t.max * 3}`;
-        $("#cm-coins").textContent = `🪙 ${data.coins}`;
+        $("#cm-coins").replaceChildren(U.icon("coin"), " " + data.coins);
         const rail = $("#cm-rail");
         if (!rail.children.length) {
             map.forEach((sec, i) => {
@@ -1065,7 +1065,7 @@ const Campaign = (() => {
             card.append(
                 U.el("div", { class: "shop-head" },
                     U.el("div", { class: "shop-title" }, U.el("small", { text: "CAMPAIGN" }), U.el("h2", { id: "shop-title", text: "Shop" })),
-                    U.el("span", { class: "shop-coins", text: `🪙 ${data.coins}` }),
+                    U.el("span", { class: "shop-coins" }, U.icon("coin"), " " + data.coins),
                     U.el("button", { type: "button", class: "btn ghost small", text: "Close", onclick: close })),
                 tabs);
             const buy = (price, give) => () => {
@@ -1085,8 +1085,8 @@ const Campaign = (() => {
                 eqRow.appendChild(U.el("div", { class: "se-slot", style: { "--c": a.fx.color } },
                     U.el("button", { type: "button", class: "se-swap", title: `Swap the ability on key ${i + 1}`, onclick: () => pickAbility(i, draw) }, U.el("span", { class: "se-icon", text: a.icon }),
                         U.el("div", { class: "se-text" }, U.el("b", { text: a.name }), U.el("small", { text: `×${data.owned[a.id] || 0} uses · key ${i + 1}` }))),
-                    U.el("button", { type: "button", class: "btn small primary", text: `+1 · 🪙 ${a.price}`, disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
-                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) })));
+                    U.el("button", { type: "button", class: "btn small primary", disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
+                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }, "+1 · ", U.icon("coin"), " " + a.price)));
             }
             eqBar.appendChild(eqRow);
             card.appendChild(eqBar);
@@ -1099,7 +1099,7 @@ const Campaign = (() => {
                     U.el("span", { class: "sic-icon", text: it.icon }),
                     U.el("b", { text: it.name }), U.el("p", { text: it.desc }),
                     U.el("div", { class: "sic-foot" }, U.el("span", { class: "shop-owned", text: `You have ×${data.items[it.id] || 0}` }),
-                        U.el("button", { type: "button", class: "btn small primary", text: `Buy · 🪙 ${it.price}`, disabled: data.coins < it.price, onclick: buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }) }))));
+                        U.el("button", { type: "button", class: "btn small primary", disabled: data.coins < it.price, onclick: buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }) }, "Buy · ", U.icon("coin"), " " + it.price))));
                 scroll.appendChild(grid);
             } else {
                 scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Daily Boss always brings its own world's three." }));
@@ -1117,7 +1117,7 @@ const Campaign = (() => {
                             U.el("b", { text: a.name }), U.el("p", { text: a.flavor }), U.el("p", { class: "sic-effect", text: a.desc }),
                             U.el("small", { class: "sic-unlock", text: (earnedAbility(a) ? "✓ Unlocked: " : "🔓 Unlock: ") + unlockText(a) }),
                             open ? U.el("div", { class: "sic-foot" }, U.el("span", { class: "shop-owned", text: `×${data.owned[a.id] || 0}` }),
-                                U.el("button", { type: "button", class: "btn small", text: `Buy · 🪙 ${a.price}`, disabled: data.coins < a.price, onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }),
+                                U.el("button", { type: "button", class: "btn small", disabled: data.coins < a.price, onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }, "Buy · ", U.icon("coin"), " " + a.price),
                                 U.el("button", { type: "button", class: "btn small" + (on ? " primary" : ""), text: on ? "Equipped" : "Equip", title: on ? `Unequip ${a.name}` : `Equip ${a.name}`, onclick: () => {
                                     let l = loadout().filter(id => id !== a.id);           // equipping a 4th drops the one on key 1
                                     if (!on) { l.push(a.id); if (l.length > 3) l = l.slice(-3); }

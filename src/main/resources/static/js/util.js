@@ -205,6 +205,17 @@ const U = (() => {
         });
     }
 
+    // The game's own small icons, drawn here so they look the same on every device (emoji differ between systems)
+    const ICONS = {
+        coin: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#d98e04"/><circle cx="12" cy="12" r="9.3" fill="#ffcf4a"/>`
+            + `<circle cx="12" cy="12" r="7" fill="none" stroke="#e39b12" stroke-width="1.2"/>`
+            + `<path d="M14.6 9.3c-.5-.8-1.5-1.3-2.6-1.3-1.6 0-2.6.8-2.6 1.9 0 2.7 5.4 1.4 5.4 4.2 0 1.2-1.1 2-2.8 2-1.2 0-2.3-.5-2.8-1.4M12 6.6v1.4M12 16.1v1.3" fill="none" stroke="#a8650a" stroke-width="1.6" stroke-linecap="round"/>`
+            + `<path d="M5.7 9a7 7 0 0 1 3.6-3.6" fill="none" stroke="#fff4c9" stroke-width="1.5" stroke-linecap="round"/></svg>`
+    };
+    function icon(name) {
+        return el("span", { class: "ic ic-" + name, html: ICONS[name] || "" });
+    }
+
     // The page's zoom (Settings > Zoom; app.js puts it on #app). Measurements (getBoundingClientRect) are on-screen
     // sizes, so a position measured on screen and then set as CSS INSIDE #app is divided by this.
     const zoom = () => parseFloat(document.getElementById("app")?.style.zoom) || 1;
@@ -279,7 +290,7 @@ const U = (() => {
     }
 
     return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, saveRaw, saveFailed, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom,
-        CONTACT, fetchJson, describe, failCard };
+        CONTACT, fetchJson, describe, failCard, icon };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
@@ -311,7 +322,7 @@ const Settings = (() => {
         bossFxVolume: 1,        // Boss Fight Effects: the bosses' moves and your abilities, on top of All Effects
         typingSounds: true,     // typing, erasing and moving on the board
         clickSounds: true,      // buttons, menus and switches
-        zoom: 1,                // Zoom: 0.6-1, smaller = more fits on screen (not on phones: see applyZoom in app.js)
+        zoom: 1,                // Zoom: 0.6-1.4, smaller = more fits on screen, bigger = easier to read (applyZoom in app.js)
         intro: false,           // play the start-up intro on every visit (it always plays the very first time)
         effects: "full"         // "full" or "lite"
     };

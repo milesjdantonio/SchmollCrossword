@@ -301,26 +301,36 @@ const App = (() => {
     });
     $("#replay-intro").addEventListener("click", () => intro(true));
 
-    // Zoom. CSS zoom on #app (the top bar and the page): it lays the page out again smaller, so more fits. The world's
-    // background, the effects and pop-ups are outside #app and stay full-screen. It's applied when the slider is let go
-    // (the generic form handler saves it); while dragging only the number changes, so the slider doesn't shrink under
-    // the mouse.
-    const ZOOM_MIN = 0.6;
-    const zoomQuery = matchMedia("(pointer: fine) and (min-width: 760px)");       // a mouse or trackpad on a screen this wide
+    // Zoom. CSS zoom on #app (the top bar and the page): it lays the page out again smaller (more fits) or bigger (easier
+    // to read), like the browser's own zoom. The world's background, the effects and pop-ups are outside #app and stay
+    // full-screen. 60% to 140%, today's size (100%) in the middle of the slider.
+    // Zooming in has a limit that depends on the screen: the layout picks its shape from the screen's real width (the
+    // CSS breakpoints at 480, 780 and 980 px), so zoom can't squeeze the page narrower than the shape it's in needs;
+    // and under 500 px the board's letters are sized from the screen width, which zoom would enlarge twice. Phones
+    // zoom out only (their own pinch zoom still works). It's applied when the slider is let go (the generic form
+    // handler saves it); while dragging only the number changes, so the slider doesn't move under you.
+    const ZOOM_MIN = 0.6, ZOOM_MAX = 1.4;
+    const roomNeeded = w => (w > 980 ? 981 : w > 780 ? 781 : w > 500 ? 500 : w);
+    let zoomShown = 0;
     function applyZoom() {
-        const z = zoomQuery.matches ? U.clamp(Settings.get("zoom") ?? 1, ZOOM_MIN, 1) : 1;
-        $("#app").style.zoom = z === 1 ? "" : String(z);
-        $("#zoom-card").hidden = !zoomQuery.matches;
+        // (a phone or tablet widens its page to fit anything too wide, so there the screen's own width is the one to trust)
+        const width = U.touch() ? Math.min(innerWidth, screen.width || innerWidth) : innerWidth;
+        const max = Math.max(1, Math.min(ZOOM_MAX, width / roomNeeded(width)));
+        const z = U.clamp(Settings.get("zoom") ?? 1, ZOOM_MIN, max);
         const range = form.elements.zoom, pct = Math.round(z * 100);
-        if (document.activeElement !== range) range.value = pct;
+        if (document.activeElement !== range) range.value = Math.round((Settings.get("zoom") ?? 1) * 100);
         $("#zoom-out").textContent = pct + "%";
-        $("#zoom-reset").disabled = pct === 100;
+        $("#zoom-reset").disabled = Math.round((Settings.get("zoom") ?? 1) * 100) === 100;
+        if (z === zoomShown) return;
+        zoomShown = z;
+        $("#app").style.zoom = z === 1 ? "" : String(z);
         dispatchEvent(new Event("resize"));               // (canvases and layouts that measure the page measure it again)
     }
     form.elements.zoom.addEventListener("input", e => { $("#zoom-out").textContent = e.target.value + "%"; });
     $("#zoom-reset").addEventListener("click", () => Settings.set("zoom", 1));
-    zoomQuery.addEventListener("change", applyZoom);
+    addEventListener("resize", U.debounce(applyZoom, 250));        // (a phone turned sideways can zoom in further)
     Settings.on(key => { if (key === "zoom") applyZoom(); });
+    $("#zoom-card").hidden = false;
     applyZoom();
     // Reset: everything, or just the leaderboard or the campaign
     function eraseAndReload(remove) {

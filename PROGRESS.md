@@ -211,8 +211,13 @@ deleted after everything is done.
       (runs only while the puzzle is on screen, saved with the game, grace after midnight counts). game.js gives the
       win `day`, `grace` and `trio`. 10 node tests; `src/test/js/score.test.mjs` (points = the server's, the grace in
       5 time zones, streaks). README says how to run them
-- [ ] Coin and point icons drawn as our own SVG (no emoji that changes between devices)
-- [ ] Zoom works on small screens; the slider's middle (50) looks like today's 100%, so players can zoom in too
+- [x] Coin icon drawn as our own SVG (`U.icon("coin")`, `.ic`): the campaign bar, the shop and its buy buttons, the
+      results, How to Play. Points are shown as "pts" text, the same on every device. (Achievement, move and item
+      icons are still emoji; the redesign decides those)
+- [x] Zoom: 60%-140% with 100% in the middle of the slider, on every screen (`applyZoom`). Zooming in stops where
+      the zoomed layout would be narrower than its breakpoint needs (`roomNeeded`: 981/781/500 px; checked at 430,
+      600, 900, 1024, 1280 and 1920 px with no spill), so phones zoom out only (their pinch zoom still zooms in).
+      Found: on touch screens a too-wide page widens the reported window, so there the screen's width is used
 - [x] Typed letters visible in every world: measured in all 17 worlds, light and dark (contrast 9.5:1 or more). The
       thing that hid them: Shatter's `translateX(var(--sx, 0px))` was on every square all the time, which put each
       square on its own layer, so board decorations (the Garden's vines) drew over the letters. It's now only on

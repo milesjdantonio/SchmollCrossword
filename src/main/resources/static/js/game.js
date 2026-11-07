@@ -748,7 +748,7 @@ const Game = (() => {
         }
         card.appendChild(row);
         card.appendChild(U.el("ul", { class: "res-earned" }, ...c.earned.map(([text, ok]) => U.el("li", { class: ok ? "ok" : "", text: (ok ? "★ " : "☆ ") + text }))));
-        card.appendChild(U.el("p", { class: "res-coins", text: `+${c.coins} Coins · 🪙 ${c.totalCoins}` }));
+        card.appendChild(U.el("p", { class: "res-coins" }, `+${c.coins} Coins · `, U.icon("coin"), " " + c.totalCoins));
         if (c.newAbility) {
             card.appendChild(U.el("div", { class: "res-ability" }, U.el("span", { class: "ra-icon", text: c.newAbility.icon }),
                 U.el("span", {}, U.el("small", { text: "NEW ABILITY UNLOCKED" }), U.el("b", { text: `${c.newAbility.name} · ${c.freeUses} Free Uses` }))));
