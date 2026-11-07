@@ -50,9 +50,11 @@ public class SecurityHeaders implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Content-Security-Policy", CSP);
+        // the /demo pages show design options side by side in frames of this same site (DemoPages; local only)
+        boolean demo = request.getRequestURI().startsWith("/demo/");
+        response.setHeader("Content-Security-Policy", demo ? CSP.replace("frame-ancestors 'none'", "frame-ancestors 'self'") : CSP);
         response.setHeader("X-Content-Type-Options", "nosniff");
-        response.setHeader("X-Frame-Options", "DENY");
+        response.setHeader("X-Frame-Options", demo ? "SAMEORIGIN" : "DENY");
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
         response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         response.setHeader("Cross-Origin-Opener-Policy", "same-origin");

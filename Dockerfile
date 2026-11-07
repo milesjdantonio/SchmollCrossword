@@ -32,6 +32,8 @@ USER schmoll
 ENV TZ=America/New_York
 # Where daily puzzles are saved. Attach a persistent disk here on the host, or a restart loses today's clues.
 ENV PUZZLE_DIR=/data
+# The design options at /demo are only for a local server
+ENV SHOW_DEMO=false
 
 # The Claude API key is NOT in here. Set it as a secret environment variable in the host's dashboard.
 

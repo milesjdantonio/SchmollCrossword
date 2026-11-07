@@ -96,7 +96,7 @@ deleted after everything is done.
       /_blob/fe092ad3c43491db6bd745c47244dbec (the C boards use it). A local copy of every file is in
       `.claude/design/redesign-canvas/`.
 - [x] The user's answer (2026-11-07, after seeing the canvas): **the campaign screen needs a huge redesign** (the
-      whole thing: map, level sheets, boss screen); **Home is fine**, but the resources from the other repos (TerraSim's
+      whole thing: map, level sheets, boss screen); **Home is fine: a refresh, not a remake**; the resources from the other repos (TerraSim's
       design skills, RhythmArchitect's renderer and tools) can come into play. **From now on, show options to pick
       at a local `/demo` page** (on the local server) and tell the user when they're ready. A, B, C weren't picked
       as such; take what fits the campaign from them.
@@ -238,7 +238,8 @@ deleted after everything is done.
       and RhythmArchitect's renderer ideas; tell the user; wait for the pick
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
-- [ ] Home: keep it; small touches only (from the other repos' resources), shown at `/demo` first
+- [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher
+      finish using the other repos' resources; shown at `/demo` first
 - [ ] The puzzle screen: clearer Across/Down direction, clue bar, red pulse on a full board with errors (a demo first)
 - [ ] Phone layout review (all screens)
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
