@@ -1,0 +1,58 @@
+/* Option D, Stage and Everbook: A's stage (a.css) with the level panel as this world's page of the Everbook and the
+   Everbook itself (b.css) opening over the stage. Only what differs from A and B is here. */
+
+body.dk { --cloth: #6e1e2c; --cloth-dark: #3a0d17; --gold: #d9ae4a; --gold-ink: #7a5216; --paper: #f6ecd2; --paper-edge: #e6d3a6; --page-ink: #4a3a22; --page-soft: #7a6442; }
+
+/* the Everbook button: a strip of the book's own cloth */
+.dk-book-btn {
+    display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border: 0; border-radius: 999px;
+    background: linear-gradient(180deg, #8e2a3a, var(--cloth)); color: #f6e2b0; font: 800 1rem var(--font-body); cursor: pointer;
+    box-shadow: 0 4px 12px rgba(60, 10, 20, .35), inset 0 0 0 1.5px rgba(217, 174, 74, .45); transition: transform .15s;
+}
+.dk-book-btn:hover { transform: translateY(-1px); }
+.dk-book-btn .di { color: var(--gold); }
+
+/* ---- the panel is this world's page ---- */
+.ws-panel.dk-page {
+    color: var(--page-ink); background: linear-gradient(90deg, #dcc795 0%, var(--paper) 6%, #f9f2df 70%, #efe2c0 100%);
+    box-shadow: -1px 0 0 rgba(122, 82, 22, .35), -14px 0 30px rgba(0, 0, 0, .14), inset 14px 0 22px -14px rgba(90, 60, 20, .45);
+}
+.dk-page .ws-p-body { padding: 22px 26px 16px; }
+.dk-folio { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.dk-folio .eb-ch-n { width: 44px; height: 44px; font-size: 1.2rem; }
+.dk-held { font: italic 600 .92rem Georgia, serif; color: var(--page-soft); }
+.dk-seal { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 8px; border-radius: 999px; background: radial-gradient(circle at 30% 30%, #f6db8a, var(--gold) 65%, #a77a22); color: #4a2e08; font: 900 .82rem var(--font-body); box-shadow: 0 2px 6px rgba(122, 82, 22, .4); }
+.dk-title { margin: 0 0 4px; font: 700 clamp(1.9rem, 2.6vw, 2.5rem)/1.05 var(--font-head); color: var(--accent); }
+.dk-facts { margin: 0 0 12px; font-weight: 800; font-size: .9rem; color: var(--page-soft); }
+.dk-lesson { margin: 14px 0 4px; font: 400 1.35rem/1.15 "IM Fell English SC", Georgia, serif; color: #6b4a22; }
+.dk-page .eb-prose { margin-bottom: 10px; }
+.dk-page .eb-goals { margin: 14px 0 6px; }
+.dk-boss-plate { margin: 4px 0 12px; }
+.dk-boss-art { width: 100%; aspect-ratio: 4 / 3; display: grid; place-items: center; border-radius: 3px; background: radial-gradient(circle at 50% 60%, #fff8e6, #ead6a6); }
+.dk-boss-art svg { width: 70%; height: 100%; }
+.dk-note { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(107, 74, 34, .2); }
+.dk-page .ws-p-go { background: linear-gradient(0deg, #efe2c0, rgba(239, 226, 192, 0)); box-shadow: 0 -1px 0 rgba(107, 74, 34, .2); }
+.dk-page ::selection { background: rgba(217, 174, 74, .45); }
+
+/* ---- the Everbook opens over the stage ---- */
+/* (it opens below the bar, so its tabs and close button never sit on the bar's title) */
+.dk-book-layer { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 92px 16px 16px; overflow-y: auto; background: rgba(18, 8, 14, .7); }
+.dk-book-layer[hidden] { display: none; }
+.dk-book-layer .eb-book { height: min(740px, calc(100dvh - 112px)); color: var(--page-ink); animation: dk-open .4s cubic-bezier(.2, .9, .3, 1); }
+@keyframes dk-open { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+.dk-book-close { position: absolute; top: -40px; left: 16px; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; background: var(--paper); color: var(--page-ink); cursor: pointer; box-shadow: 0 4px 10px rgba(0, 0, 0, .3); }
+
+@media (max-width: 760px) {
+    .dk-book-btn { height: 40px; padding: 0 12px; font-size: 0; gap: 0; }
+    .dk-book-btn .di { font-size: 1.25rem; }
+    .dk-page .ws-p-body { padding: 4px 18px 10px; }
+    .ws-panel.dk-page::before { background: rgba(107, 74, 34, .3); }
+    .ws-panel.dk-page:not(.up) .ws-p-body > :not(.dk-title):not(.dk-facts) { display: none; }
+    /* (A's rule hiding the rest weighs more for each :not(), so this one is pinned to the body to win) */
+    body.dk .ws-panel.dk-page:not(.up) .ws-p-body > .dk-title, body.dk .ws-panel.dk-page:not(.up) .ws-p-body > .dk-facts { display: block; }
+    .ws-panel.dk-page:not(.up) .dk-title { cursor: pointer; }
+    .dk-title { font-size: 1.7rem; }
+    .dk-book-layer { padding: 112px 6px 6px; place-items: start center; }
+    .dk-book-layer .eb-book { height: auto; }
+    .dk-book-close { top: -46px; left: 6px; }
+}

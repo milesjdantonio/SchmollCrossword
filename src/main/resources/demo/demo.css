@@ -37,6 +37,8 @@ a { color: var(--accent); }
 .dx-pics { position: relative; padding-bottom: 6%; }
 .dx-pics img { display: block; width: 88%; height: auto; border-radius: 12px; box-shadow: 0 18px 40px rgba(20, 25, 40, .22); }
 .dx-pics img.phone { position: absolute; right: 0; bottom: 0; width: 24%; border-radius: 16px; box-shadow: 0 14px 30px rgba(20, 25, 40, .3), 0 0 0 4px var(--card); }
+.dx-earlier { margin: 72px 0 0; color: var(--soft); }
+.dx-earlier + .dx-opt { margin-top: 24px; }
 .dx-foot { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); max-width: 70ch; }
 .dx-foot p { margin: 0; color: var(--soft); }
 @media (max-width: 860px) {

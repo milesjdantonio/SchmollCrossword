@@ -1,8 +1,8 @@
 // Shows one demo option inside a phone-sized frame (390 x 844), scaled to fit the window.
 (() => {
-    const OPTIONS = { a: "World Stage", b: "The Everbook", c: "Journey Line" };
+    const OPTIONS = { d: "Stage and Everbook", a: "World Stage", b: "The Everbook", c: "Journey Line" };
     const key = new URLSearchParams(location.search).get("o");
-    const id = Object.hasOwn(OPTIONS, key) ? key : "a";          // only the demo pages, never another address
+    const id = Object.hasOwn(OPTIONS, key) ? key : "d";          // only the demo pages, never another address
     const src = `campaign/${id}.html`;
     document.getElementById("dp-title").textContent = `${OPTIONS[id]} on a Phone`;
     document.getElementById("dp-open").href = src;
