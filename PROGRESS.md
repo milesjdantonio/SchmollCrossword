@@ -110,10 +110,11 @@ deleted after everything is done.
       throw instead of returning bad clues; a fake Claude for tests
       Done: shared client (90 s, 1 retry), `ClueWriter.asker` for tests, `fallsBack` (429/5xx/IO/no answer), review skipped on failure, `buildFixPrompt` + `merge` (only flagged clues), `givesAway` whole words, `tidy`, `CluesFailed`, model IDs from CLAUDE_FAST_MODEL / CLAUDE_STRONG_MODEL / CLAUDE_REVIEW_MODEL, per-model `USAGE` and `estimatedCost()`.
 - [x] Dailies avoid 30 days of answers (not 3), saved or shipped
-- [ ] Fix the shipped dailies that repeat (review zip: 9 pairs) and add `dailiesDontRepeat` / `everyDailyHasEveryClue` tests
+- [ ] Fix the shipped dailies that repeat: only matters on `main` (the live site serves Nov 7-29 from there).
+      Asked in REVIEW.md; do it only on the user's OK. Add an `everyDailyHasEveryClue` test either way.
 - [x] Synonym-clue rule in the AI prompt and the review prompt
-- [ ] Test the new prompt live (within the $5) and put sample clues in REVIEW.md
-- [ ] Rewrite the bare-synonym clues in the shipped dailies still to come
+- [x] Test the new prompt live (within the $5) and put sample clues in REVIEW.md
+- [ ] Rewrite the bare-synonym clues in the shipped dailies still to come (same: only on `main`, only on the OK)
 - [ ] Clear error messages everywhere (load, save, limits, offline, unexpected), with Retry / Reload / Report /
       Home; schmollcrossword@gmail.com in the contact, report and legal pages; never claim a save that failed
 - [ ] Midnight rollover: notice with Exit / Continue; 15-minute grace counts for the day before, then practice;
@@ -241,3 +242,4 @@ deleted after everything is done.
   the browser check found no errors. Home's Daily and Your Streak now sit side by side.
 - 2026-11-07: Phase 2 directions published for the user to pick (REVIEW.md). Waiting on the pick; Phase 3 next.
 - 2026-11-07: Phase 3 backend core done (ClueWriter, PuzzleStore, DailyMaker); 138 JUnit tests pass.
+- 2026-11-07: live clue test: 9 calls, about $0.04. Paid calls so far: about $0.04 of $5.

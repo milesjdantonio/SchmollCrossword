@@ -21,6 +21,21 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       about 4 cents a day. Make sure the key is set on the host and has a spending limit. The update replaces this
       with dailies made weeks ahead.
 
+- [ ] **New clue style (AI).** The clue writer now avoids bare one-word synonyms. A live test on 2026-11-07 (three
+      puzzles, about 4 cents) wrote these. Say if this is the style you want before I rewrite the campaign's clues
+      to match:
+      - Easy: TOPS "Blouses and tees, say"; ERROR "Typo, for one"; SEVEN "Number of days in a week";
+        ORDER "What you place at a diner"; RENT "Monthly payment to a landlord"
+      - Medium: BOSS "Manager who signs off on your vacation days"; WHILE "Once in a ___ (occasionally)";
+        LEMON "Dud of a used car, slangily"; SALON "Hair stylist's workplace"; OTHER "Alternate, as in 'every ___ day'"
+      - Hard: FENCE "Receiver of stolen goods, or what a picket forms"; FACTS "Things that are stubborn, per John
+        Adams"; OCEAN "Where a whale's commute takes place?"; TIFF "Minor spat between friends"
+- [ ] **Fix the live site's next three weeks of dailies?** The dailies shipped for November 7 to 29 are the ones
+      players get on the live site now. Seven of them repeat an earlier puzzle (Easy on Nov 11, 12, 14, 19, 26, 27
+      and the Boss on Nov 9), and many of their clues are the bare synonyms you didn't like. Changing them on the
+      update branch would do nothing (the branch isn't live), so it would mean a small push to `main`. Reply "fix
+      the live dailies" if you want that; otherwise they stay as they are.
+
 ## Coming up
 
 These aren't ready yet. Each one moves up when it is.
@@ -37,8 +52,6 @@ These aren't ready yet. Each one moves up when it is.
 - [ ] **Daily email.** It needs an email account to send from. For schmollcrossword@gmail.com: turn on 2-Step
       Verification, make an App Password, and put it in your host's settings as environment variables (names to
       come). Never paste the password into chat.
-- [ ] **Clue samples.** Examples of the new clue style (fewer bare synonyms) from the AI prompt, before the
-      campaign's clues are rewritten in that style.
 - [ ] **Secret worlds.** Each one's look, boss, story scene and arrival animation, as they're finished.
 - [ ] **The Beta strip** (+500 Coins, Unlock All, on the campaign map). Keep it for the relaunch or switch it off?
 - [ ] **Before the merge.** A play-through checklist of the finished update before it replaces the live site.

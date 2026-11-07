@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 /*
- * Steps 15c and 17 with the REAL Claude API. These cost a little money, so they're skipped unless you ask:
+ * Clue writing and dailies with the REAL Claude API. These cost a little money, so they're skipped unless you ask:
  *
  *   mvn test -Dlive=true                         (everything, including these)
  *   mvn test -Dlive=true -Dtest=LiveClaudeTest   (only these)
@@ -22,6 +22,27 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
  */
 @EnabledIfSystemProperty(named = "live", matches = "true")
 class LiveClaudeTest {
+
+    // Sample clues at each difficulty to read (draft, review, rewrite of anything flagged), with what it cost.
+    // About 15 cents.
+    @Test
+    void sampleCluesAtEachDifficulty() {
+        assertTrue(ClueWriter.hasApiKey(), "no API key");
+        java.util.Map<String, java.util.Map<Integer, List<String>>> lists =
+                java.util.Map.of("easy", TestWords.easy(), "medium", TestWords.everyday(), "hard", TestWords.hard());
+        long seed = 9001;
+        for (String difficulty : List.of("easy", "medium", "hard")) {
+            char[][] grid = PuzzleStore.buildGrid(seed++, lists.get(difficulty));
+            List<String> answers = new ArrayList<>();
+            for (Slot slot : Slot.findAllSlots(PuzzleStore.SHAPE)) answers.add(slot.getPattern(grid));
+            ClueWriter.ClueSet clues = ClueWriter.writeClues(answers, difficulty);
+            System.out.println("\n" + difficulty.toUpperCase());
+            for (ClueWriter.Clue clue : clues.clues()) System.out.println("  " + clue.answer() + ": " + clue.clue());
+            assertEquals(List.of(), ClueWriter.findProblems(clues, answers));
+        }
+        System.out.printf("%nClaude: %d calls, %d tokens in, %d out, about $%.3f%n", ClueWriter.CALLS.get(),
+                ClueWriter.INPUT_TOKENS.get(), ClueWriter.OUTPUT_TOKENS.get(), ClueWriter.estimatedCost());
+    }
 
     @Test
     void claudesCluesPassEveryCheck() {
