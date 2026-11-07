@@ -5,14 +5,9 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
-- [ ] **Pick a redesign direction.** https://claude.ai/artifact/LzQzyKbpcskqALsXQzCaAM (private to you).
-      Three directions: **A Passport** (tickets and stamps), **B Transit** (a departures board and a line diagram;
-      my pick, for clarity) and **C Storybook** (the Everbook as the app). The first board explains them; each row
-      below it has Home, a puzzle and the campaign on a computer, then the same three on a phone. Press Play on a
-      board to use it: on the puzzles, click a square, click it again to switch Across and Down, click clues, open
-      Check or Reveal; on the phones the keys type. Each board's World tweak swaps Garden for Deep Space.
-      Reply with A, B or C (or a mix, like "B with A's stamps") and anything you'd change. Or say "standard" for a
-      plain, familiar puzzle-app look. The redesign isn't built until you choose; I'm working on the fixes meanwhile.
+- [x] **Redesign direction.** Answered: the campaign screen gets the big redesign; Home stays (with touches from
+      the other repos' resources). Options to pick from will be at http://localhost:8080/demo (run the game locally
+      with `mvn spring-boot:run`); I'll say here and in chat when they're ready.
 
 - [x] **The live site.** It answered "503 unavailable" before any change, but it's up again and serving the update
       page (checked 2026-11-07).

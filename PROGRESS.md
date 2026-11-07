@@ -95,7 +95,11 @@ deleted after everything is done.
       A, B and C; phone boards dc-import the computer board with sfx="-Phone"). c.css was re-uploaded as
       /_blob/fe092ad3c43491db6bd745c47244dbec (the C boards use it). A local copy of every file is in
       `.claude/design/redesign-canvas/`.
-- [ ] Wait for the user's pick (don't build the redesign before it)
+- [x] The user's answer (2026-11-07, after seeing the canvas): **the campaign screen needs a huge redesign** (the
+      whole thing: map, level sheets, boss screen); **Home is fine**, but the resources from the other repos (TerraSim's
+      design skills, RhythmArchitect's renderer and tools) can come into play. **From now on, show options to pick
+      at a local `/demo` page** (on the local server) and tell the user when they're ready. A, B, C weren't picked
+      as such; take what fits the campaign from them.
 
 ### Phase 3: Reliability and backend (P0)
 - [x] **Dailies made ahead:** a scheduled job (`DailyMaker`) writes and checks the next N days of all five dailies
@@ -227,13 +231,15 @@ deleted after everything is done.
 - [ ] The world-arrival animation plays when you move on after a boss or pick the next world's level; the
       Rift's plays after the Void
 
-### Phase 5: The redesign (after the user picks a direction)
-- [ ] Design system: tokens (colour, type, spacing, radius, motion), components, light/dark/System (default System)
-- [ ] App shell and navigation; a world/theme control players find at once
-- [ ] Home, Daily, results, Stats, Settings, How to Play, legal pages
-- [ ] The puzzle screen: clearer Across/Down direction, clue bar, red pulse on a full board with errors
-- [ ] Campaign map and level selection: clear completion, optional challenges, secret-world branches
-- [ ] Level sheets and the boss screen
+### Phase 5: The redesign (the user's answer: the campaign screen, big; Home stays)
+- [ ] `/demo` on the local server: a page listing options to pick from, off in production (the Dockerfile)
+- [ ] Campaign redesign options at `/demo` (2-3 working directions for the whole campaign screen: the map, level
+      selection, level sheets, the boss sheet, the shop), desktop and phone, using the design skills (TerraSim)
+      and RhythmArchitect's renderer ideas; tell the user; wait for the pick
+- [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
+      secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
+- [ ] Home: keep it; small touches only (from the other repos' resources), shown at `/demo` first
+- [ ] The puzzle screen: clearer Across/Down direction, clue bar, red pulse on a full board with errors (a demo first)
 - [ ] Phone layout review (all screens)
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
       time, pause when hidden (ideas from RhythmArchitect)
