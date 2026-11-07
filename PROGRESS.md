@@ -85,14 +85,16 @@ deleted after everything is done.
       (audit, in short: no clear next step on Home; Check/Reveal below the fold; Across/Down hard to see; the map shows
       ~4 levels at a time with tiny unlabeled world icons and an 8-button top bar; the boss screen is overloaded and the
       companion's bubble covers the abilities; emoji icons differ by device; kickers, hard offset shadows, glows)
-- [ ] 2-3 directions as clickable mockups (Home, a puzzle, the campaign map), desktop and phone; add to REVIEW.md
+- [x] 2-3 directions as clickable mockups (Home, a puzzle, the campaign map), desktop and phone; add to REVIEW.md
       IN PROGRESS: Design canvas https://claude.ai/artifact/LzQzyKbpcskqALsXQzCaAM (local files in the session
       scratchpad `redesign-canvas/`; if lost, rebuild from this note). Directions: A Passport (tickets, stamps,
       Big Shoulders Display + Figtree), B Transit (departures board, line diagram, Atkinson Hyperlegible; my pick),
       C Storybook (the Everbook, spreads, table of contents, Alegreya + Alegreya Sans). Stylesheets uploaded as
       assets: a.css /_blob/f6068e7ae09e1ddc49f167c02fb96be6, b.css /_blob/d546a5f2effa8760a8b5e30722a40d24,
-      c.css /_blob/4290894908d6e860f2bf63a369264d23. Boards done: Main (overview), A-Home. To do: A-Puzzle, A-Map,
-      the 3 A phone wrappers (dc-import of the desktop board with sfx="-Phone"), then B and C the same way.
+      c.css /_blob/4290894908d6e860f2bf63a369264d23. All 19 boards published (Main overview + Home/Puzzle/Map, computer and phone, for
+      A, B and C; phone boards dc-import the computer board with sfx="-Phone"). c.css was re-uploaded as
+      /_blob/fe092ad3c43491db6bd745c47244dbec (the C boards use it). A local copy of every file is in
+      `.claude/design/redesign-canvas/`.
 - [ ] Wait for the user's pick (don't build the redesign before it)
 
 ### Phase 3: Reliability and backend (P0)
@@ -233,3 +235,4 @@ deleted after everything is done.
 - 2026-11-07: Phase 1 done. Unlimited, the Unlimited Boss, Allow Harder Words, `/api/unlimited*` and the
   `UNLIMITED_*` settings are gone; boot.js drops their saved data once (`schmoll.noUnlimited`). 118 JUnit tests pass;
   the browser check found no errors. Home's Daily and Your Streak now sit side by side.
+- 2026-11-07: Phase 2 directions published for the user to pick (REVIEW.md). Waiting on the pick; Phase 3 next.

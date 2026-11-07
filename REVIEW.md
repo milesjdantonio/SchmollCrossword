@@ -5,6 +5,15 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
+- [ ] **Pick a redesign direction.** https://claude.ai/artifact/LzQzyKbpcskqALsXQzCaAM (private to you).
+      Three directions: **A Passport** (tickets and stamps), **B Transit** (a departures board and a line diagram;
+      my pick, for clarity) and **C Storybook** (the Everbook as the app). The first board explains them; each row
+      below it has Home, a puzzle and the campaign on a computer, then the same three on a phone. Press Play on a
+      board to use it: on the puzzles, click a square, click it again to switch Across and Down, click clues, open
+      Check or Reveal; on the phones the keys type. Each board's World tweak swaps Garden for Deep Space.
+      Reply with A, B or C (or a mix, like "B with A's stamps") and anything you'd change. Or say "standard" for a
+      plain, familiar puzzle-app look. The redesign isn't built until you choose; I'm working on the fixes meanwhile.
+
 - [ ] **The live site.** schmollcrossword.com answered "503 unavailable" on 2026-11-07, before any change. After
       the update page is pushed, check that your host deployed it (it should look like the intro, with a
       Play the Current Version button). If the site is still 503, the host itself needs a look (a paused or
@@ -14,8 +23,6 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 These aren't ready yet. Each one moves up when it is.
 
-- [ ] **Redesign directions.** 2-3 clickable mockups (Home, a puzzle, the campaign map) on desktop and phone.
-      Pick one, or mix parts. The redesign isn't built until you choose.
 - [ ] **Difficulty slope.** A chart of how hard every campaign level is, predicted from its words, clues, grid size
       and boss speed. Tell me what the curve should be and I'll change it.
 - [ ] **Music loops.** For each fixed song, a short preview of the loop point (the end running into the start).
