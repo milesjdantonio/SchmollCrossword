@@ -300,6 +300,15 @@ deleted after everything is done.
       behind faded at the start and getting its colour back as you fill squares (`--solve` on the root, a filter on
       `#world-bg`), a pool of stage light, and in campaign levels your hero beside the board, hopping at a finished
       word, cheering at a win, wobbling at a full-but-wrong board (`.ps-hero`, `Campaign.hero()`).
+- [x] **The journey** (`js/journey.js`, play.css; the user, 2026-11-16: "it needs a scene, i want to feel like im
+      traveling through an active world trying to save something important"; their answers: side-scrolling AND flying
+      forward, atmosphere only (nothing can lose the level), campaign levels only, full spectacle but light by the
+      board and never covering it). Behind campaign levels 1-4 on the play stage: the land scrolls past in four
+      layers built from the world's `BIOMES` colours and `PROPS` scenery, always moving and faster while you type;
+      the hero walks the road; the boss stands on the horizon with its page and beam and comes nearer as squares fill
+      (`--solve`); the Void's shadow with torn pages trails at the left and falls back; loose letters blow across the
+      sky; a finished word surges you forward (speed lines from the page, the land swells) and its letters fly to the
+      page as light; the boss answers back now and then. It goes by squares FILLED, never by right letters.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)
