@@ -35,7 +35,12 @@
 @keyframes board-nope { 15% { translate: -9px 0; } 30% { translate: 8px 0; } 45% { translate: -6px 0; } 60% { translate: 4px 0; } 75% { translate: -2px 0; } }
 .board.nope::before { content: ""; position: absolute; inset: -4px; z-index: 5; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 4px #e5484d, 0 0 34px 8px rgba(229, 72, 77, .65); animation: nope-ring .9s ease-out forwards; }
 @keyframes nope-ring { to { opacity: 0; } }
-.ps-exit { display: none; }
+.ps-exit, .ps-hero { display: none; }
+/* a finished word's wave through the other squares (--rd: how far the square is from the word) */
+.cell.ripple { animation: cell-ripple .55s cubic-bezier(.3, .6, .3, 1) both; animation-delay: calc(var(--rd, 0) * 75ms); }
+@keyframes cell-ripple { 40% { translate: 0 -4px 20px; } }
+/* the world behind the puzzle is faded at the start and gets its colour back as you solve (--solve: 0 to 1) */
+html[data-view="game"] #world-bg { filter: saturate(calc(.4 + var(--solve, 1) * .6)) brightness(calc(.86 + var(--solve, 1) * .14)); transition: filter 1s ease; }
 
 /* ---------------- the play stage: the whole screen is the puzzle ---------------- */
 /* A computer-sized window, and not a boss fight (which has its own layout). The site's bar goes; the board is as
@@ -89,5 +94,36 @@
     html.no-help[data-view="game"]:not(.boss-stage):not(.in-boss) .helpers { padding: 0; border: 0; background: none; box-shadow: none; min-height: 0; }
     html[data-view="game"]:not(.boss-stage):not(.in-boss) .mascot { right: 18px; bottom: 10px; }
 }
+@media (min-width: 981px) and (min-height: 620px) {
+    /* stage light: a pool of light where the board stands, the edges of the screen a little darker */
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) #game-view::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+        background: radial-gradient(46% 50% at 36% 62%, color-mix(in srgb, var(--surface-solid) 46%, transparent), transparent 72%),
+            radial-gradient(120% 100% at 38% 52%, transparent 52%, color-mix(in srgb, var(--bg) 66%, transparent) 100%); }
+    /* the board is truly 3D: the word you're on rises out of it, and the square you're on rises higher */
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board-wrap { transform-style: preserve-3d; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board { isolation: auto; z-index: 0; transform-style: preserve-3d; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .cell { transition: translate .22s cubic-bezier(.2, 1.4, .4, 1), box-shadow .22s; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .cell.in-word { translate: 0 0 10px; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .cell.in-word:not(.locked):not(.revealed):not(.wrong) { box-shadow: 0 9px 10px -5px rgba(0, 0, 0, .34); }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .cell.selected { translate: 0 0 20px; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .cell.selected:not(.locked):not(.revealed):not(.wrong) { box-shadow: 0 16px 16px -7px rgba(0, 0, 0, .4), 0 0 0 2px var(--accent); }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board.solved .cell, html[data-view="game"]:not(.boss-stage):not(.in-boss) .board.surrendered .cell { translate: none; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board .deco-layer { translate: 0 0 10px; }
+    /* a new board lands from above */
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .board-wrap.drop { animation: board-drop .95s cubic-bezier(.2, 1.15, .3, 1) backwards; }
+    @keyframes board-drop { from { transform: translateY(-80vh) rotateX(75deg) rotateZ(-10deg); opacity: 0; } 60% { opacity: 1; } }
+    /* your hero beside the board */
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero { display: block; position: absolute; right: calc(100% + 14px); bottom: -22px; width: clamp(96px, 11vw, 160px); aspect-ratio: 1; pointer-events: none; filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .3)); transform-origin: 50% 100%; animation: ps-idle 3s ease-in-out infinite; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero[hidden] { display: none; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero svg { display: block; width: 100%; height: 100%; }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero.hop { animation: ps-hop .55s cubic-bezier(.3, 1.4, .5, 1); }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero.cheer { animation: ps-cheer 1.4s cubic-bezier(.3, 1.3, .5, 1); }
+    html[data-view="game"]:not(.boss-stage):not(.in-boss) .ps-hero.oops { animation: ps-oops .6s ease-in-out; }
+    @keyframes ps-idle { 50% { scale: 1.02 .97; } }
+    @keyframes ps-hop { 35% { translate: 0 -34px; scale: .94 1.08; } 70% { translate: 0 0; scale: 1.08 .92; } }
+    @keyframes ps-cheer { 20% { translate: 0 -46px; rotate: -12deg; } 40% { translate: 0 0; rotate: 0deg; } 60% { translate: 0 -46px; rotate: 12deg; } 80% { translate: 0 0; rotate: 0deg; } }
+    @keyframes ps-oops { 20% { rotate: -9deg; } 45% { rotate: 8deg; } 70% { rotate: -5deg; } }
+}
+@media (max-width: 1240px) { .ps-hero { display: none !important; } }
 @media (max-width: 760px) { .tool-btn { padding: 0 11px; } .tool-btn .tool-label { display: none; } }
-@media (prefers-reduced-motion: reduce) { .board.nope, .flow-chip.pop { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .board.nope, .flow-chip.pop, .cell.ripple, .board-wrap.drop, .ps-hero { animation: none !important; } }

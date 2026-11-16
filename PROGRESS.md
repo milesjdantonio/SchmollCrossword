@@ -294,6 +294,12 @@ deleted after everything is done.
       letters without a 3.5 s pause or a Backspace: a chip and a glow round the board; only for feel).
       `boss-stage` on the root (campaign.js `syncHelp`) marks a boss level before its panel arrives.
       Checked at 1440x900 (daily, 5x5 and 6x6 levels, a boss) and 390x844: no errors.
+- [x] The play stage's show (the user, 2026-11-16: "now give it some sort of wow factor"): a real 3D board (the word
+      you're on rises out of it, your square higher: `translate` z on `.cell.in-word` / `.selected`), a wave through
+      the board when a word is finished (`ripple`), the board landing from above (`.board-wrap.drop`), the world
+      behind faded at the start and getting its colour back as you fill squares (`--solve` on the root, a filter on
+      `#world-bg`), a pool of stage light, and in campaign levels your hero beside the board, hopping at a finished
+      word, cheering at a win, wobbling at a full-but-wrong board (`.ps-hero`, `Campaign.hero()`).
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)

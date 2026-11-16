@@ -324,6 +324,7 @@ const Game = (() => {
             }
         }
         U.restart(boardEl, "deal");
+        if (U.motion() === "full") U.restart(boardEl.parentElement, "drop");          // (the play stage: the board lands from above)
         // the deal over, take its animation off: while it's on, every square is its own layer, so a world's board
         // decorations (the Garden's vines) were drawn over the letters
         const dealt = boardEl.firstChild;
@@ -468,6 +469,8 @@ const Game = (() => {
         const k = open ? filled / open : 0;
         ringEl.style.strokeDashoffset = String(100 - k * 100);
         pctEl.textContent = Math.round(k * 100) + "%";
+        // the world behind the puzzle starts faded and gets its colour back as the squares fill (play.css)
+        document.documentElement.style.setProperty("--solve", (game.solved || U.motion() !== "full" ? 1 : k).toFixed(3));
         drawBanner();
         // every square filled and it isn't solved: something is wrong somewhere (said once each time the board fills up)
         const fullNow = open > 0 && filled === open && !game.solved && !isSolved();
@@ -482,6 +485,7 @@ const Game = (() => {
                 Bus.emit("word", { entry, cells, right: cells.every(([r, c]) => game.letters[r][c] === game.puzzle.solution[r][c]) });
                 cells.forEach(([r, c], i) => setTimeout(() => game.cells[r] && U.restart(game.cells[r][c], "wave"), i * 50));
             }
+            ripple(justDone[0][1]);
         }
         saveProgress();
     }
@@ -498,8 +502,36 @@ const Game = (() => {
         const other = (current.direction === "across" ? game.downAt : game.acrossAt)[game.row][game.col];
         if (other) clueBarEl.append(U.el("span", { class: "cb-cross" }, U.el("b", { text: `${other.number} ${other.direction === "across" ? "Across" : "Down"}` }), U.el("span", { text: other.clue })));
     }
+    // a finished word sends a wave out across the rest of the board
+    function ripple(from) {
+        if (U.motion() !== "full" || !from.length) return;
+        const cr = from.reduce((n, [r]) => n + r, 0) / from.length, cc = from.reduce((n, [, c]) => n + c, 0) / from.length;
+        const inWord = new Set(from.map(([r, c]) => r + "," + c));
+        game.cells.forEach((row, r) => row.forEach((cell, c) => {
+            if (inWord.has(r + "," + c)) return;
+            cell.style.setProperty("--rd", Math.hypot(r - cr, c - cc).toFixed(2));
+            U.restart(cell, "ripple");
+        }));
+    }
+    // In a campaign level your hero stands beside the board (the play stage) and reacts to how it's going
+    const heroEl = U.el("div", { class: "ps-hero", "aria-hidden": "true", hidden: true });
+    boardEl.parentElement.append(heroEl);
+    let heroFor = "";
+    function drawStageHero() {
+        const p = game.puzzle, look = p && p.mode === "campaign" && !p.special && !Campaign.isBossLevel(p) ? Campaign.hero() : null;
+        heroEl.hidden = !look;
+        if (!look) { heroFor = ""; return; }
+        const key = JSON.stringify(look);
+        if (key !== heroFor) { heroFor = key; heroEl.innerHTML = Hero.svg(look); }
+    }
+    const heroDo = what => { if (!heroEl.hidden && U.motion() !== "still") U.restart(heroEl, what); };
+    Bus.on("puzzle", drawStageHero);
+    Bus.on("resume", drawStageHero);
+    Bus.on("word", () => heroDo("hop"));
+    Bus.on("win", () => heroDo("cheer"));
     let boardFull = false;
     function notQuite() {
+        heroDo("oops");
         U.restart(boardEl, "nope");
         Sound.play("wrong");
         FX.toast({ icon: "!", kicker: "ALMOST", title: "Something's Not Right", text: "Every square is filled, but at least one letter is wrong.", cls: "nope-toast", ms: 3400 });
