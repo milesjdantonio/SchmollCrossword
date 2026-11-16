@@ -281,7 +281,21 @@ deleted after everything is done.
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
 - [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher
       finish using the other repos' resources; shown at `/demo` first
-- [ ] The puzzle screen: clearer Across/Down direction, clue bar, red pulse on a full board with errors (a demo first)
+- [x] The puzzle screen (the user, 2026-11-16: "make some major advancements to the actual crossword gameplay ... it
+      feels like its lacking behind now"; built straight in, no demo). `css/play.css`, game.js:
+      **the play stage** (a computer-sized window, not a boss fight: `html[data-view="game"]:not(.boss-stage)`): the
+      site's bar goes, a back button, the board as a thick slab as big as the window allows that leans toward the
+      pointer, the clues in a panel down the side, Check/Reveal and the items on one line each.
+      **The spotlight** (`drawSpotlight`, every layout except boss fights, whose moves hide letters and clues): under
+      the active clue, the answer so far in letter slots and the clue crossing your square.
+      **Pencil** (`game.pencil`, the Pencil button or Shift + a letter: guesses shown lighter; saved; they still
+      count). **Something's Not Right** (`notQuite`: the board shakes with a red ring and a notice when every square
+      is filled but it isn't solved). **Per-clue progress** (a bar under each clue, `--k`). **Flow** (`flowType`: 6+
+      letters without a 3.5 s pause or a Backspace: a chip and a glow round the board; only for feel).
+      `boss-stage` on the root (campaign.js `syncHelp`) marks a boss level before its panel arrives.
+      Checked at 1440x900 (daily, 5x5 and 6x6 levels, a boss) and 390x844: no errors.
+- [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
+      phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
       time, pause when hidden (ideas from RhythmArchitect)

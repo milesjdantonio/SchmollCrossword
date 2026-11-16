@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="css/worlds.css">
     <link rel="stylesheet" href="css/campaign.css">
     <link rel="stylesheet" href="css/hero.css">
+    <link rel="stylesheet" href="css/play.css">
     <link rel="stylesheet" href="css/travel.css">
     <link rel="stylesheet" href="css/story.css">
     <link rel="stylesheet" href="css/corruption.css">
@@ -123,6 +124,7 @@
             <!-- ======================== GAME ======================== -->
             <section id="game-view" class="screen" hidden>
                 <div class="game-head">
+                    <button type="button" class="ps-exit" id="game-exit" aria-label="Leave the puzzle"></button>
                     <div class="game-titles">
                         <h1 id="game-title">Daily Puzzle</h1>
                         <p class="subtitle" id="game-subtitle"></p>
@@ -147,7 +149,9 @@
                                 <span class="pct" id="progress-pct">0%</span>
                             </div>
                             <span class="time-bonus" id="time-bonus" hidden><small>Time Bonus</small><b id="time-bonus-pts">+90</b><span id="time-bonus-left">1:00</span></span>
+                            <span class="flow-chip" id="flow-chip" hidden></span>
                             <span class="points-today" id="points-today"></span>
+                            <button type="button" class="tool-btn" id="pencil-btn" aria-pressed="false" title="Pencil: letters you aren't sure of (or hold Shift while typing)"><span class="tool-label">Pencil</span></button>
                             <div class="world-hud" id="world-hud"></div>
                         </div>
                         <div class="result-banner" id="result-banner" hidden></div>

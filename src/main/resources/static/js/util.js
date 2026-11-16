@@ -231,7 +231,8 @@ const U = (() => {
         ribbon: '<path d="M6 2.5h12v19l-6-4.2-6 4.2z"/>',
         clock: '<circle cx="12" cy="12" r="9.5"/><path d="M12 6.8V12l3.6 2.2"/>',
         replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4.5h4.5"/>',
-        map: '<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>'
+        map: '<path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/>',
+        pencil: '<path d="M4 20l1-4.5L16.5 4a2.1 2.1 0 0 1 3 0l.5.5a2.1 2.1 0 0 1 0 3L8.5 19z"/><path d="M14.5 6l3.5 3.5"/>'
     };
     const FILLED = new Set(["star", "play", "bolt", "ribbon"]);
     for (const [name, paths] of Object.entries(LINE)) {

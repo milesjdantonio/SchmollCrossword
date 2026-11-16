@@ -27,6 +27,8 @@ const Game = (() => {
         solved: false,       // every square right (or the whole puzzle revealed)
         surrendered: false,  // "Reveal puzzle" was used: 0 points
         wrong: [], revealed: [],
+        pencil: [],          // pencil[row][col]: that letter is a guess (shown lighter)
+        pencilMode: false,   // the Pencil button is on
         squaresChecked: 0, squaresRevealed: 0, checks: 0,
         typos: 0, itemsUsed: 0,  // wrong letters typed, shop items used (campaign stars)
         celebrating: false,  // the win cinematic is playing
@@ -122,7 +124,7 @@ const Game = (() => {
     }
     function snapshot() {
         return JSON.parse(JSON.stringify({
-            seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked,
+            seed: game.puzzle.seed, print: fingerprint(game.puzzle), letters: game.letters, wrong: game.wrong, revealed: game.revealed, locked: game.locked, pencil: game.pencil,
             seconds: game.seconds, solved: game.solved, surrendered: game.surrendered, checks: game.checks,
             squaresChecked: game.squaresChecked, squaresRevealed: game.squaresRevealed, typos: game.typos, itemsUsed: game.itemsUsed,
             row: game.row, col: game.col, direction: game.direction, result: game.result, ticket: game.ticket || null, revealWords: game.revealWords || 0
@@ -132,6 +134,7 @@ const Game = (() => {
         Object.assign(game, {
             letters: saved.letters, wrong: saved.wrong, revealed: saved.revealed, seconds: saved.seconds,
             locked: saved.locked || saved.letters.map(row => row.map(() => false)),      // older saves had no locks
+            pencil: saved.pencil || saved.letters.map(row => row.map(() => false)),
             solved: saved.solved, surrendered: saved.surrendered, squaresChecked: saved.squaresChecked,
             squaresRevealed: saved.squaresRevealed, checks: saved.checks || 0, typos: saved.typos || 0, itemsUsed: saved.itemsUsed || 0,
             row: saved.row, col: saved.col, direction: saved.direction, celebrating: false, ticket: saved.ticket || null, revealWords: saved.revealWords || 0
@@ -231,7 +234,7 @@ const Game = (() => {
         else if (!sameGrid) {
             const blank = v => puzzle.solution.map(row => Array.from(row, () => v));
             Object.assign(game, {
-                letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), seconds: 0, solved: false, surrendered: false,
+                letters: blank(""), wrong: blank(false), revealed: blank(false), locked: blank(false), pencil: blank(false), seconds: 0, solved: false, surrendered: false,
                 squaresChecked: 0, squaresRevealed: 0, checks: 0, typos: 0, itemsUsed: 0, celebrating: false, result: null, ticket: null, revealWords: 0
             });
         }
@@ -399,6 +402,7 @@ const Game = (() => {
         const hk = game.puzzle.mode + ":" + game.puzzle.seed;
         if (hitsFor !== hk) { hits.clear(); hitsFor = hk; }
         const current = currentEntry(), size = game.puzzle.size;
+        if (!game.pencil || game.pencil.length !== size) game.pencil = game.puzzle.solution.map(row => Array.from(row, () => false));
         let filled = 0, open = 0;
         for (let row = 0; row < size; row++) {
             for (let col = 0; col < size; col++) {
@@ -407,7 +411,9 @@ const Game = (() => {
                 const cell = game.cells[row][col], letter = game.letters[row][col];
                 if (letter) filled++;
                 cell.querySelector(".ltr").textContent = letter;
+                if (game.pencil[row][col] && (!letter || isLocked(row, col))) game.pencil[row][col] = false;
                 cell.classList.toggle("filled", !!letter);
+                cell.classList.toggle("pencil", game.pencil[row][col]);
                 cell.classList.toggle("in-word", current !== null && entryCovers(current, row, col));
                 cell.classList.toggle("selected", row === game.row && col === game.col && !game.solved);
                 cell.classList.toggle("wrong", game.wrong[row][col]);
@@ -435,7 +441,7 @@ const Game = (() => {
         for (const entry of allEntries()) {
             const cells = cellsOf(entry), isFull = cells.every(([r, c]) => game.letters[r][c] !== "");
             const item = game.clueItems.get(entry);
-            if (item) { item.classList.toggle("active", entry === current); item.classList.toggle("done", isFull); }
+            if (item) { item.classList.toggle("active", entry === current); item.classList.toggle("done", isFull); item.style.setProperty("--k", (cells.filter(([r, c]) => game.letters[r][c] !== "").length / cells.length).toFixed(2)); }
             if (!isFull) continue;
             const id = entry.direction + entry.number;
             full.add(id);
@@ -456,12 +462,17 @@ const Game = (() => {
                 U.el("span", { class: "cb-num", text: current.number + (current.direction === "across" ? "A" : "D") }),
                 U.el("span", { class: "cb-dir", "aria-hidden": "true", text: current.direction === "across" ? "→" : "↓" }),
                 U.el("span", { class: "cb-text", text: current.clue }));
+            drawSpotlight(current);
         }
         // the progress ring
         const k = open ? filled / open : 0;
         ringEl.style.strokeDashoffset = String(100 - k * 100);
         pctEl.textContent = Math.round(k * 100) + "%";
         drawBanner();
+        // every square filled and it isn't solved: something is wrong somewhere (said once each time the board fills up)
+        const fullNow = open > 0 && filled === open && !game.solved && !isSolved();
+        if (fullNow && !boardFull && doneWords && doneKey === key) notQuite();
+        boardFull = fullNow;
         Worlds.board("update", game, boardEl);
         if (justDone.length && !game.solved) {
             Sound.play("word");
@@ -473,6 +484,42 @@ const Game = (() => {
             }
         }
         saveProgress();
+    }
+
+    // Under the active clue: the answer so far, one slot a letter (the square you're on is ringed), and the clue
+    // that crosses the square you're on. Not in a boss fight: its moves hide letters and clues, and these would give
+    // them away.
+    function drawSpotlight(current) {
+        if (Campaign.isBossLevel(game.puzzle)) return;
+        const cells = cellsOf(current);
+        clueBarEl.append(U.el("span", { class: "cb-slots", "aria-hidden": "true" },
+            ...cells.map(([r, c]) => U.el("i", { class: "cb-slot" + (r === game.row && c === game.col ? " cur" : "") + (game.pencil[r][c] ? " pen" : "") + (isLocked(r, c) ? " lock" : ""), text: game.letters[r][c] })),
+            U.el("small", { text: `${cells.length} Letters` })));
+        const other = (current.direction === "across" ? game.downAt : game.acrossAt)[game.row][game.col];
+        if (other) clueBarEl.append(U.el("span", { class: "cb-cross" }, U.el("b", { text: `${other.number} ${other.direction === "across" ? "Across" : "Down"}` }), U.el("span", { text: other.clue })));
+    }
+    let boardFull = false;
+    function notQuite() {
+        U.restart(boardEl, "nope");
+        Sound.play("wrong");
+        FX.toast({ icon: "!", kicker: "ALMOST", title: "Something's Not Right", text: "Every square is filled, but at least one letter is wrong.", cls: "nope-toast", ms: 3400 });
+    }
+    // Flow: letters typed one after another without a long pause. Only for the feel of it: the board glows.
+    let flow = 0, flowAt = 0, flowTimer = 0;
+    function setFlow(n) {
+        flow = n;
+        const chip = $("#flow-chip"), wrap = boardEl.parentElement;
+        wrap.classList.toggle("flowing", n >= 6);
+        wrap.style.setProperty("--flow", Math.min(1, n / 16).toFixed(2));
+        chip.hidden = n < 6;
+        if (n >= 6) { chip.textContent = `Flow ×${n}`; if (n === 6 || n % 5 === 0) U.restart(chip, "pop"); }
+    }
+    function flowType() {
+        const now = performance.now();
+        setFlow(now - flowAt < 3500 ? flow + 1 : 1);
+        flowAt = now;
+        clearTimeout(flowTimer);
+        flowTimer = setTimeout(() => setFlow(0), 3600);
     }
 
     // Keep the active clue visible inside its own scrolling list, without moving the page (scrollIntoView also
@@ -983,7 +1030,7 @@ const Game = (() => {
         game.direction = entry.direction;
         render();
     }
-    function typeLetter(letter) {
+    function typeLetter(letter, pencil = false) {
         touched();
         const row = game.row, col = game.col, cell = game.cells[row][col];
         const wasFull = isFull(currentEntry());           // correcting a finished word: move one square at a time
@@ -991,6 +1038,8 @@ const Game = (() => {
             if (letter !== game.puzzle.solution[row][col] && game.letters[row][col] !== letter) game.typos = (game.typos || 0) + 1;
             game.letters[row][col] = letter;
             game.wrong[row][col] = false;
+            if (game.pencil[row]) game.pencil[row][col] = pencil || game.pencilMode;
+            flowType();
             U.restart(cell, "typed");
             Sound.play("type", { row, col });
             Worlds.board("type", cell, row, col, game);
@@ -1026,6 +1075,7 @@ const Game = (() => {
     }
     function backspace() {
         touched();
+        setFlow(0);
         const clear = (row, col) => {
             if (isLocked(row, col)) return;
             if (game.letters[row][col] !== "") { Sound.play("erase"); Bus.emit("erase", { row, col }); }
@@ -1070,7 +1120,7 @@ const Game = (() => {
         if (event.target.closest && event.target.closest("input, select, textarea")) return;
         if (game.solved) return;
         const key = event.key;
-        if (/^[a-zA-Z]$/.test(key)) typeLetter(key.toUpperCase());
+        if (/^[a-zA-Z]$/.test(key)) typeLetter(key.toUpperCase(), event.shiftKey && !event.getModifierState("CapsLock"));
         else if (key === "Backspace" || key === "Delete") backspace();
         else if (key === "ArrowLeft") moveArrow(0, -1);
         else if (key === "ArrowRight") moveArrow(0, 1);
@@ -1101,6 +1151,34 @@ const Game = (() => {
         else typeLetter(key);
     });
     clueBarEl.addEventListener("click", () => { if (game.puzzle && !game.solved && !blocked()) toggleDirection(); });
+    // Pencil: letters typed while it's on (or with Shift held) are guesses, shown lighter
+    const pencilBtn = $("#pencil-btn");
+    pencilBtn.prepend(U.icon("pencil"));
+    pencilBtn.addEventListener("click", () => {
+        game.pencilMode = !game.pencilMode;
+        pencilBtn.setAttribute("aria-pressed", game.pencilMode ? "true" : "false");
+        Sound.play("toggle");
+        pencilBtn.blur();
+    });
+    // leaving the puzzle: a campaign level goes back to its world, anything else goes Home
+    const exitBtn = $("#game-exit");
+    exitBtn.append(U.icon("back"));
+    exitBtn.addEventListener("click", () => { location.hash = U.view() === "level" && Campaign.playing && !Campaign.playing.special ? "#campaign" : "#"; });
+    // the board leans a little toward the pointer (the full-screen layout, with a mouse)
+    const tilt = { x: 0, y: 0, tx: 0, ty: 0, raf: 0 };
+    function tiltStep() {
+        tilt.x += (tilt.tx - tilt.x) * 0.08; tilt.y += (tilt.ty - tilt.y) * 0.08;
+        const wrap = boardEl.parentElement;
+        wrap.style.setProperty("--tx", tilt.x.toFixed(4));
+        wrap.style.setProperty("--ty", tilt.y.toFixed(4));
+        tilt.raf = Math.abs(tilt.tx - tilt.x) + Math.abs(tilt.ty - tilt.y) > 0.002 && !gameViewEl.hidden ? requestAnimationFrame(tiltStep) : 0;
+    }
+    const tiltTo = (x, y) => { tilt.tx = x; tilt.ty = y; if (!tilt.raf) tilt.raf = requestAnimationFrame(tiltStep); };
+    gameViewEl.addEventListener("pointermove", e => {
+        if (e.pointerType !== "mouse" || U.motion() !== "full" || !game.puzzle) return;
+        tiltTo(e.clientX / innerWidth - 0.5, e.clientY / innerHeight - 0.5);
+    });
+    gameViewEl.addEventListener("pointerleave", () => tiltTo(0, 0));
     document.querySelectorAll(".clue-step").forEach(b => b.addEventListener("click", () => {
         if (game.puzzle && !game.solved && !blocked()) moveToEntry(Number(b.dataset.step));
     }));

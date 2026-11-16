@@ -839,6 +839,7 @@ const Campaign = (() => {
     // Into the level view. From inside a level (a rematch from a lose card, the next level) the hash
     // doesn't change, so onView doesn't run: put on the level's world here, or the last one's scene, board and win stay
     function enterLevel() {
+        syncHelp();
         if (U.view() === "level") { Worlds.use(data.playing.world); Game.show("level"); }
         else location.hash = "#level";
     }
@@ -928,10 +929,12 @@ const Campaign = (() => {
     // different moments, so Check and Reveal sometimes showed and sometimes didn't)
     function syncHelp() {
         root.classList.toggle("no-help", U.view() === "level" && !!data.playing && !data.playing.special);
+        root.classList.toggle("boss-stage", U.view() === "level" && !!data.playing && data.playing.level === 5);     // (a boss fight has its own layout)
     }
     Bus.on("puzzle", syncHelp);
     function onView(view) {
         root.classList.toggle("no-help", view === "level" && !!data.playing && !data.playing.special);
+        root.classList.toggle("boss-stage", view === "level" && !!data.playing && data.playing.level === 5);
         root.classList.toggle("in-campaign", view === "campaign" || view === "level");
         root.classList.toggle("in-map", view === "campaign");
         root.classList.toggle("in-level", view === "level");
