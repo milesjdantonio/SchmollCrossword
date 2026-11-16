@@ -269,8 +269,14 @@ deleted after everything is done.
       level it opens at the Shop (Shop and Help only). The old map, shop, skill-book and ability-picker code and CSS
       are gone. Checked in the test browser at 1440x900, 1280x620 and 390x844: no errors; play, buy, equip, keys, jumps.
       Port note: 8080 on this PC is often another project (HokieBikeRack); run ours with `PORT=8090`.
-- [ ] Island follow-ups: How to Play's map chapter still draws the old map (`ht-map` in howto.js); the user's look at
-      it (REVIEW.md); an "atlas" view of all the islands at once; boss fight screen and level screen redesign
+- [x] More of the same (the user, 2026-11-16: "i like the changes ... keep adding to them to make a wow factor"):
+      **the Atlas** (`openAtlas`: the map button in the dock, M, or the mouse wheel: every island at once along a
+      golden thread, each with its boss, locked ones as shadows; pick one to go there), the **neighbouring worlds as
+      small islands in the distance** (`miniIsle`, the prev/next buttons), a **dive into the stop** when you press
+      Play (`dive`), mist drifting past, a beam of light from the stolen page, and the boss answering when you pick
+      it (`bossSay`). Checked at 1440x900 and 390x844: no errors.
+- [ ] Island follow-ups: How to Play's map chapter still draws the old map (`ht-map` in howto.js); boss fight screen
+      and level screen redesign; the Beta strip's place
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
 - [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher

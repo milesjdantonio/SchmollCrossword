@@ -660,6 +660,103 @@ html.cm-book-on .mascot, html.cm-book-on .cm-beta { opacity: 0; pointer-events: 
 }
 @media (prefers-reduced-motion: reduce) { .ws-isle, .ws-leaf, .ws-pad.next::after, .ws-panel.turn { animation: none; } }
 
+/* ======================= the wider world ======================= */
+/* a world as a small island with its boss on it: the neighbours in the distance, and every island in the Atlas */
+.ws-mini { position: relative; display: block; width: 132px; height: 104px; flex: none; transition: transform .25s cubic-bezier(.2, 1.4, .4, 1); }
+.ws-mini-slab { position: absolute; left: 0; right: 0; bottom: 20px; height: 40px; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--ground, #ddd) 75%, #fff), var(--ground, #ddd) 72%);
+    box-shadow: 0 5px 0 var(--hill, #999), 0 10px 0 color-mix(in srgb, var(--hill, #999) 76%, #1a1020), 0 15px 0 color-mix(in srgb, var(--hill, #999) 52%, #1a1020), 0 34px 16px rgba(10, 5, 20, .34); }
+.ws-mini-slab::after { content: ""; position: absolute; left: 20%; right: 24%; top: 50%; height: 5px; border-radius: 3px; background: var(--path, #fff); rotate: -7deg; opacity: .9; }
+.ws-mini-boss { position: absolute; left: 50%; bottom: 36px; width: 74px; height: 74px; translate: -50% 0; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, .3)); }
+.ws-mini-boss svg, .ws-mini-hero svg { display: block; width: 100%; height: 100%; }
+.ws-mini .boss-art * { animation: none !important; }
+.ws-mini.shut .ws-mini-boss { filter: brightness(.1) drop-shadow(0 0 6px rgba(255, 255, 255, .35)); }
+.ws-mini.shut .ws-mini-slab { filter: grayscale(.85) brightness(.75); }
+.ws-mini.won .ws-mini-boss { filter: saturate(.5) drop-shadow(0 4px 3px rgba(0, 0, 0, .3)); }
+.ws-mini.won::after { content: ""; position: absolute; left: 50%; top: -20px; width: 16px; height: 21px; margin-left: -8px; border-radius: 1px 4px 4px 1px; background: linear-gradient(160deg, #fffaf0, #f2d98c); box-shadow: inset 2px 0 0 #d9ae4a, 0 0 12px 3px rgba(255, 221, 130, .8); }
+.ws-mini-hero { position: absolute; left: 6%; bottom: 34px; width: 46px; height: 46px; }
+
+/* mist drifting past the island */
+.ws-cloud { position: absolute; left: -60%; top: var(--t); width: var(--w); height: calc(var(--w) * .2); aspect-ratio: 5 / 1; border-radius: 50%; pointer-events: none;
+    background: color-mix(in srgb, var(--surface-solid) 72%, transparent); filter: blur(22px); opacity: var(--o, .45); animation: ws-drift var(--d, 90s) linear infinite; animation-delay: var(--dl, 0s); }
+.ws-cloud.front { z-index: 2; }
+@keyframes ws-drift { to { translate: 190vw 0; } }
+
+/* the light of the stolen page, and the boss answering back */
+.ws-leaf::before { content: ""; position: absolute; left: 50%; bottom: 90%; width: 46px; height: 460px; margin-left: -23px; border-radius: 23px; pointer-events: none;
+    background: linear-gradient(0deg, rgba(255, 228, 150, .7), rgba(255, 228, 150, 0)); filter: blur(8px); animation: ws-beam 3.4s ease-in-out infinite; }
+@keyframes ws-beam { 50% { opacity: .4; scale: .7 1; } }
+.ws-taunt { position: absolute; left: 50%; bottom: calc(100% + 30px); translate: -50% 0; width: max-content; max-width: 250px; padding: 9px 15px; border-radius: 16px; z-index: 5; pointer-events: none;
+    background: var(--surface-solid); color: var(--ink); font: 800 .92rem/1.3 var(--font-body); text-align: center; box-shadow: 0 10px 24px rgba(0, 0, 0, .28); animation: ws-pop .4s cubic-bezier(.2, 1.5, .4, 1) backwards, ws-fade .4s 3s forwards; }
+.ws-taunt::after { content: ""; position: absolute; left: 50%; top: 100%; margin: -7px 0 0 -7px; width: 14px; height: 14px; rotate: 45deg; background: inherit; }
+@keyframes ws-pop { from { opacity: 0; scale: .5; } }
+@keyframes ws-fade { to { opacity: 0; } }
+
+/* Play: the view dives into the stop */
+.ws-isle { transition: scale .45s cubic-bezier(.2, 1.1, .3, 1), opacity .3s; }
+.ws-isle.dive { animation: ws-dive .58s cubic-bezier(.6, 0, .9, .35) forwards; }
+@keyframes ws-dive { to { scale: 7; opacity: .2; } }
+.cm-page.diving::after { content: ""; position: absolute; inset: 0; z-index: 40; pointer-events: none; background: radial-gradient(circle, #fff 0, var(--accent) 120%); animation: ws-flash .58s ease-in forwards; }
+@keyframes ws-flash { 0%, 55% { opacity: 0; } 100% { opacity: 1; } }
+.cm-page.diving .ws-sky, .cm-page.diving .ws-panel, .cm-page.diving .ws-strip, .cm-page.diving .ws-edge, .cm-page.diving .ws-bar { opacity: 0; transition: opacity .25s; }
+
+/* ---- the Atlas: every island at once ---- */
+.cm-page.atlas-on .ws-isle { scale: .2; opacity: 0; }
+.cm-page.atlas-on .ws-sky, .cm-page.atlas-on .ws-edge { opacity: 0; }
+.ws-edge { transition: opacity .25s, transform .2s; }
+.ws-atlas { position: absolute; inset: 0; z-index: 30; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 6px; padding: 18px clamp(14px, 3vw, 44px) 20px; color: #fff; font-family: var(--font-body);
+    background: radial-gradient(120% 100% at 50% 0%, rgba(58, 34, 96, .62), rgba(10, 6, 24, .9)); backdrop-filter: blur(10px) saturate(1.2); -webkit-backdrop-filter: blur(10px) saturate(1.2); animation: dk-veil .3s ease; transition: opacity .22s; }
+.ws-atlas[hidden] { display: none; }
+.ws-atlas.out { opacity: 0; }
+.ws-atlas header { display: flex; align-items: center; gap: 16px; }
+.ws-atlas h2 { margin: 0; font: 700 clamp(1.5rem, 2.8vw, 2.5rem)/1.1 "Cinzel", Georgia, serif; letter-spacing: .04em; color: #f6e2b0; }
+.ws-atlas header p { margin: 4px 0 0; font-weight: 800; color: rgba(255, 255, 255, .72); }
+.ws-at-close { margin-left: auto; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .14); color: #fff; font-size: 1.2rem; cursor: pointer; }
+.ws-at-close:hover { background: rgba(255, 255, 255, .26); }
+.ws-at-map { min-height: 0; overflow: hidden auto; }
+.ws-at-inner { position: relative; height: 100%; }
+.ws-at-inner > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ws-at-inner > svg path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; }
+.ws-at-thread { stroke: rgba(255, 255, 255, .3); stroke-width: 3px; stroke-dasharray: 2 13; }
+.ws-at-done { stroke: #f2c14a; stroke-width: 4px; filter: drop-shadow(0 0 5px #f2c14a); }
+.ws-at { position: absolute; left: var(--x); top: var(--y); translate: -50% -56%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: #fff; cursor: pointer;
+    animation: ws-at-in .55s cubic-bezier(.2, 1.4, .4, 1) backwards; animation-delay: calc(var(--i) * 38ms); }
+@keyframes ws-at-in { from { opacity: 0; scale: .25; } }
+.ws-at:hover .ws-mini, .ws-at:focus-visible .ws-mini { transform: translateY(-7px) scale(1.12); }
+.ws-at:focus-visible { outline: none; }
+.ws-at:focus-visible b { outline: 2.5px solid #f6e2b0; outline-offset: 3px; border-radius: 4px; }
+.ws-at b { font: 700 calc(1.02rem * var(--head-scale, 1))/1.15 var(--font-head, var(--font-body)); color: #fff; text-shadow: 0 2px 6px rgba(0, 0, 0, .8); white-space: nowrap; }
+.ws-at small { display: inline-flex; align-items: center; gap: 4px; font: 800 .76rem var(--font-body); color: rgba(255, 255, 255, .78); font-variant-numeric: tabular-nums; }
+.ws-at small .ic { width: 14px; height: 14px; flex: none; }
+.ws-at small .ic-star { color: #f2c14a; }
+html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events: none; }
+.ws-at.shut b { color: rgba(255, 255, 255, .7); }
+.ws-at.here .ws-mini-slab { outline: 3px solid #fff; outline-offset: 5px; }
+.ws-atlas-btn { flex: none; display: grid; place-items: center; width: 46px; height: 46px; margin-right: 4px; border: 0; border-radius: 50%; background: var(--ink); color: var(--surface-solid); font-size: 1.2rem; cursor: pointer; transition: transform .2s cubic-bezier(.2, 1.4, .4, 1); }
+.ws-atlas-btn:hover { transform: scale(1.1) rotate(-6deg); }
+.ws-atlas-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+@media (min-width: 761px) {
+    /* the worlds on either side, small in the distance */
+    .ws-edge, .ws-edge.prev, .ws-edge.next { top: 44%; height: auto; flex-direction: column; gap: 4px; padding: 0; border: 0; background: none; box-shadow: none; scale: .86; animation: ws-float 6s -2.5s ease-in-out infinite; }
+    .ws-edge.prev { left: 1.2%; } .ws-edge.next { right: 1.2%; animation-delay: -4.5s; }
+    .ws-edge:hover { background: none; }
+    .ws-edge:hover .ws-mini { transform: translateY(-6px) scale(1.1); }
+    .ws-edge-name { display: inline-flex; align-items: center; gap: 4px; padding: 6px 13px; border-radius: 999px; background: color-mix(in srgb, var(--surface-solid) 92%, transparent); box-shadow: 0 4px 12px rgba(0, 0, 0, .16); }
+    .ws-edge.next .ws-edge-name { flex-direction: row-reverse; }
+}
+@media (max-width: 760px) {
+    .ws-atlas { padding: 12px 8px 8px; }
+    .ws-mini { width: 96px; height: 84px; }
+    .ws-mini-boss { width: 56px; height: 56px; bottom: 32px; }
+    .ws-mini-slab { height: 30px; }
+    .ws-mini-hero { width: 34px; height: 34px; }
+    .ws-at b { font-size: .8rem; }
+    .ws-atlas-btn { width: 36px; height: 36px; }
+    .ws-cloud.front { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ws-cloud, .ws-leaf::before, .ws-at, .ws-edge, .ws-taunt { animation: none; } }
+
 @keyframes cm-bob { to { transform: translateY(-8px); } }
 
 /* ======================= boss art: idle animations ======================= */

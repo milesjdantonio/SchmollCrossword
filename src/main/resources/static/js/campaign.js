@@ -331,7 +331,7 @@ const Campaign = (() => {
             b.hidden = !there;
             if (!there) continue;
             const name = Worlds.byId[there.world].name;
-            b.replaceChildren(icon(k < 0 ? "back" : "next"), U.el("span", { text: name }));
+            b.replaceChildren(miniIsle(si + k), U.el("span", { class: "ws-edge-name" }, icon(k < 0 ? "back" : "next"), U.el("span", { text: name })));
             b.setAttribute("aria-label", `${k < 0 ? "Previous" : "Next"} world: ${name}`);
         }
         drawHero();
@@ -356,7 +356,7 @@ const Campaign = (() => {
     function drawStrip() {
         if (stripFor !== map.length) {
             stripFor = map.length;
-            stripEl.replaceChildren();
+            stripEl.replaceChildren(U.el("button", { type: "button", class: "ws-atlas-btn", "aria-label": "See every world", title: "Every World (M)", onclick: () => openAtlas() }, icon("map")));
             map.forEach((s, i) => {
                 const w = Worlds.byId[s.world];
                 const thumb = U.el("canvas", { class: "ws-thumb", "aria-hidden": "true" });
@@ -368,7 +368,8 @@ const Campaign = (() => {
                 setTimeout(() => { if (thumb.isConnected) try { Worlds.preview(thumb, s.world, Worlds.modeFor(w)); } catch (err) { /* no still for this world */ } }, 120 + i * 45);
             });
         }
-        [...stripEl.children].forEach((tile, i) => {
+        const tiles = [...stripEl.querySelectorAll(".ws-tile")];
+        tiles.forEach((tile, i) => {
             const open = sectionOpen(i), done = LV(i).filter(l => cleared(i, l)).length;
             tile.classList.toggle("on", i === data.section);
             tile.classList.toggle("shut", !open);
@@ -378,7 +379,7 @@ const Campaign = (() => {
             tile.setAttribute("aria-label", `${Worlds.byId[map[i].world].name}: ${done} of ${LV(i).length} cleared${open ? "" : ", locked"}`);
             [...tile.querySelector(".ws-pips").children].forEach((pip, k) => pip.classList.toggle("on", cleared(i, LV(i)[k])));
         });
-        const on = stripEl.children[data.section];
+        const on = tiles[data.section];
         if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center", behavior: U.motion() === "still" ? "auto" : "smooth" });
     }
 
@@ -657,7 +658,7 @@ const Campaign = (() => {
         const foot = U.el("div", { class: "ws-p-go" });
         if (boss && open) foot.append(loadoutBox(s.world, drawPage));
         const why = !open ? (!sectionOpen(si) ? `Beat ${bossOf(map[si - 1].world).name} First` : `Clear Level ${prevLevel(si, l)} First`) : "";
-        foot.append(U.el("button", { type: "button", class: "ws-play", disabled: !open, onclick: () => play(s.world, l) },
+        foot.append(U.el("button", { type: "button", class: "ws-play", disabled: !open, onclick: () => dive(l) },
             icon(open ? "play" : "lock"), U.el("span", { text: !open ? why : boss ? (rec ? "Fight Again" : "Fight") : rec ? "Play Again" : "Play" })));
         foot.append(U.el("div", { class: "ws-p-links" },
             U.el("button", { type: "button", class: "ws-link", text: "Shop", onclick: () => openBook("shop", { shopTab: boss ? "abilities" : "items" }) }),
@@ -669,7 +670,7 @@ const Campaign = (() => {
     // pick a stop of the world on stage; picking the one that's already open plays it
     function pickLevel(l, fromStage = false) {
         const si = data.section;
-        if (fromStage && data.sel === l && unlocked(si, l) && !phone.matches) { play(map[si].world, l); return; }
+        if (fromStage && data.sel === l && unlocked(si, l) && !phone.matches) { dive(l); return; }
         if (fromStage && phone.matches && data.sel === l) pageEl.classList.toggle("up");
         data.sel = l;
         save();
@@ -679,8 +680,105 @@ const Campaign = (() => {
         if (U.motion() !== "still") U.restart(pageEl, "turn");
         moveShown = 0;
         drawPage();
+        if (l === 5) bossSay();
         if (fromStage && unlocked(si, l) && data.hero) walkHero(si, l);
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // The wider world: small islands (the neighbours in the distance, and the Atlas), mist drifting past,
+    // the boss answering back, and the dive into a level
+    // ---------------------------------------------------------------------------------------------
+    // a world as a small island with its boss standing on it (a shadow of it while the world is locked)
+    function miniIsle(si, withHero = false) {
+        const s = map[si], b = biome(s.world);
+        return U.el("span", { class: "ws-mini" + (sectionOpen(si) ? "" : " shut") + (cleared(si, 5) ? " won" : ""), style: { "--ground": b.ground, "--hill": b.hill, "--path": b.path } },
+            U.el("i", { class: "ws-mini-slab" }), U.el("span", { class: "ws-mini-boss", html: bossSvg(s.world) }),
+            withHero && data.hero ? U.el("span", { class: "ws-mini-hero", html: Hero.svg(heroLook(), "", { still: true }) }) : null);
+    }
+    // mist: two banks behind the island and one in front of it
+    stage.prepend(U.el("i", { class: "ws-cloud", style: { "--t": "12%", "--w": "46%", "--d": "95s", "--dl": "-30s", "--o": ".5" } }),
+        U.el("i", { class: "ws-cloud", style: { "--t": "40%", "--w": "34%", "--d": "70s", "--dl": "-55s", "--o": ".4" } }));
+    isle.after(U.el("i", { class: "ws-cloud front", style: { "--t": "78%", "--w": "52%", "--d": "120s", "--dl": "-80s", "--o": ".34" } }));
+    // pick the boss and it has something to say
+    function bossSay() {
+        const stop = stopsEl.querySelector(".ws-stop.boss"), si = data.section;
+        if (!stop || !sectionOpen(si)) return;
+        stop.querySelectorAll(".ws-taunt").forEach(n => n.remove());
+        const say = U.el("span", { class: "ws-taunt", "aria-hidden": "true", text: cleared(si, 5) ? U.pick(["You again?", "Haven't you won enough?", "Back for another round?"]) : bossOf(map[si].world).taunt });
+        stop.append(say);
+        setTimeout(() => say.remove(), 3400);
+    }
+    // Play: the view dives into the stop you picked, then the level begins
+    let diving = false;
+    function dive(l) {
+        const si = data.section, world = map[si].world, disc = stopsEl.querySelector(`.ws-stop[data-level="${l}"] .ws-disc`);
+        if (!unlocked(si, l) || diving) return;
+        if (!onStage() || !disc || U.motion() !== "full") { play(world, l); return; }
+        diving = true;
+        const r = disc.getBoundingClientRect(), box = isle.getBoundingClientRect();
+        isle.style.transformOrigin = `${(r.left + r.width / 2 - box.left).toFixed(0)}px ${(r.top + r.height / 2 - box.top).toFixed(0)}px`;
+        isle.classList.remove("sail-in");
+        isle.classList.add("dive");
+        view.classList.add("diving");
+        setTimeout(() => {
+            play(world, l);
+            setTimeout(() => { isle.classList.remove("dive"); view.classList.remove("diving"); isle.style.transformOrigin = ""; diving = false; }, 450);
+        }, 560);
+    }
+    // The Atlas: step back and see every island at once, in order along the thread of the story. Pick one to go there.
+    let atlasOn = false;
+    const atlasEl = U.el("div", { class: "ws-atlas", role: "dialog", "aria-modal": "true", "aria-label": "Every world", hidden: true });
+    view.append(atlasEl);
+    function openAtlas() {
+        if (!onStage() || atlasOn || switching || diving || bookOn()) return;
+        atlasOn = true;
+        Mascot.hush();
+        const n = map.length, cols = phone.matches ? 3 : 5, rows = Math.ceil(n / cols), here = heroSpot().si;
+        // the islands snake across the sky: left to right, then back
+        const pts = map.map((s, i) => {
+            const r = Math.floor(i / cols), c = i % cols, x = ((r % 2 ? cols - 1 - c : c) + 0.5) / cols * 100;
+            return [x, (r + 0.5) / rows * 100 + Math.sin(i * 1.7) * (14 / rows)];
+        });
+        const reached = map.filter((s, i) => sectionOpen(i)).length, main = map.filter(s => !s.secret), won = main.filter(s => data.levels[keyOf(s.world, 5)]).length;
+        const inner = U.el("div", { class: "ws-at-inner", style: { minHeight: rows * (phone.matches ? 150 : 0) + "px" } });
+        inner.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="ws-at-thread" d="${roadPath(pts)}"/><path class="ws-at-done" d="${roadPath(pts, reached - 1)}"/></svg>`;
+        map.forEach((s, i) => {
+            const w = Worlds.byId[s.world], open = sectionOpen(i), stars = worldStars(i);
+            inner.append(U.el("button", { type: "button", class: "ws-at" + (i === data.section ? " here" : "") + (open ? "" : " shut") + (cleared(i, 5) ? " won" : ""), "data-world": s.world, "data-theme": Worlds.modeFor(w),
+                style: { "--x": pts[i][0].toFixed(1) + "%", "--y": pts[i][1].toFixed(1) + "%", "--i": i },
+                "aria-label": `${w.name}: ${open ? stars + " of " + LV(i).length * 3 + " stars" : "locked"}`, onclick: () => { closeAtlas(); go(i); } },
+                miniIsle(i, i === here), U.el("b", { text: w.name }),
+                U.el("small", {}, open ? icon("star") : icon("lock"), open ? `${stars} / ${LV(i).length * 3}` : bossOf(s.world).name)));
+        });
+        atlasEl.replaceChildren(
+            U.el("header", {}, U.el("div", {}, U.el("h2", { text: "The Everbook's Worlds" }), U.el("p", { text: `${won} of ${main.length} Pages Won Back` })),
+                U.el("button", { type: "button", class: "ws-at-close", "aria-label": "Close", onclick: () => closeAtlas() }, icon("close"))),
+            U.el("div", { class: "ws-at-map" }, inner));
+        atlasEl.classList.remove("out");
+        atlasEl.hidden = false;
+        view.classList.add("atlas-on");
+        root.classList.add("cm-atlas-on");
+        Sound.play("worldSwap");
+        const cur = atlasEl.querySelector(".ws-at.here");
+        if (cur) { cur.focus({ preventScroll: true }); if (phone.matches) cur.scrollIntoView({ block: "center" }); }
+    }
+    function closeAtlas(now = false) {
+        if (!atlasOn) return;
+        atlasOn = false;
+        view.classList.remove("atlas-on");
+        root.classList.remove("cm-atlas-on");
+        if (now) { atlasEl.hidden = true; return; }
+        atlasEl.classList.add("out");
+        setTimeout(() => { if (!atlasOn) atlasEl.hidden = true; }, 240);
+    }
+    // the wheel steps back to the Atlas (and forward out of it)
+    let wheelAt = 0;
+    view.addEventListener("wheel", e => {
+        if (!onStage() || e.ctrlKey || e.target.closest(".ws-panel, .ws-strip, .ws-at-map") && !(atlasOn && !phone.matches)) return;
+        if (Math.abs(e.deltaY) < 20 || performance.now() - wheelAt < 500) return;
+        wheelAt = performance.now();
+        if (e.deltaY > 0 && !atlasOn) openAtlas(); else if (e.deltaY < 0 && atlasOn) closeAtlas();
+    }, { passive: true });
 
     // ---------------------------------------------------------------------------------------------
     // Showing the stage (#campaign) and playing a level (#level)
@@ -838,6 +936,7 @@ const Campaign = (() => {
         root.classList.toggle("in-map", view === "campaign");
         root.classList.toggle("in-level", view === "level");
         if (view !== "level") { hidePanel(); Corruption.pause(); Sound.levelSong(null, { fade: 1 }); musicCtl.hidden = true; }
+        if (view !== "campaign") closeAtlas(true);
         if (view === "campaign") showMap();
         else if (view === "level") {
             if (!data.playing) { location.replace("#campaign"); return false; }
@@ -4099,11 +4198,13 @@ const Campaign = (() => {
     }
     // keys: the arrows change world, 1-5 pick a stop, Enter plays it, B opens the book
     addEventListener("keydown", e => {
-        if (!onStage() || e.ctrlKey || e.metaKey || e.altKey || FX.playing || document.querySelector("#overlay .results, .ask-modal, .hm-modal") || e.target.closest("input, textarea, select")) return;
+        if (atlasOn) { if (e.key === "Escape" || e.key === "m" || e.key === "M") { e.preventDefault(); closeAtlas(); } return; }
+        if (!onStage() || diving || e.ctrlKey || e.metaKey || e.altKey || FX.playing || document.querySelector("#overlay .results, .ask-modal, .hm-modal") || e.target.closest("input, textarea, select")) return;
         if (e.key === "ArrowLeft") { e.preventDefault(); go(data.section - 1); }
         else if (e.key === "ArrowRight") { e.preventDefault(); go(data.section + 1); }
         else if (/^[1-5]$/.test(e.key) && LV(data.section).includes(+e.key)) pickLevel(+e.key);
-        else if (e.key === "Enter" && !e.target.closest("button, a") && unlocked(data.section, data.sel)) play(map[data.section].world, data.sel);
+        else if (e.key === "Enter" && !e.target.closest("button, a") && unlocked(data.section, data.sel)) dive(data.sel);
+        else if (e.key === "m" || e.key === "M") openAtlas();
         else if (e.key === "b" || e.key === "B") openBook("contents");
         else if (e.key === "Escape") pageEl.classList.remove("up");
     });
