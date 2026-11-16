@@ -246,7 +246,31 @@ deleted after everything is done.
       Found while building: the game's `main { margin: auto }` and `body { min-height: 100vh }` (on phones 100vh
       is taller than the screen) both need overriding on full-screen pages; a grid column needs `minmax(0, 1fr)`
       or a long title widens the page
-- [ ] Wait for the user's pick (REVIEW.md), then build it into the game
+- [x] The user's pick (2026-11-07): "mix of A and B, up to your discretion" -> **D, Stage and Everbook**
+      (`demo/campaign/d.*`, first on /demo): A's stage (one world, its road, hero, the strip of worlds, the phone
+      sheet) + the panel as that world's Everbook page (parchment, gold page number, "Held by X" / "Page Won Back"
+      seal, boss in a gold plate) + an Everbook button opening the book (contents with Continue, bookmarks)
+- [x] Built into the game, and pushed much further at the user's word (2026-11-16: "huge campaign rework, something I
+      look at and go woah", "preferably doesn't look at all like what it looks like now"): **the Island**.
+      Each world is a floating 3D island (`#cm-isle` > `#cm-plane`, CSS 3D: a tilted plane with a layered slab and a
+      shadow; `BIOMES` gives its ground, sides and road colours; the old map's scenery sprites `PROPS` stand on it).
+      The road winds from the near edge back to the boss, who stands whole at the far end holding its glowing page
+      (a silhouette while the world is locked; a gold seal once beaten). Stops, scenery, hero and boss are upright
+      "billboards" (`--rx`/`--rz` undo the plane's tilt); the island turns with the pointer (`leanTo`), floats, and
+      sails off / in when the world changes (`go`). A stop that opened since your last visit gets a show (`openStop`:
+      the road runs on, the hero walks, a ring and stars; `data.shown`). The world's name is large in the sky with its
+      stars; the bar floats; the level is a floating page of the Everbook that turns when you pick a stop (boss: you vs
+      it in a gold plate, threat, fight length, its moves as buttons, your abilities, Fight always in view); the worlds
+      are a dock of round windows onto their scenes. Keys: arrows, 1-5, Enter, B. Phone: the island fills the screen,
+      the page is a sheet, swipe changes world.
+      **The Everbook** (`openBook`, one layer for everything that isn't a level): Contents (continue, tallies, every
+      world in its own face), Pages (the story you've won back, each boss's lore, Watch the Story Again), Shop (items /
+      abilities, your three keys, Swap), Skills (the course, jump to a level), Hero (gifts won and to win), Help. In a
+      level it opens at the Shop (Shop and Help only). The old map, shop, skill-book and ability-picker code and CSS
+      are gone. Checked in the test browser at 1440x900, 1280x620 and 390x844: no errors; play, buy, equip, keys, jumps.
+      Port note: 8080 on this PC is often another project (HokieBikeRack); run ours with `PORT=8090`.
+- [ ] Island follow-ups: How to Play's map chapter still draws the old map (`ht-map` in howto.js); the user's look at
+      it (REVIEW.md); an "atlas" view of all the islands at once; boss fight screen and level screen redesign
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
 - [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher
@@ -337,3 +361,4 @@ deleted after everything is done.
   user + health check, error cards, save recovery, midnight grace, share. 155 JUnit tests pass (3 skipped: paid).
   Browser checks (admin, errors, midnight, share, ticket) found and fixed: `window.FX` (always undefined: FX is a
   `const`), the story intro playing on after leaving the map, a flaky leaderboard cache. Paid calls: still $0.04.
+- 2026-11-16: the campaign map rebuilt as the Island and the Everbook (Phase 5). JS tests pass (14); Java untouched. Paid calls: still $0.04.

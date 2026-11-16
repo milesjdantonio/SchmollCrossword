@@ -183,26 +183,47 @@
                 </div>
             </section>
 
-            <!-- ======================== CAMPAIGN (the map: its own page that scrolls down through every world) ======================== -->
+            <!-- ======================== CAMPAIGN (one world at a time: a floating island with its road of five stops, and its page of the Everbook) ======================== -->
             <section id="campaign-view" class="screen cm-page" hidden>
-                <header class="cmv-bar">
-                    <a class="btn cmv-exit" href="#" aria-label="Exit the campaign">Exit</a>
-                    <div class="cmv-where">
-                        <small id="cm-kicker"></small>
-                        <b id="cm-name">Campaign</b>
-                        <span id="cm-tag"></span>
+                <div class="ws-veil" aria-hidden="true"></div>
+                <header class="ws-bar">
+                    <a class="ws-round" id="cm-exit" href="#" aria-label="Exit to Home"></a>
+                    <div class="ws-title">
+                        <h1 id="cm-name">Campaign</h1>
+                        <p id="cm-where"></p>
                     </div>
-                    <span class="cmv-stat" id="cm-total"></span>
-                    <span class="cmv-stat coins" id="cm-coins"></span>
-                    <button type="button" class="btn cmv-shop" id="cm-howto" aria-label="How to Play"><span class="ht-lbl">How to Play</span><span class="ht-q" aria-hidden="true">?</span></button>
-                    <button type="button" class="btn cmv-shop" id="cm-book" title="The Everbook: the pages you've won back">Book</button>
-                    <button type="button" class="btn cmv-shop" id="cm-skills">Skills</button>
-                    <button type="button" class="btn cmv-shop" id="cm-hero">Hero</button>
-                    <button type="button" class="btn primary cmv-shop" id="cm-shop">Shop</button>
+                    <div class="ws-status">
+                        <span class="ws-chip" id="cm-total" title="Campaign stars"></span>
+                        <span class="ws-chip" id="cm-coins" title="Coins"></span>
+                        <button type="button" class="dk-book-btn" id="cm-book" aria-haspopup="dialog">Everbook</button>
+                    </div>
                 </header>
-                <div class="cm-map" id="cm-map"><p class="status"><span class="spinner" aria-hidden="true"></span>Loading the map&hellip;</p></div>
-                <nav class="cm-rail" id="cm-rail" aria-label="Worlds"></nav>
-                <div class="cm-detail" id="cm-detail" hidden></div>
+                <div class="ws-main">
+                    <section class="ws-stage" id="cm-stage" aria-label="Levels">
+                        <div class="ws-sky" id="cm-sky"></div>
+                        <div class="ws-isle" id="cm-isle">
+                            <div class="ws-plane" id="cm-plane">
+                                <div class="ws-slab" id="cm-slab" aria-hidden="true"></div>
+                                <svg class="ws-road" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                    <path class="ws-road-bed" id="cm-road-bed"/>
+                                    <path class="ws-road-ahead" id="cm-road-ahead"/>
+                                    <path class="ws-road-done" id="cm-road-done"/>
+                                    <path class="ws-road-flow" id="cm-road-flow"/>
+                                </svg>
+                                <div class="ws-props" id="cm-props" aria-hidden="true"></div>
+                                <div class="ws-stops" id="cm-stops"></div>
+                                <div class="ws-stops ws-hero-layer" id="cm-hero-layer" aria-hidden="true"></div>
+                            </div>
+                        </div>
+                        <button type="button" class="ws-edge prev" id="cm-prev" hidden></button>
+                        <button type="button" class="ws-edge next" id="cm-next" hidden></button>
+                        <div class="ws-locked" id="cm-locked" hidden></div>
+                        <p class="ws-medal" id="cm-medal" hidden></p>
+                        <p class="status ws-loading" id="cm-loading"><span class="spinner" aria-hidden="true"></span>Loading the map&hellip;</p>
+                    </section>
+                    <aside class="ws-panel dk-page" id="cm-detail" aria-label="Level"></aside>
+                </div>
+                <nav class="ws-strip" id="cm-strip" aria-label="Worlds"></nav>
             </section>
 
             <!-- ======================== STATS ======================== -->

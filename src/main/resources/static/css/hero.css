@@ -59,21 +59,6 @@
     .hm-actions { justify-content: center; }
 }
 
-/* ---- the boss sheet: your hero facing the boss ---- */
-.cm-detail-art.cm-vs { display: flex; align-items: flex-end; gap: 2px; align-self: center; flex: none; }
-.cm-vs .hero-art { width: 112px; height: 112px; transform: scaleX(-1); }
-.cm-vs .boss-art { width: 140px; height: 140px; }
-.cm-vs-col { display: flex; flex-direction: column; align-items: center; }
-.cm-vs-col small { font: 800 .72rem var(--font-body); color: var(--muted, #777); max-width: 140px; text-align: center; }
-.cm-vs-chip { align-self: center; margin: 0 2px 18px; padding: 4px 8px; border-radius: 999px; font: 900 .8rem var(--font-body);
-    color: #fff; background: var(--c, #e5484d); box-shadow: 0 3px 10px rgba(0, 0, 0, .25); }
-@media (max-width: 560px) { .cm-vs .hero-art { width: 84px; height: 84px; } .cm-vs .boss-art { width: 100px; height: 100px; } }
-
-/* ---- the map: the hero stands on its level and walks the road ---- */
-.cm-hero { pointer-events: none; }
-.cm-hero .cm-face { transition: transform .2s; }
-.cm-hero.walking .cm-bob { animation: cm-hop .32s ease-in-out infinite alternate; }
-@keyframes cm-hop { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 .hm-locked { margin: 4px 0 0; color: var(--muted); font-size: .82rem; font-weight: 700; }
 .res-hero .ra-icon { filter: drop-shadow(0 0 8px rgba(255, 210, 120, .7)); }
 .res-unlock.secret { color: #9b6bff; font-weight: 900; text-shadow: 0 0 12px rgba(155, 107, 255, .45); }

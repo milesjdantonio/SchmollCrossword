@@ -1,8 +1,9 @@
 // Campaign mode: a map of the worlds, travelled from easy to hard. Each world
 // has 5 levels; level 5 is a boss battle.
 //
-//   #campaign   the map: its own full page that scrolls down through every world (an Exit button goes home).
-//               The page's background world changes as you scroll into the next world.
+//   #campaign   the stage: one world at a time on its own scene, with its road of five stops, that world's page of
+//               the Everbook beside it, and every world in a strip along the bottom. The Everbook (the bar's button)
+//               holds the rest: contents, the story's pages, the shop, skills, your hero and help.
 //   #level      playing a level, on the normal game screen, dressed as that level's world
 //
 // The order of the worlds and each level's difficulty come from the server (GET /api/campaign/map, Campaign.java);
@@ -19,7 +20,6 @@ const Campaign = (() => {
     const $ = U.$;
     const root = document.documentElement;
 
-    const W = 1000, SH = 1000, TOP = 170, BOTTOM = 240;     // map units: the map's width, one world's height, margins
     // Par times (seconds) for the "quick" star, for a 5x5 board; bigger boards get more time, by their area
     // ("challenge" = a Challenge grid with medium clues, "expert" = hard words and clues; see Campaign.java)
     // (15% more time than they used to be)
@@ -50,15 +50,12 @@ const Campaign = (() => {
     const secretEarned = () => !!(data.betaUnlock || (data.levels && data.levels["space-5"]));
     const secretOpen = () => TEST_SECRET_OPEN || secretEarned();
     const visibleMap = () => full.filter(s => !s.secret || secretOpen());
-    // the map grows (the Void just fell, or Unlock All was pressed): it's drawn again from scratch
+    // the map grows (the Void just fell): the strip of worlds gets its new tile the next time it's drawn
     function refreshMap() {
         if (!full) return false;
         const next = visibleMap();
         if (map && next.length === map.length) return false;
         map = next;
-        svg = null;
-        const rail = $("#cm-rail");
-        if (rail) rail.innerHTML = "";
         return true;
     }
     function fetchMap() {
@@ -135,31 +132,28 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // The look of each world's part of the map
+    // The look of each world's island: its ground and sides, its road, its own colour, its scenery
     // ---------------------------------------------------------------------------------------------
     const BIOMES = {
-        paper:    { sky: "#fbf3df", hill: "#e8dcc0", ground: "#fffaf0", path: "#2f6fd6", node: "#e2483c", prop: "doodle" },
-        garden:   { sky: "#bfe6ff", hill: "#78c267", ground: "#9bd67f", path: "#e0bb83", node: "#ff5f98", prop: "flower" },
-        squirrel: { sky: "#ffd9a8", hill: "#c26b33", ground: "#d99a55", path: "#f6e3bd", node: "#b5521f", prop: "oak" },
-        candy:    { sky: "#ffd6ef", hill: "#ff9ccf", ground: "#ffc4e3", path: "#ffffff", node: "#ff3f9a", prop: "lolly" },
-        ocean:    { sky: "#8fe0f5", hill: "#2f9fc7", ground: "#47b4d4", path: "#ffe7a8", node: "#ff7a59", prop: "coral" },
-        snow:     { sky: "#d7e7fb", hill: "#b4cdea", ground: "#f2f7ff", path: "#8fb3dc", node: "#3f7fd8", prop: "pine" },
-        rain:     { sky: "#97a6b8", hill: "#6d7d91", ground: "#8493a5", path: "#ffd34d", node: "#ffc93a", prop: "umbrella" },
-        sky:      { sky: "#a6dbff", hill: "#f4fbff", ground: "#e3f4ff", path: "#ffb04d", node: "#ff7a59", prop: "cloud" },
-        desert:   { sky: "#ffd79c", hill: "#df9f55", ground: "#efc27e", path: "#9c5b2e", node: "#2f8f9d", prop: "cactus" },
-        carnival: { sky: "#ffe4a3", hill: "#6fbd5c", ground: "#8fd07a", path: "#fff1d0", node: "#e2483c", prop: "tent" },
-        arcade:   { sky: "#1a0638", hill: "#3a0d6b", ground: "#220a48", path: "#2bf0ff", node: "#ff2bd6", prop: "pixel", night: true },
-        robot:    { sky: "#55606f", hill: "#3f4855", ground: "#6a7583", path: "#ffc43d", node: "#ff7a1a", prop: "gear", night: true },
-        library:  { sky: "#2b1a35", hill: "#3d2546", ground: "#5a3a28", path: "#e8c37a", node: "#7fe0c4", prop: "books", night: true },
-        volcano:  { sky: "#5a2320", hill: "#2e1c1c", ground: "#3d2a26", path: "#ff8a2a", node: "#ffcf3f", prop: "cone", night: true },
-        space:    { sky: "#070a1f", hill: "#151b40", ground: "#0e1230", path: "#b18cff", node: "#ffe066", prop: "planet", night: true },
-        rift:     { sky: "#0c0420", hill: "#2a1050", ground: "#170a36", path: "#ffd06b", node: "#e8c66a", prop: "ruin", night: true }
+        paper:    { hill: "#e8dcc0", ground: "#fffaf0", path: "#2f6fd6", node: "#e2483c", prop: "doodle" },
+        garden:   { hill: "#78c267", ground: "#9bd67f", path: "#e0bb83", node: "#ff5f98", prop: "flower" },
+        squirrel: { hill: "#c26b33", ground: "#d99a55", path: "#f6e3bd", node: "#b5521f", prop: "oak" },
+        candy:    { hill: "#ff9ccf", ground: "#ffc4e3", path: "#ffffff", node: "#ff3f9a", prop: "lolly" },
+        ocean:    { hill: "#2f9fc7", ground: "#47b4d4", path: "#ffe7a8", node: "#ff7a59", prop: "coral" },
+        snow:     { hill: "#b4cdea", ground: "#f2f7ff", path: "#8fb3dc", node: "#3f7fd8", prop: "pine" },
+        rain:     { hill: "#6d7d91", ground: "#8493a5", path: "#ffd34d", node: "#ffc93a", prop: "umbrella" },
+        sky:      { hill: "#cfe6f7", ground: "#f4fbff", path: "#ffb04d", node: "#ff7a59", prop: "cloud" },
+        desert:   { hill: "#df9f55", ground: "#efc27e", path: "#9c5b2e", node: "#2f8f9d", prop: "cactus" },
+        carnival: { hill: "#6fbd5c", ground: "#8fd07a", path: "#fff1d0", node: "#e2483c", prop: "tent" },
+        arcade:   { hill: "#3a0d6b", ground: "#220a48", path: "#2bf0ff", node: "#ff2bd6", prop: "pixel" },
+        robot:    { hill: "#3f4855", ground: "#6a7583", path: "#ffc43d", node: "#ff7a1a", prop: "gear" },
+        library:  { hill: "#3d2546", ground: "#5a3a28", path: "#e8c37a", node: "#7fe0c4", prop: "books" },
+        volcano:  { hill: "#2e1c1c", ground: "#3d2a26", path: "#ff8a2a", node: "#ffcf3f", prop: "cone" },
+        space:    { hill: "#151b40", ground: "#0e1230", path: "#b18cff", node: "#ffe066", prop: "planet" },
+        rift:     { hill: "#2a1050", ground: "#170a36", path: "#ffd06b", node: "#e8c66a", prop: "ruin" }
     };
     const biome = world => BIOMES[world] || BIOMES.paper;
     const INK = "#2b2233";
-    const bossOf = world => Bosses.info(world);
-    const bossSvg = (world, cls = "") => Bosses.svg(world, cls);
-
     // little pictures for each world's scenery, standing on 0,0
     const pick3 = (r, list) => list[Math.floor(r() * list.length)];
     function flower(r) {
@@ -225,210 +219,223 @@ const Campaign = (() => {
             : `<path d="${starPath(0, -20, 9, 3, 4)}" fill="#fff"/>`
     };
 
+    const bossOf = world => Bosses.info(world);
+    const bossSvg = (world, cls = "") => Bosses.svg(world, cls);
+
     // ---------------------------------------------------------------------------------------------
-    // The map: one tall SVG, a band per world from the top down, the path winding through all 75 levels
+    // The stage: one world at a time on its own scene (the page's background), with its road of five stops.
+    // data.section is the world on stage, data.sel the stop whose page is open beside it.
     // ---------------------------------------------------------------------------------------------
-    const mapEl = $("#cm-map");
-    let svg = null, dyn = null, heroLayer = null;
-    const LT = [[290, 260], [700, 420], [320, 590], [690, 745], [500, 905]];      // the 5 levels inside a world's band
-    function nodePos(si, li) {
-        const r = U.rng(si * 31 + li * 7 + 5);
-        let [x, y] = LT[li];
-        if (si % 2) x = W - x;                     // every other world winds the other way
-        return [x + (r() - 0.5) * 60, TOP + si * SH + y + (r() - 0.5) * 30];
+    const view = $("#campaign-view"), stage = $("#cm-stage"), stopsEl = $("#cm-stops"), heroLayer = $("#cm-hero-layer");
+    const pageEl = $("#cm-detail"), stripEl = $("#cm-strip"), medalEl = $("#cm-medal");
+    const phone = matchMedia("(max-width: 760px)");
+    const icon = U.icon;
+    let staged = false;                         // the stage has been drawn at least once
+    // Where the five stops stand, in % of the island's top: the road starts at the near edge and winds back to the
+    // boss at the far end. Every other world winds the other way, and each has its own small bends.
+    const CLIMB = [[22, 90], [72, 73], [27, 55], [71, 38], [50, 14]];
+    function spots(si) {
+        const r = U.rng(si * 31 + 5);
+        return CLIMB.map(([x, y], i) => [(si % 2 ? 100 - x : x) + (i < 4 ? (r() - 0.5) * 9 : 0), y + (i < 4 ? (r() - 0.5) * 5 : 0)]);
     }
-    const slotOf = (si, l) => l - 1;            // (the rift had 4 nodes at first; every world has 5 now)
-    const allNodes = () => [[500, 50], ...map.flatMap((s, si) => LV(si).map(l => nodePos(si, slotOf(si, l))))];
-    // a level's place along the road (allNodes()[0] is the road's start)
-    const nodeIndex = (si, l) => 1 + map.slice(0, si).reduce((n, s, i) => n + LV(i).length, 0) + LV(si).indexOf(l);
-    const totalH = () => TOP + map.length * SH + BOTTOM;
-
-    // a smooth curve through the points (Catmull-Rom), from point "from" to point "to"
-    function curve(pts, from = 0, to = pts.length - 1) {
-        const f = v => v.toFixed(1);
-        let d = `M${f(pts[from][0])} ${f(pts[from][1])}`;
-        for (let i = from; i < to; i++) {
-            const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-            d += `C${f(p1[0] + (p2[0] - p0[0]) / 6)} ${f(p1[1] + (p2[1] - p0[1]) / 6)} ${f(p2[0] - (p3[0] - p1[0]) / 6)} ${f(p2[1] - (p3[1] - p1[1]) / 6)} ${f(p2[0])} ${f(p2[1])}`;
+    // the island's slab: its top, the layers of its side, and its shadow far below
+    const slab = $("#cm-slab"), isle = $("#cm-isle"), plane = $("#cm-plane");
+    slab.append(...Array.from({ length: 9 }, (_, n) => U.el("i", { class: n === 0 ? "top" : n === 8 ? "shade" : "", style: { "--n": n } })));
+    isle.addEventListener("animationend", e => { if (e.target === isle) isle.classList.remove("sail-in"); });
+    // scenery standing on the island, away from the road (the same for a world every time)
+    function drawProps(si) {
+        const box = $("#cm-props"), b = biome(map[si].world);
+        for (const k of ["ground", "hill", "path"]) plane.style.setProperty("--" + k, b[k]);
+        if (box.dataset.for === map[si].world) return;
+        box.dataset.for = map[si].world;
+        const r = U.rng(si * 131 + 17), pts = spots(si), road = [], list = [];
+        for (let u = 0; u <= pts.length - 1; u += 0.1) road.push(roadPoint(pts, u));
+        for (let tries = 0; list.length < 15 && tries < 500; tries++) {
+            const x = r() * 100, y = r() * 100;
+            if (Math.hypot(x - 50, y - 50) > 53) continue;                                  // (on the island)
+            if (road.some(p => Math.hypot(p[0] - x, p[1] - y) < 15) || list.some(p => Math.hypot(p.x - x, p.y - y) < 11)) continue;
+            list.push({ x, y, k: 0.9 + r() * 0.7 });
         }
-        return d;
+        box.replaceChildren(...list.map(p => U.el("div", { class: "ws-prop", style: { "--x": p.x.toFixed(1) + "%", "--y": p.y.toFixed(1) + "%", "--k": p.k.toFixed(2) },
+            html: `<svg viewBox="-40 -84 80 88" aria-hidden="true">${PROPS[b.prop](r)}</svg>` })));
     }
-    // a vertical gradient that holds each world's colour in the middle of its band and blends at the borders
-    function blend(id, field) {
-        const total = totalH();
-        const st = map.flatMap((s, si) => [TOP + si * SH + 200, TOP + si * SH + 800].map(y => `<stop offset="${(y / total).toFixed(5)}" stop-color="${biome(s.world)[field]}"/>`));
-        return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${total}">${st.join("")}</linearGradient>`;
+    // The road is a smooth curve through the stops (Catmull-Rom, as cubic Béziers). u counts stops along it: 0 is the
+    // first stop, 1.5 is halfway between the second and the third.
+    function roadPoint(pts, u) {
+        const i = U.clamp(Math.floor(u), 0, pts.length - 2), t = U.clamp(u - i, 0, 1), k = 1 - t;
+        const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        return [0, 1].map(a => k * k * k * p1[a] + 3 * k * k * t * c1[a] + 3 * k * t * t * c2[a] + t * t * t * p2[a]);
     }
-    // a wavy strip down one side of the map (hills along the edges)
-    function sideWave(left, depth, seed) {
-        const r = U.rng(seed), total = totalH();
-        const edge = left ? -60 : W + 60;
-        let d = `M${edge} -60`;
-        for (let y = -60; y <= total + 60; y += 90) {
-            const x = (left ? 0 : W) + (left ? 1 : -1) * (depth + Math.sin(y / 230 + seed) * depth * 0.45 + (r() - 0.5) * depth * 0.4);
-            d += `L${x.toFixed(0)} ${y}`;
+    function roadPath(pts, upTo = pts.length - 1) {
+        if (upTo <= 0) return "";
+        let d = "";
+        for (let u = 0; u < upTo; u += 0.04) { const [x, y] = roadPoint(pts, u); d += (d ? "L" : "M") + x.toFixed(2) + " " + y.toFixed(2); }
+        const [x, y] = roadPoint(pts, upTo);
+        return d + "L" + x.toFixed(2) + " " + y.toFixed(2);
+    }
+    const reachedIn = si => LV(si).filter(l => unlocked(si, l)).length;        // how many of a world's stops are open
+    function setRoad(si, reached) {
+        const pts = spots(si), whole = roadPath(pts);
+        $("#cm-road-bed").setAttribute("d", whole);
+        $("#cm-road-ahead").setAttribute("d", whole);
+        const done = sectionOpen(si) ? roadPath(pts, reached - 1) : "";
+        $("#cm-road-done").setAttribute("d", done);
+        $("#cm-road-flow").setAttribute("d", done);
+    }
+    const starRow = (n, cls = "") => { const box = U.el("span", { class: "ws-stars " + cls, role: "img", "aria-label": `${n} of 3 stars` }); for (let i = 0; i < 3; i++) box.append(icon("star", i < n ? "on" : "off")); return box; };
+    const worldStars = si => LV(si).reduce((n, l) => n + ((record(si, l) || {}).stars || 0), 0);
+    const levelName = (si, l) => (l === 5 ? bossOf(map[si].world).name : (lessonOf(si, l) ? lessonOf(si, l).name : label(map[si].levels[l - 1], sizeOf(map[si], l))));
+
+    // hold: this stop is drawn as still locked (it's about to open, with its own little show: see openStop)
+    function drawStage({ deal = false, hold = null } = {}) {
+        const si = data.section, s = map[si], pts = spots(si), open = sectionOpen(si), f = frontier();
+        const list = LV(si);
+        setRoad(si, reachedIn(si) - (hold ? 1 : 0));
+        stage.classList.toggle("is-locked", !open);
+        drawProps(si);
+        $("#cm-sky").replaceChildren(U.el("b", { text: Worlds.byId[s.world].name }), U.el("span", { text: isSecret(si) ? "Secret World" : `World ${si + 1} of ${MAIN} · ${bossOf(s.world).name}` }));
+        stopsEl.replaceChildren();
+        list.forEach((l, i) => {
+            const rec = record(si, l), boss = l === 5, isOpen = unlocked(si, l) && l !== hold, isNext = isOpen && !rec && f.si === si && f.level === l;
+            const state = rec ? "done" : isOpen ? "open" : "locked", [x, y] = pts[i], name = levelName(si, l);
+            const stop = U.el("button", { type: "button", class: `ws-stop ${state}${boss ? " boss" : ""}${isNext ? " next" : ""}${l === data.sel ? " sel" : ""}`,
+                style: { "--x": x + "%", "--y": y + "%", "--i": i + 1 }, "data-level": l, "aria-pressed": l === data.sel ? "true" : "false",
+                "aria-label": `${boss ? "Boss: " + name : "Level " + l + ": " + name}, ${rec ? rec.stars + " of 3 stars" : isOpen ? "not played yet" : "locked"}`,
+                onclick: () => pickLevel(l, true) });
+            const disc = U.el("span", { class: "ws-disc" }, boss ? U.el("span", { class: "ws-boss-art", html: bossSvg(s.world) }) : U.el("b", { text: String(l) }));
+            if (state === "locked" && !boss) disc.append(icon("lock", "ws-lock"));
+            // the boss holds its page of the Everbook over its head until you win it back
+            if (boss) disc.append(rec ? U.el("span", { class: "ws-wonmark", title: "Page Won Back" }, icon("check")) : U.el("span", { class: "ws-leaf", title: "Its page of the Everbook" }));
+            stopsEl.append(U.el("i", { class: `ws-pad ${state}${boss ? " boss" : ""}${isNext ? " next" : ""}${l === data.sel ? " sel" : ""}`, style: { "--x": x + "%", "--y": y + "%" }, "data-level": l }));
+            if (abilityPrize(si, l)) disc.append(U.el("span", { class: "ws-prize", title: `${rec ? "Unlocked" : "Unlocks"}: ${abilityPrize(si, l).name}` }, icon("bolt")));
+            const tag = U.el("span", { class: "ws-tag" }, U.el("b", { text: name }));
+            tag.append(rec ? starRow(rec.stars) : U.el("small", { text: isNext ? "Next" : boss ? "Boss" : label(s.levels[l - 1], sizeOf(s, l)) }));
+            stop.append(disc, tag);
+            stopsEl.append(stop);
+        });
+        // the world's own stars, and its seal once every one is won
+        const got = worldStars(si), all = list.length * 3;
+        const medal = medalEl;
+        medal.hidden = !open;
+        medal.classList.toggle("full", got >= all);
+        medal.replaceChildren(icon("star"), U.el("b", { text: String(got) }), U.el("span", { text: ` / ${all}` }));
+        if (got >= all || cleared(si, 5)) medal.append(U.el("em", { text: got >= all ? "World Mastered" : isSecret(si) ? "Rift Sealed" : "Page Won Back" }));
+        $("#cm-sky").append(medal);
+        // a locked world: what opens it
+        const lockedNote = $("#cm-locked");
+        lockedNote.hidden = open;
+        if (!open) lockedNote.replaceChildren(icon("lock"), U.el("p", { text: `Beat ${bossOf(map[si - 1].world).name} in ${Worlds.byId[map[si - 1].world].name} to open ${Worlds.byId[s.world].name}.` }));
+        for (const [id, k] of [["#cm-prev", -1], ["#cm-next", 1]]) {
+            const b = $(id), there = map[si + k];
+            b.hidden = !there;
+            if (!there) continue;
+            const name = Worlds.byId[there.world].name;
+            b.replaceChildren(icon(k < 0 ? "back" : "next"), U.el("span", { text: name }));
+            b.setAttribute("aria-label", `${k < 0 ? "Previous" : "Next"} world: ${name}`);
         }
-        return d + `L${edge} ${total + 60}Z`;
-    }
-
-    function buildStatic() {
-        const total = totalH(), nodes = allNodes();
-        const segs = [];
-        for (let i = 0; i < nodes.length - 1; i++) segs.push([nodes[i], nodes[i + 1]]);
-        const nearPath = (x, y) => segs.some(([a, b]) => {
-            if (Math.abs(y - a[1]) > 260 && Math.abs(y - b[1]) > 260) return false;
-            const dx = b[0] - a[0], dy = b[1] - a[1], t = U.clamp(((x - a[0]) * dx + (y - a[1]) * dy) / (dx * dx + dy * dy), 0, 1);
-            return Math.hypot(x - a[0] - dx * t, y - a[1] - dy * t) < 88;
-        });
-        let props = "", sky = "", texture = "", signs = "";
-        map.forEach((s, si) => {
-            const b = biome(s.world), r = U.rng(si * 131 + 17), y0 = TOP + si * SH, list = [];
-            // scenery, away from the path and the world's sign
-            for (let tries = 0; list.length < 26 && tries < 400; tries++) {
-                const x = 30 + r() * (W - 60), y = y0 + 150 + r() * (SH - 120);
-                if (Math.abs(x - 500) < 270 && y < y0 + 170) continue;
-                if (nearPath(x, y - 14) || list.some(p => Math.hypot(p.x - x, p.y - y) < 70)) continue;
-                list.push({ x, y, k: 0.95 + r() * 0.6 });
-            }
-            list.sort((a, c) => a.y - c.y);
-            for (const p of list) props += `<g transform="translate(${p.x.toFixed(0)} ${p.y.toFixed(0)}) scale(${p.k.toFixed(2)})"><ellipse rx="22" ry="5" fill="#000" opacity=".12"/>${PROPS[b.prop](r)}</g>`;
-            // the sky's bits, seen from above: stars at night, drifting cloud shadows by day
-            if (b.night) {
-                for (let i = 0; i < 40; i++) sky += `<circle cx="${(r() * W).toFixed(0)}" cy="${(y0 + r() * SH).toFixed(0)}" r="${(0.8 + r() * 2).toFixed(1)}" fill="#fff" opacity="${(0.3 + r() * 0.6).toFixed(2)}"/>`;
-            } else {
-                for (let i = 0; i < 3; i++) { const cx = 80 + r() * (W - 160), cy = y0 + 120 + r() * (SH - 200); sky += `<g transform="translate(${cx.toFixed(0)} ${cy.toFixed(0)})" fill="#fff" opacity=".35"><ellipse rx="70" ry="22"/><circle cx="-20" cy="-14" r="26"/><circle cx="22" cy="-10" r="20"/></g>`; }
-            }
-            if (s.world === "volcano") sky += `<path d="M${W - 280} ${y0 + 520}L${W - 170} ${y0 + 360}h50L${W - 10} ${y0 + 520}z" fill="#24130f"/><path d="M${W - 170} ${y0 + 360}h50l-10 18h-30z" fill="#ff7a1f"/>`;
-            if (s.world === "rift") {               // the tear across the secret world's sky, light pouring out of it
-                sky += `<path d="M40 ${y0 + 300} L190 ${y0 + 270} L300 ${y0 + 320} L430 ${y0 + 250} L560 ${y0 + 310} L700 ${y0 + 240} L830 ${y0 + 300} L960 ${y0 + 260} L960 ${y0 + 290} L830 ${y0 + 330} L700 ${y0 + 290} L560 ${y0 + 350} L430 ${y0 + 290} L300 ${y0 + 360} L190 ${y0 + 300} L40 ${y0 + 320}Z" fill="#fff3c4" stroke="#ffd06b" stroke-width="5" opacity=".9"/>`;
-                for (let i = 0; i < 7; i++) sky += `<path d="M${120 + i * 130} ${y0 + 300} L${60 + i * 150} ${y0 + 980} L${180 + i * 150} ${y0 + 980}Z" fill="#ffe7a3" opacity=".06"/>`;
-            }
-            if (s.world === "space") sky += `<circle cx="140" cy="${y0 + 470}" r="54" fill="#ff9f6b"/><ellipse cx="140" cy="${y0 + 470}" rx="92" ry="14" fill="none" stroke="#ffe066" stroke-width="4" transform="rotate(-12 140 ${y0 + 470})"/>`;
-            if (s.world === "arcade") sky += `<g transform="translate(${W - 130} ${y0 + 520})"><circle r="70" fill="#ff5fb0"/>${[0, 1, 2, 3].map(i => `<rect x="-80" y="${8 + i * 14}" width="160" height="${3 + i * 2}" fill="#220a48"/>`).join("")}</g>`;
-            // ground textures
-            if (s.world === "paper") { for (let y = y0 + 20; y < y0 + SH; y += 36) texture += `<path d="M0 ${y}h${W}" stroke="#b9cdea" stroke-width="2"/>`; texture += `<path d="M90 ${y0}V${y0 + SH}" stroke="#f0a0a0" stroke-width="2.5"/>`; }
-            if (s.world === "arcade") { for (let x = 0; x <= W; x += 60) texture += `<path d="M${x} ${y0}V${y0 + SH}" stroke="#ff2bd6" stroke-width="1.5" opacity=".3"/>`; for (let y = y0; y < y0 + SH; y += 60) texture += `<path d="M0 ${y}H${W}" stroke="#2bf0ff" stroke-width="1.5" opacity=".2"/>`; }
-            if (s.world === "robot") for (let x = 0; x < W; x += 125) for (let y = y0; y < y0 + SH; y += 90) texture += `<rect x="${x + 4}" y="${y + 4}" width="117" height="82" fill="none" stroke="#56606d" stroke-width="2"/>`;
-            if (s.world === "library") for (let y = y0 + 10; y < y0 + SH; y += 28) texture += `<path d="M0 ${y}h${W}" stroke="#4a2f20" stroke-width="2"/>`;
-            if (s.world === "ocean") for (let i = 0; i < 9; i++) { const y = y0 + 60 + i * 110; texture += `<path d="M0 ${y} q60 -16 120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0 t120 0" stroke="#fff" stroke-width="2" fill="none" opacity=".18"/>`; }
-            // the world's sign at the top of its band
-            const w = Worlds.byId[s.world];
-            signs += `<g class="cm-sign" transform="translate(500 ${y0 + 92})"><rect x="-230" y="-52" width="460" height="104" rx="22" fill="${b.node}" stroke="#fff" stroke-width="6"/>
-                <rect x="-230" y="-52" width="460" height="104" rx="22" fill="none" stroke="${INK}" stroke-width="3" opacity=".35"/>
-                <text class="cm-sign-kick" y="-16">${worldTag(si)}</text><text class="cm-sign-name" y="30">${U.esc(w.icon + " " + w.name)}</text></g>`;
-        });
-        svg = U.svg("svg", { class: "cm-svg", viewBox: `0 0 ${W} ${total}`, role: "group", "aria-label": "Campaign map" });
-        svg.innerHTML = `<defs>${blend("cm-ground", "ground")}${blend("cm-hill", "hill")}${blend("cm-path", "path")}${blend("cm-sky", "sky")}</defs>
-            <rect x="-100" y="-100" width="${W + 200}" height="${total + 200}" fill="url(#cm-ground)"/>
-            <g>${texture}</g>
-            <path d="${sideWave(true, 70, 3)}" fill="url(#cm-hill)"/><path d="${sideWave(false, 70, 7)}" fill="url(#cm-hill)"/>
-            <path d="${sideWave(true, 30, 11)}" fill="url(#cm-sky)" opacity=".7"/><path d="${sideWave(false, 30, 13)}" fill="url(#cm-sky)" opacity=".7"/>
-            <g>${sky}</g>
-            <path class="cm-road-shadow" d="${curve(nodes)}" transform="translate(0 7)"/>
-            <path class="cm-road" d="${curve(nodes)}" stroke="url(#cm-path)"/>
-            <path class="cm-road-dash" d="${curve(nodes)}"/>
-            <g>${props}</g><g>${signs}</g>
-            <g class="cm-start" transform="translate(500 50)"><circle r="26" fill="#fff" stroke="${INK}" stroke-width="3"/><text y="7" class="cm-start-text">GO</text></g>
-            <g class="cm-finish" transform="translate(500 ${total - 120})"><path d="M-8 40V-60" stroke="${INK}" stroke-width="6"/><path d="M-8 -60h70l-14 22 14 22h-70z" fill="#ffd23f" stroke="${INK}" stroke-width="3"/><text x="27" y="-32" class="cm-finish-text">🏆</text></g>`;
-        // the parts that move (the nodes, the travelled path, the player) are in a second SVG on top, on its own
-        // layer: an animation inside the big map made the browser repaint all of it every frame (~0.7 s of work a
-        // second on the map page); now only these few things are repainted
-        const top = U.svg("svg", { class: "cm-svg cm-svg-dyn", viewBox: `0 0 ${W} ${total}`, role: "group", "aria-label": "Levels" });
-        dyn = U.svg("g", { class: "cm-dyn" }, top);
-        heroLayer = U.svg("g", { class: "cm-hero-layer" }, top);
-        mapEl.innerHTML = "";
-        mapEl.append(svg, top);
-    }
-
-    // the parts that change with progress: the travelled path, the nodes, the fog over locked worlds, the player
-    function drawDynamic() {
-        const nodes = allNodes(), f = frontier(), fi = nodeIndex(f.si, f.level);
-        let out = `<path class="cm-road-done" d="${curve(nodes, 0, fi)}"/>`;
-        map.forEach((s, si) => {
-            const b = biome(s.world);
-            if (!sectionOpen(si)) {
-                out += `<g class="cm-fog"><rect x="-100" y="${TOP + si * SH}" width="${W + 200}" height="${SH}"/><text x="500" y="${TOP + si * SH + SH / 2 - 10}" class="cm-fog-lock">&#128274;</text>` +
-                    `<text x="500" y="${TOP + si * SH + SH / 2 + 40}" class="cm-fog-text">Beat ${U.esc(bossOf(map[si - 1].world).name)} to open</text></g>`;
-            }
-            for (const l of LV(si)) {
-                const [x, y] = nodePos(si, slotOf(si, l)), rec = record(si, l), open = unlocked(si, l), boss = l === 5;
-                const state = rec ? "done" : open ? "open" : "locked";
-                const sel = si === data.section && l === data.sel && sheetOpen ? " sel" : "";
-                const R = boss ? 62 : 38;
-                let inner = `<circle class="cm-node-shadow" cy="7" r="${R}"/>`;
-                if (state === "open" && si === f.si && l === f.level) inner += `<circle class="cm-pulse" r="${R}" style="stroke:${b.node}"/>`;
-                inner += `<circle class="cm-node-base" r="${R}" style="fill:${state === "locked" ? "" : b.node}"/>`;
-                if (boss) inner += `<g transform="translate(-54 -60) scale(.45)" class="${state === "locked" ? "cm-dim" : ""}">${Bosses.inner(s.world)}</g>`;
-                else inner += `<text class="cm-node-num" y="11">${state === "locked" ? "&#128274;" : l}</text>`;
-                if (rec) inner += `<g transform="translate(0 ${R + 16})">${[-1, 0, 1].map((k, i) => `<path class="cm-star${i < rec.stars ? " on" : ""}" d="${starPath(k * 20, 0, 10, 4.4, 5)}"/>`).join("")}</g>`;
-                if (boss) inner += `<text class="cm-boss-tag" y="${-R - 12}">BOSS</text>`;
-                const prize = abilityPrize(si, l);
-                if (prize) inner += `<g class="cm-prize-badge${rec ? "" : " todo"}" transform="translate(${(R * 0.78).toFixed(1)} ${(boss ? R * 0.78 : -R * 0.78).toFixed(1)})"><title>${rec ? "Unlocked" : "Unlocks"}: ${U.esc(prize.name)}</title><circle r="16"/><text>${prize.icon}</text></g>`;
-                out += `<g class="cm-node ${state}${boss ? " boss" : ""}${sel}" data-si="${si}" data-level="${l}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})" tabindex="0" role="button" aria-label="${U.esc(Worlds.byId[s.world].name)}, ${boss ? "boss battle" : "level " + l}, ${state === "locked" ? "locked" : rec ? rec.stars + " stars" : "ready"}">${inner}</g>`;
-            }
-        });
-        dyn.innerHTML = out;
         drawHero();
-        dyn.querySelectorAll(".cm-node").forEach(n => {
-            n.addEventListener("click", () => pickLevel(+n.dataset.si, +n.dataset.level, true));
-            n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickLevel(+n.dataset.si, +n.dataset.level, true); } });
-        });
+        if (deal && U.motion() !== "still") U.restart(stage, "deal");
+        staged = true;
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Your hero (hero.js): made the first time the campaign opens, changed with the Hero button,
-    // standing on the map on the level it's at and walking the road to the next one. data.hero is its look,
+    // The bar along the top (Exit, the world on stage, stars, coins, the Everbook) and the strip of worlds
+    // ---------------------------------------------------------------------------------------------
+    $("#cm-exit").append(icon("back"));
+    $("#cm-book").prepend(icon("book"));
+    function drawBar() {
+        const si = data.section, s = map[si], w = Worlds.byId[s.world], t = totals();
+        $("#cm-name").textContent = w.name;
+        $("#cm-where").textContent = isSecret(si) ? `Secret World · ${bossOf(s.world).name}'s Prison` : `World ${si + 1} of ${MAIN} · ${bossOf(s.world).name}'s World`;
+        $("#cm-total").replaceChildren(icon("star"), U.el("b", { text: String(t.stars) }), U.el("span", { text: ` / ${t.max * 3}` }));
+        $("#cm-coins").replaceChildren(icon("coin"), U.el("b", { text: String(data.coins) }));
+    }
+    // one tile per world: a still of its scene, its name, and a pip for each of its five stops
+    let stripFor = 0;
+    function drawStrip() {
+        if (stripFor !== map.length) {
+            stripFor = map.length;
+            stripEl.replaceChildren();
+            map.forEach((s, i) => {
+                const w = Worlds.byId[s.world];
+                const thumb = U.el("canvas", { class: "ws-thumb", "aria-hidden": "true" });
+                const tile = U.el("button", { type: "button", class: "ws-tile", onclick: () => { Sound.play("select"); go(i); } },
+                    thumb, U.el("span", { class: "ws-tile-name", text: w.name }), U.el("span", { class: "ws-pips", "aria-hidden": "true" }, ...LV(i).map(() => U.el("i"))),
+                    icon("lock", "ws-tile-lock"), U.el("span", { class: "ws-tile-crown", "aria-hidden": "true" }, icon("star")));
+                stripEl.append(tile);
+                // (a frame apart: each still runs its scene for a moment, and sixteen at once would stall the page)
+                setTimeout(() => { if (thumb.isConnected) try { Worlds.preview(thumb, s.world, Worlds.modeFor(w)); } catch (err) { /* no still for this world */ } }, 120 + i * 45);
+            });
+        }
+        [...stripEl.children].forEach((tile, i) => {
+            const open = sectionOpen(i), done = LV(i).filter(l => cleared(i, l)).length;
+            tile.classList.toggle("on", i === data.section);
+            tile.classList.toggle("shut", !open);
+            tile.classList.toggle("won", cleared(i, 5));
+            tile.classList.toggle("full", worldStars(i) >= LV(i).length * 3);
+            tile.setAttribute("aria-current", i === data.section ? "true" : "false");
+            tile.setAttribute("aria-label", `${Worlds.byId[map[i].world].name}: ${done} of ${LV(i).length} cleared${open ? "" : ", locked"}`);
+            [...tile.querySelector(".ws-pips").children].forEach((pip, k) => pip.classList.toggle("on", cleared(i, LV(i)[k])));
+        });
+        const on = stripEl.children[data.section];
+        if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center", behavior: U.motion() === "still" ? "auto" : "smooth" });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Your hero (hero.js): made the first time the campaign opens, changed in the Everbook,
+    // standing on the stage at the level it's at and walking the road to the next one. data.hero is its look,
     // data.heroAt the level it stands on ({ si, level }), data.arrived the furthest world it has arrived in (each new
     // world plays its arrival scene once, see travel.js)
     // ---------------------------------------------------------------------------------------------
     const heroLook = () => Hero.fix(data.hero);
-    let heroWalking = false, heroFace = 1, heroArt = "", heroArtFor = "";
-    const heroLift = level => (level === 5 ? 66 : 42);          // how far above a node's middle the hero's feet are
+    let heroWalking = false, heroArt = "", heroArtFor = "";
     function heroSpot() {
         const at = data.heroAt, f = frontier();
         if (at && map && map[at.si] && LV(at.si).includes(at.level) && unlocked(at.si, at.level)) return at;
         return { si: f.si, level: f.level };
     }
-    function heroMarkup(x, y) {
+    function heroNode() {
         const key = JSON.stringify(heroLook());
-        if (key !== heroArtFor) { heroArtFor = key; heroArt = Hero.inner(heroLook(), { still: true }); }
-        return `<g class="cm-hero${heroWalking ? " walking" : ""}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><g class="cm-bob"><g class="cm-face" transform="scale(${heroFace} 1)"><g transform="translate(-50 -90) scale(.42)">${heroArt}</g></g></g></g>`;
+        if (key !== heroArtFor) { heroArtFor = key; heroArt = Hero.svg(heroLook(), "", { still: true }); }
+        return U.el("div", { class: "ws-hero" }, U.el("div", { html: heroArt }));
     }
+    const placeHero = (node, [x, y]) => { node.style.setProperty("--x", x.toFixed(2) + "%"); node.style.setProperty("--y", y.toFixed(2) + "%"); };
+    // the hero stands on the stage only while its own world is the one on stage
     function drawHero() {
-        if (!heroLayer || heroWalking || !map) return;
-        const at = heroSpot(), [x, y] = nodePos(at.si, slotOf(at.si, at.level));
-        heroLayer.innerHTML = heroMarkup(x, y - heroLift(at.level));
+        if (heroWalking || !map) return;
+        heroLayer.replaceChildren();
+        const at = heroSpot();
+        if (!data.hero || at.si !== data.section) return;
+        const node = heroNode(), i = LV(at.si).indexOf(at.level);
+        placeHero(node, spots(at.si)[i]);
+        node.classList.toggle("at-boss", at.level === 5);
+        heroLayer.append(node);
     }
-    // walk along the road from where the hero stands to (si, level); far jumps (more than a world away) just hop there
+    // walk the road from where the hero stands to a level of the world on stage (from another world it just appears)
     function walkHero(si, level) {
-        if (!heroLayer || !map || heroWalking) return Promise.resolve();
-        const from = heroSpot(), a = nodeIndex(from.si, from.level), b = nodeIndex(si, level);
+        if (!map || heroWalking) return Promise.resolve();
+        const from = heroSpot();
         data.heroAt = { si, level };
         save();
-        if (a === b) { drawHero(); return Promise.resolve(); }
-        if (U.motion() === "still" || Math.abs(a - b) > 6) { drawHero(); return Promise.resolve(); }
-        const nodes = allNodes(), lo = Math.min(a, b), hi = Math.max(a, b);
-        const path = U.svg("path", { d: curve(nodes, lo, hi), fill: "none", stroke: "none" }, heroLayer);
-        const len = path.getTotalLength(), ms = U.clamp(Math.abs(a - b) * 520, 650, 2800);
-        const lift0 = heroLift(from.level), lift1 = heroLift(level);
-        heroFace = nodes[b][0] >= nodes[a][0] ? 1 : -1;
+        if (si !== data.section || from.si !== si || from.level === level || U.motion() === "still" || !data.hero) { drawHero(); return Promise.resolve(); }
+        const pts = spots(si), a = LV(si).indexOf(from.level), b = LV(si).indexOf(level), ms = U.clamp(Math.abs(a - b) * 520, 600, 1900);
         heroWalking = true;
-        heroLayer.querySelectorAll(".cm-hero").forEach(n => n.remove());       // (the one standing there: it was left behind while its copy walked)
-        heroLayer.insertAdjacentHTML("beforeend", heroMarkup(nodes[a][0], nodes[a][1] - lift0));
-        const g = heroLayer.querySelector(".cm-hero");
-        g.classList.add("walking");
-        const face = g.querySelector(".cm-face");
+        heroLayer.replaceChildren();
+        const node = heroNode();
+        node.classList.add("walking");
+        heroLayer.append(node);
         Sound.play("select");
         return new Promise(done => {
             const t0 = performance.now();
             const step = now => {
                 const k = Math.min(1, (now - t0) / ms), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-                const at = path.getPointAtLength((a < b ? e : 1 - e) * len), ahead = path.getPointAtLength(Math.min(len, Math.max(0, (a < b ? e + 0.02 : 1 - e - 0.02) * len)));
-                const dir = ahead.x >= at.x ? 1 : -1;
-                if (Math.abs(ahead.x - at.x) > 0.5 && dir !== heroFace) { heroFace = dir; face.setAttribute("transform", `scale(${dir} 1)`); }
-                g.setAttribute("transform", `translate(${at.x.toFixed(1)} ${(at.y - (lift0 + (lift1 - lift0) * e)).toFixed(1)})`);
-                if (k < 1 && g.isConnected) requestAnimationFrame(step);
-                else { heroWalking = false; path.remove(); drawHero(); done(); }
+                const u = a + (b - a) * e, at = roadPoint(pts, u), ahead = roadPoint(pts, U.clamp(u + (b > a ? 0.05 : -0.05), 0, pts.length - 1));
+                node.classList.toggle("left", ahead[0] < at[0] - 0.01);
+                node.classList.toggle("at-boss", level === 5 && e > 0.8);
+                placeHero(node, at);
+                if (k < 1 && node.isConnected && U.view() === "campaign") requestAnimationFrame(step);
+                else { heroWalking = false; drawHero(); done(); }
             };
             requestAnimationFrame(step);
         });
@@ -440,12 +447,11 @@ const Campaign = (() => {
         if (!look) return false;
         data.hero = look;
         save();
-        drawHero();
-        if (sheetOpen) drawDetail();
+        if (map && staged && U.view() === "campaign") { drawHero(); drawPage(); }
         return true;
     }
-    // Coming back to the map: a world reached for the first time plays its arrival scene, then the hero walks on
-    async function heroOnMap() {
+    // Coming back to the stage: a world reached for the first time plays its arrival scene, then the hero walks on
+    async function heroOnMap(fresh = null) {
         if (!map || U.view() !== "campaign") return;
         const f = frontier();
         if (data.arrived == null) { data.arrived = data.storySeen && data.hero ? f.si : -1; save(); }
@@ -457,94 +463,100 @@ const Campaign = (() => {
             data.arrived = f.si;
             data.heroAt = { si: f.si, level: 1 };
             save();
+            if (data.section !== f.si) { data.section = f.si; data.sel = 1; save(); showWorld(true); }
             await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }), { stayOn: "campaign" });
             if (U.view() !== "campaign") { data.arrived = before; save(); return; }    // left the map: it plays next time
             drawHero();
             return;
         }
+        if (fresh) { openStop(fresh); return; }
         const at = heroSpot();
-        if (at.si === f.si && at.level < f.level && !data.betaUnlock) setTimeout(() => { if (U.view() === "campaign") walkHero(f.si, f.level); }, 650);
+        if (at.si === f.si && at.si === data.section && at.level < f.level && !data.betaUnlock) setTimeout(() => { if (U.view() === "campaign") walkHero(f.si, f.level); }, 500);
+        else drawHero();
     }
-
-    // ---------------------------------------------------------------------------------------------
-    // Scrolling: the page scrolls through the worlds; the background world and the top bar follow
-    // ---------------------------------------------------------------------------------------------
-    const scale = () => (svg ? svg.getBoundingClientRect().width / W : 1);
-    const svgTop = () => (svg ? svg.getBoundingClientRect().top + scrollY : 0);
-    function scrollToPoint(y, smooth = true) {
-        scrollTo({ top: Math.max(0, svgTop() + y * scale() - innerHeight * 0.48), behavior: smooth && U.motion() !== "still" ? "smooth" : "auto" });
-    }
-    const scrollToLevel = (si, l, smooth) => scrollToPoint(nodePos(si, slotOf(si, l))[1], smooth);
-    const scrollToWorld = si => scrollToPoint(TOP + si * SH + 420);
-    function sectionInView() {
-        const y = (scrollY + innerHeight * 0.5 - svgTop()) / scale();
-        return U.clamp(Math.floor((y - TOP) / SH), 0, map.length - 1);
-    }
-    let scrollRAF = 0;
-    addEventListener("scroll", () => {
-        if (U.view() !== "campaign" || !svg || scrollRAF) return;
-        scrollRAF = requestAnimationFrame(() => {
-            scrollRAF = 0;
-            const si = sectionInView();
-            if (si !== data.section) { data.section = si; save(); drawBar(); swapWorld(si); }
+    // A stop that has just opened: the road runs on to it, the hero walks along, and the stop wakes up
+    async function openStop(level) {
+        const si = data.section, pts = spots(si), i = LV(si).indexOf(level);
+        if (i < 1 || U.motion() === "still") { drawStage(); return; }
+        const walk = walkHero(si, level), t0 = performance.now(), ms = 900;
+        await new Promise(done => {
+            const step = now => {
+                const k = Math.min(1, (now - t0) / ms), d = roadPath(pts, i - 1 + (1 - Math.pow(1 - k, 3)));
+                $("#cm-road-done").setAttribute("d", d);
+                $("#cm-road-flow").setAttribute("d", d);
+                if (k < 1 && U.view() === "campaign" && data.section === si) requestAnimationFrame(step); else done();
+            };
+            requestAnimationFrame(step);
         });
-    }, { passive: true });
+        await walk;
+        if (U.view() !== "campaign" || data.section !== si) return;
+        drawStage();
+        const stop = stopsEl.querySelector(`.ws-stop[data-level="${level}"]`);
+        if (!stop) return;
+        U.restart(stop, "fresh");
+        Sound.play("sparkle");
+        const r = stop.querySelector(".ws-disc").getBoundingClientRect(), css = getComputedStyle(root);
+        FX.ring({ x: r.left + r.width / 2, y: r.top + r.height / 2, color: css.getPropertyValue("--accent").trim() || "#ffd23f", r0: r.width / 2, r1: r.width * 1.5, dur: 0.6, width: 6 });
+        FX.burst({ x: r.left + r.width / 2, y: r.top + r.height / 2, n: 18, shape: "star", colors: ["#ffd23f", "#fff4c9", css.getPropertyValue("--accent").trim() || "#ffd23f"], speed: 240 });
+    }
 
-    // the background behind the page becomes the world in view, fading through
-    // (not while a level's sheet is open: the page keeps the sheet's world, fonts and all, until it's closed)
-    let fadeTimer = 0, pendingSwap = null, greetTimer = 0;
-    // a world's companion says hello when the map reaches it (its whole introduction the first time)
+    // ---------------------------------------------------------------------------------------------
+    // Changing the world on stage: the page's background (and with it every colour and face) becomes that world
+    // ---------------------------------------------------------------------------------------------
+    let fadeTimer = 0, greetTimer = 0, switching = false;
+    // a world's companion says hello when the stage reaches it (its whole introduction the first time)
     function greetCompanion(id) {
         clearTimeout(greetTimer);
         greetTimer = setTimeout(() => {
-            if (U.view() !== "campaign" || !Worlds.current || Worlds.current.id !== id || typeof Companions === "undefined") return;
+            if (U.view() !== "campaign" || bookOn() || !Worlds.current || Worlds.current.id !== id || typeof Companions === "undefined") return;
             const line = Companions.greet(id);
             if (line) Mascot.say(line, { mood: "happy", hold: 6500 });
         }, 900);
     }
     function swapWorld(si, instant = false) {
-        if (sheetOpen && !instant) { pendingSwap = si; return; }
-        pendingSwap = null;
         const id = map[si].world, bg = document.getElementById("world-bg");
         clearTimeout(fadeTimer);
-        if (Worlds.current && Worlds.current.id === id) return;
+        if (Worlds.current && Worlds.current.id === id) { bg.style.opacity = ""; return; }
         if (instant) { bg.style.opacity = ""; Worlds.use(id); greetCompanion(id); return; }
         bg.style.opacity = "0";
-        fadeTimer = setTimeout(() => { if (U.view() === "campaign") { Worlds.use(id); greetCompanion(id); } bg.style.opacity = ""; }, 380);
+        fadeTimer = setTimeout(() => { if (U.view() === "campaign") { Worlds.use(id); greetCompanion(id); } bg.style.opacity = ""; }, 260);
+    }
+    // the stop a world opens on: the next one to play there, or its boss once it's all done
+    function restStop(si) {
+        const f = frontier();
+        if (f.si === si) return f.level;
+        return sectionOpen(si) && LV(si).every(l => cleared(si, l)) ? 5 : 1;
+    }
+    function showWorld(instant = false) {
+        swapWorld(data.section, instant);
+        drawBar(); drawStage({ deal: true }); drawPage(); drawStrip();
+    }
+    // go to world si (and a stop there): the road slides away, the world changes behind it, the new road is dealt in
+    function go(si, level) {
+        if (!map || !map[si] || switching) return;
+        if (si === data.section) { if (level) pickLevel(level); return; }
+        const dir = si > data.section ? 1 : -1;
+        const land = () => {
+            data.section = si;
+            data.sel = level || restStop(si);
+            save();
+            Mascot.hush();
+            pageEl.classList.remove("up");
+            showWorld(U.motion() === "still");
+        };
+        if (U.motion() === "still") { land(); return; }
+        // the island sails off one way and the next one sails in from the other
+        switching = true;
+        isle.style.setProperty("--dir", dir);
+        isle.classList.remove("sail-in");
+        isle.classList.add("sail-out");
+        $("#cm-sky").classList.add("out");
+        Sound.play("worldSwap");
+        setTimeout(() => { land(); isle.classList.remove("sail-out"); isle.classList.add("sail-in"); $("#cm-sky").classList.remove("out"); U.restart(pageEl, "turn"); switching = false; }, 300);
     }
 
     // ---------------------------------------------------------------------------------------------
-    // The bar along the top (Exit, the world in view, stars, coins, shop) and the rail of worlds
-    // ---------------------------------------------------------------------------------------------
-    function drawBar() {
-        const si = data.section, s = map[si], w = Worlds.byId[s.world], b = biome(s.world);
-        const bar = $(".cmv-bar");
-        bar.style.setProperty("--c", b.node);
-        $("#cm-kicker").textContent = isSecret(si) ? "SECRET WORLD" : `WORLD ${si + 1} OF ${MAIN}`;
-        $("#cm-name").textContent = `${w.icon} ${w.name}`;
-        const diffs = [...new Set(LV(si).filter(l => l < 5).map(l => label(s.levels[l - 1], sizeOf(s, l))))].join(" / ");
-        $("#cm-tag").textContent = `${diffs} · Boss: ${bossOf(s.world).name}`;
-        const t = totals();
-        $("#cm-total").textContent = `★ ${t.stars} / ${t.max * 3}`;
-        $("#cm-coins").replaceChildren(U.icon("coin"), " " + data.coins);
-        const rail = $("#cm-rail");
-        if (!rail.children.length) {
-            map.forEach((sec, i) => {
-                const ww = Worlds.byId[sec.world];
-                const dot = U.el("button", { type: "button", class: "cm-dot", style: { "--c": biome(sec.world).node }, title: `${i + 1}. ${ww.name}`, "aria-label": `Go to world ${i + 1}: ${ww.name}` }, U.el("span", { text: ww.icon }));
-                dot.addEventListener("click", () => { Sound.play("select"); scrollToWorld(i); });
-                rail.appendChild(dot);
-            });
-        }
-        [...rail.children].forEach((dot, i) => {
-            dot.classList.toggle("on", i === si);
-            dot.classList.toggle("done", cleared(i, 5));
-            dot.classList.toggle("locked", !sectionOpen(i));
-        });
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // The level sheet: what a level is, and Play
+    // The page beside the road: the Everbook's page for the world on stage, open at the stop you picked
     // ---------------------------------------------------------------------------------------------
     // About how long a boss fight takes: each phase's puzzle at your own average on levels like it (same difficulty
     // and size), or its par time if you haven't played one, but never longer than the boss itself takes
@@ -563,121 +575,141 @@ const Campaign = (() => {
         });
         return { phases: phases.length, minutes: Math.max(1, Math.round(total / 60)), yours };
     }
-
-    let sheetOpen = false;
-    function drawDetail() {
-        const si = data.section, s = map[si], l = data.sel, boss = l === 5, rec = record(si, l), open = unlocked(si, l);
-        const d = s.levels[l - 1], box = $("#cm-detail");
-        box.innerHTML = "";
-        // the sheet wears its own level's world (fonts, colours), so scrolling the map to another world doesn't restyle it
-        const w = Worlds.byId[s.world];
-        if (w) { box.dataset.world = w.id; box.dataset.theme = Worlds.modeFor(w); }
-        box.classList.toggle("boss", boss);
-        box.style.setProperty("--c", boss ? bossOf(s.world).color : biome(s.world).node);
-        box.appendChild(U.el("button", { type: "button", class: "cm-sheet-close", "aria-label": "Close", text: "×", onclick: closeSheet }));
-        // a boss's sheet fits the screen: its moves | you vs the boss, with its story under them | the details, and a
-        // footer with your abilities and the buttons that always stays in view
-        if (boss) box.appendChild(U.el("div", { class: "cm-side" },
-            U.el("div", { class: "cm-detail-art cm-vs" },
-                U.el("div", { class: "cm-vs-col" }, U.el("div", { html: Hero.svg(heroLook()) }), U.el("small", { text: heroLook().name })),
-                U.el("span", { class: "cm-vs-chip", text: "VS" }),
-                U.el("div", { class: "cm-vs-col" }, U.el("div", { html: bossSvg(s.world) }), U.el("small", { text: bossOf(s.world).name }))),
-            bossOf(s.world).story ? U.el("p", { class: "cm-story", text: bossOf(s.world).story }) : null));
-        const body = U.el("div", { class: "cm-detail-body" });
-        box.appendChild(body);
-        body.appendChild(U.el("small", { class: "cm-detail-kicker", text: `${worldTag(si)} · ${boss ? "BOSS BATTLE" : "LEVEL " + l} · ${label(d, sizeOf(s, l)).toUpperCase()}` }));
-        body.appendChild(U.el("h2", { text: boss ? bossOf(s.world).name : `${Worlds.byId[s.world].name} ${l}` }));
-        if (boss) body.appendChild(U.el("p", { class: "cm-taunt", text: `"${bossOf(s.world).taunt}"` }));
-        if (boss) {
-            const th = Powers.threat(si, MAIN), moves = Powers.MOVES[s.world] || [];
-            body.appendChild(U.el("p", { class: "cm-threat", text: `Threat ${"💀".repeat(th.stars)}${"·".repeat(5 - th.stars)}` }));
-            const est = fightEstimate(si);
-            body.appendChild(U.el("p", { class: "cm-fight-length", title: est.yours ? "From your own times on levels like these" : "A typical time",
-                text: `${est.phases} Phase${est.phases > 1 ? "s" : ""} · About ${est.minutes} Minute${est.minutes > 1 ? "s" : ""}` }));
-            // its moves, in a menu on the left of the sheet
-            box.classList.toggle("many-moves", moves.length > 6);          // (the Cursed Angel's ten: two columns)
-            box.insertBefore(U.el("div", { class: "cm-moves-menu" + (moves.length > 6 ? " many" : "") }, U.el("small", { text: "ITS MOVES" }),
-                ...moves.map(m => U.el("div", { class: "cm-move" }, U.el("span", { class: "cm-move-icon", text: m.icon }),
-                    U.el("div", {}, U.el("b", { text: m.name }), U.el("small", { text: "It " + m.desc }))))), box.children[1] || null);
+    // a small live portrait of a world's companion (it blinks and breathes while it's on the page)
+    const portraits = new Set();
+    let portraitRaf = 0;
+    function portrait(worldId, size = 52) {
+        const cv = U.el("canvas", { class: "dk-companion", width: size * 2, height: size * 2, style: { width: size + "px", height: size + "px" }, "aria-hidden": "true" });
+        const w = Worlds.byId[worldId];
+        if (!w || !w.mascot) return cv;
+        portraits.add({ cv, w, size, st: { t: Math.random() * 3, blink: 0, mood: "happy", look: 0, talk: 0, excite: 0, hop: 0, blinkIn: 1 + Math.random() * 3 } });
+        const paint = (p, dt) => {
+            const g = p.cv.getContext("2d"), st = p.st, k = (p.size * 2) / 160;
+            st.t += dt; st.blinkIn -= dt;
+            if (st.blinkIn < 0) { st.blink = 1; st.blinkIn = 2.2 + Math.random() * 3; }
+            st.blink = Math.max(0, st.blink - dt * 7);
+            g.setTransform(k, 0, 0, k, 0, 0);
+            g.clearRect(0, 0, 160, 160);
+            try { p.w.mascot.draw(g, st); } catch (err) { /* a world without a drawable companion */ }
+        };
+        for (const p of portraits) if (p.cv === cv) paint(p, 0);
+        if (!portraitRaf && U.motion() !== "still") {
+            let last = performance.now();
+            portraitRaf = requestAnimationFrame(function loop(now) {
+                const dt = Math.min(0.05, (now - last) / 1000);
+                last = now;
+                for (const p of portraits) { if (!p.cv.isConnected && p.st.t > 1) { portraits.delete(p); continue; } paint(p, dt); }
+                portraitRaf = portraits.size ? requestAnimationFrame(loop) : 0;
+            });
         }
-        const lesson = lessonOf(si, l);
-        if (lesson) body.appendChild(U.el("div", { class: "cm-lesson" },
-            U.el("small", { text: boss ? "BOSS REVIEW" : `LESSON ${l} OF ${LV(si).length - 1}` + (lesson.round > 1 ? ` · ROUND ${lesson.round}` : "") }),
-            U.el("b", { text: `📘 ${lesson.name}` }),
-            U.el("p", { text: lesson.practise }),
-            U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` })));
-        body.appendChild(U.el("p", { class: "cm-rules", text: boss
-            ? "A race: solve your puzzle before the boss solves its own. Every right word pushes the race bar your way; chain words for combos. When it winds up an attack, finish a word to block it."
-            : (isSecret(si) ? "The Cursed Angel watches you solve: a corruption meter rises, and finishing words pushes it back. Fight off its tricks. If the meter fills, the level is lost. " : "")
-                + `${label(d, sizeOf(s, l))}. Three stars: ★ Solve It · ★ No Items · ★ ${starGoal(lesson, d, sizeOf(s, l))[0]}` }));
-        const foot = boss ? U.el("div", { class: "cm-foot" }) : body;
-        if (boss) foot.appendChild(loadoutBox(map[si].world, () => drawDetail()));
+        return cv;
+    }
+    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+    let moveShown = 0;                          // which of a boss's moves is explained on its page
+    function drawPage() {
+        const si = data.section, s = map[si], w = Worlds.byId[s.world], l = data.sel, boss = l === 5, rec = record(si, l), open = unlocked(si, l);
+        const d = s.levels[l - 1], size = sizeOf(s, l), b = bossOf(s.world), won = cleared(si, 5);
+        const keep = pageEl.querySelector(".ws-p-body"), keepTop = keep && keep.dataset.for === si + "-" + l ? keep.scrollTop : 0;
+        const body = U.el("div", { class: "ws-p-body", "data-for": si + "-" + l });
+        body.append(U.el("div", { class: "dk-folio" },
+            U.el("span", { class: "eb-ch-n", text: isSecret(si) ? "?" : String(si + 1) }),
+            won ? U.el("span", { class: "dk-seal" }, icon("check"), U.el("span", { text: isSecret(si) ? "Rift Sealed" : "Page Won Back" })) : U.el("span", { class: "dk-held", text: `Held by ${b.name}` })));
+        body.append(U.el("span", { class: "dk-kicker", text: boss ? "Boss" : `Level ${l} of ${LV(si).length - 1}` }),
+            U.el("h2", { class: "dk-title", text: boss ? b.name : `${w.name} ${l}` }));
+        if (boss) {
+            const th = Powers.threat(si, MAIN), est = fightEstimate(si), moves = Powers.MOVES[s.world] || [];
+            body.append(U.el("p", { class: "dk-facts", title: est.yours ? "From your own times on levels like these" : "A typical time" },
+                `${plural(est.phases, "Phase")} · About ${plural(est.minutes, "Minute")} · Threat `, U.el("span", { class: "dk-threat", role: "img", "aria-label": `${th.stars} of 5` }, ...[1, 2, 3, 4, 5].map(k => U.el("i", { class: k <= th.stars ? "on" : "" })))));
+            body.append(U.el("div", { class: "eb-plate dk-boss-plate" }, U.el("div", { class: "dk-vs" },
+                U.el("div", { html: Hero.svg(heroLook()) }), U.el("b", { text: "vs" }), U.el("div", { html: bossSvg(s.world) }))));
+            body.append(U.el("p", { class: "dk-taunt", text: `“${b.taunt}”` }));
+            if (b.story) body.append(U.el("p", { class: "eb-prose", text: b.story }));
+            // its moves: tap one to read what it does
+            if (moves.length) {
+                moveShown = U.clamp(moveShown, 0, moves.length - 1);
+                const what = U.el("p", { class: "dk-move-what", "aria-live": "polite" });
+                const grid = U.el("div", { class: "dk-move-grid", role: "group", "aria-label": "Its moves" });
+                const show = k => { moveShown = k; [...grid.children].forEach((c, n) => c.setAttribute("aria-pressed", n === k ? "true" : "false")); what.replaceChildren(U.el("b", { text: moves[k].name + ". " }), "It " + moves[k].desc); };
+                moves.forEach((m, k) => grid.append(U.el("button", { type: "button", class: "dk-move", onclick: () => { Sound.play("select"); show(k); } }, U.el("span", { text: m.icon, "aria-hidden": "true" }), U.el("b", { text: m.name }))));
+                show(moveShown);
+                body.append(U.el("h3", { class: "dk-sub", text: "Its Moves" }), grid, what);
+            }
+            const lesson = lessonOf(si, l);
+            if (lesson) body.append(U.el("h3", { class: "dk-sub", text: "Boss Review" }), U.el("p", { class: "eb-prose", text: lesson.practise }));
+        } else {
+            body.append(U.el("p", { class: "dk-facts", text: `${label(d, size)} · Par ${U.fmtTime(par(d, size))}` }));
+            const lesson = lessonOf(si, l);
+            if (lesson) body.append(U.el("h3", { class: "dk-lesson" }, U.el("small", { text: "Lesson" + (lesson.round > 1 ? ` · Round ${lesson.round}` : "") }), lesson.name),
+                U.el("p", { class: "eb-prose", text: lesson.practise }), U.el("p", { class: "eb-tip" }, icon("spark"), U.el("span", { text: lesson.tip })));
+            if (isSecret(si)) body.append(U.el("p", { class: "eb-small why" }, icon("clock"), U.el("span", { text: "The corruption meter rises as you solve. Finished words push it back. If it fills, the level is lost." })));
+        }
+        const got = rec ? rec.stars : 0;
+        const goals = boss ? ["Win the Race", `Boss Kept Under ${Math.round(STAR_CLOSE[0] * 100)}%`, `Boss Kept Under ${Math.round(STAR_CLOSE[1] * 100)}%`] : ["Solve It", "No Items", starGoal(lessonOf(si, l), d, size)[0]];
+        body.append(U.el("ul", { class: "eb-goals", "aria-label": "Stars" }, ...goals.map((g, i) => U.el("li", { class: i < got ? "got" : "" }, icon("star"), U.el("span", { text: g })))));
         const prize = abilityPrize(si, l);
-        if (prize) body.appendChild(U.el("p", { class: "cm-prize" + (rec ? " got" : ""), text: rec ? `Ability unlocked here: ${prize.icon} ${prize.name}` : `Clear it to unlock an ability: ${prize.icon} ${prize.name}` }));
-        if (rec) body.appendChild(U.el("p", { class: "cm-best", text: `Best: ${"★".repeat(rec.stars)}${"☆".repeat(3 - rec.stars)} · ${U.fmtTime(rec.seconds || 0)}` }));
-        if (!open) body.appendChild(U.el("p", { class: "cm-rules", text: l > 1 ? `Clear level ${prevLevel(si, l)} first.` : `Beat ${bossOf(map[si - 1].world).name} first.` }));
-        const btn = U.el("button", { type: "button", class: "btn primary big", text: !open ? "🔒 Locked" : rec ? "Play Again" : boss ? "Fight" : "Play" });
-        btn.disabled = !open;
-        btn.addEventListener("click", () => play(s.world, l));
-        foot.appendChild(U.el("div", { class: "cm-actions" }, btn, U.el("button", { type: "button", class: "btn", text: "Shop", onclick: () => openShop(boss ? "abilities" : "items") }),
-            boss ? U.el("button", { type: "button", class: "btn ghost", text: "How It Works", onclick: () => HowTo.open("boss") }) : null));
-        if (boss) box.appendChild(foot);
-        box.hidden = false;
-        sheetOpen = true;
-        document.documentElement.classList.toggle("cm-boss-sheet", boss);   // (your companion steps aside: its bubble covered an ability slot)
-        requestAnimationFrame(() => box.classList.add("in"));
+        if (prize) body.append(U.el("p", { class: "eb-small" }, icon("bolt"), U.el("span", { text: rec ? `You unlocked ${prize.name} here.` : `Clear it to unlock ${prize.name}.` })));
+        if (rec) body.append(U.el("p", { class: "eb-small" }, icon("check"), U.el("span", { text: `Best: ${U.fmtTime(rec.seconds || 0)}` })));
+        if (boss && !rec && Hero.giftNames && Hero.giftNames(s.world)) body.append(U.el("p", { class: "eb-small" }, icon("hero"), U.el("span", { text: `Win for your hero: ${Hero.giftNames(s.world).join(", ")}.` })));
+        // the companion's note in the margin
+        const line = typeof Companions !== "undefined" && (boss ? Companions.boss(s.world, "before") : Companions.level(s.world, l));
+        if (w.mascot && line) body.append(U.el("figure", { class: "dk-note" }, portrait(s.world), U.el("figcaption", {}, U.el("b", { text: w.mascot.name }), U.el("q", { text: line }))));
+
+        const foot = U.el("div", { class: "ws-p-go" });
+        if (boss && open) foot.append(loadoutBox(s.world, drawPage));
+        const why = !open ? (!sectionOpen(si) ? `Beat ${bossOf(map[si - 1].world).name} First` : `Clear Level ${prevLevel(si, l)} First`) : "";
+        foot.append(U.el("button", { type: "button", class: "ws-play", disabled: !open, onclick: () => play(s.world, l) },
+            icon(open ? "play" : "lock"), U.el("span", { text: !open ? why : boss ? (rec ? "Fight Again" : "Fight") : rec ? "Play Again" : "Play" })));
+        foot.append(U.el("div", { class: "ws-p-links" },
+            U.el("button", { type: "button", class: "ws-link", text: "Shop", onclick: () => openBook("shop", { shopTab: boss ? "abilities" : "items" }) }),
+            boss ? U.el("button", { type: "button", class: "ws-link", text: "How It Works", onclick: () => HowTo.open("boss") }) : U.el("button", { type: "button", class: "ws-link", text: "Skills", onclick: () => openBook("skills") })));
+        pageEl.replaceChildren(body, foot);
+        pageEl.classList.toggle("is-boss", boss);
+        body.scrollTop = keepTop;
     }
-    function catchUpWorld() { if (pendingSwap != null) { const si = pendingSwap; pendingSwap = null; swapWorld(si); } }
-    function closeSheet() {
-        const box = $("#cm-detail");
-        sheetOpen = false;
-        document.documentElement.classList.remove("cm-boss-sheet");
-        catchUpWorld();
-        box.classList.remove("in");
-        setTimeout(() => { if (!sheetOpen) box.hidden = true; }, 250);
-        if (dyn) drawDynamic();
-    }
-    function pickLevel(si, l, fromMap = false) {
-        if (fromMap && unlocked(si, l) && data.hero) walkHero(si, l);
-        if (fromMap && sheetOpen && data.section === si && data.sel === l && unlocked(si, l)) { play(map[si].world, l); return; }   // a second click plays it
-        data.section = si;
+    // pick a stop of the world on stage; picking the one that's already open plays it
+    function pickLevel(l, fromStage = false) {
+        const si = data.section;
+        if (fromStage && data.sel === l && unlocked(si, l) && !phone.matches) { play(map[si].world, l); return; }
+        if (fromStage && phone.matches && data.sel === l) pageEl.classList.toggle("up");
         data.sel = l;
         save();
         Sound.play("select");
-        drawBar();
-        drawDetail();
-        drawDynamic();
-        const node = dyn.querySelector(`.cm-node[data-si="${si}"][data-level="${l}"]`);
-        if (node) U.restart(node, "cm-bump");
+        stopsEl.querySelectorAll(".ws-stop").forEach(b => { const on = +b.dataset.level === l; b.classList.toggle("sel", on); b.setAttribute("aria-pressed", on ? "true" : "false"); if (on) U.restart(b, "bump"); });
+        stopsEl.querySelectorAll(".ws-pad").forEach(p => p.classList.toggle("sel", +p.dataset.level === l));
+        if (U.motion() !== "still") U.restart(pageEl, "turn");
+        moveShown = 0;
+        drawPage();
+        if (fromStage && unlocked(si, l) && data.hero) walkHero(si, l);
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Showing the map (#campaign) and playing a level (#level)
+    // Showing the stage (#campaign) and playing a level (#level)
     // ---------------------------------------------------------------------------------------------
     async function showMap() {
+        const loadingEl = $("#cm-loading");
         try {
             await fetchMap();
         } catch (err) {
-            const box = U.el("div", { class: "status" });
-            mapEl.replaceChildren(box);
-            U.failCard(box, err, { retry: () => { if (U.view() === "campaign") showMap(); } });
+            loadingEl.hidden = false;
+            U.failCard(loadingEl, err, { retry: () => { if (U.view() === "campaign") showMap(); } });
             return;
         }
         if (U.view() !== "campaign") return;
+        loadingEl.hidden = true;
         data = { ...data, ...U.store.get("campaign", {}) };
-        if (!svg) buildStatic();
-        drawDynamic();
-        const f = frontier();
+        const f = frontier(), key = f.si + "-" + f.level;
         data.section = U.clamp(data.section || 0, 0, map.length - 1);
-        drawBar();
+        if (!LV(data.section).includes(data.sel)) data.sel = restStop(data.section);
+        // a stop that opened since the stage was last seen gets its own little show (not a new world's first stop:
+        // the arrival scene is that world's show)
+        const fresh = data.shown && data.shown !== key && f.si === data.section && f.level > 1 && !cleared(f.si, f.level) && !data.betaUnlock ? f.level : null;
+        data.shown = key;
+        if (fresh) data.sel = fresh;
+        save();
+        pageEl.classList.remove("up");
         swapWorld(data.section, true);
-        closeSheetQuiet();
-        // land on the level you were looking at (or the next one to play)
-        const last = data.playing && data.playing.special ? data.lastPlaying : data.playing;
-        const target = last && map.some(s => s.world === last.world)
-            ? { si: map.findIndex(s => s.world === last.world), level: last.level } : f;
-        requestAnimationFrame(() => scrollToLevel(target.si, target.level, false));
-        // the first time you open the campaign: the story so far (the 📖 Book button replays it from the book)
+        drawBar(); drawStage({ deal: true, hold: fresh }); drawPage(); drawStrip();
+        // the first time you open the campaign: the story so far (the Everbook replays it)
         if (!data.storySeen) {
             data.storySeen = true;
             data.arrived = -1;
@@ -688,20 +720,15 @@ const Campaign = (() => {
                 if (U.view() === "campaign") heroOnMap();
                 else { data.storySeen = false; save(); }            // left the map during it: it plays next time
             }, 400);
-        } else setTimeout(heroOnMap, 450);
-        if (!shownOnce) {
-            shownOnce = true;
-            const w = Worlds.byId[map[f.si].world];
-            setTimeout(() => Mascot.say(`Scroll down the map! Next up: ${w.name}, ${f.level === 5 ? "the boss" : "level " + f.level}.`, { mood: "wow", hold: 4500 }), 600);
-        }
+        } else setTimeout(() => heroOnMap(fresh), fresh ? 700 : 450);
     }
-    let shownOnce = false;
-    function closeSheetQuiet() { sheetOpen = false; document.documentElement.classList.remove("cm-boss-sheet"); const box = $("#cm-detail"); box.classList.remove("in"); box.hidden = true; catchUpWorld(); }
 
     function play(world, level) {
         data.playing = { world, level };
-        if (map && map.some(s => s.world === world)) data.heroAt = { si: map.findIndex(s => s.world === world), level };
+        // (the stage comes back to this level's world, with the hero standing on it)
+        if (map && map.some(s => s.world === world)) { data.section = map.findIndex(s => s.world === world); data.sel = level; data.heroAt = { si: data.section, level }; }
         save();
+        closeBook(true);
         // a level that was finished (or given up), and every boss fight, starts again from scratch with a new puzzle from
         // its pool; a level you're in the middle of carries on with the one it has
         if (Game.restartSlot(slotName())) { newPick(world, level); Game.forgetSlot(slotName()); }
@@ -735,7 +762,6 @@ const Campaign = (() => {
         let world = null;
         try { world = (await U.fetchJson(`/api/boss/daily?date=${dayStr()}`)).world; } catch (err) { problem(err); return; }
         if (!world || !map.some(s => s.world === world)) { FX.toast({ icon: "⚠️", kicker: "BOSS", title: "Couldn't Find Today's Boss", text: "Reload the page and try again.", ms: 4000 }); return; }
-        if (data.playing && !data.playing.special) data.lastPlaying = data.playing;          // where the campaign map lands next time
         data.playing = { world, level: 5, special: "daily", date: dayStr(), sid: Date.now() };
         save();
         fight = null;
@@ -1047,156 +1073,297 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // The shop: one page for everything (items and every world's abilities)
+    // The Everbook: the campaign's book, open over the stage. Its bookmarks are everything that isn't a level:
+    // Contents (the whole journey), Pages (the story you've won back), Shop, Skills, Hero and Help.
+    // From inside a level it opens at the Shop, with only the Shop and Help.
     // ---------------------------------------------------------------------------------------------
-    function openShop(tab = "items") {
-        const modal = U.el("div", { class: "results shop-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "shop-title" });
-        const card = U.el("div", { class: "shop-card" });
-        modal.appendChild(card);
-        let scrollKeep = 0;
-        const draw = () => {
-            const list0 = card.querySelector(".shop-scroll");
-            if (list0) scrollKeep = list0.scrollTop;
-            card.innerHTML = "";
-            const eq = loadout();
-            const tabs = U.el("div", { class: "shop-tabs", role: "tablist" },
-                ...[["items", "Items"], ["abilities", "Boss Abilities"]].map(([id, text]) => U.el("button", { type: "button", role: "tab", class: "shop-tab" + (tab === id ? " on" : ""), "aria-selected": tab === id ? "true" : "false", text,
-                    onclick: () => { tab = id; scrollKeep = 0; Sound.play("select"); draw(); } })));
-            card.append(
-                U.el("div", { class: "shop-head" },
-                    U.el("div", { class: "shop-title" }, U.el("small", { text: "CAMPAIGN" }), U.el("h2", { id: "shop-title", text: "Shop" })),
-                    U.el("span", { class: "shop-coins" }, U.icon("coin"), " " + data.coins),
-                    U.el("button", { type: "button", class: "btn ghost small", text: "Close", onclick: close })),
-                tabs);
-            const buy = (price, give) => () => {
-                if (data.coins < price) return;
-                data.coins -= price;
-                data.bought = (data.bought || 0) + 1;
-                data.spent = (data.spent || 0) + price;
-                give(); save(); Sound.play("coin"); draw();
-                Achievements.announce(Achievements.campaign({ bought: data.bought, spent: data.spent }));
-            };
-            // your 3 equipped abilities, always at the top: easy to buy more uses, click one to swap it
-            const eqBar = U.el("div", { class: "shop-equipped" }, U.el("small", { text: "EQUIPPED · KEYS 1-3" }));
-            const eqRow = U.el("div", { class: "se-row" });
-            for (let i = 0; i < 3; i++) {
-                const a = abilityById[eq[i]];
-                if (!a) { eqRow.appendChild(U.el("div", { class: "se-slot empty" }, U.el("span", { class: "se-icon", text: "+" }), U.el("div", { class: "se-text" }, U.el("b", { text: "Empty" }), U.el("small", { text: `Key ${i + 1} · unlock more by clearing levels` })))); continue; }
-                eqRow.appendChild(U.el("div", { class: "se-slot", style: { "--c": a.fx.color } },
-                    U.el("button", { type: "button", class: "se-swap", title: `Swap the ability on key ${i + 1}`, onclick: () => pickAbility(i, draw) }, U.el("span", { class: "se-icon", text: a.icon }),
-                        U.el("div", { class: "se-text" }, U.el("b", { text: a.name }), U.el("small", { text: `×${data.owned[a.id] || 0} uses · key ${i + 1}` }))),
-                    U.el("button", { type: "button", class: "btn small primary", disabled: data.coins < a.price, title: `Buy one more use of ${a.name}`,
-                        onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }, "+1 · ", U.icon("coin"), " " + a.price)));
-            }
-            eqBar.appendChild(eqRow);
-            card.appendChild(eqBar);
-            const scroll = U.el("div", { class: "shop-scroll" });
-            card.appendChild(scroll);
-            if (tab === "items") {
-                
-                const grid = U.el("div", { class: "shop-grid" });
-                for (const it of ITEMS) grid.appendChild(U.el("div", { class: "shop-item-card" },
-                    U.el("span", { class: "sic-icon", text: it.icon }),
-                    U.el("b", { text: it.name }), U.el("p", { text: it.desc }),
-                    U.el("div", { class: "sic-foot" }, U.el("span", { class: "shop-owned", text: `You have ×${data.items[it.id] || 0}` }),
-                        U.el("button", { type: "button", class: "btn small primary", disabled: data.coins < it.price, onclick: buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }) }, "Buy · ", U.icon("coin"), " " + it.price))));
-                scroll.appendChild(grid);
-            } else {
-                scroll.appendChild(U.el("p", { class: "shop-note", text: "Equip any three abilities you've unlocked for the campaign's boss fights. A world's abilities unlock at its Level 1, its Level 3 and its boss. The Daily Boss always brings its own world's three." }));
-                // (what you bring is shown in the equipped bar at the top of the shop)
-                for (const world of WORLD_ORDER) {
-                    if (world === "rift" && !secretOpen()) continue;        // the secret world stays a secret
-                    const w = Worlds.byId[world];
-                    if (!w) continue;
-                    scroll.appendChild(U.el("h3", { class: "shop-world", style: { "--c": biome(world).node } }, U.el("span", { text: `${w.icon} ${w.name}` }), U.el("small", { text: bossOf(world).name })));
-                    const grid = U.el("div", { class: "shop-grid" });
-                    for (const a of ABILITIES.filter(x => x.world === world)) {
-                        const on = eq.includes(a.id), open = unlockedAbility(a);
-                        grid.appendChild(U.el("div", { class: "shop-item-card ability" + (on ? " on" : "") + (open ? "" : " locked"), style: { "--c": biome(world).node } },
-                            U.el("span", { class: "sic-icon", text: open ? a.icon : "🔒" }),
-                            U.el("b", { text: a.name }), U.el("p", { text: a.flavor }), U.el("p", { class: "sic-effect", text: a.desc }),
-                            U.el("small", { class: "sic-unlock", text: (earnedAbility(a) ? "✓ Unlocked: " : "🔓 Unlock: ") + unlockText(a) }),
-                            open ? U.el("div", { class: "sic-foot" }, U.el("span", { class: "shop-owned", text: `×${data.owned[a.id] || 0}` }),
-                                U.el("button", { type: "button", class: "btn small", disabled: data.coins < a.price, onclick: buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }) }, "Buy · ", U.icon("coin"), " " + a.price),
-                                U.el("button", { type: "button", class: "btn small" + (on ? " primary" : ""), text: on ? "Equipped" : "Equip", title: on ? `Unequip ${a.name}` : `Equip ${a.name}`, onclick: () => {
-                                    let l = loadout().filter(id => id !== a.id);           // equipping a 4th drops the one on key 1
-                                    if (!on) { l.push(a.id); if (l.length > 3) l = l.slice(-3); }
-                                    equip(l); Sound.play("select"); draw(); } })) : null));
-                    }
-                    scroll.appendChild(grid);
-                }
-            }
-            requestAnimationFrame(() => { scroll.scrollTop = scrollKeep; });
-        };
-        const close = () => {
-            modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300);
-            if (U.view() === "campaign" && map && svg) { drawBar(); if (sheetOpen) drawDetail(); }
-            drawAbilityBar(); drawItemBar();
-        };
-        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
-        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
-        draw();
-        document.getElementById("overlay").appendChild(modal);
-        requestAnimationFrame(() => { modal.classList.add("in"); const b = modal.querySelector(".shop-tab.on"); if (b) b.focus({ preventScroll: true }); });
-        Sound.play("select");
+    const BOOK_TABS = [["contents", "Contents", "list"], ["pages", "Pages", "ribbon"], ["shop", "Shop", "bag"], ["skills", "Skills", "bolt"], ["hero", "Hero", "hero"], ["help", "Help", "help"]];
+    let book = null;                            // the open book: { layer, tab, shopTab, slot, page, focus }
+    const bookOn = () => !!book;
+    const onStage = () => U.view() === "campaign" && !!map && staged;
+    function buy(price, give) {
+        if (data.coins < price) return;
+        data.coins -= price;
+        data.bought = (data.bought || 0) + 1;
+        data.spent = (data.spent || 0) + price;
+        give(); save(); Sound.play("coin"); drawBook();
+        Achievements.announce(Achievements.campaign({ bought: data.bought, spent: data.spent }));
     }
+    const price = n => U.el("button", { type: "button", class: "eb-buy" }, icon("coin"), U.el("span", { text: String(n) }));
+    const pips = i => U.el("span", { class: "eb-pips", "aria-hidden": "true" }, ...LV(i).map(l => U.el("i", { class: cleared(i, l) ? "on" : "" })));
+    // leave the book for a place on the stage
+    const bookGo = (si, level) => { closeBook(); if (U.view() !== "campaign") { data.section = si; data.sel = level || restStop(si); save(); location.hash = "#campaign"; } else setTimeout(() => go(si, level), 140); };
+    // the three abilities a boss fight brings, as the book shows them (swap one, or buy another use)
+    function kitList(world) {
+        const eq = loadout(world);
+        return U.el("ol", { class: "eb-kit" }, ...[0, 1, 2].map(i => {
+            const a = abilityById[eq[i]];
+            if (!a) return U.el("li", { class: "empty" }, U.el("small", { text: `Key ${i + 1}` }), U.el("b", { text: "Empty" }));
+            const more = price(a.price);
+            more.disabled = data.coins < a.price;
+            more.title = `Buy one more use of ${a.name}`;
+            more.prepend("+1 ");
+            more.addEventListener("click", () => buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }));
+            return U.el("li", { style: { "--c": a.fx.color } }, U.el("small", { text: `Key ${i + 1} · ${plural(data.owned[a.id] || 0, "Use")}` }), U.el("b", { text: `${a.icon} ${a.name}` }),
+                U.el("button", { type: "button", class: "eb-btn", text: "Swap", onclick: () => { book.slot = i; book.tab = "pick"; turnBook(); } }), more);
+        }));
+    }
+    const BOOK_VIEWS = {
+        contents(left, right) {
+            const t = totals(), f = frontier(), main = map.filter(s => !s.secret), pagesWon = main.filter(s => data.levels[keyOf(s.world, 5)]).length;
+            const bar = U.el("span", { class: "eb-pagesbar", role: "img", "aria-label": `${pagesWon} of ${main.length} pages won back` }, ...main.map(s => U.el("i", { class: data.levels[keyOf(s.world, 5)] ? "on" : "" })));
+            const allDone = t.levels >= t.max;
+            left.append(U.el("h1", { class: "eb-book-title", text: "The Everbook" }),
+                U.el("p", { class: "eb-prose", text: "Every word there is, in one book. The Void tore it into fifteen pages and gave one to each boss. Win them back." }),
+                U.el("div", { class: "eb-owner" }, U.el("div", { class: "eb-owner-hero", html: Hero.svg(heroLook()) }),
+                    U.el("div", {}, U.el("b", { text: heroLook().name }), U.el("p", { text: `${pagesWon} of ${main.length} Pages Won Back` }), bar)),
+                U.el("button", { type: "button", class: "eb-ribbon", onclick: () => bookGo(f.si, f.level) }, icon("ribbon"),
+                    U.el("span", {}, U.el("small", { text: allDone ? "Every Level Cleared" : t.levels ? "Continue" : "Begin" }), U.el("b", { text: `${Worlds.byId[map[f.si].world].name} ${f.level === 5 ? "Boss" : f.level}` }))),
+                U.el("dl", { class: "eb-tally" },
+                    U.el("div", {}, U.el("dt", { text: "Stars" }), U.el("dd", { text: `${t.stars} / ${t.max * 3}` })),
+                    U.el("div", {}, U.el("dt", { text: "Levels" }), U.el("dd", { text: `${t.levels} / ${t.max}` })),
+                    U.el("div", {}, U.el("dt", { text: "Abilities" }), U.el("dd", { text: `${unlockedAbilities().length} / ${ABILITIES.filter(a => a.world !== "rift" || secretOpen()).length}` })),
+                    U.el("div", {}, U.el("dt", { text: "Skills Mastered" }), U.el("dd", { text: `${course().filter(k => k.mastered).length} / ${course().length}` }))));
+            const list = U.el("ol", { class: "eb-toc" });
+            map.forEach((s, i) => {
+                const open = sectionOpen(i), w = Worlds.byId[s.world], full = worldStars(i) >= LV(i).length * 3;
+                list.append(U.el("li", { "data-world": s.world, "data-theme": Worlds.modeFor(w), class: (open ? "" : "shut") + (i === data.section ? " here" : "") },
+                    U.el("button", { type: "button", onclick: () => bookGo(i), "aria-label": `${w.name}, ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length} cleared${open ? "" : ", locked"}` },
+                        U.el("span", { class: "eb-toc-n", text: s.secret ? "?" : String(i + 1) }), U.el("span", { class: "eb-toc-name", text: w.name }),
+                        U.el("span", { class: "eb-toc-dots", "aria-hidden": "true" }), !open ? icon("lock") : full ? icon("check") : pips(i))));
+            });
+            right.append(U.el("h2", { class: "eb-h", text: "Contents" }), list);
+        },
+        // the story: one page per world, readable once its boss has given it back
+        pages(left, right) {
+            const pages = storyPages(), wonN = pages.filter(p => p.won).length;
+            if (book.page == null || !pages[book.page]) book.page = Math.max(0, pages.map(p => p.won).lastIndexOf(true));
+            left.append(U.el("h1", { class: "eb-book-title small", text: "The Pages" }),
+                U.el("p", { class: "eb-prose", text: wonN ? `${wonN} of ${pages.length} are back in the book.` : "None are back yet. Beat a world's boss to win its page." }));
+            const list = U.el("ol", { class: "eb-leaves" });
+            pages.forEach((p, i) => list.append(U.el("li", {}, U.el("button", { type: "button", class: "eb-leaf" + (p.won ? " won" : "") + (i === book.page ? " on" : ""), style: { "--c": p.color },
+                "aria-pressed": i === book.page ? "true" : "false", "aria-label": `Page ${i + 1}, ${p.name}: ${p.won ? "won back" : "held by " + p.boss}`,
+                onclick: () => { book.page = i; Sound.play("flip"); drawBook(); } }, U.el("b", { text: String(i + 1) }), p.won ? null : icon("lock")))));
+            left.append(list, U.el("button", { type: "button", class: "eb-quiet", onclick: () => { closeBook(); setTimeout(() => FX.cinematic(c => Story.intro(c, storyPages())), 200); } }, icon("replay"), U.el("span", { text: "Watch the Story Again" })));
+            const p = pages[book.page], b = bossOf(p.world), w = Worlds.byId[p.world], si = map.findIndex(s => s.world === p.world);
+            right.dataset.world = p.world;
+            right.dataset.theme = Worlds.modeFor(w);
+            right.append(U.el("h2", { class: "eb-h", text: `Page ${book.page + 1}` }), U.el("h3", { class: "eb-leaf-title", text: p.name }));
+            if (p.won) {
+                right.append(U.el("div", { class: "eb-plate eb-leaf-plate" }, U.el("div", { class: "dk-vs", html: bossSvg(p.world) })),
+                    U.el("p", { class: "eb-prose", text: b.story || "" }),
+                    U.el("p", { class: "eb-small" }, icon("check"), U.el("span", { text: `Won back from ${b.name}.` })));
+                const c = w.mascot && typeof Companions !== "undefined" && Companions.has(p.world) ? Companions.loreLeft(p.world) : 0;
+                if (w.mascot) right.append(U.el("figure", { class: "dk-note" }, portrait(p.world), U.el("figcaption", {}, U.el("b", { text: w.mascot.name }),
+                    U.el("q", { text: c ? `I have ${c === 1 ? "one more story" : c + " more stories"} to tell you. Come and find me in ${p.name}.` : "You know all my stories now." }))));
+            } else {
+                right.append(U.el("p", { class: "eb-prose", text: `This page is missing. ${b.name} holds it in ${p.name}.` }),
+                    b.stakes ? U.el("p", { class: "eb-small" }, icon("spark"), U.el("span", { text: b.stakes })) : null);
+            }
+            if (si >= 0) right.append(U.el("button", { type: "button", class: "eb-quiet", onclick: () => bookGo(si, p.won ? undefined : 5) }, icon("next"), U.el("span", { text: `Go to ${p.name}` })));
+        },
+        shop(left, right) {
+            const tab = book.shopTab || "items";
+            left.append(U.el("h1", { class: "eb-book-title small", text: "The Shop" }),
+                U.el("p", { class: "eb-purse" }, icon("coin"), U.el("b", { text: String(data.coins) }), U.el("span", { text: data.coins === 1 ? "Coin" : "Coins" })),
+                U.el("p", { class: "eb-prose", text: "Coins come from stars and first clears. Items work in any level. A boss fight takes abilities instead." }));
+            if (!special()) left.append(U.el("h2", { class: "eb-h gap", text: "Your Abilities" }), kitList());
+            right.append(U.el("div", { class: "eb-switch", role: "group", "aria-label": "What to show" }, ...[["items", "Items"], ["abilities", "Abilities"]].map(([id, text]) =>
+                U.el("button", { type: "button", "aria-pressed": tab === id ? "true" : "false", text, onclick: () => { book.shopTab = id; Sound.play("select"); drawBook(); } }))));
+            if (tab === "items") {
+                right.append(U.el("ul", { class: "eb-list" }, ...ITEMS.map(it => {
+                    const b = price(it.price);
+                    b.disabled = data.coins < it.price;
+                    b.setAttribute("aria-label", `Buy ${it.name} for ${it.price} coins`);
+                    b.addEventListener("click", () => buy(it.price, () => { data.items[it.id] = (data.items[it.id] || 0) + 1; }));
+                    return U.el("li", {}, U.el("span", { class: "eb-icon", text: it.icon, "aria-hidden": "true" }),
+                        U.el("div", {}, U.el("b", { text: it.name }), U.el("p", { text: it.desc }), U.el("small", { text: `You Have ${data.items[it.id] || 0}` })), b);
+                })));
+                return;
+            }
+            const eq = loadout();
+            for (const world of WORLD_ORDER) {
+                const w = Worlds.byId[world];
+                if (!w || (world === "rift" && !secretOpen())) continue;        // the secret world stays a secret
+                right.append(U.el("h3", { class: "eb-world", "data-world": world, "data-theme": Worlds.modeFor(w) }, U.el("span", { text: w.name }), U.el("small", { text: bossOf(world).name })));
+                right.append(U.el("ul", { class: "eb-list" }, ...ABILITIES.filter(a => a.world === world).map(a => {
+                    const on = eq.includes(a.id), open = unlockedAbility(a);
+                    const acts = U.el("div", { class: "eb-acts" });
+                    if (open) {
+                        const b = price(a.price);
+                        b.disabled = data.coins < a.price;
+                        b.setAttribute("aria-label", `Buy a use of ${a.name} for ${a.price} coins`);
+                        b.addEventListener("click", () => buy(a.price, () => { data.owned[a.id] = (data.owned[a.id] || 0) + 1; }));
+                        acts.append(U.el("button", { type: "button", class: "eb-btn" + (on ? " on" : ""), text: on ? "Equipped" : "Equip", "aria-pressed": on ? "true" : "false", onclick: () => {
+                            let l = loadout().filter(id => id !== a.id);           // equipping a 4th drops the one on key 1
+                            if (!on) { l.push(a.id); if (l.length > 3) l = l.slice(-3); }
+                            equip(l); Sound.play("select"); drawBook(); } }), b);
+                    }
+                    return U.el("li", { class: (open ? "" : "locked") + (on ? " on" : ""), style: { "--c": a.fx.color } }, U.el("span", { class: "eb-icon", text: open ? a.icon : "", "aria-hidden": "true" }, open ? null : icon("lock")),
+                        U.el("div", {}, U.el("b", { text: a.name }), U.el("p", { text: a.desc }), U.el("small", { text: open ? plural(data.owned[a.id] || 0, "Use") : unlockText(a) })), acts);
+                })));
+            }
+        },
+        // choosing the ability for one key (from Swap, or a slot on a boss's page)
+        pick(left, right) {
+            const slot = book.slot || 0, eq = loadout(book.world), now = abilityById[eq[slot]];
+            left.append(U.el("h1", { class: "eb-book-title small", text: `Key ${slot + 1}` }),
+                U.el("p", { class: "eb-prose", text: "Any ability you've unlocked works in any campaign boss fight." }),
+                now ? U.el("ul", { class: "eb-list" }, U.el("li", { class: "on", style: { "--c": now.fx.color } }, U.el("span", { class: "eb-icon", text: now.icon, "aria-hidden": "true" }),
+                    U.el("div", {}, U.el("b", { text: now.name }), U.el("p", { text: now.desc }), U.el("small", { text: "On This Key Now" })))) : null,
+                U.el("button", { type: "button", class: "eb-quiet", onclick: () => pickDone() }, icon("back"), U.el("span", { text: "Back" })));
+            right.append(U.el("h2", { class: "eb-h", text: "Choose an Ability" }));
+            let any = false;
+            for (const world of WORLD_ORDER) {
+                const list = ABILITIES.filter(a => a.world === world && unlockedAbility(a)), w = Worlds.byId[world];
+                if (!list.length || !w) continue;
+                any = true;
+                right.append(U.el("h3", { class: "eb-world", "data-world": world, "data-theme": Worlds.modeFor(w) }, U.el("span", { text: w.name })));
+                right.append(U.el("ul", { class: "eb-list" }, ...list.map(a => {
+                    const at = eq.indexOf(a.id);
+                    return U.el("li", { class: at === slot ? "on" : "", style: { "--c": a.fx.color } }, U.el("span", { class: "eb-icon", text: a.icon, "aria-hidden": "true" }),
+                        U.el("div", {}, U.el("b", { text: a.name }), U.el("p", { text: a.desc }), U.el("small", { text: plural(data.owned[a.id] || 0, "Use") + (at >= 0 ? ` · On Key ${at + 1}` : "") })),
+                        U.el("button", { type: "button", class: "eb-btn" + (at === slot ? " on" : ""), text: at === slot ? "Chosen" : "Choose", onclick: () => {
+                            const l = eq.slice(0, 3);
+                            while (l.length < 3) l.push(null);
+                            const was = l.indexOf(a.id);
+                            if (was >= 0) l[was] = l[slot];                 // already on another key: the two swap
+                            l[slot] = a.id;
+                            equip(l); Sound.play("select"); drawAbilityBar(); pickDone();
+                        } }));
+                })));
+            }
+            if (!any) right.append(U.el("p", { class: "eb-prose", text: "No abilities yet. Clear a world's Level 1 to unlock its first one." }));
+        },
+        // the course: every skill, where it's taught, and how well you've done (3 stars everywhere = mastered)
+        skills(left, right) {
+            const list = course(), mastered = list.filter(k => k.mastered).length;
+            left.append(U.el("h1", { class: "eb-book-title small", text: "Skills" }),
+                U.el("p", { class: "eb-prose", text: "Every level practises one crossword skill, and the skills come back harder further on. Three stars on every level of a skill masters it." }),
+                U.el("p", { class: "eb-purse" }, icon("check"), U.el("b", { text: `${mastered} / ${list.length}` }), U.el("span", { text: "Mastered" })),
+                U.el("div", { class: "eb-meter", role: "img", "aria-label": `${mastered} of ${list.length} skills mastered` }, ...list.map(k => U.el("i", { class: k.mastered ? "on" : k.stars.some(n => n > 0) ? "some" : "" }))));
+            right.append(U.el("h2", { class: "eb-h", text: "The Course" }));
+            for (const k of list) {
+                right.append(U.el("section", { class: "eb-skill" + (k.mastered ? " mastered" : "") },
+                    U.el("header", {}, U.el("b", { text: k.lesson.name.replace(/ I+$/, "") }), U.el("small", { text: k.mastered ? "Mastered" : `${k.stars.filter(n => n === 3).length} of ${k.levels.length} Perfect` })),
+                    U.el("p", { text: k.lesson.practise }),
+                    U.el("div", { class: "eb-chips" }, ...k.levels.map((x, n) => U.el("button", { type: "button", class: "eb-chip", "aria-label": `${Worlds.byId[x.world].name} ${x.level}, ${k.stars[n]} of 3 stars`,
+                        onclick: () => bookGo(x.si, x.level) }, U.el("span", { text: `${Worlds.byId[x.world].name} ${x.level}` }), ...[0, 1, 2].map(i => icon("star", i < k.stars[n] ? "on" : "off"))))) ));
+            }
+        },
+        hero(left, right) {
+            const look = heroLook();
+            left.classList.add("eb-center");
+            left.append(U.el("div", { class: "eb-hero-big", html: Hero.svg(look) }), U.el("h1", { class: "eb-book-title small", text: look.name }),
+                U.el("button", { type: "button", class: "eb-quiet", onclick: () => { closeBook(); setTimeout(async () => { await editHero(false); }, 160); } }, icon("hero"), U.el("span", { text: "Change Your Hero" })));
+            const worlds = (full || map).filter(s => !s.secret || secretOpen()).map(s => s.world).filter(w => Hero.giftNames(w));
+            right.append(U.el("h2", { class: "eb-h", text: "Gifts" }), U.el("p", { class: "eb-prose", text: "Every boss you beat gives your hero a hat, an outfit and something to hold." }),
+                U.el("ul", { class: "eb-list eb-gifts" }, ...worlds.map(w => {
+                    const got = beatenBosses().includes(w);
+                    return U.el("li", { class: got ? "" : "locked" }, got ? icon("check") : icon("lock"), U.el("div", {}, U.el("b", { text: bossOf(w).name }), U.el("p", { text: got ? Hero.giftNames(w).join(", ") : "Three parts to win" })));
+                })));
+        },
+        help(left, right) {
+            left.append(U.el("h1", { class: "eb-book-title small", text: "How to Play" }),
+                U.el("p", { class: "eb-prose", text: "Each level practises one crossword skill and earns up to three stars. The fifth is the world's boss: a race to finish your puzzle before it finishes its own." }),
+                U.el("p", { class: "eb-prose", text: "Pick a stop on the road to open its page, then press Play. Pick it again to start straight away." }));
+            const row = (name, sub, fn) => U.el("li", {}, U.el("button", { type: "button", onclick: fn }, U.el("span", {}, name, U.el("small", { text: sub })), icon("next")));
+            right.append(U.el("h2", { class: "eb-h", text: "Guides" }), U.el("ul", { class: "eb-chapters" },
+                row("Levels, Stars and Items", "Ten short animated chapters", () => { closeBook(); HowTo.open("normal"); }),
+                row("Boss Fights", "The race, attacks, counters and abilities", () => { closeBook(); HowTo.open("boss"); })));
+            if (onStage()) right.append(U.el("h2", { class: "eb-h gap", text: "Keys" }), U.el("dl", { class: "eb-keys" },
+                ...[["← →", "Change World"], ["1 – 5", "Pick a Stop"], ["Enter", "Play"], ["B", "Open the Everbook"], ["Esc", "Close"]].map(([k, v]) => U.el("div", {}, U.el("dt", { text: k }), U.el("dd", { text: v })))));
+        }
+    };
+    // every skill in the course: its lesson, the levels that teach it, your stars on each
+    function course() {
+        const skills = new Map();
+        map.forEach((s, si) => (s.lessons || []).forEach((lesson, i) => {
+            if (!lesson || lesson.id === "review") return;
+            if (!skills.has(lesson.id)) skills.set(lesson.id, { lesson, levels: [] });
+            skills.get(lesson.id).levels.push({ si, level: i + 1, world: s.world });
+        }));
+        return [...skills.values()].map(k => { const stars = k.levels.map(x => (record(x.si, x.level) || {}).stars || 0); return { ...k, stars, mastered: stars.every(n => n === 3) }; });
+    }
+    const bookTabs = () => (onStage() ? BOOK_TABS : BOOK_TABS.filter(([id]) => id === "shop" || id === "help"));
+    function drawBook() {
+        if (!book) return;
+        const left = book.layer.querySelector(".eb-left"), right = book.layer.querySelector(".eb-right");
+        const keep = right.dataset.tab === book.tab ? right.scrollTop : 0;
+        for (const p of [left, right]) { p.replaceChildren(); p.className = "eb-page " + (p === left ? "eb-left" : "eb-right"); delete p.dataset.world; delete p.dataset.theme; }
+        right.dataset.tab = book.tab;
+        BOOK_VIEWS[book.tab](left, right);
+        right.scrollTop = keep;
+        const on = book.tab === "pick" ? "shop" : book.tab;
+        book.layer.querySelector(".eb-tabs").replaceChildren(...bookTabs().map(([id, name, ic]) => U.el("button", { type: "button", class: "eb-tab" + (on === id ? " on" : ""), "aria-current": on === id ? "page" : "false",
+            onclick: () => { if (book.tab === id) return; book.tab = id; book.direct = false; turnBook(); } }, icon(ic), U.el("span", { text: name }))));
+        if (U.view() === "campaign" && map && staged) drawBar();
+    }
+    // turn to another section: the pages tip over the spine and settle
+    function turnBook() {
+        const el = book.layer.querySelector(".eb-book");
+        Sound.play("flip");
+        if (U.motion() === "still") { drawBook(); return; }
+        el.classList.add("turning");
+        setTimeout(() => { if (!book) return; drawBook(); el.classList.remove("turning"); U.restart(el, "turned"); }, 230);
+    }
+    // an ability was chosen (or Back): to the shop, or straight back to the boss's page it was opened from
+    function pickDone() {
+        if (book.direct) { closeBook(); return; }
+        book.tab = "shop"; book.shopTab = "abilities";
+        turnBook();
+    }
+    function openBook(tab = "contents", opts = {}) {
+        if (book || !map) return;
+        if (!bookTabs().some(([id]) => id === tab) && tab !== "pick") tab = "shop";
+        const layer = U.el("div", { class: "results in cm-book-layer", role: "dialog", "aria-modal": "true", "aria-label": "The Everbook" },
+            U.el("div", { class: "eb-book" },
+                U.el("nav", { class: "eb-tabs", "aria-label": "The book's sections" }),
+                U.el("button", { type: "button", class: "dk-book-close", onclick: () => closeBook() }, icon("close"), U.el("span", { text: "Close" })),
+                U.el("section", { class: "eb-page eb-left" }), U.el("div", { class: "eb-spine", "aria-hidden": "true" }), U.el("section", { class: "eb-page eb-right" })));
+        book = { layer, tab, focus: document.activeElement, ...opts };
+        layer.addEventListener("pointerdown", e => { if (e.target === layer) closeBook(); });
+        layer.addEventListener("keydown", e => {
+            if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); if (book.tab === "pick" && !book.direct) pickDone(); else closeBook(); return; }
+            if (e.key !== "Tab") return;                               // Tab stays inside the book
+            const list = [...layer.querySelectorAll("button:not(:disabled), [href]")].filter(n => n.offsetParent), first = list[0], last = list[list.length - 1];
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        });
+        drawBook();
+        document.getElementById("overlay").appendChild(layer);
+        root.classList.add("cm-book-on");
+        Mascot.hush();
+        Sound.play("flip");
+        layer.querySelector(".dk-book-close").focus({ preventScroll: true });
+    }
+    function closeBook(quiet = false) {
+        if (!book) return;
+        const { layer, focus } = book;
+        book = null;
+        layer.remove();
+        root.classList.remove("cm-book-on");
+        if (onStage()) { drawBar(); drawPage(); drawStrip(); }
+        drawAbilityBar(); drawItemBar();
+        if (!quiet && focus && focus.isConnected && focus.focus) focus.focus({ preventScroll: true });
+    }
+    // (the item bar's shop button, and anything else that asks for the shop)
+    const openShop = (tab = "items") => openBook("shop", { shopTab: tab });
 
-    // ---- the boss sheet: your 3 abilities, click a slot to pick what goes in it ----
+    // ---- a boss's page: your 3 abilities, click a slot to pick what goes in it ----
     function loadoutBox(world, redraw) {
         const eq = loadout(world);
-        const box = U.el("div", { class: "cm-loadout" }, U.el("small", { text: "YOUR ABILITIES · KEYS 1-3" }));
+        const box = U.el("div", { class: "cm-loadout" }, U.el("small", { text: "Your Abilities · Keys 1-3" }));
         const row = U.el("div", { class: "lo-row" });
         for (let i = 0; i < 3; i++) {
             const a = abilityById[eq[i]];
             row.appendChild(U.el("button", { type: "button", class: "lo-slot" + (a ? "" : " empty"), style: a ? { "--c": a.fx.color } : {}, title: a ? `${a.name}: ${a.desc}` : "Pick an ability",
-                onclick: () => pickAbility(i, redraw, world) },
+                onclick: () => openBook("pick", { slot: i, world, direct: true }) },
                 U.el("span", { class: "lo-icon", text: a ? a.icon : "+" }), U.el("b", { text: a ? a.name : "Empty" }),
-                U.el("small", { text: a ? `×${data.owned[a.id] || 0} · key ${i + 1}` : `key ${i + 1}` })));
+                U.el("small", { text: a ? `×${data.owned[a.id] || 0} · Key ${i + 1}` : `Key ${i + 1}` })));
         }
         box.appendChild(row);
         return box;
-    }
-    // Pick the ability for key slot+1, from every unlocked ability in every world
-    function pickAbility(slot, redraw, world = shopWorld()) {
-        const modal = U.el("div", { class: "results shop-page pick-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "pick-title" });
-        const card = U.el("div", { class: "shop-card" });
-        const close = () => { modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
-        const eq = loadout(world);
-        const scroll = U.el("div", { class: "shop-scroll" }, U.el("p", { class: "shop-note", text: `Choose the ability for key ${slot + 1}. Any ability you've unlocked works in any campaign boss fight.` }));
-        let any = false;
-        for (const w of WORLD_ORDER) {
-            const list = ABILITIES.filter(a => a.world === w && unlockedAbility(a));
-            if (!list.length || !Worlds.byId[w]) continue;
-            any = true;
-            scroll.appendChild(U.el("h3", { class: "shop-world", style: { "--c": biome(w).node } }, U.el("span", { text: `${Worlds.byId[w].icon} ${Worlds.byId[w].name}` })));
-            const grid = U.el("div", { class: "shop-grid" });
-            for (const a of list) {
-                const at = eq.indexOf(a.id);
-                grid.appendChild(U.el("button", { type: "button", class: "shop-item-card ability pick" + (at === slot ? " on" : ""), style: { "--c": a.fx.color },
-                    onclick: () => {
-                        const l = eq.slice(0, 3);
-                        while (l.length < 3) l.push(null);
-                        const was = l.indexOf(a.id);
-                        if (was >= 0) l[was] = l[slot];                 // already on another key: the two swap
-                        l[slot] = a.id;
-                        equip(l);
-                        Sound.play("select"); close(); if (redraw) redraw(); drawAbilityBar();
-                    } },
-                    U.el("span", { class: "sic-icon", text: a.icon }), U.el("b", { text: a.name }), U.el("p", { class: "sic-effect", text: a.desc }),
-                    U.el("small", { class: "sic-unlock", text: `×${data.owned[a.id] || 0} uses` + (at >= 0 ? ` · on key ${at + 1}` : "") })));
-            }
-            scroll.appendChild(grid);
-        }
-        if (!any) scroll.appendChild(U.el("p", { class: "shop-note", text: "No abilities yet. Clear a world's Level 1 to unlock its first one." }));
-        card.append(U.el("div", { class: "shop-head" },
-            U.el("div", { class: "shop-title" }, U.el("small", { text: "EQUIP" }), U.el("h2", { id: "pick-title", text: `Key ${slot + 1}` })),
-            U.el("button", { type: "button", class: "btn ghost small", text: "Close", onclick: close })), scroll);
-        modal.appendChild(card);
-        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
-        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
-        document.getElementById("overlay").appendChild(modal);
-        requestAnimationFrame(() => modal.classList.add("in"));
-        Sound.play("select");
     }
 
     // ---- the item bar under the board, in campaign levels ----
@@ -3884,9 +4051,9 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Buttons and keys on the map page
+    // Buttons, keys and swipes on the stage
     // ---------------------------------------------------------------------------------------------
-    // BETA helpers: a small strip on the map. Unlock All opens every world and level
+    // BETA helpers: a small strip on the stage. Unlock All opens every world and level
     // (data.betaUnlock), and every ability too, and can be switched back. Set BETA to false to hide it (kept for beta testing).
     const BETA = true;
     if (BETA) {
@@ -3894,7 +4061,7 @@ const Campaign = (() => {
         const open = U.el("button", { type: "button", class: "btn small" });
         const strip = U.el("div", { class: "cm-beta", role: "group", "aria-label": "Beta tools" }, U.el("b", { text: "Beta" }), give, open);
         const label = () => { open.textContent = data.betaUnlock ? "Lock Again" : "Unlock All"; open.classList.toggle("primary", !!data.betaUnlock); };
-        const redraw = () => { if (map && svg) { drawBar(); drawDynamic(); if (sheetOpen) drawDetail(); } drawItemBar(); };
+        const redraw = () => { if (onStage()) { drawBar(); drawStage(); drawPage(); drawStrip(); } drawItemBar(); };
         give.addEventListener("click", () => {
             data.coins = (data.coins || 0) + 500;
             save(); redraw(); Sound.play("coin");
@@ -3905,20 +4072,17 @@ const Campaign = (() => {
             // every ability opens too (unlockedAbility), each with its free uses if it has none yet
             if (data.betaUnlock) for (const a of ABILITIES) if (!(data.owned[a.id] > 0)) data.owned[a.id] = FREE_USES;
             save(); label();
-            if (full) { map = visibleMap(); svg = null; $("#cm-rail").innerHTML = ""; if (U.view() === "campaign") showMap(); }
+            if (full) { map = visibleMap(); data.section = U.clamp(data.section || 0, 0, map.length - 1); const f = frontier(); data.shown = f.si + "-" + f.level; save(); }
             redraw(); Sound.play(data.betaUnlock ? "sparkle" : "select");
             FX.toast({ icon: data.betaUnlock ? "🔓" : "🔒", kicker: "Beta", title: data.betaUnlock ? "Everything Unlocked" : "Locked Again", text: data.betaUnlock ? "Every level and ability is open." : "Levels and abilities open as you clear them again.", ms: 2400 });
         });
         label();
-        // on the page itself, not inside the map's view: the view is animated (a transform), and a fixed element
-        // inside a transformed one scrolls away with it instead of staying in the corner
+        // on the page itself, not inside the campaign's view (which is zoomed with the rest of the app)
         document.body.appendChild(strip);
     }
-    $("#cm-shop").addEventListener("click", () => openShop("items"));
-    $("#cm-skills").addEventListener("click", () => openSkills());
-    $("#cm-hero").addEventListener("click", () => { Sound.play("select"); editHero(false); });
-    $("#cm-howto").addEventListener("click", () => HowTo.open("normal"));
-    $("#cm-book").addEventListener("click", () => { Sound.play("select"); Story.openBook(storyPages(), { onReplay: () => FX.cinematic(c => Story.intro(c, storyPages())) }); });
+    $("#cm-book").addEventListener("click", () => openBook("contents"));
+    $("#cm-prev").addEventListener("click", () => go(data.section - 1));
+    $("#cm-next").addEventListener("click", () => go(data.section + 1));
     // The story (story.js): the Everbook's pages, one per world, won back by beating its boss
     function storyPages() {
         return (map || []).filter(s => !s.secret).map(s => ({ world: s.world, name: Worlds.byId[s.world] ? Worlds.byId[s.world].name : s.world, boss: bossOf(s.world).name,
@@ -3933,46 +4097,46 @@ const Campaign = (() => {
         await Story.page(c, pages, cm.world);
         if (!c.skipped && pages.every(p => p.won)) { await c.wait(300); await Story.finale(c, pages); }
     }
-    // The skill book: every skill in the course, where it's taught, and how well you've done (3 stars everywhere = mastered)
-    function openSkills() {
-        const skills = new Map();
-        map.forEach((s, si) => (s.lessons || []).forEach((lesson, i) => {
-            if (!lesson || lesson.id === "review") return;
-            if (!skills.has(lesson.id)) skills.set(lesson.id, { lesson, levels: [] });
-            skills.get(lesson.id).levels.push({ si, level: i + 1, world: s.world, name: lesson.name });
-        }));
-        const modal = U.el("div", { class: "results shop-page", role: "dialog", "aria-modal": "true", "aria-labelledby": "skills-title" });
-        const card = U.el("div", { class: "shop-card" });
-        const close = () => { modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
-        let mastered = 0;
-        const list = U.el("div", { class: "skill-list" });
-        for (const { lesson, levels } of skills.values()) {
-            const stars = levels.map(x => (record(x.si, x.level) || {}).stars || 0), done = stars.every(n => n === 3);
-            if (done) mastered++;
-            list.appendChild(U.el("div", { class: "skill-card" + (done ? " mastered" : "") },
-                U.el("div", { class: "sk-head" }, U.el("b", { text: lesson.name.replace(/ I+$/, "") }), U.el("span", { class: "sk-badge", text: done ? "🏅 Mastered" : `${stars.filter(n => n === 3).length}/${levels.length} perfect` })),
-                U.el("p", { text: lesson.practise }),
-                U.el("p", { class: "cm-tip", text: `💡 ${lesson.tip}` }),
-                U.el("div", { class: "sk-levels" }, ...levels.map((x, k) => U.el("button", { type: "button", class: "sk-level", title: `Play ${Worlds.byId[x.world].name} ${x.level}`,
-                    text: `${Worlds.byId[x.world].icon} ${x.si + 1}-${x.level} ${"★".repeat(stars[k])}${"☆".repeat(3 - stars[k])}`,
-                    onclick: () => { close(); data.section = x.si; data.sel = x.level; save(); drawBar(); drawDetail(); drawDynamic(); scrollToLevel(x.si, x.level, true); } })))));
-        }
-        card.append(U.el("div", { class: "shop-head" },
-            U.el("div", { class: "shop-title" }, U.el("small", { text: "THE COURSE" }), U.el("h2", { id: "skills-title", text: "Skill Book" })),
-            U.el("span", { class: "shop-coins", text: `🏅 ${mastered} / ${skills.size} mastered` }),
-            U.el("button", { type: "button", class: "btn ghost small", text: "Close", onclick: close })),
-            U.el("div", { class: "shop-scroll" }, U.el("p", { class: "shop-note", text: "Get 3 stars on every level of a skill to master it." }), list));
-        modal.appendChild(card);
-        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
-        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
-        document.getElementById("overlay").appendChild(modal);
-        requestAnimationFrame(() => modal.classList.add("in"));
-        Sound.play("select");
-    }
+    // keys: the arrows change world, 1-5 pick a stop, Enter plays it, B opens the book
     addEventListener("keydown", e => {
-        if (U.view() !== "campaign" || !map || e.ctrlKey || e.metaKey || e.altKey || document.querySelector("#overlay .results")) return;
-        if (e.key === "Escape" && sheetOpen) { e.preventDefault(); closeSheet(); }
+        if (!onStage() || e.ctrlKey || e.metaKey || e.altKey || FX.playing || document.querySelector("#overlay .results, .ask-modal, .hm-modal") || e.target.closest("input, textarea, select")) return;
+        if (e.key === "ArrowLeft") { e.preventDefault(); go(data.section - 1); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); go(data.section + 1); }
+        else if (/^[1-5]$/.test(e.key) && LV(data.section).includes(+e.key)) pickLevel(+e.key);
+        else if (e.key === "Enter" && !e.target.closest("button, a") && unlocked(data.section, data.sel)) play(map[data.section].world, data.sel);
+        else if (e.key === "b" || e.key === "B") openBook("contents");
+        else if (e.key === "Escape") pageEl.classList.remove("up");
     });
+    // a phone: swipe the stage to change world; tap the page's top to pull it up or let it down
+    let touchAt = null;
+    stage.addEventListener("touchstart", e => { touchAt = [e.touches[0].clientX, e.touches[0].clientY]; }, { passive: true });
+    stage.addEventListener("touchend", e => {
+        if (!touchAt || !map) return;
+        const dx = e.changedTouches[0].clientX - touchAt[0], dy = e.changedTouches[0].clientY - touchAt[1];
+        touchAt = null;
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(data.section + (dx < 0 ? 1 : -1));
+    });
+    stage.addEventListener("click", e => { if (e.target === stage || e.target === stopsEl) pageEl.classList.remove("up"); });
+    pageEl.addEventListener("click", e => {
+        if (phone.matches && (e.target === pageEl || e.target.closest(".dk-title, .dk-folio, .dk-kicker, .dk-facts"))) pageEl.classList.toggle("up");
+    });
+    // the island turns a little with the pointer (eased, so it glides)
+    const lean = { x: 0, y: 0, tx: 0, ty: 0, raf: 0 };
+    function leanStep() {
+        lean.x += (lean.tx - lean.x) * 0.09; lean.y += (lean.ty - lean.y) * 0.09;
+        stage.style.setProperty("--lx", lean.x.toFixed(4));
+        stage.style.setProperty("--ly", lean.y.toFixed(4));
+        lean.raf = Math.abs(lean.tx - lean.x) + Math.abs(lean.ty - lean.y) > 0.002 && U.view() === "campaign" ? requestAnimationFrame(leanStep) : 0;
+    }
+    const leanTo = (x, y) => { lean.tx = x; lean.ty = y; if (!lean.raf) lean.raf = requestAnimationFrame(leanStep); };
+    stage.addEventListener("pointermove", e => {
+        if (e.pointerType !== "mouse" || U.motion() !== "full") return;
+        const r = stage.getBoundingClientRect();
+        leanTo((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
+    });
+    stage.addEventListener("pointerleave", () => leanTo(0, 0));
+    // the page is a sheet on a phone
+    phone.addEventListener("change", () => { if (onStage()) { drawStage(); drawPage(); } });
 
     return {
         onView, showMap, play, playSpecial, heroLook, editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
