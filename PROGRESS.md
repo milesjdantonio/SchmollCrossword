@@ -17,6 +17,44 @@ deleted after everything is done.
 - The review zip (`SchmollCrossword-review.zip`, 9 reviewers, 2026-10-15) is summarised in `.claude/REVIEW-STATUS.md`.
   Some of its findings are fixed by removing Unlimited; the rest are in Phase 3 and Phase 11 below.
 
+## START HERE NEXT SESSION: the Atlas is slow and awkward (the user, 2026-11-16)
+
+The user on the rebuilt Atlas (commit 17d80cc): "it has horrid performance and UX issues". Nothing below is done yet.
+I only ever saw it in a headless test browser as stills, so I never felt its frame rate or its handling.
+
+**First, ask the user which UX problems they hit** (I don't know yet). My guesses, to confirm or drop:
+- dragging and picking fight each other (a pick is "a press that didn't move"); a drag that ends on an island
+- the wheel zooms here but opens the Atlas on the island, and there's no wheel way out
+- the page of the atlas covers the right third; Whole Map cuts off the nearest row; labels and bosses overlap
+- far islands are tiny and near ones huge; it's hard to tell where you are and what to press to travel
+- it opens zoomed in on one island instead of showing the journey; no pinch zoom on a phone
+
+**Performance: measure first** (the test browser can read frame times: `performance.now()` deltas over rAF while the
+camera eases; also try Settings > Effects: Lite). Likely causes, worst first:
+1. ~250 elements inside `transform-style: preserve-3d` (16 islands x slab layers, scenery, boss, page, label), each
+   its own compositor layer, re-projected every frame the camera moves
+2. filters on those layers: `drop-shadow` on every boss / prop / hero, `blur` on `.at-mist`, `.at-glow` and the page's
+   beam (`.ws-leaf::before`, one per unbeaten boss), `backdrop-filter` on the buttons
+3. `.at-sea` is `inset: -30%` of a 2700 x 2800 plane with a repeating gradient: one layer of about 4300 x 4500 px
+4. 16 full boss SVGs (gradients, many paths) as live DOM, plus always-running animations (mist, rings, beams, stars)
+5. `.at-isle` rise animation on every island at once when it opens
+
+**Plan:**
+1. Measure (frame time opening, dragging, zooming; with and without each suspect) and write the numbers here.
+2. Make each island ONE flat picture: draw it once to a canvas (slab, scenery, boss, page) at open, cache per world +
+   state (open / locked / won), and place those pictures. No per-part 3D, no filters on the moving parts.
+3. Then pick the cheapest way to show them: (a) a single 2D canvas for the whole sea, drawn only while the camera
+   moves, or (b) keep one tilted plane but with flat sprites that are pre-drawn "standing up", so there is exactly
+   one 3D transform. Prefer (a) if (b) still drops frames.
+4. Stop everything when it isn't needed: no animation off screen, none while dragging, nothing running when the
+   Atlas is closed (check `atlasStep` and the CSS animations really stop); respect Effects: Lite and reduce motion.
+5. Fix the UX list above once the user has confirmed it: open on the whole journey with "you are here" obvious,
+   one clear way to travel, a page that doesn't cover the sea, consistent wheel behaviour, pinch zoom.
+6. Check the same suspects on the island (`.ws-isle`: slab layers, `drop-shadow` on scenery, mist `blur`) and the
+   journey scene (`journey.js`: four scrolling layers, blurred front layer). The user hasn't complained about those,
+   but they use the same techniques. Measure before changing them.
+7. Test on the real page with the frame counter, at 1440x900 and on a phone size, then commit and push.
+
 ## The user's decisions (2026-11-07)
 
 - **Update page:** pushed to `main`; it looks like the intro and has a **Play the Current Version** button, so the
