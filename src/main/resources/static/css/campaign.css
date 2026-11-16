@@ -18,7 +18,7 @@
    from the world on stage (worlds.css), so each world looks like itself. */
 .in-map .top-bar { display: none; }
 .in-map main { max-width: none; padding: 0; }
-.cm-page, .cm-book-layer { --cloth: #6e1e2c; --cloth-dark: #3a0d17; --gold: #d9ae4a; --gold-ink: #7a5216; --paper: #f6ecd2; --paper-edge: #e6d3a6; --page-ink: #4a3a22; --page-soft: #7a6442; }
+.cm-page, .cm-book-layer, .sc-layer { --cloth: #6e1e2c; --cloth-dark: #3a0d17; --gold: #d9ae4a; --gold-ink: #7a5216; --paper: #f6ecd2; --paper-edge: #e6d3a6; --page-ink: #4a3a22; --page-soft: #7a6442; }
 /* (fixed to the window: the page itself never scrolls here; 100vh on a phone is taller than what's visible) */
 #campaign-view.cm-page {
     position: fixed; inset: 0; overflow: hidden;
@@ -756,6 +756,88 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
     .ws-cloud.front { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ws-cloud, .ws-leaf::before, .ws-at, .ws-edge, .ws-taunt { animation: none; } }
+
+/* ======================= the secret worlds ======================= */
+/* An omen is the odd thing on an island that leads to its secret world; a gate is what stands there once it's found. */
+.ws-omens { pointer-events: none; }
+.ws-omen { position: absolute; left: var(--x); top: var(--y); width: 74px; padding: 0; border: 0; background: none; cursor: pointer; pointer-events: auto; transform-origin: 50% 100%;
+    transform: translate(-50%, -100%) rotateZ(calc(var(--rz) * -1)) rotateX(calc(var(--rx) * -1)); transition: left .7s cubic-bezier(.3, 1.3, .5, 1), top .7s cubic-bezier(.3, 1.3, .5, 1), opacity .5s;
+    filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .3)); -webkit-tap-highlight-color: transparent; }
+.ws-omen svg { display: block; width: 100%; overflow: visible; }
+.ws-omen:focus-visible { outline: 3px solid #ffd66b; outline-offset: 4px; border-radius: 8px; }
+.ws-omen.open { pointer-events: none; }
+/* the acorn: it wobbles, hops away, and cracks */
+.ws-omen.acorn svg { animation: om-wobble 1.1s ease-in-out infinite alternate; transform-origin: 50% 90%; }
+.ws-omen.acorn.hop svg { animation: om-hop .7s cubic-bezier(.3, 1.4, .5, 1); }
+.ws-omen.acorn.open svg { animation: om-crack .7s ease-out forwards; }
+@keyframes om-wobble { from { rotate: -9deg; } to { rotate: 9deg; } }
+@keyframes om-hop { 40% { translate: 0 -46px; rotate: 200deg; } 100% { rotate: 360deg; } }
+@keyframes om-crack { 30% { scale: 1.25; rotate: -14deg; } 60% { scale: 1.3 .7; } 100% { scale: 1.6; opacity: 0; } }
+/* the bottle: bobbing beside the island, glinting now and then */
+.ws-omen.bottle { width: 50px; animation: om-bob 2.6s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px rgba(190, 240, 255, .7)); }
+.ws-omen.bottle::after { content: ""; position: absolute; left: 20%; top: 30%; width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 4px #fff; animation: om-glint 3.4s ease-in-out infinite; }
+.ws-omen.bottle.open .ws-cork { animation: om-cork .6s cubic-bezier(.3, 1.5, .5, 1) forwards; }
+@keyframes om-bob { from { translate: 0 6px; rotate: -8deg; } to { translate: 0 -10px; rotate: 10deg; } }
+@keyframes om-glint { 0%, 78%, 100% { opacity: 0; scale: .3; } 86% { opacity: 1; scale: 1.2; } }
+@keyframes om-cork { to { translate: 14px -40px; rotate: 80deg; opacity: 0; } }
+/* the mirage: it shimmers, and is gone when you come near */
+.ws-omen.mirage { width: 96px; opacity: .78; animation: om-shimmer 1.4s ease-in-out infinite alternate; }
+.ws-omen.mirage.gone { opacity: 0; scale: 1.2 .6; filter: blur(6px); pointer-events: none; }
+.ws-omen.mirage.real { opacity: 1; animation: none; filter: drop-shadow(0 0 12px rgba(94, 200, 224, .8)); }
+@keyframes om-shimmer { from { filter: blur(0); scale: 1 1; } to { filter: blur(1.6px); scale: 1.04 .96; } }
+/* the cracked boulder: its seam glows hotter while you hold it (--heat, 0 to 1) */
+.ws-omen.crack { width: 104px; filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .3)) drop-shadow(0 0 calc(4px + var(--heat, 0) * 30px) #ff7a1f); scale: calc(1 + var(--heat, 0) * .22); touch-action: none; }
+.ws-crack-glow { animation: om-pulse 1.3s ease-in-out infinite alternate; stroke-width: calc(6px + var(--heat, 0) * 10px); }
+.ws-omen.crack.open { animation: om-burst .7s ease-out forwards; }
+@keyframes om-pulse { from { opacity: .55; } to { opacity: 1; } }
+@keyframes om-burst { 40% { scale: 1.7; filter: drop-shadow(0 0 50px #fff) brightness(2); } 100% { scale: 2.2; opacity: 0; } }
+/* the gate */
+.ws-gate { width: 92px; }
+.ws-gate svg { filter: drop-shadow(0 0 12px color-mix(in srgb, #ffd66b 70%, transparent)); animation: om-pulse 2s ease-in-out infinite alternate; }
+.ws-gate.rise { animation: om-rise 1s cubic-bezier(.2, 1.3, .4, 1) backwards; }
+@keyframes om-rise { from { translate: 0 60px; opacity: 0; scale: 1 .2; } }
+.ws-gate-name { display: block; width: max-content; margin: 4px 0 0 50%; translate: -50% 0; padding: 4px 10px; border-radius: 9px; background: #1c1030; color: #ffd66b; font: 800 .78rem var(--font-body); }
+.ws-gate:hover svg { scale: 1.08; }
+.ws-tile.secret::before { content: "?"; position: absolute; left: -3px; top: -4px; z-index: 1; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #2a1646; color: #ffd66b; font: 900 .72rem Georgia, serif; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
+/* the torn scrap and its riddle */
+.results.sc-layer { z-index: 5; background: rgba(18, 8, 26, .7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); transition: none; animation: dk-veil .25s ease; }
+.sc-scrap { width: min(440px, 94vw); padding: 26px 28px 22px; text-align: center; color: #4a3a22; background: linear-gradient(160deg, #fbf3dc, #ecdcae); rotate: -1.5deg;
+    clip-path: polygon(0 3%, 6% 0, 15% 3%, 27% 0, 40% 2%, 54% 0, 68% 3%, 82% 0, 93% 3%, 100% 0, 99% 30%, 100% 62%, 98% 97%, 88% 100%, 74% 97%, 60% 100%, 45% 98%, 30% 100%, 16% 97%, 5% 100%, 0 96%, 2% 60%, 0 30%);
+    animation: sc-in .5s cubic-bezier(.2, 1.3, .4, 1); }
+.sc-scrap.no { animation: board-nope .5s; }
+@keyframes sc-in { from { opacity: 0; translate: 0 40px; rotate: 10deg; scale: .7; } }
+.sc-scrap small { font: 800 .8rem var(--font-body); color: #7a6442; }
+.sc-riddle { margin: 10px 0 18px; font: italic 600 1.45rem/1.4 Georgia, "Times New Roman", serif; }
+.sc-input { width: calc(var(--n) * 1.55em + 1em); max-width: 100%; padding: 8px 0 8px .5em; border: 0; border-bottom: 3px solid #7a5216; background: rgba(255, 255, 255, .5); color: #2b2233; font: 800 1.6rem/1 ui-monospace, Consolas, monospace; letter-spacing: .55em; text-transform: uppercase; text-align: left; border-radius: 6px 6px 0 0; }
+.sc-input:focus { outline: 3px solid #d9ae4a; outline-offset: 2px; }
+.sc-hint { margin: 8px 0 16px; font: 800 .86rem var(--font-body); color: #7a6442; min-height: 1.2em; }
+.sc-actions { display: flex; justify-content: center; gap: 10px; }
+.sc-actions .eb-quiet { margin: 0; height: 40px; }
+.sc-actions .eb-buy { height: 40px; padding: 0 20px; }
+/* what's behind a gate */
+.sc-reveal { background: radial-gradient(90% 80% at 50% 40%, color-mix(in srgb, var(--c) 45%, #0c0616), #0c0616 80%); }
+.sc-card { width: min(560px, 94vw); padding: 12px 20px; text-align: center; color: #fff; }
+.sc-card small { display: block; font: 800 .86rem var(--font-body); color: #ffd66b; letter-spacing: .04em; }
+.sc-card h2 { margin: 6px 0 12px; font: 700 clamp(2.2rem, 6vw, 3.8rem)/1.05 "Cinzel", Georgia, serif; color: #fff4d2; text-shadow: 0 0 30px color-mix(in srgb, var(--c) 80%, #fff); }
+.sc-tease { margin: 0 auto 16px; max-width: 46ch; font: italic 500 1.15rem/1.6 Georgia, serif; color: rgba(255, 255, 255, .88); }
+.sc-who { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 20px; font: 800 .92rem var(--font-body); color: rgba(255, 255, 255, .7); }
+.sc-card .eb-buy { height: 44px; padding: 0 24px; background: #ffd66b; color: #2b1a05; font-size: 1rem; }
+.sc-eyes { display: flex; justify-content: center; gap: 46px; height: 70px; margin-bottom: 4px; }
+.sc-eyes i { width: 34px; height: 46px; border-radius: 50%; background: radial-gradient(circle at 50% 55%, #1a0d05 0 22%, #ffd66b 24% 60%, #ff9a1f 100%); box-shadow: 0 0 30px 6px color-mix(in srgb, var(--c) 70%, #ffd66b); animation: sc-blink 4.5s infinite; }
+@keyframes sc-blink { 0%, 90%, 100% { scale: 1 1; } 94% { scale: 1 .08; } }
+.sc-reveal.first .sc-card > * { animation: sc-step .7s cubic-bezier(.2, .9, .3, 1) backwards; }
+.sc-reveal.first .sc-eyes { animation-delay: .5s; } .sc-reveal.first .sc-card small { animation-delay: 1.5s; } .sc-reveal.first h2 { animation-delay: 1.9s; }
+.sc-reveal.first .sc-tease { animation-delay: 2.7s; } .sc-reveal.first .sc-who { animation-delay: 3.4s; } .sc-reveal.first .sc-card .eb-buy { animation-delay: 3.9s; }
+@keyframes sc-step { from { opacity: 0; translate: 0 16px; } }
+/* in the Atlas: a found secret world hangs off its island; an omen not yet found is a faint glimmer */
+.ws-at-branch { stroke: #c9a6ff; stroke-width: 3px; stroke-dasharray: 3 8; fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; filter: drop-shadow(0 0 4px #c9a6ff); }
+.ws-at-gate { display: block; width: 58px; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--c) 70%, #ffd66b)); transition: transform .2s cubic-bezier(.2, 1.4, .4, 1); }
+.ws-at-gate svg { display: block; width: 100%; }
+.ws-at-secret:hover .ws-at-gate { transform: translateY(-5px) scale(1.12); }
+.ws-at-secret b { font: 800 .82rem var(--font-body); color: #ffd66b; }
+.ws-at-glimmer { position: absolute; left: var(--x); top: var(--y); width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: #fff; box-shadow: 0 0 14px 5px rgba(201, 166, 255, .9); animation: om-glint 3s ease-in-out infinite; pointer-events: none; }
+@media (max-width: 760px) { .ws-omen { width: 54px; } .ws-omen.crack { width: 76px; } .ws-omen.mirage { width: 70px; } .ws-gate { width: 66px; } .ws-at-gate { width: 40px; } }
+@media (prefers-reduced-motion: reduce) { .ws-omen, .ws-omen svg, .ws-omen::after, .ws-gate svg, .ws-at-glimmer, .sc-eyes i, .sc-reveal.first .sc-card > * { animation: none !important; } .ws-at-glimmer { opacity: .8; } }
 
 @keyframes cm-bob { to { transform: translateY(-8px); } }
 

@@ -2,7 +2,9 @@
 // world toward the boss, who waits on the horizon holding its page of the Everbook.
 //
 //   - the land scrolls past sideways in layers (far hills, scenery, the road, things close to the camera), always
-//     moving, faster while you type; your hero walks the road
+//     moving, faster while you type; your hero travels the way that world is travelled (MODES: on foot along a road,
+//     a mine cart on rails, a submarine, a sled, a boat, a balloon, a flying carpet, a hoverboard, a flying book,
+//     a rocket through open space with no ground at all...)
 //   - every finished word throws you forward: a surge of speed lines from the page, and its letters fly to the page
 //     as light
 //   - the boss and the page come closer as the squares fill (--solve on the page's root, 0 to 1, set by game.js)
@@ -15,9 +17,46 @@ const Journey = (() => {
     const TILE = 2600;                                     // px: a layer's scenery repeats after this far
     const el = U.el("div", { class: "jr", "aria-hidden": "true", hidden: true });
     view.prepend(el);
-    let world = "", layers = [], goal = null, hero = null, zoom = null, streaks = null, sg = null;
+    let world = "", mode = null, layers = [], goal = null, hero = null, rider = null, zoom = null, streaks = null, sg = null;
     let raf = 0, last = 0, x = 0, boost = 0, surge = 0, lines = [], halfSaid = false, heroFor = "";
-    const TAU = Math.PI * 2;
+    const TAU = Math.PI * 2, INK = "#2b2233";
+
+    // How each world is travelled. ride: what the hero travels in or on (drawn over the hero, in units where the hero
+    // is the 100x100 box at 40,80); ground: what the road is; fly: the hero is up in the air ("high" or "low");
+    // open: there's no land at all (space), so the scenery drifts at every height and stars streak by.
+    const cart = (body, trim) => `<rect x="42" y="148" width="96" height="30" rx="7" fill="${body}" stroke="${INK}" stroke-width="3"/><rect x="42" y="148" width="96" height="8" rx="4" fill="${trim}"/>` +
+        [62, 118].map(cx => `<circle cx="${cx}" cy="184" r="10" fill="${INK}"/><circle cx="${cx}" cy="184" r="4" fill="${trim}"/>`).join("");
+    const starPts = (cx, cy, R, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r : R; return (cx + Math.cos(a) * q).toFixed(1) + "," + (cy + Math.sin(a) * q).toFixed(1); }).join(" ");
+    const RIDES = {
+        sub: `<circle cx="90" cy="126" r="54" fill="rgba(190,235,255,.3)" stroke="#e8f8ff" stroke-width="3"/><path d="M26 150Q90 196 154 150Q150 186 90 190Q30 186 26 150Z" fill="#ffc93a" stroke="${INK}" stroke-width="3"/>` +
+            [60, 90, 120].map((cx, i) => `<circle cx="${cx}" cy="${i === 1 ? 177 : 171}" r="6" fill="#fff" stroke="${INK}" stroke-width="2"/>`).join("") +
+            `<g class="jr-spin" style="transform-origin:20px 162px"><path d="M20 146v32M8 162h24" stroke="${INK}" stroke-width="5" stroke-linecap="round"/></g><path d="M124 76v-18h14" fill="none" stroke="#ffc93a" stroke-width="6" stroke-linecap="round"/>`,
+        sled: `<path d="M34 188h100q16 0 18-16" fill="none" stroke="#7a4a2a" stroke-width="5" stroke-linecap="round"/><rect x="44" y="173" width="84" height="8" rx="3" fill="#c0392b" stroke="${INK}" stroke-width="2.5"/><path d="M56 181v7M116 181v7" stroke="#7a4a2a" stroke-width="4"/>`,
+        boat: `<path d="M30 156h120l-16 30H48z" fill="#b9773e" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M32 157h116" stroke="#f2d2a2" stroke-width="5"/>`,
+        balloon: `<path d="M64 150L58 76M116 150l6-74" stroke="${INK}" stroke-width="2"/><ellipse cx="90" cy="38" rx="46" ry="42" fill="#ff5c6c" stroke="${INK}" stroke-width="3"/><path d="M90-4c-18 14-18 70 0 84c18-14 18-70 0-84z" fill="#ffd23f"/><rect x="60" y="150" width="60" height="30" rx="5" fill="#b9773e" stroke="${INK}" stroke-width="3"/><path d="M60 160h60M60 170h60" stroke="#7a4a2a" stroke-width="2"/>`,
+        carpet: `<path d="M26 176q16-9 32 0t32 0t32 0t32 0v10q-16 9-32 0t-32 0t-32 0t-32 0z" fill="#8e44ad" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M34 181q12-6 24 0t24 0t24 0t24 0t16 0" fill="none" stroke="#ffd23f" stroke-width="3"/>`,
+        board: `<ellipse cx="90" cy="198" rx="50" ry="7" fill="#2bf0ff" opacity=".4"/><rect x="38" y="175" width="104" height="10" rx="5" fill="#ff2bd6" stroke="#2bf0ff" stroke-width="3"/>`,
+        book: `<path d="M90 192L34 178v-8l56 12 56-12v8z" fill="#7a3b2e" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M90 182L38 170v-6l52 12 52-12v6z" fill="#f6ecd2" stroke="${INK}" stroke-width="2"/>`,
+        rocket: `<g transform="translate(0 16)"><g class="jr-flick" style="transform-origin:24px 158px"><path d="M24 144Q-22 158 24 172Q8 158 24 144Z" fill="#ffb21e"/><path d="M26 150Q0 158 26 166Z" fill="#fff3c4"/></g><path d="M24 138l-14-16h26zM24 178l-14 16h26z" fill="#e2483c" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>` +
+            `<path d="M24 136h96q40 6 54 22q-14 16-54 22H24z" fill="#f4f6fb" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M134 138q28 6 40 20q-12 14-40 20z" fill="#e2483c" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/><path d="M46 136a44 54 0 0 1 88 0z" fill="rgba(190,235,255,.28)" stroke="#e8f8ff" stroke-width="3"/></g>`,
+        star: `<path d="M62 186H4" stroke="#ffe7a3" stroke-width="7" stroke-linecap="round" opacity=".55"/><path d="M70 196H24" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".5"/><polygon points="${starPts(90, 186, 32, 14)}" fill="#ffd06b" stroke="#fff3c4" stroke-width="3" stroke-linejoin="round"/>`
+    };
+    const MODES = {
+        paper: { ground: "road" }, garden: { ground: "road" }, squirrel: { ground: "road" },
+        candy: { ground: "rail", ride: cart("#ff6fb4", "#ffffff") },
+        ocean: { ground: "none", fly: "high", ride: RIDES.sub, bubbles: true },
+        snow: { ground: "snow", ride: RIDES.sled },
+        rain: { ground: "water", ride: RIDES.boat },
+        sky: { ground: "none", fly: "high", ride: RIDES.balloon },
+        desert: { ground: "none", fly: "low", ride: RIDES.carpet },
+        carnival: { ground: "rail", ride: cart("#e2483c", "#ffd23f") },
+        arcade: { ground: "grid", fly: "low", ride: RIDES.board },
+        library: { ground: "none", fly: "high", ride: RIDES.book },
+        robot: { ground: "rail", ride: cart("#8a95a3", "#ff7a1a") },
+        volcano: { ground: "lava", ride: cart("#5a3a34", "#ff8a2a") },
+        space: { ground: "none", fly: "high", ride: RIDES.rocket, open: true },
+        rift: { ground: "none", fly: "high", ride: RIDES.star, open: true }
+    };
 
     // a strip of hills that joins up with itself after TILE (so the layer can go round and round)
     function hills(base, amp, seed, fill, opacity = 1) {
@@ -38,14 +77,22 @@ const Journey = (() => {
     function scenery(r, n, width, bottom, spread = 0) {
         let out = "";
         for (let i = 0; i < n; i++) {
-            const px = (i + 0.15 + r() * 0.7) / n * TILE, w = width * (0.75 + r() * 0.6);
-            out += `<svg class="jr-prop" viewBox="-40 -84 80 88" style="left:${px.toFixed(0)}px;bottom:${(bottom + (r() - 0.5) * spread).toFixed(1)}%;width:${w.toFixed(0)}px">${Campaign.prop(world, r)}</svg>`;
+            const px = (i + 0.15 + r() * 0.7) / n * TILE, w = width * (0.75 + r() * 0.6), at = mode.open ? r() * 92 : bottom + (r() - 0.5) * spread;
+            out += `<svg class="jr-prop" viewBox="-40 -84 80 88" style="left:${px.toFixed(0)}px;bottom:${at.toFixed(1)}%;width:${w.toFixed(0)}px">${Campaign.prop(world, r)}</svg>`;
         }
+        return out;
+    }
+    // stars for a layer in open space
+    function stars(r, n) {
+        let out = "";
+        for (let i = 0; i < n; i++) out += `<i class="jr-star" style="left:${(r() * TILE).toFixed(0)}px;top:${(r() * 100).toFixed(1)}%;scale:${(0.5 + r() * 1.6).toFixed(2)}"></i>`;
         return out;
     }
     function build(id) {
         world = id;
+        mode = MODES[id] || MODES.paper;
         layers = [];
+        el.className = "jr jr-g-" + mode.ground + (mode.fly ? " jr-fly jr-" + mode.fly : "") + (mode.open ? " jr-open" : "") + (mode.ride ? " jr-riding" : "");
         const b = Campaign.biome(id), r = U.rng(U.hash(id) % 9973 + 11), boss = Bosses.info(id);
         el.style.setProperty("--ground", b.ground);
         el.style.setProperty("--hill", b.hill);
@@ -56,13 +103,18 @@ const Journey = (() => {
             style: { "--t": (4 + r() * 46).toFixed(0) + "%", "--d": (16 + r() * 22).toFixed(1) + "s", "--dl": (-r() * 38).toFixed(1) + "s", "--s": (0.7 + r() * 1.3).toFixed(2), "--spin": (r() < 0.5 ? -1 : 1) * (180 + r() * 360) + "deg" } }));
         // the boss on the horizon with the page it holds, and its beam of light
         goal = U.el("div", { class: "jr-goal" }, U.el("i", { class: "jr-crag" }), U.el("div", { class: "jr-boss", html: Bosses.svg(id) }), U.el("span", { class: "ws-leaf" }));
-        hero = U.el("div", { class: "jr-hero" });
+        // the hero, and what it travels in or on (drawn over it)
+        rider = U.el("div", { class: "jr-rider" });
+        hero = U.el("div", { class: "jr-hero" }, rider);
+        if (mode.ride) hero.insertAdjacentHTML("beforeend", `<svg class="jr-ride" viewBox="0 0 180 205" aria-hidden="true">${mode.ride}</svg>`);
+        if (mode.bubbles) for (let i = 0; i < 5; i++) hero.append(U.el("i", { class: "jr-bubble", style: { "--dl": (-i * 0.5) + "s", "--x": (i * 9 - 10) + "px" } }));
+        const land = (base, amp, seed, fill, opacity) => (mode.open ? "" : hills(base, amp, seed, fill, opacity));
         heroFor = "";
         zoom = U.el("div", { class: "jr-zoom" },
-            layer("far", 0.1, hills(120, 70, 1.3, b.hill, 0.42)),
+            layer("far", 0.1, land(120, 70, 1.3, b.hill, 0.42) + (mode.open ? stars(r, 90) : "")),
             goal,
-            layer("mid", 0.3, hills(215, 42, 4.1, b.hill) + scenery(r, 11, 48, 44, 5)),
-            layer("near", 1, hills(292, 9, 2.2, b.ground) + `<i class="jr-road"></i>` + scenery(r, 9, 96, 23, 3)),
+            layer("mid", 0.3, land(215, 42, 4.1, b.hill) + scenery(r, 11, 48, 44, 5)),
+            layer("near", 1, land(292, 9, 2.2, b.ground) + `<i class="jr-road"></i>` + scenery(r, 9, 96, 23, 3) + (mode.open ? stars(r, 40) : "")),
             hero);
         streaks = U.el("canvas", { class: "jr-streaks" });
         sg = streaks.getContext("2d");
@@ -76,7 +128,7 @@ const Journey = (() => {
         hero.hidden = !look;
         if (!look) return;
         const key = JSON.stringify(look);
-        if (key !== heroFor) { heroFor = key; hero.innerHTML = Hero.svg(look); }
+        if (key !== heroFor) { heroFor = key; rider.innerHTML = Hero.svg(look); }
     }
 
     const showing = () => !el.hidden && root.dataset.view === "game" && !view.hidden && getComputedStyle(el).display !== "none";

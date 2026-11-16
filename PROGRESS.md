@@ -309,6 +309,22 @@ deleted after everything is done.
       (`--solve`); the Void's shadow with torn pages trails at the left and falls back; loose letters blow across the
       sky; a finished word surges you forward (speed lines from the page, the land swells) and its letters fly to the
       page as light; the boss answers back now and then. It goes by squares FILLED, never by right letters.
+- [x] The journey's way of travelling fits the world (the user: "space doesnt have a road ... it uses a rocket
+      ship"): `MODES` / `RIDES` in journey.js. On foot along a road (Notebook, Garden, Acorn Woods); a cart on rails
+      (Candy Hills, Carnival, Robot Factory; over lava on Volcano Island); a submarine with bubbles (Coral Reef); a
+      sled (Snow Day); a boat on flooded streets (Rainy City); a balloon (Sky Kingdom); a flying carpet (Desert); a
+      hoverboard over a neon line (Neon Arcade); a flying book (Haunted Library); a rocket through open space with
+      no land, scenery at every height and stars streaking by (Deep Space); a star (the Celestial Rift).
+- [x] **Secret worlds: how they're found** (the user: "make creative ways to introduce the secret worlds that are
+      planned", "the atlas might need huge work for this to work, and other UI"). `SECRETS` in campaign.js. Nothing
+      says they exist; once a world's boss is beaten an omen turns up on its island, each handled its own way:
+      Acorn Woods, a giant acorn that hops away (catch it 3 times); Coral Reef, a bottle bobbing beside the island
+      (pull the cork); Desert, an oasis that vanishes when the pointer comes near (the 4th time it's real); Volcano, a
+      boulder with a glowing crack (press and hold). Each gives a torn scrap with a riddle answered by typing the
+      word (hints after 2 and 4 wrong tries), then a reveal (eyes in the dark, the name, a teaser). Found: a gate on
+      the island, a "?" on its dock window, a branch island in the Atlas (an unfound omen is a faint glimmer there),
+      and a Secret Places list in the Everbook's contents. `data.secrets`.
+      **The worlds behind the gates are NOT built** (Phase 9): a gate says its door opens in a coming update.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)

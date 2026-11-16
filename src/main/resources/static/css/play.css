@@ -151,7 +151,37 @@ html[data-view="game"] #world-bg { filter: saturate(calc(.4 + var(--solve, 1) * 
     /* your hero on the road */
     .jr-hero { position: absolute; left: clamp(20px, 4.5vw, 90px); bottom: 12%; width: clamp(96px, 9.5vw, 150px); aspect-ratio: 1; transform-origin: 50% 100%; filter: drop-shadow(0 8px 6px rgba(0, 0, 0, .3)); animation: jr-walk .42s ease-in-out infinite alternate; }
     .jr-hero[hidden] { display: none; }
-    .jr-hero svg { display: block; width: 100%; height: 100%; }
+    .jr-rider, .jr-rider svg { display: block; width: 100%; height: 100%; }
+    /* what the hero travels in or on: drawn over it (the hero is the 100x100 box at 40,80 of its 180x205 picture) */
+    .jr-ride { position: absolute; left: -40%; top: -80%; width: 180%; height: 205%; overflow: visible; }
+    .jr-riding .jr-hero { animation: jr-rumble .16s linear infinite alternate; }
+    .jr-riding .jr-hero.run { rotate: 4deg; }
+    @keyframes jr-rumble { to { translate: 0 -2px; } }
+    .jr-fly .jr-hero { bottom: 40%; animation: jr-floaty 2.6s ease-in-out infinite alternate; }
+    .jr-fly.jr-low .jr-hero { bottom: 17%; animation-duration: 1.7s; }
+    .jr-fly .jr-hero.run { rotate: 6deg; }
+    @keyframes jr-floaty { from { translate: 0 6px; rotate: -2deg; } to { translate: 0 -12px; rotate: 3deg; } }
+    .jr-flick { animation: jr-flick .12s linear infinite alternate; }
+    @keyframes jr-flick { to { scale: 1.35 .8; opacity: .8; } }
+    .jr-spin { animation: jr-spin .5s linear infinite; }
+    @keyframes jr-spin { to { rotate: 360deg; } }
+    .jr-bubble { position: absolute; left: calc(8% + var(--x, 0px)); top: 20%; width: 9px; height: 9px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .8); animation: jr-bubble 2.4s ease-in infinite; animation-delay: var(--dl, 0s); }
+    @keyframes jr-bubble { from { translate: 0 0; opacity: .9; } to { translate: -70px -150px; opacity: 0; scale: 1.8; } }
+    /* what's under the traveller: rails, water, snow tracks, a neon line, rails over lava, or nothing at all */
+    .jr-g-none .jr-road { display: none; }
+    .jr-g-rail .jr-road, .jr-g-lava .jr-road { height: 16px; bottom: 10%; border-radius: 0; box-shadow: none;
+        background: linear-gradient(#cfd6de, #8f99a6) 0 0 / 100% 4px no-repeat, linear-gradient(#cfd6de, #8f99a6) 0 100% / 100% 4px no-repeat, repeating-linear-gradient(90deg, #6e4a2c 0 10px, transparent 10px 34px); }
+    .jr-g-lava .jr-road::after { content: ""; position: absolute; left: 0; right: 0; top: 16px; height: 300px; background: linear-gradient(#ffb21e, #ff5a1f 30%, #a31d0c); opacity: .9; animation: jr-lava 1.6s ease-in-out infinite alternate; }
+    @keyframes jr-lava { to { filter: brightness(1.25); } }
+    .jr-g-water .jr-road { bottom: 0; height: 17%; border-radius: 0; box-shadow: none;
+        background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .5) 0 30px, transparent 30px 90px) 0 8px / auto 3px repeat-x, repeating-linear-gradient(90deg, transparent 0 50px, rgba(255, 255, 255, .35) 50px 84px) 0 26px / auto 3px repeat-x, linear-gradient(rgba(96, 150, 200, .82), rgba(40, 80, 130, .92)); }
+    .jr-g-water .jr-hero { bottom: 9%; animation: jr-floaty 2s ease-in-out infinite alternate; }
+    .jr-g-snow .jr-road { height: 12px; bottom: 10%; box-shadow: none; background: repeating-linear-gradient(90deg, rgba(120, 150, 190, .45) 0 60px, transparent 60px 66px) 0 0 / auto 3px repeat-x, repeating-linear-gradient(90deg, rgba(120, 150, 190, .45) 0 60px, transparent 60px 66px) 0 100% / auto 3px repeat-x; }
+    .jr-g-grid .jr-road { height: 6px; bottom: 11%; background: #2bf0ff; box-shadow: 0 0 14px 3px #2bf0ff, 0 0 40px 8px rgba(255, 43, 214, .5); }
+    /* open space: no land, stars streaking by */
+    .jr-star { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px 1px rgba(255, 255, 255, .8), -14px 0 0 -1px rgba(255, 255, 255, .35); }
+    .jr-open .jr-band { height: 100%; }
+    .jr-open .jr-crag { clip-path: polygon(6% 40%, 30% 14%, 62% 8%, 94% 34%, 100% 66%, 74% 100%, 30% 96%, 4% 72%); bottom: -40px; }
     .jr-hero.run { animation-duration: .2s; }
     .jr-hero.hop { animation: jr-hop .6s cubic-bezier(.3, 1.4, .5, 1); }
     @keyframes jr-walk { from { translate: 0 0; rotate: -3deg; } to { translate: 0 -8px; rotate: 4deg; } }

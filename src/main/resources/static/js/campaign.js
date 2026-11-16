@@ -335,6 +335,7 @@ const Campaign = (() => {
             b.setAttribute("aria-label", `${k < 0 ? "Previous" : "Next"} world: ${name}`);
         }
         drawHero();
+        drawSecret();
         if (deal && U.motion() !== "still") U.restart(stage, "deal");
         staged = true;
     }
@@ -375,6 +376,7 @@ const Campaign = (() => {
             tile.classList.toggle("shut", !open);
             tile.classList.toggle("won", cleared(i, 5));
             tile.classList.toggle("full", worldStars(i) >= LV(i).length * 3);
+            tile.classList.toggle("secret", !!secretOf(i) && secretState(secretOf(i)) === "found");
             tile.setAttribute("aria-current", i === data.section ? "true" : "false");
             tile.setAttribute("aria-label", `${Worlds.byId[map[i].world].name}: ${done} of ${LV(i).length} cleared${open ? "" : ", locked"}`);
             [...tile.querySelector(".ws-pips").children].forEach((pip, k) => pip.classList.toggle("on", cleared(i, LV(i)[k])));
@@ -685,6 +687,175 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // The secret worlds: four hidden places, each branching off a world once that world's boss is beaten.
+    // Nothing says they exist. After the boss falls, something odd turns up on that island (an omen), different in
+    // every world, and it has to be dealt with its own way:
+    //   Acorn Woods   a giant acorn that keeps hopping away: catch it three times and it cracks open
+    //   Coral Reef    a bottle bobbing in the sea beside the island: pull its cork
+    //   Desert        an oasis that vanishes when the pointer comes near (a mirage): the fourth time it's real
+    //   Volcano       a boulder with a glowing crack: press and hold until it splits
+    // Each gives up a torn scrap with a riddle. Say the answer (type it) and the way in appears: a gate on the island,
+    // and a small island of its own in the Atlas. data.secrets: { id: "found" }.
+    // The worlds behind the gates aren't built yet: a found gate shows what's waiting and says its door is still shut.
+    // ---------------------------------------------------------------------------------------------
+    const SECRETS = [
+        { id: "hollow", parent: "squirrel", name: "The Great Hollow", boss: "The Giant Squirrel", color: "#8a5a2b", omen: "acorn", riddle: "I start as a nut and end as a tree.", answer: "ACORN",
+            tease: "Deep inside the oldest oak, something enormous is cracking nuts. Whole ones. With the tree still attached." },
+        { id: "atlantis", parent: "ocean", name: "Atlantis", boss: "Poseidon", color: "#1f8fb8", omen: "bottle", riddle: "The city that sank beneath the waves.", answer: "ATLANTIS",
+            tease: "Far below the reef a drowned city still keeps its lights on. Its king has a trident, and he has been collecting letters." },
+        { id: "dunes", parent: "desert", name: "The Sunken Dunes", boss: "The Sandworm", color: "#c98a3c", omen: "mirage", riddle: "Water you can see but never drink, shimmering on hot sand.", answer: "MIRAGE",
+            tease: "The sand here moves by itself. Something long is swimming through the dunes, and it swallows whole sentences." },
+        { id: "cave", parent: "volcano", name: "The Lava Cave", boss: "The Lava Beast", color: "#d9481f", omen: "crack", riddle: "The black glass that lava leaves behind.", answer: "OBSIDIAN",
+            tease: "Under the volcano is a cave the Magma Wyrm is afraid of. Whatever lives there is made of the mountain itself." }
+    ];
+    const INK2 = "#2b2233";
+    const OMEN_ART = {
+        acorn: `<svg viewBox="-30 -62 60 66"><ellipse cy="-20" rx="20" ry="23" fill="#b9773e" stroke="${INK2}" stroke-width="3"/><path d="M-24-30a24 16 0 0 1 48 0z" fill="#6e4429" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M0-46v-11" stroke="#6e4429" stroke-width="5" stroke-linecap="round"/><path d="M-9-18q3-8 9-8" fill="none" stroke="#f2d2a2" stroke-width="3" stroke-linecap="round"/></svg>`,
+        bottle: `<svg viewBox="-22 -72 44 76"><rect class="ws-cork" x="-6" y="-68" width="12" height="11" rx="2" fill="#b9773e" stroke="${INK2}" stroke-width="2"/><path d="M-6-57h12v10q10 6 10 18v21a6 6 0 0 1-6 6h-20a6 6 0 0 1-6-6v-21q0-12 10-18z" fill="rgba(170,230,240,.55)" stroke="#e8f8ff" stroke-width="3" stroke-linejoin="round"/><rect x="-8" y="-26" width="17" height="15" rx="2" fill="#f6ecd2" stroke="#b9a070" stroke-width="1.5" transform="rotate(-12)"/></svg>`,
+        mirage: `<svg viewBox="-42 -74 84 78"><ellipse cy="-5" rx="36" ry="8" fill="#5ec8e0" stroke="#fff" stroke-width="2"/><path d="M-6-7q5-30 0-50" fill="none" stroke="#7a4a2a" stroke-width="7" stroke-linecap="round"/><path d="M-6-57q-22-8-30 8M-6-57q22-10 32 6M-6-57q-6-18-24-12M-6-57q10-16 26-10" fill="none" stroke="#2f9e6b" stroke-width="6" stroke-linecap="round"/></svg>`,
+        crack: `<svg viewBox="-44 -70 88 74"><path d="M-36 0l-6-24 16-26 28-12 26 14 12 28-8 20z" fill="#3a2622" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M-22-40l10 6" stroke="#5a3f39" stroke-width="4" stroke-linecap="round"/><path class="ws-crack-glow" d="M2-60l-8 16 10 10-12 14 8 10-6 10" fill="none" stroke="#ffb21e" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></svg>`
+    };
+    const gateArt = sec => `<svg viewBox="-38 -86 76 90"><path d="M-32 0V-48a32 32 0 0 1 64 0V0z" fill="${sec.color}" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M-21 0V-46a21 21 0 0 1 42 0V0z" fill="#150a22"/><text y="-18" text-anchor="middle" font-size="32" font-weight="900" fill="#ffd66b" font-family="Georgia, serif">?</text></svg>`;
+    data.secrets = data.secrets || {};
+    const secretOf = si => (map && map[si] ? SECRETS.find(s => s.parent === map[si].world) || null : null);
+    // "hidden" (its boss still stands), "omen" (something odd is on the island) or "found"
+    const secretState = sec => (data.secrets[sec.id] === "found" ? "found" : data.levels[keyOf(sec.parent, 5)] || data.betaUnlock ? "omen" : "hidden");
+    const foundSecrets = () => SECRETS.filter(s => secretState(s) === "found" && map && map.some(m => m.world === s.parent));
+    const omenEl = U.el("div", { class: "ws-stops ws-omens" });
+    plane.append(omenEl);
+    let omenTimer = 0;
+    // a place on the island away from the road (k picks a different one each time)
+    function freeSpot(si, k = 0) {
+        const r = U.rng(si * 977 + k * 131 + 3), pts = spots(si), road = [];
+        for (let u = 0; u <= pts.length - 1; u += 0.1) road.push(roadPoint(pts, u));
+        for (let tries = 0; tries < 300; tries++) {
+            const x = 8 + r() * 84, y = 18 + r() * 70;
+            if (Math.hypot(x - 50, y - 50) < 44 && !road.some(p => Math.hypot(p[0] - x, p[1] - y) < 19)) return [x, y];
+        }
+        return [84, 60];
+    }
+    const placeAt = (node, [x, y]) => { node.style.setProperty("--x", x.toFixed(1) + "%"); node.style.setProperty("--y", y.toFixed(1) + "%"); };
+    function drawSecret() {
+        clearInterval(omenTimer);
+        omenEl.replaceChildren();
+        const si = data.section, sec = secretOf(si), state = sec ? secretState(sec) : "hidden";
+        if (state === "hidden") return;
+        if (state === "found") {
+            const gate = U.el("button", { type: "button", class: "ws-omen ws-gate", "aria-label": `${sec.name}: a secret world`, html: gateArt(sec), onclick: () => showSecret(sec, false) });
+            gate.append(U.el("span", { class: "ws-gate-name", text: sec.name }));
+            placeAt(gate, freeSpot(si));
+            omenEl.append(gate);
+            return;
+        }
+        const omen = U.el("button", { type: "button", class: "ws-omen " + sec.omen, "aria-label": "Something strange", html: OMEN_ART[sec.omen] });
+        omenEl.append(omen);
+        let n = 0;
+        const done = () => { clearInterval(omenTimer); omen.classList.add("open"); Sound.play("sparkle"); setTimeout(() => { if (omen.isConnected) openRiddle(sec); }, 750); };
+        if (sec.omen === "acorn") {
+            // it hops somewhere else every few seconds, and faster each time it's caught
+            let k = 0;
+            const hop = () => { placeAt(omen, freeSpot(si, ++k)); U.restart(omen, "hop"); };
+            placeAt(omen, freeSpot(si, 0));
+            omenTimer = setInterval(hop, 3200);
+            omen.addEventListener("click", () => {
+                if (omen.classList.contains("open")) return;
+                Sound.play("select");
+                if (++n >= 3) { done(); return; }
+                clearInterval(omenTimer);
+                hop();
+                omenTimer = setInterval(hop, 3200 - n * 900);
+            });
+        } else if (sec.omen === "bottle") {
+            placeAt(omen, [si % 2 ? -9 : 109, 62]);                 // (off the island's edge, in the open)
+            omen.addEventListener("click", () => { if (!omen.classList.contains("open")) done(); });
+        } else if (sec.omen === "mirage") {
+            // gone the moment you come near; the fourth time it stays
+            placeAt(omen, freeSpot(si, 0));
+            const flee = () => {
+                if (n >= 3 || omen.classList.contains("gone")) return;
+                n++;
+                omen.classList.add("gone");
+                setTimeout(() => { if (!omen.isConnected) return; placeAt(omen, freeSpot(si, n)); omen.classList.remove("gone"); if (n >= 3) omen.classList.add("real"); }, 900);
+            };
+            omen.addEventListener("pointerenter", flee);
+            omen.addEventListener("click", () => { if (n >= 3 && !omen.classList.contains("gone") && !omen.classList.contains("open")) done(); else flee(); });
+        } else {
+            // the crack: press and hold until it glows white and gives
+            placeAt(omen, freeSpot(si, 0));
+            let heat = 0, held = false, raf = 0, last = 0;
+            const step = now => {
+                const dt = Math.min(0.05, (now - last) / 1000);
+                last = now;
+                heat = U.clamp(heat + (held ? dt / 1.8 : -dt / 0.6), 0, 1);
+                omen.style.setProperty("--heat", heat.toFixed(3));
+                if (heat >= 1) { held = false; done(); return; }
+                raf = heat > 0 || held ? requestAnimationFrame(step) : 0;
+            };
+            const press = on => e => { if (omen.classList.contains("open")) return; if (on) e.preventDefault(); held = on; if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); } };
+            // (the press keeps hold of the pointer: the island turns a little under it, and the crack would slip away)
+            omen.addEventListener("pointerdown", e => { try { omen.setPointerCapture(e.pointerId); } catch (err) { /* no capture: the hold still works while the pointer stays on it */ } press(true)(e); });
+            for (const ev of ["pointerup", "pointercancel", "lostpointercapture"]) omen.addEventListener(ev, press(false));
+            omen.addEventListener("keydown", e => { if ((e.key === " " || e.key === "Enter") && !e.repeat) press(true)(e); });
+            omen.addEventListener("keyup", press(false));
+        }
+    }
+    // the torn scrap: a riddle, answered by typing the word
+    function openRiddle(sec) {
+        if (document.querySelector(".sc-layer")) return;
+        let tries = 0;
+        const input = U.el("input", { class: "sc-input", type: "text", maxlength: sec.answer.length, autocomplete: "off", autocapitalize: "characters", spellcheck: "false", "aria-label": "Your answer", style: { "--n": sec.answer.length } });
+        const hint = U.el("p", { class: "sc-hint", "aria-live": "polite", text: `${sec.answer.length} Letters` });
+        const card = U.el("form", { class: "sc-scrap" }, U.el("small", { text: "A Torn Scrap" }), U.el("p", { class: "sc-riddle", text: `“${sec.riddle}”` }), input, hint,
+            U.el("div", { class: "sc-actions" }, U.el("button", { type: "button", class: "eb-quiet", text: "Put It Back", onclick: () => close() }), U.el("button", { type: "submit", class: "eb-buy", text: "Say the Word" })));
+        const layer = U.el("div", { class: "results in sc-layer", role: "dialog", "aria-modal": "true", "aria-label": "A torn scrap" }, card);
+        const close = () => { layer.remove(); if (onStage()) drawSecret(); };
+        card.addEventListener("submit", e => {
+            e.preventDefault();
+            if (input.value.trim().toUpperCase() === sec.answer) { layer.remove(); foundSecret(sec); return; }
+            tries++;
+            Sound.play("wrong");
+            U.restart(card, "no");
+            input.select();
+            hint.textContent = tries >= 4 ? `Starts with ${sec.answer[0]}, ends with ${sec.answer[sec.answer.length - 1]}` : tries >= 2 ? `Starts with ${sec.answer[0]}` : "Not that. Try again.";
+        });
+        layer.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") close(); });
+        layer.addEventListener("pointerdown", e => { if (e.target === layer) close(); });
+        document.getElementById("overlay").append(layer);
+        Mascot.hush();
+        input.focus();
+    }
+    function foundSecret(sec) {
+        data.secrets[sec.id] = "found";
+        save();
+        Sound.play("sparkle");
+        showSecret(sec, true);
+    }
+    // what's behind the gate: shown when it's found (with a little ceremony) and whenever the gate is picked
+    function showSecret(sec, first) {
+        if (document.querySelector(".sc-layer")) return;
+        const close = () => {
+            layer.remove();
+            if (!onStage()) return;
+            drawSecret(); drawStrip();
+            const gate = omenEl.querySelector(".ws-gate");
+            if (first && gate) { U.restart(gate, "rise"); const r = gate.getBoundingClientRect(); FX.ring({ x: r.left + r.width / 2, y: r.top + r.height / 2, color: sec.color, r0: 20, r1: 220, dur: 0.8, width: 8 }); }
+        };
+        const layer = U.el("div", { class: "results in sc-layer sc-reveal" + (first ? " first" : ""), role: "dialog", "aria-modal": "true", "aria-label": sec.name, style: { "--c": sec.color } },
+            U.el("div", { class: "sc-card" },
+                U.el("div", { class: "sc-eyes", "aria-hidden": "true" }, U.el("i"), U.el("i")),
+                U.el("small", { text: first ? "You Found a Secret World" : "A Secret World" }),
+                U.el("h2", { text: sec.name }),
+                U.el("p", { class: "sc-tease", text: sec.tease }),
+                U.el("p", { class: "sc-who" }, icon("lock"), U.el("span", { text: `${sec.boss} is waiting. Its door opens in a coming update.` })),
+                U.el("button", { type: "button", class: "eb-buy", text: first ? "Mark It on the Map" : "Close", onclick: () => close() })));
+        layer.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") close(); });
+        layer.addEventListener("pointerdown", e => { if (e.target === layer) close(); });
+        document.getElementById("overlay").append(layer);
+        Mascot.hush();
+        layer.querySelector("button").focus();
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // The wider world: small islands (the neighbours in the distance, and the Atlas), mist drifting past,
     // the boss answering back, and the dive into a level
     // ---------------------------------------------------------------------------------------------
@@ -750,8 +921,21 @@ const Campaign = (() => {
                 miniIsle(i, i === here), U.el("b", { text: w.name }),
                 U.el("small", {}, open ? icon("star") : icon("lock"), open ? `${stars} / ${LV(i).length * 3}` : bossOf(s.world).name)));
         });
+        let branches = "";
+        map.forEach((s, i) => {
+            const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
+            if (state === "hidden") return;
+            const side = pts[i][0] > 80 ? -1 : 1, bx = pts[i][0] + side * (phone.matches ? 13 : 8.5), by = pts[i][1] + 100 / rows * 0.36;
+            if (state === "omen") { inner.append(U.el("i", { class: "ws-at-glimmer", title: "Something is hidden here", style: { "--x": bx.toFixed(1) + "%", "--y": by.toFixed(1) + "%" } })); return; }
+            branches += `<path class="ws-at-branch" d="M${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}Q${((pts[i][0] + bx) / 2).toFixed(1)} ${(by + 4).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}"/>`;
+            inner.append(U.el("button", { type: "button", class: "ws-at ws-at-secret", style: { "--x": bx.toFixed(1) + "%", "--y": by.toFixed(1) + "%", "--i": map.length + i, "--c": sec.color },
+                "aria-label": `${sec.name}, a secret world off ${Worlds.byId[s.world].name}`, onclick: () => { closeAtlas(); if (i === data.section) showSecret(sec, false); else go(i); } },
+                U.el("span", { class: "ws-at-gate", html: gateArt(sec) }), U.el("b", { text: sec.name }), U.el("small", {}, icon("lock"), "Sealed")));
+        });
+        if (branches) inner.querySelector("svg").insertAdjacentHTML("beforeend", branches);
+        const secretsFound = foundSecrets().length;
         atlasEl.replaceChildren(
-            U.el("header", {}, U.el("div", {}, U.el("h2", { text: "The Everbook's Worlds" }), U.el("p", { text: `${won} of ${main.length} Pages Won Back` })),
+            U.el("header", {}, U.el("div", {}, U.el("h2", { text: "The Everbook's Worlds" }), U.el("p", { text: `${won} of ${main.length} Pages Won Back` + (secretsFound ? ` · ${plural(secretsFound, "Secret World")} Found` : "") })),
                 U.el("button", { type: "button", class: "ws-at-close", "aria-label": "Close", onclick: () => closeAtlas() }, icon("close"))),
             U.el("div", { class: "ws-at-map" }, inner));
         atlasEl.classList.remove("out");
@@ -1235,6 +1419,9 @@ const Campaign = (() => {
                         U.el("span", { class: "eb-toc-dots", "aria-hidden": "true" }), !open ? icon("lock") : full ? icon("check") : pips(i))));
             });
             right.append(U.el("h2", { class: "eb-h", text: "Contents" }), list);
+            if (foundSecrets().length) right.append(U.el("h2", { class: "eb-h gap", text: "Secret Places" }), U.el("ul", { class: "eb-list" }, ...foundSecrets().map(sec =>
+                U.el("li", { style: { "--c": sec.color } }, icon("lock"), U.el("div", {}, U.el("b", { text: sec.name }), U.el("p", { text: `Off ${Worlds.byId[sec.parent].name}. ${sec.boss} is waiting.` })),
+                    U.el("button", { type: "button", class: "eb-btn", text: "Go", onclick: () => bookGo(map.findIndex(m => m.world === sec.parent)) })))));
         },
         // the story: one page per world, readable once its boss has given it back
         pages(left, right) {
