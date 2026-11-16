@@ -325,6 +325,15 @@ deleted after everything is done.
       the island, a "?" on its dock window, a branch island in the Atlas (an unfound omen is a faint glimmer there),
       and a Secret Places list in the Everbook's contents. `data.secrets`.
       **The worlds behind the gates are NOT built** (Phase 9): a gate says its door opens in a coming update.
+- [x] **The Atlas rebuilt** (the user: "rework the atlas page heavily ... a full rework"): the grid of small islands
+      on a dark sheet is gone. `openAtlas` now builds an archipelago on a tilted sea under a dusk sky (`.at`, CSS 3D):
+      world 1 nearest, four islands a row, each row further off, the Void toward the horizon; every island has its
+      slab, scenery, boss and the page it holds (locked: grey under mist, the boss a shadow, the page still shining);
+      the golden road shows how far you've come; found secret worlds are rocks with gates off their islands (an
+      unfound omen is a glimmer). A camera (`at`: x, y, zoom, eased): drag to look around, wheel or + / - to zoom,
+      Whole Map, arrows step along the journey. Picking an island opens its page of the atlas (stops with their
+      lessons and stars, the secret, Travel Here); picking it again, Travel or Enter flies down into it. Phone: the
+      page is a sheet. Checked at 1440x900 and 390x844: no errors.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)
