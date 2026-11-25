@@ -27,7 +27,7 @@ class RiftTest {
         assertNotNull(rift());
         assertTrue(Campaign.secret(rift()));
         assertFalse(Campaign.SECTIONS.contains(rift()), "the 15 worlds (and the Daily Boss rotation) don't include it");
-        assertEquals(16, Campaign.ALL.size());
+        assertEquals(20, Campaign.ALL.size());                       // the 15, the rift, then the four other secret worlds
         assertEquals("rift", Campaign.ALL.get(15).world(), "it comes after the Void");
         for (int day = 0; day < 60; day++) assertFalse(PuzzleStore.dailyBossSection(java.time.LocalDate.of(2026, 10, 1).plusDays(day)) == rift());
     }

@@ -88,7 +88,9 @@ public class Lesson {
         Map.entry("rain", "rainy weather and the city"), Map.entry("sky", "flight and the sky"), Map.entry("desert", "deserts and travel"),
         Map.entry("carnival", "circuses and fairs"), Map.entry("arcade", "video games"), Map.entry("robot", "machines and technology"),
         Map.entry("library", "books and ghost stories"), Map.entry("volcano", "fire and the earth"), Map.entry("space", "outer space"),
-        Map.entry("rift", "angels, heaven and the stars"));
+        Map.entry("rift", "angels, heaven and the stars"), Map.entry("hollow", "giant trees, nuts and forest animals"),
+        Map.entry("atlantis", "sunken cities, sea myths and the deep"), Map.entry("dunes", "sand, deserts and buried things"),
+        Map.entry("cave", "caves, rock and lava"));
 
     // The course: each world's four lessons (levels 1-4), easiest skills first. Skills come back later, harder,
     // in bigger grids with tougher words. Level 5 (the boss) reviews the world's four.
@@ -108,8 +110,12 @@ public class Lesson {
         Map.entry("robot",    List.of("theme", "misdirection", "double", "mixed")),     // world 13
         Map.entry("volcano",  List.of("long", "wordplay", "speed", "clean")),
         Map.entry("space",    List.of("mixed", "misdirection", "theme", "clean")),
-        // the secret world: the hardest of the course, and the angel reviews them
-        Map.entry("rift",     List.of("double", "misdirection", "long", "mixed")));
+        // the secret worlds: each a step past the world it branches off, and its boss reviews them
+        Map.entry("rift",     List.of("double", "misdirection", "long", "mixed")),
+        Map.entry("hollow",   List.of("theme", "wordplay", "double", "speed")),
+        Map.entry("atlantis", List.of("long", "theme", "misdirection", "double")),
+        Map.entry("dunes",    List.of("misdirection", "long", "wordplay", "speed")),
+        Map.entry("cave",     List.of("long", "wordplay", "mixed", "clean")));
 
     // A level's lesson. Level 5 is the boss's review: null skill, and the four lessons in `review`.
     record Level(Skill skill, int round, List<Skill> review) {

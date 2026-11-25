@@ -42,13 +42,22 @@ public class Campaign {
 
     static final int LEVELS = 5;      // per world; the last one is the boss
 
-    // The secret world: the Celestial Rift, which only shows up on the map after the Void is beaten. The Void's fall
-    // broke open the prison of the Cursed Angel, who wants the Everbook for itself. The hardest in the game: Expert
-    // words and clues on 7x7 and 9x9 boards, 4 levels like every world (each with a corruption meter, see
-    // static/js/corruption.js), then the angel: a 5-phase boss (level 5, like every boss). It isn't one of the 15
-    // pages of the Everbook, and it isn't in the Daily Boss rotation (dailyBossSection uses SECTIONS only).
+    // The secret worlds, each found from the world it branches off once that world's boss is beaten (campaign.js
+    // SECRETS: an omen, a riddle, a gate). Each is a step harder than its parent, has 4 levels with a corruption meter
+    // (static/js/corruption.js) and a boss. None is a page of the Everbook or in the Daily Boss rotation
+    // (dailyBossSection uses SECTIONS only).
+    //   rift      off Deep Space: the Celestial Rift and the Cursed Angel, the hardest in the game (7x7 then 9x9)
+    //   hollow    off Acorn Woods: the Great Hollow and the Giant Squirrel
+    //   atlantis  off the Coral Reef: Atlantis and Poseidon
+    //   dunes     off the Desert: the Sunken Dunes and the Sandworm
+    //   cave      off Volcano Island: the Lava Cave and the Lava Beast
+    // (new ones go at the end: a level's seed comes from its place in ALL)
     static final List<Section> SECRET = List.of(
-        new Section("rift", "expert", 9, "expert", 9)
+        new Section("rift",     "expert",    9, "expert",    9),
+        new Section("hollow",   "challenge", 6, "challenge", 7),
+        new Section("atlantis", "challenge", 7, "expert",    7),
+        new Section("dunes",    "expert",    7, "expert",    9),
+        new Section("cave",     "expert",    9, "expert",    9)
     );
     // every section, the 15 worlds then the secret one
     static final List<Section> ALL = all();
@@ -83,7 +92,7 @@ public class Campaign {
 
     // A level's board size (5 = the normal 5x5 shape)
     static int size(Section section, int level) {
-        if (secret(section) && level == 1) return 7;             // the rift starts on a 7x7, then it's all 9x9
+        if (section.world().equals("rift") && level == 1) return 7;     // the rift starts on a 7x7, then it's all 9x9
         return level == LEVELS ? section.bossSize() : section.size();
     }
 
@@ -107,7 +116,12 @@ public class Campaign {
     // finish a board.
     static final int SINGLE_PHASE_BOSSES = 5;
     static int phases(Section section) {
-        if (secret(section)) return 5;                           // the Cursed Angel: 5 phases, like the Void
+        switch (section.world()) {                               // the secret bosses (the design: 2, 3, 3, 5)
+            case "rift", "cave" -> { return 5; }
+            case "atlantis", "dunes" -> { return 3; }
+            case "hollow" -> { return 2; }
+            default -> { }
+        }
         int i = SECTIONS.indexOf(section), last = SECTIONS.size() - 1;
         if (i == last) return 5;
         if (i >= last - 2) return 3;
@@ -120,6 +134,7 @@ public class Campaign {
     }
     static int phaseSize(Section section, int phase) {
         if (phase <= 1) return section.bossSize();
+        if (section.world().equals("hollow")) return 7;            // (the Giant Squirrel's second board stays 7x7)
         if (phase >= 3) return 9;
         if (!bigGrid(section.bossDifficulty())) return 6;
         return section.bossSize() >= 7 ? 9 : 7;
@@ -144,7 +159,7 @@ public class Campaign {
 
     // The map as JSON for the website:
     // [{"world":"paper","levels":["easy","easy","easy","easy","easy"],"sizes":[5,5,5,5,5],"phase2":["challenge",6]}, ...]
-    // The secret world comes last with "secret":true and "levelList":[1,2,3,5] (the website hides it until the Void is beaten)
+    // The secret worlds come last with "secret":true (the website hides each until it's found)
     static String mapJson() {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < ALL.size(); i++) {
