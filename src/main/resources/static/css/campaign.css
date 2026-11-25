@@ -794,87 +794,50 @@ html.cm-book-on .mascot, html.cm-book-on .cm-beta { opacity: 0; pointer-events: 
 @media (prefers-reduced-motion: reduce) { .ws-omen, .ws-omen svg, .ws-omen::after, .ws-gate svg, .sc-eyes i, .sc-reveal.first .sc-card > * { animation: none !important; } }
 
 /* ======================= the Atlas: the archipelago ======================= */
-/* The whole journey on a tilted sea under a dusk sky (campaign.js openAtlas). The sea is one big plane, turned by
-   --at-tilt; what stands on it (bosses, scenery, name plates, the hero, gates) is turned back upright. */
-.cm-page.atlas-on .ws-isle { scale: .2; opacity: 0; }
+/* The whole journey on a tilted sea under a dusk sky (campaign.js openAtlas). The sea and its islands are drawn on one
+   canvas by atlas.js; only the name plates, the buttons and the page of the atlas are elements. */
+.cm-page.atlas-on .ws-isle { opacity: 0; visibility: hidden; transition: none; }
+.cm-page.atlas-on .ws-cloud { visibility: hidden; }
 .cm-page.atlas-on .ws-sky, .cm-page.atlas-on .ws-edge, .cm-page.atlas-on .ws-panel, .cm-page.atlas-on .ws-strip, .cm-page.atlas-on .ws-bar { opacity: 0; pointer-events: none; }
 .ws-edge, .ws-panel, .ws-strip, .ws-bar { transition: opacity .25s, transform .2s; }
-.at { --at-tilt: 54deg; position: absolute; inset: 0; z-index: 30; overflow: hidden; color: #fff; font-family: var(--font-body);
+.at { position: absolute; inset: 0; z-index: 30; overflow: hidden; color: #fff; font-family: var(--font-body);
     background: linear-gradient(180deg, #0a0620 0%, #24144e 14%, #6a3577 24%, #d9785f 31%, #f7b56f 34%, #4a2f7e 34.4%, #2a1a58 52%, #170d34 100%); animation: dk-veil .35s ease; transition: opacity .3s; }
 .at[hidden] { display: none; }
 .at.out { opacity: 0; }
 .at.diving { opacity: 0; transition: opacity .3s .15s; }
-.at-scene { position: absolute; inset: 0; perspective: 2600px; perspective-origin: 42% 20%; cursor: grab; touch-action: none; }
+.at-scene { position: absolute; inset: 0; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.at-scene.over { cursor: pointer; }
 .at-scene.dragging { cursor: grabbing; }
+.at-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .at-stars { position: absolute; inset: 0 0 68% 0; opacity: .8; pointer-events: none;
     background: radial-gradient(1.5px 1.5px at 12% 22%, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 31% 9%, #fff, transparent 60%), radial-gradient(2px 2px at 47% 31%, #ffe9b0, transparent 60%), radial-gradient(1.5px 1.5px at 63% 14%, #fff, transparent 60%),
         radial-gradient(1.5px 1.5px at 78% 27%, #fff, transparent 60%), radial-gradient(2px 2px at 90% 8%, #cfe0ff, transparent 60%), radial-gradient(1.5px 1.5px at 22% 44%, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 56% 48%, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 84% 46%, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 5% 60%, #fff, transparent 60%);
     animation: at-twinkle 4s ease-in-out infinite alternate; }
 @keyframes at-twinkle { to { opacity: .45; } }
 .at-horizon { position: absolute; left: -10%; right: -10%; top: 34%; height: 40%; pointer-events: none; background: radial-gradient(60% 60% at 45% 0%, rgba(255, 190, 130, .42), transparent 72%); }
-.at-plane { position: absolute; left: 41%; top: 62%; transform-style: preserve-3d; transform-origin: 50% 50%; will-change: transform; }
-.at-sea { position: absolute; inset: -30%; border-radius: 50%; pointer-events: none;
-    background: repeating-radial-gradient(circle at 50% 60%, rgba(255, 255, 255, .055) 0 3px, transparent 3px 120px), radial-gradient(closest-side, rgba(96, 70, 170, .55), rgba(60, 40, 120, .25) 60%, transparent 100%); }
-.at-thread { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; transform: translateZ(1px); }
-.at-thread path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
-.at-bed { stroke: rgba(20, 10, 40, .45); stroke-width: 44px; }
-.at-ahead { stroke: rgba(255, 255, 255, .34); stroke-width: 8px; stroke-dasharray: 2 26; }
-.at-done { stroke: #f2c14a; stroke-width: 16px; filter: drop-shadow(0 0 10px #f2c14a); }
-.at-branch { stroke: #c9a6ff; stroke-width: 8px; stroke-dasharray: 3 20; filter: drop-shadow(0 0 6px #c9a6ff); }
-/* an island: a point on the sea; its slab lies flat, everything else stands */
-.at-isle { position: absolute; width: 0; height: 0; transform-style: preserve-3d; }
-.at-slab { position: absolute; left: -190px; top: -160px; width: 380px; height: 320px; transform-style: preserve-3d; cursor: pointer; }
-.at-slab i { position: absolute; inset: 0; border-radius: 47% 53% 50% 50% / 45% 43% 57% 55%; transform: translateZ(calc(var(--n) * -11px)); background: color-mix(in srgb, var(--hill) calc(100% - var(--n) * 9%), #170d24); }
-.at-slab i.top { background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--ground) 76%, #fff) 0, var(--ground) 55%, color-mix(in srgb, var(--ground) 55%, var(--hill)) 100%);
-    box-shadow: inset 0 0 0 6px color-mix(in srgb, var(--hill) 70%, #fff), inset 0 0 60px rgba(0, 0, 0, .14); }
-.at-slab i.top::after { content: ""; position: absolute; left: 22%; right: 26%; top: 54%; height: 12px; border-radius: 6px; background: var(--path); rotate: -8deg; opacity: .9; }
-.at-glow { position: absolute; left: -340px; top: -290px; width: 680px; height: 580px; border-radius: 50%; transform: translateZ(-70px); background: radial-gradient(closest-side, color-mix(in srgb, var(--ground) 70%, transparent), transparent); opacity: .5; pointer-events: none; }
-.at-ring { position: absolute; left: -230px; top: -200px; width: 460px; height: 400px; border-radius: 50%; border: 8px solid #fff; transform: translateZ(2px); animation: ws-halo 2s cubic-bezier(.2, .8, .3, 1) infinite; pointer-events: none; }
-.at-isle.focus .at-slab i.top { box-shadow: inset 0 0 0 6px #fff, inset 0 0 60px rgba(0, 0, 0, .1), 0 0 0 10px rgba(255, 255, 255, .85), 0 0 60px 24px rgba(255, 236, 170, .65); }
-.at-who, .at-prop, .at-hero, .at-label, .at-gate { position: absolute; transform-origin: 50% 100%; transform: translate(-50%, -100%) rotateX(calc(var(--at-tilt) * -1)); }
-.at-who { left: 0; top: -40px; width: 170px; cursor: pointer; transition: scale .25s cubic-bezier(.2, 1.4, .4, 1); }
-.at-boss { filter: drop-shadow(0 12px 8px rgba(0, 0, 0, .35)); }
-.at-boss svg, .at-hero svg, .at-prop svg, .at-gate svg { display: block; width: 100%; height: auto; overflow: visible; }
-.at-boss .boss-art * { animation: none !important; }
-.at-who .ws-leaf { top: -34px; }
-.at-isle:hover .at-who, .at-isle.focus .at-who { scale: 1.1; }
-.at-isle.won .at-boss { filter: saturate(.5) drop-shadow(0 12px 8px rgba(0, 0, 0, .35)); }
-.at-prop { width: calc(74px * var(--k, 1)); pointer-events: none; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, .25)); }
-.at-hero { left: -130px; top: 60px; width: 100px; pointer-events: none; filter: drop-shadow(0 6px 5px rgba(0, 0, 0, .35)); }
-.at-label { left: 0; top: 196px; display: flex; flex-direction: column; align-items: center; gap: 2px; width: max-content; padding: 7px 16px 8px; border: 0; border-radius: 14px; background: rgba(20, 10, 40, .78); color: #fff; cursor: pointer;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .35); }
-.at-label b { font: 700 calc(1.5rem * var(--head-scale, 1))/1.1 var(--font-head, var(--font-body)); white-space: nowrap; color: #fff; }
-.at-label small { display: inline-flex; align-items: center; gap: 5px; font: 800 .95rem var(--font-body); color: rgba(255, 255, 255, .8); font-variant-numeric: tabular-nums; }
+/* the name plates, moved with their islands (atlas.js placeTags) */
+.at-tags { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.at-label { position: absolute; left: 0; top: 0; transform-origin: 50% 0; display: flex; flex-direction: column; align-items: center; gap: 2px; width: max-content; padding: 6px 15px 7px; border: 0; border-radius: 14px;
+    background: rgba(20, 10, 40, .8); color: #fff; cursor: pointer; pointer-events: auto; box-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+.at-label b { font: 700 calc(1.3rem * var(--head-scale, 1))/1.1 var(--font-head, var(--font-body)); white-space: nowrap; color: #fff; }
+.at-label small { display: inline-flex; align-items: center; gap: 5px; font: 800 .9rem var(--font-body); color: rgba(255, 255, 255, .8); font-variant-numeric: tabular-nums; }
 .at-label small .ic { width: 15px; height: 15px; } .at-label small .ic-star { color: #f2c14a; }
-.at-isle.focus .at-label { background: #fff; } .at-isle.focus .at-label b { color: #1c1030; } .at-isle.focus .at-label small { color: #5a4a70; }
+.at-label.far small { display: none; }
+.at-label.focus { background: #fff; z-index: 100000 !important; } .at-label.focus b { color: #1c1030; } .at-label.focus small { color: #5a4a70; }
+.at-label.focus small { display: inline-flex; }
 .at-label:focus-visible { outline: 3px solid #ffd66b; outline-offset: 3px; }
-/* a locked island: grey, under mist, its boss a shadow */
-.at-isle.shut .at-slab i { filter: grayscale(.9) brightness(.55); }
-.at-isle.shut .at-boss { filter: brightness(.08) drop-shadow(0 0 10px rgba(255, 255, 255, .3)); }
-.at-isle.shut .at-glow { display: none; }
-.at-isle.shut .at-label b { color: rgba(255, 255, 255, .7); }
-.at-mist { position: absolute; left: -260px; top: -200px; width: 520px; height: 400px; border-radius: 50%; transform: translateZ(26px); background: radial-gradient(closest-side, rgba(220, 215, 240, .5), transparent); filter: blur(14px); pointer-events: none; animation: at-mist 7s ease-in-out infinite alternate; }
-@keyframes at-mist { to { translate: 40px -14px; opacity: .6; } }
-/* a secret world's rock, off its island */
-.at-rock .at-slab { left: -90px; top: -76px; width: 180px; height: 152px; }
-.at-rock .at-slab i.top::after { content: none; }
-.at-gate { left: 0; top: -10px; width: 110px; cursor: pointer; filter: drop-shadow(0 0 16px color-mix(in srgb, var(--c) 70%, #ffd66b)); }
-.at-label.secret { top: 100px; background: #1c1030; } .at-label.secret b { font: 800 1.05rem var(--font-body); color: #ffd66b; }
-.at-glimmer { position: absolute; width: 22px; height: 22px; margin: -11px; border-radius: 50%; background: #fff; box-shadow: 0 0 30px 12px rgba(201, 166, 255, .9); animation: om-glint 3s ease-in-out infinite; pointer-events: none; }
-/* the islands rise out of the sea as the Atlas opens */
-.at-isle { animation: at-rise .7s cubic-bezier(.2, 1.2, .3, 1) backwards; animation-delay: calc(var(--i, 0) * 40ms + .1s); }
-@keyframes at-rise { from { opacity: 0; translate: 0 0 -160px; } }
+.at-label.secret { background: #1c1030; } .at-label.secret b { font: 800 1rem var(--font-body); color: #ffd66b; }
 /* what's over the sea: the heading, the view's buttons, and the page of the island you picked */
 .at-head { position: absolute; left: clamp(14px, 2.4vw, 34px); right: clamp(14px, 2.4vw, 34px); top: 16px; display: flex; align-items: flex-start; gap: 16px; pointer-events: none; }
 .at-head > * { pointer-events: auto; }
 .at-head h2 { margin: 0; font: 700 clamp(1.8rem, 3.4vw, 3rem)/1.05 "Cinzel", Georgia, serif; letter-spacing: .05em; color: #f6e2b0; text-shadow: 0 2px 14px rgba(0, 0, 0, .5); }
 .at-head p { margin: 5px 0 0; font-weight: 800; color: rgba(255, 255, 255, .78); }
-.at-round { margin-left: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .16); color: #fff; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(6px); }
-.at-round:hover { background: rgba(255, 255, 255, .3); }
+.at-round { margin-left: auto; display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 50%; background: rgba(40, 24, 80, .72); color: #fff; font-size: 1.2rem; cursor: pointer; }
+.at-round:hover { background: rgba(80, 56, 140, .9); }
 .at-tools { position: absolute; left: clamp(14px, 2.4vw, 34px); bottom: 18px; display: flex; align-items: center; gap: 6px; }
-.at-tools button { display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .16); color: #fff; font: 800 1.15rem var(--font-body); cursor: pointer; backdrop-filter: blur(6px); }
+.at-tools button { display: grid; place-items: center; min-width: 44px; height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: rgba(40, 24, 80, .72); color: #fff; font: 800 1.15rem var(--font-body); cursor: pointer; }
 .at-tools button.wide { font-size: .9rem; padding: 0 16px; }
-.at-tools button:hover { background: rgba(255, 255, 255, .3); }
+.at-tools button:hover { background: rgba(80, 56, 140, .9); }
 .at-tools span { margin-left: 8px; font: 700 .84rem var(--font-body); color: rgba(255, 255, 255, .6); }
 .at-round:focus-visible, .at-tools button:focus-visible { outline: 3px solid #ffd66b; outline-offset: 2px; }
 .at-card { position: absolute; right: clamp(14px, 2.2vw, 30px); top: 84px; bottom: 22px; width: min(380px, 34vw); display: flex; flex-direction: column; min-height: 0; overflow: hidden; color: var(--page-ink); border-radius: 5px 16px 16px 5px;
@@ -895,15 +858,13 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .ws-atlas-btn:hover { transform: scale(1.1) rotate(-6deg); }
 .ws-atlas-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 @media (max-width: 760px) {
-    .at-plane { left: 50%; top: 40%; }
-    .at-scene { perspective-origin: 50% 12%; }
     .at-card { left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 44%; border-radius: 20px 20px 0 0; transform: none; }
     .at-card-body { padding: 14px 18px 8px; }
     .at-card .at-stops, .at-card .eb-prose { display: none; }
-    .at-tools { bottom: auto; top: 84px; } .at-tools span, .at-tools .wide { display: none; }
+    .at-tools { bottom: auto; top: 84px; } .at-tools span { display: none; }
     .ws-atlas-btn { width: 36px; height: 36px; }
 }
-@media (prefers-reduced-motion: reduce) { .at-isle, .at-stars, .at-mist, .at-ring, .at-glimmer { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .at-stars { animation: none !important; } }
 
 @keyframes cm-bob { to { transform: translateY(-8px); } }
 

@@ -899,13 +899,12 @@ const Campaign = (() => {
     // The Atlas: step back from the island and the whole journey is laid out below you, an archipelago on a tilted sea
     // under a dusk sky. World 1 is nearest; the road of pages winds away row by row to the Void, far off toward the
     // horizon. Every island is a small island of its own (its ground, its scenery, its boss holding the page; a locked
-    // one is grey under mist), and found secret worlds hang off theirs.
-    //   drag to look around, scroll (or + and -) to zoom, the arrows step from island to island
-    //   pick an island and its page of the atlas opens beside the sea; pick it again (or Travel, or Enter) to go there:
-    //   the view flies down into it
-    // at: the camera (x, y: the point of the sea in the middle of the view; z: zoom) and where it's heading (tx, ty, tz)
+    // one is grey under mist), and found secret worlds hang off theirs. The sea is drawn by atlas.js on one canvas.
+    //   drag to look around, scroll or pinch (or + and -) to zoom, the arrows step from island to island
+    //   pick an island and its page of the atlas opens beside the sea; pick it again (or Travel, or Enter, or scroll in
+    //   all the way) to go there: the view flies down into it
     let atlasOn = false, at = null;
-    const AT_W = 2700, AT_H = 2800, AT_TILT = 54, AT_COLS = 4;
+    const AT_W = 2700, AT_H = 2800, AT_COLS = 4;
     const atlasEl = U.el("div", { class: "at", role: "dialog", "aria-modal": "true", "aria-label": "The atlas of every world", hidden: true });
     view.append(atlasEl);
     // where each island lies on the sea: four to a row, each row further away and running the other way
@@ -914,23 +913,6 @@ const Campaign = (() => {
             const row = Math.floor(i / AT_COLS), c = i % AT_COLS, k = row % 2 ? AT_COLS - 1 - c : c, r = U.rng(i * 53 + 7);
             return [360 + k * 660 + (r() - 0.5) * 150, AT_H - 340 - row * 640 + (r() - 0.5) * 120];
         });
-    }
-    const atlasFit = () => { const b = at.scene.getBoundingClientRect(); return Math.min(b.width * (phone.matches ? 1 : 0.7) / AT_W, b.height / (AT_H * Math.cos(AT_TILT * Math.PI / 180) * 1.2)); };
-    function atlasApply() {
-        at.plane.style.transform = `translate(-50%, -50%) rotateX(${AT_TILT}deg) scale(${at.z.toFixed(4)}) translate(${(AT_W / 2 - at.x).toFixed(1)}px, ${(AT_H / 2 - at.y).toFixed(1)}px)`;
-    }
-    function atlasStep() {
-        at.raf = 0;
-        if (!atlasOn) return;
-        const k = U.motion() === "still" ? 1 : 0.11;
-        at.x += (at.tx - at.x) * k; at.y += (at.ty - at.y) * k; at.z += (at.tz - at.z) * k;
-        atlasApply();
-        if (Math.abs(at.tx - at.x) + Math.abs(at.ty - at.y) > 0.5 || Math.abs(at.tz - at.z) > 0.002) at.raf = requestAnimationFrame(atlasStep);
-    }
-    const atlasMove = () => { if (!at.raf) at.raf = requestAnimationFrame(atlasStep); };
-    function atlasLook(x, y, z = at.tz) {
-        at.tx = U.clamp(x, 100, AT_W - 100); at.ty = U.clamp(y, 100, AT_H - 100); at.tz = U.clamp(z, atlasFit() * 0.9, 2.3);
-        atlasMove();
     }
     // an island's page of the atlas
     function atlasCard(i) {
@@ -953,9 +935,9 @@ const Campaign = (() => {
     function atlasFocus(i, glide = true) {
         if (!map[i]) return;
         at.focus = i;
-        at.plane.querySelectorAll(".at-isle").forEach(n => n.classList.toggle("focus", +n.dataset.i === i));
+        at.view.focus(i);
         const [x, y] = at.pts[i];
-        if (glide) atlasLook(x, y - 80, Math.max(at.tz, phone.matches ? 0.5 : 0.72));
+        if (glide) at.view.look(x, y - 60, Math.max(at.view.cam.tz, phone.matches ? 0.5 : 0.62));
         atlasCard(i);
         Sound.play("select");
     }
@@ -964,113 +946,128 @@ const Campaign = (() => {
         if (!sectionOpen(i) || at.leaving) return;
         at.leaving = true;
         const [x, y] = at.pts[i];
-        atlasLook(x, y - 40, 2.3);
+        at.view.look(x, y - 40, 2.3);
         atlasEl.classList.add("diving");
         setTimeout(() => { closeAtlas(true); if (i !== data.section) { data.section = i; data.sel = restStop(i); save(); pageEl.classList.remove("up"); showWorld(true); U.restart(isle, "sail-in"); } }, U.motion() === "still" ? 0 : 420);
+    }
+    // what the sea holds: every island (and found secret worlds' rocks), the road through them, the branches to the
+    // rocks, and the glimmers where a secret is still waiting
+    function atlasSea(pts) {
+        const here = heroSpot().si, islands = [], branches = [], glimmers = [];
+        map.forEach((s, i) => {
+            const w = Worlds.byId[s.world], b = biome(s.world), open = sectionOpen(i), won = cleared(i, 5), r = U.rng(i * 71 + 3), props = [];
+            if (open) for (let k = 0; k < 5; k++) {
+                const a = (k / 5 + r() * 0.12) * Math.PI * 2, rx = 118 + r() * 26, ry = 96 + r() * 22;
+                if (Math.sin(a) < -0.55 && Math.abs(Math.cos(a)) < 0.6) continue;                    // (not where the boss stands)
+                props.push({ ox: Math.cos(a) * rx, oy: Math.sin(a) * ry, k: 0.8 + r() * 0.5, key: `prop-${i}-${k}`, svg: `<svg viewBox="-40 -84 80 88">${PROPS[b.prop](r)}</svg>` });
+            }
+            const look = i === here && data.hero ? heroLook() : null;
+            islands.push({ i, x: pts[i][0], y: pts[i][1], world: s.world, ground: b.ground, hill: b.hill, path: b.path, open, won, here: i === here, props, boss: bossSvg(s.world),
+                hero: look ? Hero.svg(look, "", { still: true }) : null, heroKey: look ? "hero-" + JSON.stringify(look) : "",
+                label: { name: w.name, world: s.world, theme: Worlds.modeFor(w), aria: `${w.name}: ${open ? worldStars(i) + " of " + LV(i).length * 3 + " stars" : "locked"}`,
+                    sub: [open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : bossOf(s.world).name] } });
+            // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
+            const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
+            if (state === "hidden") return;
+            const sx = pts[i][0] + (i % 2 ? -250 : 250), sy = pts[i][1] + 190;
+            if (state === "omen") { glimmers.push([sx, sy]); return; }
+            const bend = [(pts[i][0] + sx) / 2, sy + 56];
+            branches.push(Array.from({ length: 21 }, (_, n) => { const t = n / 20, k = 1 - t; return [k * k * pts[i][0] + 2 * k * t * bend[0] + t * t * sx, k * k * pts[i][1] + 2 * k * t * bend[1] + t * t * sy]; }));
+            islands.push({ i, rock: true, seed: 100 + i, x: sx, y: sy, ground: sec.color, hill: sec.color, path: sec.color, open: true, gate: gateArt(sec), gateKey: "gate-" + sec.id,
+                label: { name: sec.name, aria: `${sec.name}, a secret world`, sub: [icon("lock"), "Sealed"] } });
+        });
+        const reached = map.filter((s, i) => sectionOpen(i)).length;
+        const along = upTo => { const out = []; for (let u = 0; u < upTo; u += 0.04) out.push(roadPoint(pts, u)); if (upTo > 0) out.push(roadPoint(pts, upTo)); return out; };
+        return { islands, branches, glimmers, road: { all: along(pts.length - 1), done: along(reached - 1) } };
+    }
+    // the Atlas's pictures (bosses, scenery, the hero, gates) are made while you look at the island, at the sizes the
+    // Atlas opens at, so it opens at once (atlas.js keeps them for the rest of the visit)
+    let warmed = "";
+    function warmAtlas() {
+        if (!map) return;
+        const sea = atlasSea(atlasSpots()), dpr = Math.min(2, devicePixelRatio || 1), list = [];
+        const sig = sea.islands.map(d => (d.open ? 1 : 0) + (d.won ? 2 : 0)).join("") + (sea.islands.find(d => d.hero) || {}).heroKey;
+        if (sig === warmed) return;
+        warmed = sig;
+        for (const d of sea.islands) {
+            if (d.boss) for (const px of [70, 110]) list.push({ key: "boss-" + d.world, svg: d.boss, px: px * dpr, look: d.open ? (d.won ? "faded" : "") : "shadow" });
+            for (const p of d.props || []) list.push({ key: p.key, svg: p.svg, px: 74 * p.k * 0.6 * dpr });
+            if (d.hero) list.push({ key: d.heroKey, svg: d.hero, px: 60 * dpr });
+            if (d.gate) list.push({ key: d.gateKey, svg: d.gate, px: 60 * dpr });
+        }
+        AtlasView.warm(list);
+        // the name plates' fonts (each world's own) load now too: a hidden row of plates, gone once they're in
+        const fonts = U.el("div", { class: "at-tags", "aria-hidden": "true", style: { position: "fixed", left: "-9999px", top: "0", visibility: "hidden" } },
+            ...map.map(s => U.el("span", { class: "at-label", "data-world": s.world, "data-theme": Worlds.modeFor(Worlds.byId[s.world]) }, U.el("b", { text: Worlds.byId[s.world].name }))),
+            U.el("span", { class: "at-head" }, U.el("h2", { text: "The Atlas" })));
+        document.body.append(fonts);
+        const done = () => fonts.remove();
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(done, 1500));
     }
     function openAtlas() {
         if (!onStage() || atlasOn || switching || diving || bookOn()) return;
         atlasOn = true;
         Mascot.hush();
-        const pts = atlasSpots(), here = heroSpot().si, reached = map.filter((s, i) => sectionOpen(i)).length;
-        const pct = pts.map(([x, y]) => [x / AT_W * 100, y / AT_H * 100]);
-        const plane = U.el("div", { class: "at-plane", style: { width: AT_W + "px", height: AT_H + "px" } });
-        let branches = "";
-        const things = [U.el("i", { class: "at-sea" })];
-        map.forEach((s, i) => {
-            const w = Worlds.byId[s.world], b = biome(s.world), open = sectionOpen(i), won = cleared(i, 5), r = U.rng(i * 71 + 3);
-            const isleEl = U.el("div", { class: "at-isle" + (open ? "" : " shut") + (won ? " won" : "") + (i === here ? " here" : ""), "data-i": i,
-                style: { left: pts[i][0].toFixed(0) + "px", top: pts[i][1].toFixed(0) + "px", "--ground": b.ground, "--hill": b.hill, "--path": b.path, "--i": i } });
-            isleEl.append(U.el("i", { class: "at-glow" }), U.el("div", { class: "at-slab" }, ...Array.from({ length: 6 }, (_, n) => U.el("i", { class: n ? "" : "top", style: { "--n": n } }))));
-            if (i === here) isleEl.append(U.el("i", { class: "at-ring" }));
-            if (open) for (let k = 0; k < 5; k++) {
-                const a = (k / 5 + r() * 0.12) * Math.PI * 2, rx = 118 + r() * 26, ry = 96 + r() * 22;
-                if (Math.sin(a) < -0.55 && Math.abs(Math.cos(a)) < 0.6) continue;                    // (not where the boss stands)
-                isleEl.append(U.el("div", { class: "at-prop", style: { left: (Math.cos(a) * rx).toFixed(0) + "px", top: (Math.sin(a) * ry).toFixed(0) + "px", "--k": (0.8 + r() * 0.5).toFixed(2) }, html: `<svg viewBox="-40 -84 80 88" aria-hidden="true">${PROPS[b.prop](r)}</svg>` }));
-            }
-            else isleEl.append(U.el("i", { class: "at-mist" }));
-            // (the page is beside the boss, not inside it: a locked boss is darkened, and its page must still shine)
-            isleEl.append(U.el("div", { class: "at-who" }, U.el("div", { class: "at-boss", html: bossSvg(s.world) }), won ? null : U.el("span", { class: "ws-leaf" })));
-            if (i === here && data.hero) isleEl.append(U.el("div", { class: "at-hero", html: Hero.svg(heroLook(), "", { still: true }) }));
-            isleEl.append(U.el("button", { type: "button", class: "at-label", "data-world": s.world, "data-theme": Worlds.modeFor(w), "aria-label": `${w.name}: ${open ? worldStars(i) + " of " + LV(i).length * 3 + " stars" : "locked"}` },
-                U.el("b", { text: w.name }), U.el("small", {}, open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : b.name)));
-            things.push(isleEl);
-            // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
-            const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
-            if (state === "hidden") return;
-            const sx = pts[i][0] + (i % 2 ? -250 : 250), sy = pts[i][1] + 190;
-            if (state === "omen") { things.push(U.el("i", { class: "at-glimmer", style: { left: sx + "px", top: sy + "px" } })); return; }
-            branches += `<path class="at-branch" d="M${pct[i][0].toFixed(2)} ${pct[i][1].toFixed(2)}Q${((pct[i][0] + sx / AT_W * 100) / 2).toFixed(2)} ${(sy / AT_H * 100 + 2).toFixed(2)} ${(sx / AT_W * 100).toFixed(2)} ${(sy / AT_H * 100).toFixed(2)}"/>`;
-            things.push(U.el("div", { class: "at-isle at-rock", "data-i": i, style: { left: sx + "px", top: sy + "px", "--ground": sec.color, "--hill": sec.color, "--c": sec.color } },
-                U.el("div", { class: "at-slab" }, ...Array.from({ length: 4 }, (_, n) => U.el("i", { class: n ? "" : "top", style: { "--n": n } }))),
-                U.el("div", { class: "at-gate", html: gateArt(sec) }), U.el("button", { type: "button", class: "at-label secret", "aria-label": `${sec.name}, a secret world` }, U.el("b", { text: sec.name }), U.el("small", {}, icon("lock"), "Sealed"))));
-        });
-        plane.innerHTML = `<svg class="at-thread" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="at-bed" d="${roadPath(pct)}"/><path class="at-ahead" d="${roadPath(pct)}"/><path class="at-done" d="${roadPath(pct, reached - 1)}"/>${branches}</svg>`;
-        plane.prepend(things[0]);
-        plane.append(...things.slice(1));
+        const pts = atlasSpots();
         const main = map.filter(s => !s.secret), won = main.filter(s => data.levels[keyOf(s.world, 5)]).length, secretsFound = foundSecrets().length;
-        const scene = U.el("div", { class: "at-scene" }, U.el("i", { class: "at-stars" }), U.el("i", { class: "at-horizon" }), plane);
+        const scene = U.el("div", { class: "at-scene" }, U.el("i", { class: "at-stars" }), U.el("i", { class: "at-horizon" }));
         const card = U.el("aside", { class: "at-card", "aria-live": "polite" });
-        const zoomBy = k => atlasLook(at.tx, at.ty, at.tz * k);
         atlasEl.replaceChildren(scene,
             U.el("header", { class: "at-head" }, U.el("div", {}, U.el("h2", { text: "The Atlas" }), U.el("p", { text: `${won} of ${main.length} Pages Won Back` + (secretsFound ? ` · ${plural(secretsFound, "Secret World")} Found` : "") })),
                 U.el("button", { type: "button", class: "at-round", "aria-label": "Close the atlas", onclick: () => closeAtlas() }, icon("close"))),
             U.el("div", { class: "at-tools", role: "group", "aria-label": "The view" },
-                U.el("button", { type: "button", "aria-label": "Zoom in", text: "+", onclick: () => zoomBy(1.3) }), U.el("button", { type: "button", "aria-label": "Zoom out", text: "−", onclick: () => zoomBy(1 / 1.3) }),
-                U.el("button", { type: "button", class: "wide", text: "Whole Map", onclick: () => atlasLook(AT_W / 2, AT_H / 2 + 300, 0) }), U.el("span", { text: "Drag to look around" })),
+                U.el("button", { type: "button", "aria-label": "Zoom in", text: "+", onclick: () => at.view.zoomBy(1.3) }), U.el("button", { type: "button", "aria-label": "Zoom out", text: "−", onclick: () => at.view.zoomBy(1 / 1.3) }),
+                U.el("button", { type: "button", class: "wide", text: "Whole Map", onclick: () => at.view.fit() }), U.el("span", { text: "Drag to Look Around" })),
             card);
         atlasEl.hidden = false;
         atlasEl.classList.remove("out", "diving");
         view.classList.add("atlas-on");
         root.classList.add("cm-atlas-on");
-        at = { plane, scene, card, pts, x: pts[data.section][0], y: pts[data.section][1], z: 2.2, tx: 0, ty: 0, tz: 1, focus: data.section, raf: 0, leaving: false };
-        atlasApply();
-        atlasFocus(data.section);
-        Sound.play("worldSwap");
-        // drag to look around; a press that doesn't move is a pick
-        let drag = null;
-        scene.addEventListener("pointerdown", e => { if (e.button) return; drag = { x: e.clientX, y: e.clientY, cx: at.tx, cy: at.ty, moved: false }; });
-        scene.addEventListener("pointermove", e => {
-            if (!drag) return;
-            const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-            if (!drag.moved && Math.hypot(dx, dy) < 7) return;
-            if (!drag.moved) { drag.moved = true; scene.classList.add("dragging"); try { scene.setPointerCapture(e.pointerId); } catch (err) { /* the drag still works without it */ } }
-            atlasLook(drag.cx - dx / at.z, drag.cy - dy / (at.z * Math.cos(AT_TILT * Math.PI / 180)));
-        });
-        const drop = e => {
-            if (!drag) return;
-            const moved = drag.moved;
-            drag = null;
-            scene.classList.remove("dragging");
-            if (moved || e.type !== "pointerup") return;
-            const hit = document.elementFromPoint(e.clientX, e.clientY), on = hit && hit.closest(".at-isle");
-            if (!on) return;
-            const i = +on.dataset.i;
-            if (on.classList.contains("at-rock")) { atlasFocus(i); return; }
-            if (i === at.focus && sectionOpen(i)) atlasTravel(i); else atlasFocus(i);
+        // the room the page of the atlas takes (beside the sea on a computer, under it on a phone)
+        const room = { right: 0, bottom: 0 };
+        const measure = () => {
+            const r = card.getBoundingClientRect(), box = atlasEl.getBoundingClientRect();
+            room.right = phone.matches ? 0 : Math.max(0, box.right - r.left + 8);
+            room.bottom = phone.matches ? Math.max(0, box.bottom - r.top) : 0;
+            if (at && at.view) at.view.wake();
         };
-        scene.addEventListener("pointerup", drop);
-        scene.addEventListener("pointercancel", drop);
-        scene.addEventListener("wheel", e => { e.preventDefault(); atlasLook(at.tx, at.ty, at.tz * Math.exp(-e.deltaY * 0.0014)); }, { passive: false });
-        card.focus && atlasEl.querySelector(".at-round").focus({ preventScroll: true });
+        at = { scene, card, pts, focus: data.section, leaving: false, view: null, ro: new ResizeObserver(measure) };
+        at.view = AtlasView.create(scene, { width: AT_W, height: AT_H, ...atlasSea(pts), insets: () => room,
+            onPick: (d, quiet) => { if (d.rock || d.i !== at.focus || quiet || !sectionOpen(d.i)) atlasFocus(d.i); else atlasTravel(d.i); },
+            onTravel: () => atlasTravel(at.focus) });
+        measure();
+        at.ro.observe(card);
+        // the camera starts low over where you are, then rises to show it and the island the road leads to next
+        const [hx, hy] = pts[data.section], [nx, ny] = pts[Math.min(map.length - 1, data.section + 1)];
+        Object.assign(at.view.cam, { x: hx, y: hy - 60, z: 0.85, tx: hx, ty: hy - 60, tz: 0.85 });
+        atlasFocus(data.section, false);
+        at.view.look((hx + nx) / 2, (hy + ny) / 2 - 60, phone.matches ? 0.42 : 0.55);
+        Worlds.cover(true);
+        Sound.play("worldSwap");
+        atlasEl.querySelector(".at-round").focus({ preventScroll: true });
     }
     function closeAtlas(now = false) {
         if (!atlasOn) return;
         atlasOn = false;
         view.classList.remove("atlas-on");
         root.classList.remove("cm-atlas-on");
-        if (now === true && U.view() !== "campaign") { atlasEl.hidden = true; atlasEl.replaceChildren(); return; }
+        Worlds.cover(false);
+        const old = at;
+        const gone = () => { if (atlasOn) return; atlasEl.hidden = true; if (old) { old.ro.disconnect(); if (old.view) old.view.destroy(); } atlasEl.replaceChildren(); };
+        if (now === true && U.view() !== "campaign") { gone(); return; }
         atlasEl.classList.add("out");
-        setTimeout(() => { if (!atlasOn) { atlasEl.hidden = true; atlasEl.replaceChildren(); } }, 300);
+        setTimeout(gone, 300);
     }
-    // keys in the Atlas: the arrows step along the journey, Enter travels, + and - zoom, Escape or M closes
+    // keys in the Atlas: the arrows step along the journey, Enter travels, + and - zoom, 0 shows the whole map,
+    // Escape or M closes
     function atlasKey(e) {
         if (e.key === "Escape" || e.key === "m" || e.key === "M") closeAtlas();
         else if (e.key === "ArrowRight" || e.key === "ArrowUp") atlasFocus(Math.min(map.length - 1, at.focus + 1));
         else if (e.key === "ArrowLeft" || e.key === "ArrowDown") atlasFocus(Math.max(0, at.focus - 1));
         else if (e.key === "Enter" && !e.target.closest("button")) atlasTravel(at.focus);
-        else if (e.key === "+" || e.key === "=") atlasLook(at.tx, at.ty, at.tz * 1.3);
-        else if (e.key === "-") atlasLook(at.tx, at.ty, at.tz / 1.3);
+        else if (e.key === "+" || e.key === "=") at.view.zoomBy(1.3);
+        else if (e.key === "-") at.view.zoomBy(1 / 1.3);
+        else if (e.key === "0") at.view.fit();
         else return;
         e.preventDefault();
     }
@@ -1109,6 +1106,7 @@ const Campaign = (() => {
         pageEl.classList.remove("up");
         swapWorld(data.section, true);
         drawBar(); drawStage({ deal: true, hold: fresh }); drawPage(); drawStrip();
+        warmAtlas();
         // the first time you open the campaign: the story so far (the Everbook replays it)
         if (!data.storySeen) {
             data.storySeen = true;

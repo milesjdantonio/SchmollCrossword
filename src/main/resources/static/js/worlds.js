@@ -19,6 +19,7 @@ const Worlds = (() => {
     let current = null, scene = null;
     const cv = document.getElementById("world-bg"), g = cv.getContext("2d");
     let W = 0, H = 0, dpr = 1, raf = 0, timer = 0, last = 0, t = 0;
+    let covered = false;                       // something opaque fills the screen (the Atlas): the scene waits
     const input = { px: 0, py: 0, tx: 0, ty: 0, W: 0, H: 0, scroll: 0 };
 
     addEventListener("pointermove", e => {
@@ -96,7 +97,7 @@ const Worlds = (() => {
             return;
         }
         const m = U.motion();
-        if (m === "still" || document.hidden) return;          // a single still frame
+        if (m === "still" || document.hidden || covered) return;          // a single still frame
         if (m === "lite") timer = setTimeout(() => { raf = requestAnimationFrame(frame); }, 30);
         else raf = requestAnimationFrame(frame);
     }
@@ -252,8 +253,16 @@ const Worlds = (() => {
         if (k > 0.86) { glow(g, x, y, r * 6, color, (k - 0.86) * 4); glint(g, x, y, r * 5 * (k - 0.6), (k - 0.86) * 6, color); }
     }
 
+    // cover(true) while something opaque fills the whole screen, so the scene behind it stops drawing; cover(false)
+    // starts it again
+    function cover(on) {
+        if (covered === !!on) return;
+        covered = !!on;
+        if (!covered && scene) loop();
+    }
+
     return {
-        register, use, board, preview, modeFor, list, byId, decoBoard, canvas, glow, glint, twinkle,
+        register, use, cover, board, preview, modeFor, list, byId, decoBoard, canvas, glow, glint, twinkle,
         get current() { return current; },
         get time() { return t; }
     };
