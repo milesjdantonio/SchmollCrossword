@@ -13,6 +13,7 @@
 //   v.cam                 { x, y, z, tx, ty, tz }: where the camera is and where it's heading
 //   v.destroy()           stop drawing and let go of everything
 //   AtlasView.warm(list)  make pictures ahead of time ([{ key, svg, px, look }]), so the Atlas opens without waiting
+//   AtlasView.thumb(canvas, o)  a world's boss on a little island, for the dock's windows
 //
 // The sea is a plane of width x height units. The camera looks at the point (x, y) of it, zoomed by z; the plane is
 // tilted away by TILT degrees and seen with a perspective of PERSP pixels, like CSS's rotateX + perspective.
@@ -131,6 +132,43 @@ const AtlasView = (() => {
         };
         idle(next);
     }
+    // A world's window in the dock (campaign.js drawStrip): its boss standing on a little island of the world's
+    // colours, under a glow of them. o: { key, svg, look, ground, hill }. Drawn once; again when the boss's picture
+    // is ready.
+    function thumb(canvas, o) {
+        const w = Math.max(16, canvas.clientWidth || 52), h = Math.max(16, canvas.clientHeight || 52), dpr = Math.min(2, window.devicePixelRatio || 1);
+        canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+        const g = canvas.getContext("2d"), ground = hex(o.ground), hill = hex(o.hill), dark = o.look === "shadow";
+        const size = SIZES.find(s => s >= h * 0.95 * dpr) || SIZES[SIZES.length - 1], id = o.key + "|" + (o.look || "") + "|" + size;
+        const paint = () => {
+            g.setTransform(dpr, 0, 0, dpr, 0, 0);
+            const sky = g.createRadialGradient(w / 2, h * 0.38, 0, w / 2, h * 0.38, Math.max(w, h) * 0.75);
+            sky.addColorStop(0, css(mix(ground, WHITE, dark ? 0.05 : 0.45)));
+            sky.addColorStop(0.55, css(mix(hill, NIGHT, dark ? 0.45 : 0.1)));
+            sky.addColorStop(1, css(mix(hill, NIGHT, dark ? 0.75 : 0.5)));
+            g.fillStyle = sky;
+            g.fillRect(0, 0, w, h);
+            // the island: its side in two layers, then its top
+            const cx = w / 2, cy = h * 0.84, rx = w * 0.44, ry = h * 0.11;
+            for (let n = 2; n >= 1; n--) { g.fillStyle = css(mix(hill, NIGHT, 0.2 + n * 0.15)); g.beginPath(); g.ellipse(cx, cy + n * h * 0.035, rx, ry, 0, 0, Math.PI * 2); g.fill(); }
+            g.fillStyle = css(mix(ground, WHITE, 0.15));
+            g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); g.fill();
+            g.fillStyle = "rgba(10, 4, 24, .22)";
+            g.beginPath(); g.ellipse(cx, cy, rx * 0.5, ry * 0.5, 0, 0, Math.PI * 2); g.fill();
+            const pic = cache.get(id);
+            if (!pic) return;
+            const bh = h * 0.8, bw = bh * pic.width / pic.height;
+            g.drawImage(pic, cx - bw / 2, cy + ry * 0.35 - bh, bw, bh);
+        };
+        paint();
+        if (cache.has(id)) return;
+        source(o.key, o.svg).p.then(ok => {
+            if (!ok || !canvas.isConnected) return;
+            if (!cache.has(id)) cache.set(id, render(loading.get(o.key), size, o.look || ""));
+            paint();
+        });
+    }
+
     function create(host, opts) {
         const { width: W, height: H } = opts;
         const canvas = document.createElement("canvas"), g = canvas.getContext("2d");
@@ -593,5 +631,5 @@ const AtlasView = (() => {
             destroy() { alive = false; cancelAnimationFrame(raf); ro.disconnect(); onReady = null; canvas.remove(); tags.remove(); }
         };
     }
-    return { create, warm };
+    return { create, warm, thumb };
 })();

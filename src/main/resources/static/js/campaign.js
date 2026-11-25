@@ -40,15 +40,17 @@ const Campaign = (() => {
     data.items = data.items || {};
 
     let map = null, full = null, loading = null;
-    // The secret world (the Celestial Rift): on the map only once the Void is beaten
-    // (or with the beta's Unlock All). map is what's shown; full has it too.
-    // TEST_SECRET_OPEN: true puts the rift on the map and opens its first level without beating the Void (for testing;
+    // The secret world that's built (the Celestial Rift) is found like the other secret worlds (see SECRETS): once the
+    // Void is beaten an omen turns up on Deep Space's island, its riddle opens a gate, and only then is the Rift on the
+    // map (or with the beta's Unlock All). map is what's shown; full has it too.
+    // TEST_SECRET_OPEN: true puts the rift on the map and opens its first level without finding it (for testing;
     // false for everyone else).
     const TEST_SECRET_OPEN = false;
-    // really unlocked (the Void beaten, or Unlock All), ignoring TEST_SECRET_OPEN: what the credits and the start
-    // screen's boss parade go by, so they never give the rift or the angel away
+    // the Void beaten (or Unlock All), ignoring TEST_SECRET_OPEN: what the credits and the start screen's boss parade
+    // go by, so they never give the rift or the angel away
     const secretEarned = () => !!(data.betaUnlock || (data.levels && data.levels["space-5"]));
-    const secretOpen = () => TEST_SECRET_OPEN || secretEarned();
+    const riftFound = () => !!(data.secrets && data.secrets.rift === "found") || !!(data.levels && Object.keys(data.levels).some(k => k.startsWith("rift-")));
+    const secretOpen = () => TEST_SECRET_OPEN || !!data.betaUnlock || (secretEarned() && riftFound());
     const visibleMap = () => full.filter(s => !s.secret || secretOpen());
     // the map grows (the Void just fell): the strip of worlds gets its new tile the next time it's drawn
     function refreshMap() {
@@ -117,6 +119,7 @@ const Campaign = (() => {
         if (si === 0 && level === 1) return true;
         if (TEST_SECRET_OPEN && level === 1 && map[si].secret) return true;      // (testing: see TEST_SECRET_OPEN)
         if (level > 1) return cleared(si, prevLevel(si, level) || level - 1);
+        if (map[si].secret) return secretOpen() && cleared(map.findIndex(s => s.world === "space"), 5) || !!data.betaUnlock;
         return si > 0 && cleared(si - 1, 5);
     }
     const sectionOpen = si => unlocked(si, 1);
@@ -365,13 +368,18 @@ const Campaign = (() => {
                     thumb, U.el("span", { class: "ws-tile-name", text: w.name }), U.el("span", { class: "ws-pips", "aria-hidden": "true" }, ...LV(i).map(() => U.el("i"))),
                     icon("lock", "ws-tile-lock"), U.el("span", { class: "ws-tile-crown", "aria-hidden": "true" }, icon("star")));
                 stripEl.append(tile);
-                // (a frame apart: each still runs its scene for a moment, and sixteen at once would stall the page)
-                setTimeout(() => { if (thumb.isConnected) try { Worlds.preview(thumb, s.world, Worlds.modeFor(w)); } catch (err) { /* no still for this world */ } }, 120 + i * 45);
             });
         }
         const tiles = [...stripEl.querySelectorAll(".ws-tile")];
         tiles.forEach((tile, i) => {
             const open = sectionOpen(i), done = LV(i).filter(l => cleared(i, l)).length;
+            // its window: the world's boss on a little island of its colours (a shadow until the world is open)
+            const look = open ? "" : "shadow", thumb = tile.querySelector(".ws-thumb");
+            if (thumb && thumb.dataset.look !== look && thumb.clientWidth) {
+                thumb.dataset.look = look;
+                const b = biome(map[i].world);
+                AtlasView.thumb(thumb, { key: "boss-" + map[i].world, svg: bossSvg(map[i].world), look, ground: b.ground, hill: b.hill });
+            }
             tile.classList.toggle("on", i === data.section);
             tile.classList.toggle("shut", !open);
             tile.classList.toggle("won", cleared(i, 5));
@@ -461,7 +469,8 @@ const Campaign = (() => {
         if (!data.hero) {
             if (!(await editHero(true))) return;
         }
-        if (f.si > data.arrived && U.view() === "campaign") {
+        // (a secret world is arrived at through its gate, never on the way: enterSecret)
+        if (f.si > data.arrived && !map[f.si].secret && U.view() === "campaign") {
             const from = data.arrived >= 0 ? map[data.arrived].world : null, to = map[f.si].world, before = data.arrived;
             data.arrived = f.si;
             data.heroAt = { si: f.si, level: 1 };
@@ -687,16 +696,18 @@ const Campaign = (() => {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // The secret worlds: four hidden places, each branching off a world once that world's boss is beaten.
+    // The secret worlds: five hidden places, each branching off a world once that world's boss is beaten.
     // Nothing says they exist. After the boss falls, something odd turns up on that island (an omen), different in
     // every world, and it has to be dealt with its own way:
     //   Acorn Woods   a giant acorn that keeps hopping away: catch it three times and it cracks open
     //   Coral Reef    a bottle bobbing in the sea beside the island: pull its cork
     //   Desert        an oasis that vanishes when the pointer comes near (a mirage): the fourth time it's real
     //   Volcano       a boulder with a glowing crack: press and hold until it splits
+    //   Deep Space    (after the Void) four fallen stars that blink in turn: blink them back in the same order
     // Each gives up a torn scrap with a riddle. Say the answer (type it) and the way in appears: a gate on the island,
     // and a small island of its own in the Atlas. data.secrets: { id: "found" }.
-    // The worlds behind the gates aren't built yet: a found gate shows what's waiting and says its door is still shut.
+    // A secret with a `world` is built (the Celestial Rift): its gate opens, and the world joins the map once found.
+    // The others aren't built yet: a found gate shows what's waiting and says its door is still shut.
     // ---------------------------------------------------------------------------------------------
     const SECRETS = [
         { id: "hollow", parent: "squirrel", name: "The Great Hollow", boss: "The Giant Squirrel", color: "#8a5a2b", omen: "acorn", riddle: "I start as a nut and end as a tree.", answer: "ACORN",
@@ -706,13 +717,16 @@ const Campaign = (() => {
         { id: "dunes", parent: "desert", name: "The Sunken Dunes", boss: "The Sandworm", color: "#c98a3c", omen: "mirage", riddle: "Water you can see but never drink, shimmering on hot sand.", answer: "MIRAGE",
             tease: "The sand here moves by itself. Something long is swimming through the dunes, and it swallows whole sentences." },
         { id: "cave", parent: "volcano", name: "The Lava Cave", boss: "The Lava Beast", color: "#d9481f", omen: "crack", riddle: "The black glass that lava leaves behind.", answer: "OBSIDIAN",
-            tease: "Under the volcano is a cave the Magma Wyrm is afraid of. Whatever lives there is made of the mountain itself." }
+            tease: "Under the volcano is a cave the Magma Wyrm is afraid of. Whatever lives there is made of the mountain itself." },
+        { id: "rift", parent: "space", world: "rift", name: "The Celestial Rift", boss: "The Cursed Angel", color: "#9b6bff", omen: "stars", riddle: "A ring of light that crowns an angel.", answer: "HALO",
+            tease: "Where the Void fell, the sky has split. Behind the crack is the prison it was guarding, and something with broken wings is awake." }
     ];
     const INK2 = "#2b2233";
     const OMEN_ART = {
         acorn: `<svg viewBox="-30 -62 60 66"><ellipse cy="-20" rx="20" ry="23" fill="#b9773e" stroke="${INK2}" stroke-width="3"/><path d="M-24-30a24 16 0 0 1 48 0z" fill="#6e4429" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M0-46v-11" stroke="#6e4429" stroke-width="5" stroke-linecap="round"/><path d="M-9-18q3-8 9-8" fill="none" stroke="#f2d2a2" stroke-width="3" stroke-linecap="round"/></svg>`,
         bottle: `<svg viewBox="-22 -72 44 76"><rect class="ws-cork" x="-6" y="-68" width="12" height="11" rx="2" fill="#b9773e" stroke="${INK2}" stroke-width="2"/><path d="M-6-57h12v10q10 6 10 18v21a6 6 0 0 1-6 6h-20a6 6 0 0 1-6-6v-21q0-12 10-18z" fill="rgba(170,230,240,.55)" stroke="#e8f8ff" stroke-width="3" stroke-linejoin="round"/><rect x="-8" y="-26" width="17" height="15" rx="2" fill="#f6ecd2" stroke="#b9a070" stroke-width="1.5" transform="rotate(-12)"/></svg>`,
         mirage: `<svg viewBox="-42 -74 84 78"><ellipse cy="-5" rx="36" ry="8" fill="#5ec8e0" stroke="#fff" stroke-width="2"/><path d="M-6-7q5-30 0-50" fill="none" stroke="#7a4a2a" stroke-width="7" stroke-linecap="round"/><path d="M-6-57q-22-8-30 8M-6-57q22-10 32 6M-6-57q-6-18-24-12M-6-57q10-16 26-10" fill="none" stroke="#2f9e6b" stroke-width="6" stroke-linecap="round"/></svg>`,
+        star: `<svg viewBox="-24 -50 48 52"><circle cy="-22" r="20" fill="rgba(200,170,255,.25)"/><path d="M0-42l5.5 12.6 13.5 1.2-10.2 9 3 13.2L0-13l-11.8 7 3-13.2-10.2-9 13.5-1.2z" fill="#f6efff" stroke="#9b6bff" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
         crack: `<svg viewBox="-44 -70 88 74"><path d="M-36 0l-6-24 16-26 28-12 26 14 12 28-8 20z" fill="#3a2622" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M-22-40l10 6" stroke="#5a3f39" stroke-width="4" stroke-linecap="round"/><path class="ws-crack-glow" d="M2-60l-8 16 10 10-12 14 8 10-6 10" fill="none" stroke="#ffb21e" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></svg>`
     };
     const gateArt = sec => `<svg viewBox="-38 -86 76 90"><path d="M-32 0V-48a32 32 0 0 1 64 0V0z" fill="${sec.color}" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M-21 0V-46a21 21 0 0 1 42 0V0z" fill="#150a22"/><text y="-18" text-anchor="middle" font-size="32" font-weight="900" fill="#ffd66b" font-family="Georgia, serif">?</text></svg>`;
@@ -741,7 +755,8 @@ const Campaign = (() => {
         const si = data.section, sec = secretOf(si), state = sec ? secretState(sec) : "hidden";
         if (state === "hidden") return;
         if (state === "found") {
-            const gate = U.el("button", { type: "button", class: "ws-omen ws-gate", "aria-label": `${sec.name}: a secret world`, html: gateArt(sec), onclick: () => showSecret(sec, false) });
+            const gate = U.el("button", { type: "button", class: "ws-omen ws-gate" + (sec.world ? " built" : ""), "aria-label": sec.world ? `Enter ${sec.name}` : `${sec.name}: a secret world`, html: gateArt(sec),
+                onclick: () => (sec.world ? enterSecret(sec) : showSecret(sec, false)) });
             gate.append(U.el("span", { class: "ws-gate-name", text: sec.name }));
             placeAt(gate, freeSpot(si));
             omenEl.append(gate);
@@ -765,6 +780,31 @@ const Campaign = (() => {
                 hop();
                 omenTimer = setInterval(hop, 3200 - n * 900);
             });
+        } else if (sec.omen === "stars") {
+            // four fallen stars blink in turn; blink them back in the same order (a wrong one and they show it again)
+            omen.remove();
+            const stars = [0, 1, 2, 3].map(k => {
+                const b = U.el("button", { type: "button", class: "ws-omen star", "aria-label": `A fallen star, ${k + 1} of 4`, html: OMEN_ART.star });
+                placeAt(b, freeSpot(si, k * 3 + 1));
+                omenEl.append(b);
+                return b;
+            });
+            const order = U.rng(si * 7 + 41), seq = [0, 1, 2, 3].sort(() => order() - 0.5);
+            let pos = 0, showing = false;
+            const blink = (k, ms = 420) => { stars[k].classList.add("lit"); Sound.play("select"); setTimeout(() => stars[k].classList.remove("lit"), ms); };
+            const show = () => {
+                showing = true; pos = 0;
+                seq.forEach((k, n) => setTimeout(() => { if (stars[k].isConnected) blink(k); }, 600 + n * 620));
+                setTimeout(() => { showing = false; }, 600 + seq.length * 620);
+            };
+            stars.forEach((b, k) => b.addEventListener("click", () => {
+                if (showing || b.classList.contains("open")) return;
+                if (seq[pos] !== k) { Sound.play("wrong"); stars.forEach(s => U.restart(s, "no")); clearInterval(omenTimer); setTimeout(show, 500); return; }
+                blink(k, 300);
+                if (++pos === seq.length) { stars.forEach(s => s.classList.add("open")); Sound.play("sparkle"); setTimeout(() => { if (b.isConnected) openRiddle(sec); }, 750); }
+            }));
+            show();
+            omenTimer = setInterval(() => { if (!showing && pos === 0) show(); }, 9000);
         } else if (sec.omen === "bottle") {
             placeAt(omen, [si % 2 ? -9 : 109, 62]);                 // (off the island's edge, in the open)
             omen.addEventListener("click", () => { if (!omen.classList.contains("open")) done(); });
@@ -827,8 +867,27 @@ const Campaign = (() => {
     function foundSecret(sec) {
         data.secrets[sec.id] = "found";
         save();
+        if (sec.world) refreshMap();
         Sound.play("sparkle");
         showSecret(sec, true);
+    }
+    // through a built secret world's gate: to its island (the first time, its arrival scene plays on the way)
+    async function enterSecret(sec) {
+        refreshMap();
+        const si = map.findIndex(s => s.world === sec.world);
+        if (si < 0) return;
+        if (!(data.arrived >= si)) {
+            const before = data.arrived;
+            data.arrived = si;
+            data.section = si; data.sel = restStop(si); data.heroAt = { si, level: 1 };
+            save();
+            await FX.cinematic(c => Travel.arrive(c, sec.parent, sec.world, heroLook(), { index: si, total: MAIN }), { stayOn: "campaign" });
+            if (U.view() !== "campaign") { data.arrived = before; save(); return; }      // left the map: it plays next time
+            showWorld(true);
+            drawHero();
+            return;
+        }
+        go(si);
     }
     // what's behind the gate: shown when it's found (with a little ceremony) and whenever the gate is picked
     function showSecret(sec, first) {
@@ -846,8 +905,9 @@ const Campaign = (() => {
                 U.el("small", { text: first ? "You Found a Secret World" : "A Secret World" }),
                 U.el("h2", { text: sec.name }),
                 U.el("p", { class: "sc-tease", text: sec.tease }),
-                U.el("p", { class: "sc-who" }, icon("lock"), U.el("span", { text: `${sec.boss} is waiting. Its door opens in a coming update.` })),
-                U.el("button", { type: "button", class: "eb-buy", text: first ? "Mark It on the Map" : "Close", onclick: () => close() })));
+                sec.world ? U.el("p", { class: "sc-who" }, icon("spark"), U.el("span", { text: `${sec.boss} is waiting. The gate is open.` }))
+                    : U.el("p", { class: "sc-who" }, icon("lock"), U.el("span", { text: `${sec.boss} is waiting. Its door opens in a coming update.` })),
+                U.el("button", { type: "button", class: "eb-buy", text: sec.world ? "Go Through the Gate" : first ? "Mark It on the Map" : "Close", onclick: () => { close(); if (sec.world) enterSecret(sec); } })));
         layer.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") close(); });
         layer.addEventListener("pointerdown", e => { if (e.target === layer) close(); });
         document.getElementById("overlay").append(layer);
@@ -871,12 +931,25 @@ const Campaign = (() => {
         U.el("i", { class: "ws-cloud", style: { "--t": "40%", "--w": "34%", "--d": "70s", "--dl": "-55s", "--o": ".4" } }));
     isle.after(U.el("i", { class: "ws-cloud front", style: { "--t": "78%", "--w": "52%", "--d": "120s", "--dl": "-80s", "--o": ".34" } }));
     // pick the boss and it has something to say
+    // (the bubble is placed on the stage, not inside the boss: the boss stands at the stage's far edge, and a bubble
+    // above it was cut off by the stage's top. It goes above the boss if it fits, else beside it, else below it.)
     function bossSay() {
         const stop = stopsEl.querySelector(".ws-stop.boss"), si = data.section;
         if (!stop || !sectionOpen(si)) return;
-        stop.querySelectorAll(".ws-taunt").forEach(n => n.remove());
+        stage.querySelectorAll(".ws-taunt").forEach(n => n.remove());
         const say = U.el("span", { class: "ws-taunt", "aria-hidden": "true", text: cleared(si, 5) ? U.pick(["You again?", "Haven't you won enough?", "Back for another round?"]) : bossOf(map[si].world).taunt });
-        stop.append(say);
+        say.style.visibility = "hidden";
+        stage.append(say);
+        const z = U.zoom(), box = stage.getBoundingClientRect(), art = (stop.querySelector(".ws-boss-art") || stop).getBoundingClientRect(), me = say.getBoundingClientRect();
+        const bx = (art.left + art.width / 2 - box.left) / z, top = (art.top - box.top) / z, bottom = (art.bottom - box.top) / z, w = me.width / z, h = me.height / z, gap = 14;
+        let x, y, side;
+        if (top - h - gap > 8) { side = "up"; x = bx - w / 2; y = top - h - gap; }
+        else if ((art.right - box.left) / z + gap + w < box.width / z - 8) { side = "right"; x = (art.right - box.left) / z + gap; y = top + art.height / z * 0.25; }
+        else if ((art.left - box.left) / z - gap - w > 8) { side = "left"; x = (art.left - box.left) / z - gap - w; y = top + art.height / z * 0.25; }
+        else { side = "down"; x = bx - w / 2; y = bottom + gap; }
+        x = U.clamp(x, 8, box.width / z - w - 8); y = U.clamp(y, 8, box.height / z - h - 8);
+        Object.assign(say.style, { left: x + "px", top: y + "px", visibility: "" });
+        say.dataset.side = side;
         setTimeout(() => say.remove(), 3400);
     }
     // Play: the view dives into the stop you picked, then the level begins
@@ -907,12 +980,25 @@ const Campaign = (() => {
     const AT_W = 2700, AT_H = 2800, AT_COLS = 4;
     const atlasEl = U.el("div", { class: "at", role: "dialog", "aria-modal": "true", "aria-label": "The atlas of every world", hidden: true });
     view.append(atlasEl);
-    // where each island lies on the sea: four to a row, each row further away and running the other way
+    // where each island lies on the sea: the worlds of the road four to a row, each row further away and running the
+    // other way; a secret world off to the side of the island it branches from (where its gate's rock would be)
+    const branchSpot = (p, i) => [p[0] + (i % 2 ? -250 : 250), p[1] + 190];
     function atlasSpots() {
-        return map.map((s, i) => {
-            const row = Math.floor(i / AT_COLS), c = i % AT_COLS, k = row % 2 ? AT_COLS - 1 - c : c, r = U.rng(i * 53 + 7);
-            return [360 + k * 660 + (r() - 0.5) * 150, AT_H - 340 - row * 640 + (r() - 0.5) * 120];
+        const pts = [];
+        let n = 0;
+        map.forEach((s, i) => {
+            if (s.secret) return;
+            const row = Math.floor(n / AT_COLS), c = n % AT_COLS, k = row % 2 ? AT_COLS - 1 - c : c, r = U.rng(n * 53 + 7);
+            pts[i] = [360 + k * 660 + (r() - 0.5) * 150, AT_H - 340 - row * 640 + (r() - 0.5) * 120];
+            n++;
         });
+        map.forEach((s, i) => {
+            if (!s.secret) return;
+            const sec = SECRETS.find(x => x.world === s.world), pi = sec ? map.findIndex(m => m.world === sec.parent) : -1;
+            // (a whole island needs more room than a gate's rock: it lies further out, toward the horizon)
+            pts[i] = pi >= 0 ? [pts[pi][0] + 140, pts[pi][1] - 470] : [AT_W / 2, 200];
+        });
+        return pts;
     }
     // an island's page of the atlas
     function atlasCard(i) {
@@ -969,16 +1055,17 @@ const Campaign = (() => {
             // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
             const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
             if (state === "hidden") return;
-            const sx = pts[i][0] + (i % 2 ? -250 : 250), sy = pts[i][1] + 190;
+            const [sx, sy] = branchSpot(pts[i], i);
             if (state === "omen") { glimmers.push([sx, sy]); return; }
             const bend = [(pts[i][0] + sx) / 2, sy + 56];
             branches.push(Array.from({ length: 21 }, (_, n) => { const t = n / 20, k = 1 - t; return [k * k * pts[i][0] + 2 * k * t * bend[0] + t * t * sx, k * k * pts[i][1] + 2 * k * t * bend[1] + t * t * sy]; }));
+            if (sec.world && map.some(m => m.world === sec.world)) return;                // (a built one is a whole island of its own)
             islands.push({ i, rock: true, seed: 100 + i, x: sx, y: sy, ground: sec.color, hill: sec.color, path: sec.color, open: true, gate: gateArt(sec), gateKey: "gate-" + sec.id,
                 label: { name: sec.name, aria: `${sec.name}, a secret world`, sub: [icon("lock"), "Sealed"] } });
         });
-        const reached = map.filter((s, i) => sectionOpen(i)).length;
-        const along = upTo => { const out = []; for (let u = 0; u < upTo; u += 0.04) out.push(roadPoint(pts, u)); if (upTo > 0) out.push(roadPoint(pts, upTo)); return out; };
-        return { islands, branches, glimmers, road: { all: along(pts.length - 1), done: along(reached - 1) } };
+        const road = pts.filter((p, i) => !map[i].secret), reached = map.filter((s, i) => !s.secret && sectionOpen(i)).length;
+        const along = upTo => { const out = []; for (let u = 0; u < upTo; u += 0.04) out.push(roadPoint(road, u)); if (upTo > 0) out.push(roadPoint(road, upTo)); return out; };
+        return { islands, branches, glimmers, road: { all: along(road.length - 1), done: along(reached - 1) } };
     }
     // the Atlas's pictures (bosses, scenery, the hero, gates) are made while you look at the island, at the sizes the
     // Atlas opens at, so it opens at once (atlas.js keeps them for the rest of the visit)
@@ -1038,7 +1125,7 @@ const Campaign = (() => {
         measure();
         at.ro.observe(card);
         // the camera starts low over where you are, then rises to show it and the island the road leads to next
-        const [hx, hy] = pts[data.section], [nx, ny] = pts[Math.min(map.length - 1, data.section + 1)];
+        const [hx, hy] = pts[data.section], [nx, ny] = pts[map[data.section + 1] && !map[data.section + 1].secret ? data.section + 1 : data.section];
         Object.assign(at.view.cam, { x: hx, y: hy - 60, z: 0.85, tx: hx, ty: hy - 60, tz: 0.85 });
         atlasFocus(data.section, false);
         at.view.look((hx + nx) / 2, (hy + ny) / 2 - 60, phone.matches ? 0.42 : 0.55);
@@ -1292,10 +1379,10 @@ const Campaign = (() => {
         const prize = abilityPrize(c.si, c.level), newAbility = firstClear && prize ? prize : null;
         if (newAbility) data.owned[prize.id] = (data.owned[prize.id] || 0) + FREE_USES;
         let next = null;
-        // the Void beaten for the first time: the secret world opens (the map grows, the next world is the Rift)
-        const opened = c.world === "space" && boss && firstClear && refreshMap();
+        // (beating the Void says nothing about the secret world: an omen turns up on Deep Space's island instead)
+        const opened = false;
         if (c.level < 5) next = { world: c.world, level: nextLevel(c.si, c.level) };
-        else if (c.si + 1 < map.length) next = { world: map[c.si + 1].world, level: 1 };
+        else if (c.si + 1 < map.length && !map[c.si + 1].secret) next = { world: map[c.si + 1].world, level: 1 };
         if (next && next.level === 1) { data.section = c.si + 1; data.sel = 1; }
         else if (next) { data.section = c.si; data.sel = next.level; }
         save();
@@ -1573,8 +1660,8 @@ const Campaign = (() => {
                 U.el("p", { class: "eb-purse" }, icon("coin"), U.el("b", { text: String(data.coins) }), U.el("span", { text: data.coins === 1 ? "Coin" : "Coins" })),
                 U.el("p", { class: "eb-prose", text: "Coins come from stars and first clears. Items work in any level. A boss fight takes abilities instead." }));
             if (!special()) left.append(U.el("h2", { class: "eb-h gap", text: "Your Abilities" }), kitList());
-            right.append(U.el("div", { class: "eb-switch", role: "group", "aria-label": "What to show" }, ...[["items", "Items"], ["abilities", "Abilities"]].map(([id, text]) =>
-                U.el("button", { type: "button", "aria-pressed": tab === id ? "true" : "false", text, onclick: () => { book.shopTab = id; Sound.play("select"); drawBook(); } }))));
+            right.append(U.el("div", { class: "eb-switch", role: "group", "aria-label": "What to show", "data-on": book.shopFrom || tab }, ...[["items", "Items"], ["abilities", "Abilities"]].map(([id, text]) =>
+                U.el("button", { type: "button", "aria-pressed": tab === id ? "true" : "false", text, onclick: () => shopSwitch(id) }))));
             if (tab === "items") {
                 right.append(U.el("ul", { class: "eb-list" }, ...ITEMS.map(it => {
                     const b = price(it.price);
@@ -1701,22 +1788,62 @@ const Campaign = (() => {
         right.scrollTop = keep;
         const on = book.tab === "pick" ? "shop" : book.tab;
         book.layer.querySelector(".eb-tabs").replaceChildren(...bookTabs().map(([id, name, ic]) => U.el("button", { type: "button", class: "eb-tab" + (on === id ? " on" : ""), "aria-current": on === id ? "page" : "false",
-            onclick: () => { if (book.tab === id) return; book.tab = id; book.direct = false; turnBook(); } }, icon(ic), U.el("span", { text: name }))));
+            onclick: () => {
+                if (book.tab === id) return;
+                const order = bookTabs().map(t => t[0]), was = order.indexOf(book.tab === "pick" ? "shop" : book.tab);
+                book.tab = id; book.direct = false;
+                turnBook(order.indexOf(id) >= was ? 1 : -1);
+            } }, icon(ic), U.el("span", { text: name }))));
         if (U.view() === "campaign" && map && staged) drawBar();
     }
-    // turn to another section: the pages tip over the spine and settle
-    function turnBook() {
+    // Turn to another section: a leaf lifts off one page and turns over the spine. Forward, the right-hand page turns
+    // to the left (its back is the new left page); back, the left-hand page turns to the right. Copies of the old pages
+    // stand in on top of the new ones until the leaf has passed over them.
+    function turnBook(dir = 1) {
         const el = book.layer.querySelector(".eb-book");
         Sound.play("flip");
+        el.querySelectorAll(".eb-flip").forEach(n => n.remove());
         if (U.motion() === "still") { drawBook(); return; }
-        el.classList.add("turning");
-        setTimeout(() => { if (!book) return; drawBook(); el.classList.remove("turning"); U.restart(el, "turned"); }, 230);
+        const L = el.querySelector(".eb-left"), R = el.querySelector(".eb-right");
+        const copy = (page, scroll) => { const c = page.cloneNode(true); c.dataset.scroll = scroll; return c; };
+        const oldL = copy(L, L.scrollTop), oldR = copy(R, R.scrollTop);
+        drawBook();
+        const newL = copy(L, 0), newR = copy(R, 0);
+        const fwd = dir >= 0, still = fwd ? L : R, moving = fwd ? R : L;
+        const box = (n, extra = {}) => ({ left: n.offsetLeft + "px", top: n.offsetTop + "px", width: n.offsetWidth + "px", height: n.offsetHeight + "px", ...extra });
+        const gap = R.offsetLeft - (L.offsetLeft + L.offsetWidth);              // the spine's width
+        const under = fwd ? oldL : oldR, front = fwd ? oldR : oldL, back = fwd ? newL : newR;
+        const leaf = U.el("div", { class: "eb-leaf", style: box(moving, { "transform-origin": fwd ? `${-gap / 2}px 50%` : `calc(100% + ${gap / 2}px) 50%` }) },
+            U.el("div", { class: "eb-face front" }, front), U.el("div", { class: "eb-face back" }, back), U.el("i", { class: "eb-shade" }));
+        const flip = U.el("div", { class: "eb-flip " + (fwd ? "fwd" : "back"), "aria-hidden": "true" }, U.el("div", { class: "eb-under-box", style: box(still) }, under), leaf);
+        flip.inert = true;
+        el.append(flip);
+        for (const c of [under, front]) c.scrollTop = +c.dataset.scroll;
+        leaf.addEventListener("animationend", e => { if (e.target === leaf) flip.remove(); });
+        setTimeout(() => flip.remove(), 1200);
+    }
+    // the shop's Items / Abilities switch: the marker slides across and only the list slides in
+    function shopSwitch(id) {
+        if (!book || book.shopTab === id) return;
+        const from = book.shopTab || "items";
+        book.shopTab = id;
+        book.shopFrom = from;
+        Sound.play("select");
+        drawBook();
+        book.shopFrom = null;
+        const right = book.layer.querySelector(".eb-right"), sw = right.querySelector(".eb-switch");
+        if (!sw) return;
+        requestAnimationFrame(() => requestAnimationFrame(() => { sw.dataset.on = id; }));
+        right.scrollTop = 0;
+        if (U.motion() === "still") return;
+        const dir = id === "abilities" ? 1 : -1;
+        [...right.children].filter(n => n !== sw).forEach((n, k) => { n.style.setProperty("--d", dir); n.style.setProperty("--k", Math.min(k, 8)); n.classList.add("eb-slide"); });
     }
     // an ability was chosen (or Back): to the shop, or straight back to the boss's page it was opened from
     function pickDone() {
         if (book.direct) { closeBook(); return; }
         book.tab = "shop"; book.shopTab = "abilities";
-        turnBook();
+        turnBook(-1);
     }
     function openBook(tab = "contents", opts = {}) {
         if (book || !map) return;
@@ -1724,7 +1851,7 @@ const Campaign = (() => {
         const layer = U.el("div", { class: "results in cm-book-layer", role: "dialog", "aria-modal": "true", "aria-label": "The Everbook" },
             U.el("div", { class: "eb-book" },
                 U.el("nav", { class: "eb-tabs", "aria-label": "The book's sections" }),
-                U.el("button", { type: "button", class: "dk-book-close", onclick: () => closeBook() }, icon("close"), U.el("span", { text: "Close" })),
+                U.el("button", { type: "button", class: "dk-book-close", "aria-label": "Close the Everbook", onclick: () => closeBook() }, icon("close"), U.el("span", { text: "Close" })),
                 U.el("section", { class: "eb-page eb-left" }), U.el("div", { class: "eb-spine", "aria-hidden": "true" }), U.el("section", { class: "eb-page eb-right" })));
         book = { layer, tab, focus: document.activeElement, ...opts };
         layer.addEventListener("pointerdown", e => { if (e.target === layer) closeBook(); });
