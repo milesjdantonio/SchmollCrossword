@@ -20,7 +20,7 @@ const Spells = (() => {
         canvas = U.el("canvas", { class: "spells-canvas", "aria-hidden": "true" });
         document.body.appendChild(canvas);
         g = canvas.getContext("2d");
-        const size = () => { dpr = Math.min(2, devicePixelRatio || 1); canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr; };
+        const size = () => { dpr = Math.min(1.5, devicePixelRatio || 1); canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr; };
         size();
         addEventListener("resize", size);
     }
@@ -42,7 +42,8 @@ const Spells = (() => {
         if (!fx.fixed && !fx.anchor) fx.anchor = anchorOf(aim && aim.isConnected ? aim : document.getElementById("board"));
         fx.sx = scrollX; fx.sy = scrollY;
         effects.push(fx);
-        if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+        // (hidden between effects: an empty full-screen canvas still costs the graphics chip every frame)
+        if (!running) { running = true; canvas.style.visibility = ""; last = performance.now(); requestAnimationFrame(loop); }
     }
     function loop(now) {
         const dt = Math.max(0, Math.min(0.05, (now - last) / 1000));      // a frame can be stamped just before "last": never step back
@@ -63,7 +64,7 @@ const Spells = (() => {
         const kept = now_.filter(fx => { fx.t += dt; const alive = fx.t < fx.life; if (alive) { g.save(); if (fx.anchor) follow(fx.anchor); else if (!fx.fixed) g.translate(fx.sx - sx, fx.sy - sy); try { fx.draw(g, fx.t / fx.life, fx.t); } catch (err) { console.error("spell", err); fx.life = 0; } g.restore(); } return alive; });
         effects = kept.concat(effects);
         if (effects.length) requestAnimationFrame(loop);
-        else { running = false; g.clearRect(0, 0, innerWidth, innerHeight); }
+        else { running = false; g.clearRect(0, 0, innerWidth, innerHeight); canvas.style.visibility = "hidden"; }
     }
     const wait = ms => new Promise(r => setTimeout(r, still() ? 0 : ms));
     const rect = el => el.getBoundingClientRect();

@@ -1829,9 +1829,12 @@ const Campaign = (() => {
         book.shopTab = id;
         book.shopFrom = from;
         Sound.play("select");
-        drawBook();
+        // (only the right-hand page is drawn again: the left one doesn't change)
+        const right = book.layer.querySelector(".eb-right");
+        right.replaceChildren();
+        BOOK_VIEWS.shop(document.createElement("section"), right);
         book.shopFrom = null;
-        const right = book.layer.querySelector(".eb-right"), sw = right.querySelector(".eb-switch");
+        const sw = right.querySelector(".eb-switch");
         if (!sw) return;
         requestAnimationFrame(() => requestAnimationFrame(() => { sw.dataset.on = id; }));
         right.scrollTop = 0;
@@ -1865,6 +1868,7 @@ const Campaign = (() => {
         drawBook();
         document.getElementById("overlay").appendChild(layer);
         root.classList.add("cm-book-on");
+        Worlds.cover(true);
         Mascot.hush();
         Sound.play("flip");
         layer.querySelector(".dk-book-close").focus({ preventScroll: true });
@@ -1875,6 +1879,7 @@ const Campaign = (() => {
         book = null;
         layer.remove();
         root.classList.remove("cm-book-on");
+        Worlds.cover(false);
         if (onStage()) { drawBar(); drawPage(); drawStrip(); }
         drawAbilityBar(); drawItemBar();
         if (!quiet && focus && focus.isConnected && focus.focus) focus.focus({ preventScroll: true });

@@ -37,6 +37,12 @@ const Game = (() => {
     const difficultyFor = { daily: Settings.get("difficulty") };
     const lastPuzzle = {};   // slot -> the last puzzle loaded, so coming back to it doesn't fetch a new one
     const savedGames = {};   // slot -> a copy of that slot's game
+    let solveWas = "";        // the last --solve written (render)
+    // the board's width as --bw, for the size of its letters on the play stage (play.css), set only when it changes
+    if (window.ResizeObserver) new ResizeObserver(([e]) => {
+        const w = Math.round(e.contentRect.width);
+        if (w && String(w) + "px" !== boardEl.style.getPropertyValue("--bw")) boardEl.style.setProperty("--bw", w + "px");
+    }).observe(boardEl);
     let loadCounter = 0;     // ignore a slow answer if the player has already asked for something else
     let lastInput = performance.now(), idleSaid = false, clockStoppedUntil = 0, clockHeld = false;
 
@@ -411,7 +417,10 @@ const Game = (() => {
                 open++;
                 const cell = game.cells[row][col], letter = game.letters[row][col];
                 if (letter) filled++;
-                cell.querySelector(".ltr").textContent = letter;
+                // (only a letter that changed is written: writing every square's text each time made the browser restyle
+                // and lay out the whole board with every key)
+                const ltr = cell._ltr || (cell._ltr = cell.querySelector(".ltr"));
+                if (ltr.textContent !== letter) ltr.textContent = letter;
                 if (game.pencil[row][col] && (!letter || isLocked(row, col))) game.pencil[row][col] = false;
                 cell.classList.toggle("filled", !!letter);
                 cell.classList.toggle("pencil", game.pencil[row][col]);
@@ -432,7 +441,7 @@ const Game = (() => {
             }
         }
         boardEl.classList.toggle("solved", game.solved && !game.surrendered);
-        boardEl.dataset.dir = game.direction;
+        if (boardEl.dataset.dir !== game.direction) boardEl.dataset.dir = game.direction;
         boardEl.classList.toggle("surrendered", game.surrendered);
         document.querySelectorAll("#helpers button:not(#report-btn)").forEach(b => { b.disabled = game.solved; });
         drawRevealWords();                     // (Reveal Word stays off once a boss phase's 10 are used)
@@ -442,7 +451,11 @@ const Game = (() => {
         for (const entry of allEntries()) {
             const cells = cellsOf(entry), isFull = cells.every(([r, c]) => game.letters[r][c] !== "");
             const item = game.clueItems.get(entry);
-            if (item) { item.classList.toggle("active", entry === current); item.classList.toggle("done", isFull); item.style.setProperty("--k", (cells.filter(([r, c]) => game.letters[r][c] !== "").length / cells.length).toFixed(2)); }
+            if (item) {
+                item.classList.toggle("active", entry === current); item.classList.toggle("done", isFull);
+                const k = (cells.filter(([r, c]) => game.letters[r][c] !== "").length / cells.length).toFixed(2);
+                if (item._k !== k) { item._k = k; item.style.setProperty("--k", k); }
+            }
             if (!isFull) continue;
             const id = entry.direction + entry.number;
             full.add(id);
@@ -469,8 +482,11 @@ const Game = (() => {
         const k = open ? filled / open : 0;
         ringEl.style.strokeDashoffset = String(100 - k * 100);
         pctEl.textContent = Math.round(k * 100) + "%";
-        // the world behind the puzzle starts faded and gets its colour back as the squares fill (play.css)
-        document.documentElement.style.setProperty("--solve", (game.solved || U.motion() !== "full" ? 1 : k).toFixed(3));
+        // the world behind the puzzle starts faded and gets its colour back as the squares fill (play.css). (--solve is
+        // set only on what uses it, the world's background and the journey: on the page's root it restyled every
+        // element on the page with every letter.)
+        const solve = (game.solved || U.motion() !== "full" ? 1 : k).toFixed(3);
+        if (solve !== solveWas) { solveWas = solve; for (const n of document.querySelectorAll("#world-bg, .jr")) n.style.setProperty("--solve", solve); }
         drawBanner();
         // every square filled and it isn't solved: something is wrong somewhere (said once each time the board fills up)
         const fullNow = open > 0 && filled === open && !game.solved && !isSolved();

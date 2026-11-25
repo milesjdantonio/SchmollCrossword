@@ -631,7 +631,7 @@ const Chaos = (() => {
         circle(x1, y1, 8, "#bff3ff"); circle(x2, y2, 8, "#bff3ff");
     }
 
-    const dpr = () => Math.min(2, devicePixelRatio || 1);
+    const dpr = () => Math.min(1.5, devicePixelRatio || 1);        // (a full-screen canvas: more pixels than this cost frames)
     function frame(now) {
         // (a boss fight, or a boss arena shown behind the credits: credits.js)
         if (!cv || !cv.isConnected || !(document.documentElement.classList.contains("in-boss") || cv.closest(".boss-arena.cr-show"))) { stop(); return; }

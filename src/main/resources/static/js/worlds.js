@@ -50,8 +50,11 @@ const Worlds = (() => {
         if (changed) Bus.emit("world", world);
     }
 
+    // The scene is soft and moving, so it's drawn at 1.25 pixels per CSS pixel at most (1 with Lite effects). If frames
+    // keep coming late (on a high-density screen with a lot else on the page) it steps down to 1, then 0.75.
+    let cap = 1.25, slow = 0;
     function size() {
-        dpr = Math.min(devicePixelRatio || 1, U.motion() === "lite" ? 1 : 1.5);
+        dpr = Math.min(devicePixelRatio || 1, U.motion() === "lite" ? 1 : cap);
         W = innerWidth;
         H = innerHeight;
         cv.width = Math.round(W * dpr);
@@ -84,9 +87,14 @@ const Worlds = (() => {
     function frame(now) {
         raf = 0;
         if (!scene) return;
-        const dt = U.clamp((now - last) / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
+        const gap = now - last;
+        const dt = U.clamp(gap / 1000, 0, 0.05);       // a frame can be stamped just before "last": never step backwards
         last = now;
         t += dt;
+        if (U.motion() === "full" && !covered) {
+            if (gap > 22 && gap < 250) slow++; else if (slow > 0) slow -= 0.5;
+            if (slow > 90 && cap > 0.75) { cap -= 0.25; slow = 0; size(); if (scene && scene.resize) scene.resize(W, H); }
+        }
         input.px += (input.tx - input.px) * Math.min(1, dt * 2.5);
         input.py += (input.ty - input.py) * Math.min(1, dt * 2.5);
         g.setTransform(dpr, 0, 0, dpr, 0, 0);

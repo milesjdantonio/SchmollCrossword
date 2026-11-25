@@ -497,7 +497,9 @@ html.cm-book-on .mascot, html.cm-book-on .cm-beta { opacity: 0; pointer-events: 
 .ws-panel .cm-loadout > small { font-weight: 800; }
 
 /* ---- the Everbook's finer points ---- */
-.results.cm-book-layer { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); transition: none; animation: dk-veil .25s ease; }
+/* (no backdrop blur: the island and the world kept animating under it, so the blur was redone every frame and
+   scrolling the book stuttered; a deeper veil instead) */
+.results.cm-book-layer { background: rgba(18, 8, 14, .8); transition: none; animation: dk-veil .25s ease; }
 @keyframes dk-veil { from { opacity: 0; } }
 .eb-tally { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 22px 0 0; }
 .eb-tally div { padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, .45); }
@@ -780,7 +782,7 @@ html.cm-book-on .mascot, html.cm-book-on .cm-beta { opacity: 0; pointer-events: 
 .ws-gate:hover svg { scale: 1.08; }
 .ws-tile.secret::before { content: "?"; position: absolute; left: -3px; top: -4px; z-index: 1; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #2a1646; color: #ffd66b; font: 900 .72rem Georgia, serif; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
 /* the torn scrap and its riddle */
-.results.sc-layer { z-index: 5; background: rgba(18, 8, 26, .7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); transition: none; animation: dk-veil .25s ease; }
+.results.sc-layer { z-index: 5; background: rgba(18, 8, 26, .78); transition: none; animation: dk-veil .25s ease; }
 .sc-scrap { width: min(440px, 94vw); padding: 26px 28px 22px; text-align: center; color: #4a3a22; background: linear-gradient(160deg, #fbf3dc, #ecdcae); rotate: -1.5deg;
     clip-path: polygon(0 3%, 6% 0, 15% 3%, 27% 0, 40% 2%, 54% 0, 68% 3%, 82% 0, 93% 3%, 100% 0, 99% 30%, 100% 62%, 98% 97%, 88% 100%, 74% 97%, 60% 100%, 45% 98%, 30% 100%, 16% 97%, 5% 100%, 0 96%, 2% 60%, 0 30%);
     animation: sc-in .5s cubic-bezier(.2, 1.3, .4, 1); }

@@ -117,19 +117,24 @@ const U = (() => {
 
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-    // Remove and re-add a class so its CSS animation plays again
-    // Play a one-shot CSS animation again. The classes it adds stay on the element afterwards, so the ones started
-    // before on the same element are taken off first: a square that was once "scorched" kept that class, and its
-    // stronger rule silently replaced every later flip or shake on it
+    // Play a one-shot CSS animation (a class) again. The classes it adds stay on the element afterwards, so the ones
+    // started before on the same element are taken off first: a square that was once "scorched" kept that class, and
+    // its stronger rule silently replaced every later flip or shake on it.
+    // A class that's already on (or was taken off a moment ago) is taken off and put back two frames later, once the
+    // browser has drawn the element without it. (It used to be put back at once after reading offsetWidth, which made
+    // the browser restyle the whole page on the spot: typing a letter did that dozens of times.)
     function restart(node, cls) {
         if (!node) return;
         const shots = node._shots || (node._shots = new Set());
-        for (const c of shots) if (c !== cls) node.classList.remove(c);
+        const now = performance.now(), recent = now - (node._shotAt || -1e9) < 50;
+        for (const c of shots) if (c !== cls && node.classList.contains(c)) { node.classList.remove(c); node._shotAt = now; }
         shots.clear();
         shots.add(cls);
+        const token = node._shotToken = (node._shotToken || 0) + 1;
+        if (!node.classList.contains(cls) && !recent) { node.classList.add(cls); return; }
         node.classList.remove(cls);
-        void node.offsetWidth;
-        node.classList.add(cls);
+        node._shotAt = now;
+        requestAnimationFrame(() => requestAnimationFrame(() => { if (node._shotToken === token) node.classList.add(cls); }));
     }
 
     const fmtTime = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");

@@ -17,7 +17,7 @@ const FX = (() => {
     let parts = [], effects = [];
 
     function size() {
-        dpr = Math.min(devicePixelRatio || 1, 2);
+        dpr = Math.min(devicePixelRatio || 1, 1.5);          // (sparks and bursts don't need more, and it's a full-screen canvas)
         W = innerWidth;
         H = innerHeight;
         cv.width = W * dpr;
@@ -26,8 +26,12 @@ const FX = (() => {
     size();
     addEventListener("resize", size);
 
+    // (the canvas is hidden while nothing is on it: a full-screen layer costs the graphics chip every frame even when
+    // it's empty)
+    cv.style.visibility = "hidden";
     function kick() {
         if (raf) return;
+        cv.style.visibility = "";
         lastSX = scrollX; lastSY = scrollY;
         last = performance.now();
         raf = requestAnimationFrame(loop);
@@ -51,11 +55,18 @@ const FX = (() => {
         const r = el.getBoundingClientRect();
         return r.width ? { el, x: r.left, y: r.top, w: r.width, last: r, px: r.left, py: r.top, dx: 0, dy: 0, f: -1 } : null;
     };
-    // an anchor's place this frame (measured once a frame; a removed element keeps its last place), and how far it moved
+    // an anchor's place this frame (a removed element keeps its last place), and how far it moved. It's measured every
+    // sixth frame, and at once after a scroll or a resize: measuring every frame made the browser restyle the page an
+    // extra time each frame (the board rarely moves while a burst is in the air).
+    let moved = 0;
+    addEventListener("scroll", () => { moved = fno + 1; }, { passive: true, capture: true });
+    addEventListener("resize", () => { moved = fno + 1; });
     function track(a) {
         if (a.f === fno) return a;
         a.f = fno;
-        const r = a.el.isConnected ? a.el.getBoundingClientRect() : null;
+        const due = a.m == null || fno - a.m >= 6 || moved >= fno;
+        const r = due && a.el.isConnected ? a.el.getBoundingClientRect() : null;
+        if (due) a.m = fno;
         if (r && r.width) a.last = r;
         a.dx = a.last.left - a.px; a.dy = a.last.top - a.py;
         a.px = a.last.left; a.py = a.last.top;
@@ -69,7 +80,7 @@ const FX = (() => {
         try { frame(now); }
         catch (err) { console.error(err); parts = []; born = []; }
         if (parts.length || effects.length) raf = requestAnimationFrame(loop);
-        else { raf = 0; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); }
+        else { raf = 0; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); cv.style.visibility = "hidden"; }
     }
     const safeStep = (p, dt) => { try { return stepParticle(p, dt); } catch (err) { return false; } };
     function frame(now) {

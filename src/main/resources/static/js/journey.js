@@ -7,7 +7,7 @@
 //     a rocket through open space with no ground at all...)
 //   - every finished word throws you forward: a surge of speed lines from the page, and its letters fly to the page
 //     as light
-//   - the boss and the page come closer as the squares fill (--solve on the page's root, 0 to 1, set by game.js)
+//   - the boss and the page come closer as the squares fill (--solve on .jr, 0 to 1, set by game.js)
 //   - the Void's shadow trails behind you with torn pages in it, and falls back as you solve
 //   - loose letters blow across the sky
 // It is only a scene: nothing here can lose the level, and nothing tells you whether a letter is right.
@@ -131,7 +131,14 @@ const Journey = (() => {
         if (key !== heroFor) { heroFor = key; rider.innerHTML = Hero.svg(look); }
     }
 
-    const showing = () => !el.hidden && root.dataset.view === "game" && !view.hidden && getComputedStyle(el).display !== "none";
+    // (whether CSS hides the scene is read at most twice a second: reading it every frame restyled the whole page)
+    let shownAt = 0, shownCss = false;
+    const showing = () => {
+        if (el.hidden || root.dataset.view !== "game" || view.hidden) return false;
+        const now = performance.now();
+        if (now - shownAt > 500) { shownAt = now; shownCss = getComputedStyle(el).display !== "none"; }
+        return shownCss;
+    };
     function frame(now) {
         raf = 0;
         if (!showing() || document.hidden) return;
@@ -191,7 +198,7 @@ const Journey = (() => {
             document.body.append(w);
             const dx = g.sx - fx, dy = g.sy - fy;
             w.animate([{ translate: "0 0", scale: 1, opacity: 0 }, { translate: `${dx * 0.3}px ${dy * 0.3 - 90}px`, scale: 1.25, opacity: 1, offset: 0.3 }, { translate: `${dx}px ${dy}px`, scale: 0.3, opacity: 0.9 }],
-                { duration: 950, delay: i * 70, easing: "cubic-bezier(.4,0,.6,1)", fill: "both" }).onfinish = () => { w.remove(); goal.classList.remove("got"); void goal.offsetWidth; goal.classList.add("got"); };
+                { duration: 950, delay: i * 70, easing: "cubic-bezier(.4,0,.6,1)", fill: "both" }).onfinish = () => { w.remove(); U.restart(goal, "got"); };
         });
     }
     // the boss has something to say now and then
@@ -231,7 +238,7 @@ const Journey = (() => {
         wake();
         startSurge();
         wisps(cells);
-        hero.classList.remove("hop"); void hero.offsetWidth; hero.classList.add("hop");
+        U.restart(hero, "hop");
         // (how many squares are FILLED, never how many are right)
         const filled = Game.state.letters.flat().filter(Boolean).length, half = filled / Math.max(1, Game.progress().total) >= 0.5;
         if (half && !halfSaid) { halfSaid = true; setTimeout(() => bossSay("You're getting too close!"), 700); }
