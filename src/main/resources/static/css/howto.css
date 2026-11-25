@@ -251,6 +251,34 @@
 .ht-skill { transform: translateX(-50%); padding: 2px 9px; border-radius: 999px; background: var(--surface-solid); border: 1.5px solid var(--line); font: 800 11.5px var(--font-body); white-space: nowrap; }
 .ht-stars { transform: translateX(-50%); color: #f2b417; font-size: 18px; letter-spacing: 1px; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
 .ht-coins { padding: 6px 12px; border-radius: 999px; background: var(--surface-solid); border: 1.5px solid var(--line); font: 900 15px var(--font-body); }
+/* the Campaign chapter: an island with its road, the boss and its page, the Everbook and the Atlas */
+.ht-isle { border-radius: 50%; background: radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--ground) 78%, #fff), var(--ground) 55%, color-mix(in srgb, var(--ground) 55%, var(--hill)));
+    box-shadow: 0 6px 0 color-mix(in srgb, var(--hill) 85%, #000), 0 12px 0 color-mix(in srgb, var(--hill) 70%, #000), 0 18px 0 color-mix(in srgb, var(--hill) 55%, #000), 0 34px 30px rgba(0, 0, 0, .3);
+    transition: transform .6s cubic-bezier(.4, 0, .2, 1), opacity .6s; transform-origin: 50% 50%; }
+.ht-isle.far { transform: scale(.25) translateY(-260px); opacity: 0; }
+.ht-isle-road { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.ht-isle-road path { fill: none; stroke: var(--path); stroke-width: 10; stroke-linecap: round; opacity: .85; }
+.ht-node.small { width: 34px; height: 34px; margin: -17px 0 0 -17px; font-size: 14px; }
+.ht-isle-boss .ht-boss { position: static; width: 100%; height: 100%; }
+.ht-leaf { width: 18px; height: 23px; border-radius: 2px 5px 5px 2px; background: #fbf1d3; box-shadow: inset 2px 0 0 #d9ae4a, 0 0 14px 4px rgba(255, 221, 130, .85); animation: ht-bob 2.2s ease-in-out infinite alternate; }
+@keyframes ht-bob { to { translate: 0 -6px; rotate: 6deg; } }
+.ht-hero svg { width: 100%; height: 100%; display: block; }
+.ht-bookbtn { padding: 7px 14px; border-radius: 999px; background: #6b1f2e; color: #f2dfae; font: 800 13px var(--font-body); box-shadow: 0 3px 8px rgba(0, 0, 0, .25); }
+.ht-book { display: grid; grid-template-rows: auto 1fr; border-radius: 12px; padding: 30px 10px 10px; background: linear-gradient(135deg, #7a2232, #4e1420); box-shadow: 0 16px 40px rgba(0, 0, 0, .4); transition: opacity .3s, transform .3s; }
+.ht-book.gone { opacity: 0; transform: translateY(12px) scale(.96); }
+.ht-book-tabs { position: absolute; top: 6px; right: 14px; display: flex; gap: 3px; }
+.ht-book-tab { padding: 3px 10px; border-radius: 7px 7px 0 0; background: #8e2a3a; color: #f2dfae; font: 800 11px var(--font-body); }
+.ht-book-tab.on { background: #f6ecd2; color: #5a3a14; }
+.ht-book-page { display: grid; align-content: start; gap: 6px; padding: 12px; border-radius: 6px; background: linear-gradient(90deg, #efe2c0, #f9f2df 30%, #f6ecd2); color: #4a3618; }
+.ht-book-row { padding: 6px 10px; border-radius: 6px; background: rgba(255, 255, 255, .55); font: 800 12.5px var(--font-body); }
+.ht-book-hero { width: 96px; height: 96px; justify-self: center; } .ht-book-hero svg { width: 100%; height: 100%; }
+.ht-turn { animation: ht-turn .42s cubic-bezier(.2, .9, .3, 1); }
+@keyframes ht-turn { from { opacity: 0; transform: perspective(600px) rotateY(-50deg); transform-origin: 0 50%; } }
+.ht-mini { width: 120px; height: 70px; border-radius: 50%; background: var(--ground); box-shadow: 0 5px 0 color-mix(in srgb, var(--hill) 75%, #000), 0 14px 16px rgba(0, 0, 0, .3); }
+.ht-mini .ht-boss { position: absolute; left: 50%; bottom: 32px; width: 64px; height: 64px; translate: -50% 0; }
+.ht-rise { animation: ht-rise .6s cubic-bezier(.2, 1.3, .4, 1) backwards; }
+@keyframes ht-rise { from { opacity: 0; transform: translateY(30px) scale(.6); } }
+@media (prefers-reduced-motion: reduce) { .ht-leaf, .ht-turn, .ht-rise { animation: none; } }
 
 /* worlds */
 .ht-tools { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--surface); border: 1.5px solid var(--line); }

@@ -672,47 +672,86 @@ const HowTo = (() => {
             }
         },
         {
-            title: "The Campaign", len: 8400, text: "Fifteen worlds with five levels each. Every level practises a skill and earns up to three stars, and the fifth is a boss. Coins buy items and ability uses in the shop.",
+            title: "The Campaign", len: 15600, text: "Fifteen worlds, each an island with five levels. Every level practises a skill and earns up to three stars; the fifth is the boss, who holds a page of the Everbook. The Everbook has the shop, your skills and your hero, and the Atlas (M, or scroll out) shows every island at once.",
             async demo(s) {
-                const sc = scene();
-                const map = s.add("ht-map", { x: 0, y: 0, w: W, h: H });
-                const path = U.svg("svg", { class: "ht-path", viewBox: `0 0 ${W} ${H}` });
-                U.svg("path", { d: "M70 280 C 150 280, 150 170, 230 170 S 330 280, 400 230 S 480 90, 560 110" }, path);
-                map.appendChild(path);
-                const spots = [[70, 280], [230, 170], [330, 232], [445, 175], [560, 110]];
-                const skills = ["Definitions", "Plurals", "Crossings", "Speed"];
+                const sc = scene(), bio = Campaign.biome(sc.bw);
+                // the island: its top, a road of five stops winding back to the boss, who holds the page
+                const isle = s.add("ht-isle", { x: 110, y: 112, w: 420, h: 196, style: { "--ground": bio.ground, "--hill": bio.hill, "--path": bio.path } });
+                const spots = [[78, 150], [300, 128], [120, 84], [290, 62], [210, 34]];
+                const road = U.svg("svg", { class: "ht-isle-road", viewBox: "0 0 420 196" });
+                U.svg("path", { d: "M78 150 C 190 160, 260 150, 300 128 S 140 104, 120 84 S 250 76, 290 62 S 230 40, 210 34" }, road);
+                isle.appendChild(road);
                 const nodes = spots.map(([x, y], i) => {
-                    const n = s.add("ht-node" + (i === 4 ? " boss" : ""), { x, y }, map);
-                    if (i === 4) s.bossArt(sc.bw, "", n); else n.textContent = String(i + 1);
+                    if (i === 4) { const who = s.add("ht-isle-boss", { x: x - 46, y: y - 108, w: 92, h: 92 }, isle); s.bossArt(sc.bw, "", who); return who; }
+                    const n = s.add("ht-node small", { x, y, text: String(i + 1) }, isle);
                     return n;
                 });
+                const leaf = s.add("ht-leaf", { x: spots[4][0] - 9, y: spots[4][1] - 134 }, isle);
                 const coins = s.add("ht-coins", { x: 24, y: 18 }), coinNum = U.el("span", { text: " 120" });
                 coins.append(U.icon("coin"), coinNum);
-                const token = s.face(sc.w.id, 46, "happy", map, { x: spots[0][0], y: spots[0][1] - 40 });
+                const bookBtn = s.add("ht-bookbtn", { x: 482, y: 16, text: "Everbook" });
+                const look = Campaign.hero && Campaign.hero();
+                const token = look ? s.add("ht-token ht-hero", { html: Hero.svg(look, "", { still: true }), x: 0, y: 0, w: 52, h: 52 }, isle) : s.face(sc.w.id, 46, "happy", isle, { x: 0, y: 0 });
                 token.classList.add("ht-token");
+                const place = (x, y) => { token.style.left = x + "px"; token.style.top = (y - 40) + "px"; };
+                place(...spots[0]);
                 await s.wait(300);
-                s.sub("Fifteen worlds, five levels each");
-                await s.wait(1400);
+                s.sub("Fifteen worlds, each an island with five levels");
+                await s.wait(1500);
                 s.sub("Each level practises a skill and earns up to three stars");
                 let c = 120;
                 for (let i = 0; i < 4; i++) {
                     const [x, y] = spots[i], stars = [3, 2, 3, 1][i];
-                    const lab = s.add("ht-skill", { x, y: y + 30, text: skills[i] }, map);
-                    s.pop(lab);
-                    const st = s.add("ht-stars", { x, y: y - 74, text: "★".repeat(stars) + "☆".repeat(3 - stars) }, map);
+                    const st = s.add("ht-stars", { x, y: y - 64, text: "★".repeat(stars) + "☆".repeat(3 - stars) }, isle);
                     s.pop(st);
                     nodes[i].classList.add("done");
                     c += 20; coinNum.textContent = " " + c; s.pop(coins, "ht-flash");
-                    await s.wait(500);
+                    await s.wait(420);
                     const [nx, ny] = spots[i + 1];
-                    await s.tween(560, k => { token.style.left = U.lerp(x, nx, k) + "px"; token.style.top = (U.lerp(y, ny, k) - 40 - Math.sin(k * Math.PI) * 40) + "px"; });
-                    if (i === 1) s.sub("Coins buy items and ability uses in the shop");
+                    if (i < 3) await s.tween(520, k => place(U.lerp(x, nx, k), U.lerp(y, ny, k) - Math.sin(k * Math.PI) * 26));
+                    if (i === 1) s.sub("Coins come from stars and first clears");
                 }
-                s.sub("The fifth level is a boss");
+                s.sub("The fifth is the boss. It holds a page of the Everbook");
                 s.pop(nodes[4], "ht-shake");
-                const bp = s.pos(nodes[4]);
-                s.burst(bp.x, bp.y, sc.boss.color, 16);
-                await s.wait(2000);
+                s.pop(leaf, "ht-flash");
+                const bp = s.pos(leaf);
+                s.burst(bp.x, bp.y, "#ffd66b", 14);
+                await s.wait(2200);
+                // the Everbook: the shop, your skills and your hero
+                s.cursor.show(560, 300);
+                s.sub("The Everbook has the shop, your skills and your hero");
+                await s.cursor.click(bookBtn);
+                const book = s.add("ht-book", { x: 150, y: 70, w: 340, h: 210 });
+                const tabs = s.add("ht-book-tabs", {}, book);
+                const names = ["Shop", "Skills", "Hero"], tabEls = names.map(n => s.add("ht-book-tab", { tag: "span", text: n }, tabs));
+                const page = s.add("ht-book-page", {}, book);
+                const fill = k => {
+                    tabEls.forEach((t, i) => t.classList.toggle("on", i === k));
+                    page.replaceChildren();
+                    if (k === 0) ["Letter Reveal", "Word Reveal", "Time Stop"].forEach(n => s.add("ht-book-row", { text: n }, page));
+                    else if (k === 1) ["Definitions", "Plurals", "Crossings"].forEach(n => s.add("ht-book-row", { text: n + "  ★★★" }, page));
+                    else if (look) s.add("ht-book-hero", { html: Hero.svg(look, "", { still: true }) }, page);
+                    else s.add("ht-book-row", { text: "Make your hero" }, page);
+                    s.pop(page, "ht-turn");
+                };
+                fill(0);
+                s.pop(book, "ht-pop");
+                s.cursor.hide();
+                for (let k = 1; k < 3; k++) { await s.wait(1100); fill(k); }
+                await s.wait(1300);
+                book.classList.add("gone");
+                // the Atlas: every island at once
+                s.sub("Press M or scroll out: the Atlas shows every island");
+                await s.key("M");
+                isle.classList.add("far");
+                const order = ["paper", "garden", "squirrel", "candy", "ocean", "snow"];
+                order.forEach((wid, i) => {
+                    const bb = Campaign.biome(wid), m = s.add("ht-mini", { x: 70 + (i % 3) * 180, y: 196 - Math.floor(i / 3) * 110, style: { "--ground": bb.ground, "--hill": bb.hill } });
+                    s.bossArt(wid, "", m);
+                    m.style.animationDelay = (i * 80) + "ms";
+                    s.pop(m, "ht-rise");
+                });
+                await s.wait(2600);
             }
         },
         {
