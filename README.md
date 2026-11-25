@@ -9,8 +9,9 @@ Inspired by daily mini crosswords such as the NYT Mini. Not affiliated with The 
 **Daily.** Five puzzles a day, the same for everyone, new at each player's midnight: Easy, Medium and Hard 5×5 grids,
 a bigger Challenge grid (6×6 up to 9×9), and the Daily Boss. Scores count toward a streak and a world leaderboard.
 
-**Campaign.** A map of fifteen worlds, five levels each, from the Notebook to Deep Space, plus a secret sixteenth world
-that opens once the final boss falls. Every level teaches a crossword skill (fill-in-the-blanks, wordplay,
+**Campaign.** Fifteen worlds, each a floating island with five levels, from the Notebook to Deep Space, plus a secret
+sixteenth world that opens once the final boss falls. The Atlas shows every island at once on a twilight sea, and the
+Everbook holds the shop, your skills, your hero and the story so far. Every level teaches a crossword skill (fill-in-the-blanks, wordplay,
 misdirection, long answers...), and every world ends in a boss: a race against a rival solving its own board, with
 moves to dodge and counter, your own abilities, items from the shop, and a story about a torn book of every word.
 Make a hero, meet each world's companion, and watch your hero travel from world to world.
