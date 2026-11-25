@@ -33,6 +33,7 @@ const AtlasView = (() => {
     // colour, for a boss you've beaten)
     const cache = new Map(), loading = new Map();
     let onReady = null;                                   // the open view's redraw, called when a picture arrives
+    let calm = true;                                      // the camera is still: new sizes may be made
     function aspectOf(svg) {
         const m = /viewBox="([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)"/.exec(svg);
         return m ? +m[4] / +m[3] : 1;
@@ -101,9 +102,10 @@ const AtlasView = (() => {
         const id = key + "|" + look + "|" + size;
         const hit = cache.get(id);
         if (hit) return hit;
-        enqueue(id, key, svg, size, look);
         let best = null;
         for (const s of SIZES) { const c = cache.get(key + "|" + look + "|" + s); if (c && (!best || Math.abs(s - size) < Math.abs(best.width - size))) best = c; }
+        // (while the camera moves, the nearest size stands in: making new ones mid-zoom is what made zooming stutter)
+        if (!best || calm) enqueue(id, key, svg, size, look);
         return best;
     }
     // make pictures ahead of time, when the browser has nothing else to do: [{ key, svg, px, look }]
@@ -261,8 +263,9 @@ const AtlasView = (() => {
         function drawSea(t) {
             g.clearRect(0, 0, vw, vh);
             // a soft purple pool of light on the water, and rings on it
+            // (the pool of light under it all is the .at-scene background: a full-screen gradient here cost too much
+            // on high-density screens)
             const cx = W / 2, cy = H * 0.62, R = Math.max(W, H) * 0.78;
-            radial(ellipseAt(cx, cy, R, R), [[0, "rgba(96, 70, 170, .55)"], [0.6, "rgba(60, 40, 120, .25)"], [1, "rgba(60, 40, 120, 0)"]]);
             g.strokeStyle = "rgba(255, 255, 255, .055)";
             g.lineWidth = Math.max(1, 3 * cam.z);
             for (let r = 120 + (t / 90) % 120; r < R; r += 120) {
@@ -454,18 +457,30 @@ const AtlasView = (() => {
                 if (Math.abs(inertia.vx) + Math.abs(inertia.vy) < 0.2) inertia = null;
                 busy = true;
             }
-            draw(t);
-            // the scene's own life (the pages' light, the ring, the mist) runs on with full effects; otherwise the
-            // canvas is only drawn while the camera or something else moves
             const rising = t - born < islands.length * 40 + 900;
+            calm = !busy && !drag && !pinch;
+            // the scene's own life (the pages' light, the ring, the mist) runs on at 30 frames a second with full
+            // effects; otherwise the canvas is only drawn while the camera or something else moves
+            if (busy || rising || t - drawnAt > 31) {
+                if (busy && drawnAt) settle(t - drawnAt);
+                drawnAt = t;
+                draw(t);
+            }
             if (busy || rising || U.motion() === "full") raf = requestAnimationFrame(step);
+        }
+        // If moving frames come slower than about 45 a second, the canvas drops to fewer pixels (it starts at 1.25 per
+        // CSS pixel at most: the plates are real text, so the canvas needn't be sharper than that)
+        let drawnAt = 0, slow = 0, quality = 1.25;
+        function settle(dt) {
+            if (dt > 22 && dt < 200) slow++; else slow = Math.max(0, slow - 1);
+            if (slow > 12 && quality > 0.75) { quality -= 0.25; slow = 0; resize(); }
         }
         function wake() { if (!raf && alive) raf = requestAnimationFrame(step); }
 
         function resize() {
             const r = host.getBoundingClientRect();
             vw = Math.max(1, r.width); vh = Math.max(1, r.height);
-            dpr = Math.min(2, window.devicePixelRatio || 1);
+            dpr = Math.min(quality, window.devicePixelRatio || 1);
             canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
             fitCache = null;
             F = frame();
