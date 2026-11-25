@@ -41,13 +41,41 @@ left by the page of the atlas, and plates behind the page are hidden; it opens o
 Whole Map fits everything (also on phones now); plates stay readable at any zoom (`.far` drops the star line); locked
 islands' plates said "undefined" (an old bug) and now name the boss.
 
-**Still to do:**
-- Ask the user which UX problems they hit, and whether the changes above fixed them (they're looking at it now).
-- The island (`.ws-isle`) and the journey (`journey.js`): measured at 60 fps idle and when changing world on the
-  island (one 130 ms frame on the first change); the level screen with the journey wasn't measured properly yet (the
-  test's setup failed; the user stopped the next run). `scratchpad/stage-perf.mjs` had the script (scratchpads can
-  vanish; it's short to rewrite).
-- Phone check of dragging/pinch on a real touch screen (only simulated so far).
+**The user, 2026-11-25:** still laggy with scrolling ("unless the local host needs a restart"); "finish the campaign
+and build the new sections"; bosses' speech bubbles cut off at the top; "review the performance on every campaign
+thing"; a new animation for switching pages in the Everbook's shop; "celestial rift isn't treated like a secret world
+like the rest of them"; a different picture than "what looks like a ss" in the dock. All done (commits 2308cd2 to
+c212d72), except the new sections (below):
+- Atlas scroll-zoom at 200% scaling: canvas capped at 1.25 px per CSS px and steps down when slow, picture sizes made
+  only once the camera stops, idle animation at 30 fps, the sea's glow in CSS. A third of frames late -> none.
+- The boss's bubble is placed on the stage beside/above/below the boss, so it's never clipped.
+- The Everbook: sections turn a leaf over the spine (backward for an earlier section); the shop's Items/Abilities
+  switch slides a marker and only the list (only its page is redrawn). Phone: Close was blank (the rule hiding its
+  label hid its icon too) and had no name.
+- The Rift is a secret like the others (`SECRETS` id "rift", parent "space", `world: "rift"`): after the Void, four
+  fallen stars blink in turn on Deep Space (repeat the order), riddle HALO, a gate that opens (`enterSecret`: the
+  arrival scene the first time), a branch island off Deep Space in the Atlas. `secretOpen()` = found (or Unlock All,
+  or any rift-* record). Beating the Void announces nothing.
+- The dock's windows: `AtlasView.thumb` draws the boss on a little island of the world's colours (a shadow while
+  locked), from the Atlas's picture cache, instead of 16 live scene previews.
+- Performance on every campaign screen at 200% (scratchpad `perf-all.mjs`, `prof-type.mjs`, `trace-type.mjs`,
+  `layers.mjs`): typing in a level ~50 ms frames -> ~23 ms (U.restart no longer forces a restyle; render() writes only
+  changed letters; `--solve` on its users, not :root; `--bw` instead of a container query; journey/FX measure less);
+  world background 1.25x and adaptive, effects/spells/chaos 1.5x, empty effect canvases hidden; the Everbook has no
+  backdrop blur and pauses the world (scroll: 55/80 late -> 20/102). Still ~23 ms while typing at 150-200%: what's
+  left is GPU compositing (~100 layers, 4 full-screen) and SVG animations inside board decorations (Candy's pops).
+  Ideas if needed: an automatic Lite when frames stay slow; fewer journey layers; fewer full-screen layers.
+- How to Play's Campaign chapter shows the island, the boss holding its page, the Everbook (Shop/Skills/Hero) and
+  the Atlas.
+
+**Next: the new sections (Phase 9, the four secret worlds).** The plan, per world, in this order (The Great Hollow
+first, then Atlantis, the Sunken Dunes, the Lava Cave), each committed as it goes:
+1. Server: a `Campaign.SECRET` section (a step harder than its parent), lessons, 25 puzzles per level + boss boards
+   + phases in `campaign/` (unique boards, clues from the hand-written bank; only new answers need new clues).
+2. Client: `SECRETS` entry gets `world`, a `worlds/<id>.js` (scene light/dark, board decorations, win, transition,
+   font), its companion (the parent world's), the boss (SVG, lore, 10 moves with counterplay, arena chaos), 4
+   abilities (one per level), corruption-style levels, an arrival scene, hero gifts, achievements, credits.
+3. Music: CC0/CC BY picks measured by intensity (the user listens before it's final).
 
 ## The user's decisions (2026-11-07)
 
@@ -307,8 +335,8 @@ islands' plates said "undefined" (an old bug) and now name the boss.
       small islands in the distance** (`miniIsle`, the prev/next buttons), a **dive into the stop** when you press
       Play (`dive`), mist drifting past, a beam of light from the stolen page, and the boss answering when you pick
       it (`bossSay`). Checked at 1440x900 and 390x844: no errors.
-- [ ] Island follow-ups: How to Play's map chapter still draws the old map (`ht-map` in howto.js); boss fight screen
-      and level screen redesign; the Beta strip's place
+- [x] How to Play's Campaign chapter shows the island, the Everbook and the Atlas (2026-11-25)
+- [ ] Island follow-ups: boss fight screen and level screen redesign; the Beta strip's place (asked in REVIEW.md)
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
 - [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher
@@ -455,3 +483,5 @@ islands' plates said "undefined" (an old bug) and now name the boss.
   `const`), the story intro playing on after leaving the map, a flaky leaderboard cache. Paid calls: still $0.04.
 - 2026-11-16: the campaign map rebuilt as the Island and the Everbook (Phase 5). JS tests pass (14); Java untouched. Paid calls: still $0.04.
 - 2026-11-25: the Atlas on one canvas (js/atlas.js), 60 fps; see "START HERE". JS tests pass (14). Paid calls: still $0.04.
+- 2026-11-25: campaign performance pass, the Rift as a secret world, dock pictures, Everbook page turns, How to Play's
+  campaign chapter. JS tests pass (14). Paid calls: still $0.04.
