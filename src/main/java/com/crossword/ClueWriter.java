@@ -366,7 +366,21 @@ public class ClueWriter {
         }
     }
 
+    // The live site closes on this date while the new version is finished (CLOSED_FROM in the environment, a date like
+    // 2026-11-29, New York time; set it empty to turn this off). From then on no request can make a paid call.
+    static final String CLOSED_FROM = System.getenv().getOrDefault("CLOSED_FROM", "2026-11-29");
+
+    static boolean closed() {
+        if (CLOSED_FROM.isBlank()) return false;
+        try {
+            return !java.time.LocalDate.now(java.time.ZoneId.of("America/New_York")).isBefore(java.time.LocalDate.parse(CLOSED_FROM.trim()));
+        } catch (java.time.DateTimeException e) {
+            return false;
+        }
+    }
+
     private static <T> T askModel(AnthropicClient client, String prompt, Class<T> type, String model) {
+        if (closed()) throw new IllegalStateException("The site is closed for the update, so no clues are written.");
         StructuredMessageCreateParams<T> params =
                 MessageCreateParams.builder()
                         .model(model)

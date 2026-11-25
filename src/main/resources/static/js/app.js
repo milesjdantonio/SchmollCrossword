@@ -641,17 +641,49 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     // The update notice. While the big update is being built, the site opens on this start screen with one button that
     // plays the current version (on a first visit, the intro's logo comes next). Once per visit: a reload skips it.
+    // It counts down to SHUTDOWN (midnight at the start of that day, the player's own time); from then on the current
+    // version is closed: the page only says so, with no way past it, and a game left open goes to it.
     // Set UPDATE_NOTICE to false to turn it off.
     // ---------------------------------------------------------------------------------------------
     const UPDATE_NOTICE = true;
+    const SHUTDOWN = new Date(2026, 10, 29);                 // November 29, 2026 (months count from 0)
     const NOTICE_TICKER = ["A New Look", "Four Secret Worlds", "A Daily Archive", "Weekly Quests", "A Puzzle of the Week", "Friend Challenges", "Make Your Own Puzzles"];
     const NOTICE_SEEN = "schmoll.noticeSeen";
+    const isClosed = () => Date.now() >= SHUTDOWN.getTime();
+    // the time left, as "3 days, 04:12:09"
+    function timeLeft() {
+        const s = Math.max(0, Math.floor((SHUTDOWN.getTime() - Date.now()) / 1000)), d = Math.floor(s / 86400);
+        const hms = [Math.floor(s % 86400 / 3600), Math.floor(s % 3600 / 60), s % 60].map(n => String(n).padStart(2, "0")).join(":");
+        return (d ? `${d} ${d === 1 ? "day" : "days"}, ` : "") + hms;
+    }
+    // a game left open past the shutdown goes to the closed page
+    if (UPDATE_NOTICE) setInterval(() => { if (isClosed() && !document.querySelector(".notice-closed")) location.reload(); }, 30000);
+
+    // the page once the current version has closed: nothing to press
+    function closedNotice(box) {
+        root.classList.add("intro-on");
+        box.hidden = false;
+        box.classList.remove("go");
+        box.classList.add("notice");
+        box.innerHTML = startScreen(`
+            <div class="intro-press notice-press notice-closed" role="dialog" aria-modal="true" aria-labelledby="notice-title" aria-describedby="notice-text">
+                <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
+                <p class="notice-kicker">Under Development</p>
+                <h1 class="notice-title" id="notice-title">Sorry for the Inconvenience</h1>
+                <p class="notice-text" id="notice-text">Schmoll Crossword is closed while the new version is finished. A release is planned very soon, with a new look, new worlds and more to play. Thank you for your patience.</p>
+            </div>`, NOTICE_TICKER);
+        Mascot.away = true;
+        // (every key stays here, so nothing reaches the game behind)
+        addEventListener("keydown", e => { e.stopPropagation(); if (e.key !== "Tab") e.preventDefault(); }, true);
+        return new Promise(() => {});
+    }
 
     // resolves to false (not shown), "intro" (the intro's logo should follow) or "done" (the game is showing)
     async function updateNotice() {
         if (!UPDATE_NOTICE) return false;
-        try { if (sessionStorage.getItem(NOTICE_SEEN)) return false; } catch (err) { /* storage blocked: show it */ }
         const box = $("#intro");
+        if (isClosed()) return closedNotice(box);
+        try { if (sessionStorage.getItem(NOTICE_SEEN)) return false; } catch (err) { /* storage blocked: show it */ }
         root.classList.add("intro-on");
         box.hidden = false;
         box.classList.remove("go");
@@ -661,10 +693,17 @@ const App = (() => {
                 <div class="intro-mini" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i></div>
                 <p class="notice-kicker">Under Development</p>
                 <h1 class="notice-title" id="notice-title">A Big Update Is on the Way</h1>
-                <p class="notice-text" id="notice-text">Schmoll Crossword is being rebuilt. Until the new version is ready, you can still play the current one.</p>
+                <p class="notice-text" id="notice-text">Schmoll Crossword is being rebuilt. The current version closes on November 29 until the new one is released.</p>
+                <p class="notice-count" aria-live="off"><span>Closes In</span> <b class="notice-left">${timeLeft()}</b></p>
                 <button type="button" class="intro-start notice-play">Play the Current Version</button>
             </div>`, NOTICE_TICKER);
         Mascot.away = true;
+        const left = box.querySelector(".notice-left");
+        const tick = setInterval(() => {
+            if (!left.isConnected) { clearInterval(tick); return; }
+            if (isClosed()) { clearInterval(tick); location.reload(); return; }
+            left.textContent = timeLeft();
+        }, 1000);
         const play = box.querySelector(".notice-play");
         play.focus({ preventScroll: true });
         await new Promise(resolve => {
