@@ -467,6 +467,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       the first visit to each page in a browser session costs ~1.3 s of GPU raster (shader/glyph warm-up), then
       ~0.2 s. Not fixed yet: an idle-time warm-up of the Campaign and Daily pages (they build on demand and the
       campaign switches worlds, so it needs care).
+- [x] The Atlas is a real map (2026-11-26, the user: "make the campaign atlas like an actual map, design the map, and
+      dont put the locations in a grid"): `js/atlas-map.js` paints one illustrated continent once (coast, shallows,
+      rivers, each world's country in its colours with its own pictures, Volcano Island, the sky at the top edge
+      where Deep Space and the Rift hang, sea names, serpent, ship, compass, frame); every world has a hand-placed
+      spot (`AtlasMap.SPOT`); atlas.js `flat` mode draws it from straight above with map markers, an inked trail
+      (the way you've come in red) and fog over places not reached; zoom capped at 0.9 so it stays sharp. 60 fps.
+- [x] Gold for a secret waiting (the user: "if the player beat the boss in an area that has a secret world but hasnt
+      started the secret world, highlight the area in gold..."): `secretWaiting(si)` in campaign.js; the country
+      glows gold with a turning gold ring at its base, its plate and Atlas page count the secret world's 5 levels.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
       is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to

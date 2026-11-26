@@ -171,6 +171,8 @@ const AtlasView = (() => {
 
     function create(host, opts) {
         const { width: W, height: H } = opts;
+        // (a flat Atlas is a map seen from straight above: its painted land, opts.terrain, lies under the locations)
+        const flat = !!opts.flat, tilt = (flat ? 0 : 54) * Math.PI / 180, COS = Math.cos(tilt), SIN = Math.sin(tilt);
         const canvas = document.createElement("canvas"), g = canvas.getContext("2d");
         canvas.className = "at-canvas";
         const tags = document.createElement("div");
@@ -207,7 +209,7 @@ const AtlasView = (() => {
         const clampCam = () => {
             cam.tx = Math.min(W - 100, Math.max(100, cam.tx));
             cam.ty = Math.min(H - 100, Math.max(100, cam.ty));
-            cam.tz = Math.min(ZMAX, Math.max(fitZ() * 0.9, cam.tz));
+            cam.tz = Math.min(flat ? 0.9 : ZMAX, Math.max(fitZ() * 0.9, cam.tz));       // (a painted map stays sharp up to about 1 pixel a unit)
         };
         function look(x, y, z = cam.tz) { cam.tx = x; cam.ty = y; cam.tz = z; clampCam(); wake(); }
         // the zoom (with the camera on the middle of the islands) that keeps every island in view
@@ -300,6 +302,11 @@ const AtlasView = (() => {
 
         function drawSea(t) {
             g.clearRect(0, 0, vw, vh);
+            if (flat) {
+                const a = project(0, 0), b = project(W, H), tex = opts.terrain && opts.terrain();
+                if (a && b && tex) g.drawImage(tex, a.x, a.y, b.x - a.x, b.y - a.y);
+                return;
+            }
             // a soft purple pool of light on the water, and rings on it
             // (the pool of light under it all is the .at-scene background: a full-screen gradient here cost too much
             // on high-density screens)
@@ -330,6 +337,14 @@ const AtlasView = (() => {
             if (!road) return;
             const k = Math.max(0.35, Math.min(1.3, cam.z));
             g.lineCap = "round"; g.lineJoin = "round";
+            if (flat) {                                   // a map's trail: ink dashes, the way you've come in red
+                line(road.all, 14 * k, "rgba(255, 246, 220, .55)");
+                line(road.all, 6 * k, "#5a3e22", [12 * k, 12 * k]);
+                if (road.done.length > 1) { line(road.done, 16 * k, "rgba(255, 246, 220, .7)"); line(road.done, 9 * k, "#c8321f", [16 * k, 10 * k]); }
+                for (const b of opts.branches || []) line(b, 6 * k, "#7a4ac8", [6 * k, 12 * k]);
+                g.setLineDash([]);
+                return;
+            }
             line(road.all, 44 * k, "rgba(20, 10, 40, .45)");
             line(road.all, 8 * k, "rgba(255, 255, 255, .34)", [2 * k, 26 * k]);
             if (road.done.length > 1) {
@@ -346,6 +361,7 @@ const AtlasView = (() => {
             g.save();
             g.globalAlpha = e;
             g.translate(0, (1 - e) * 60 * cam.z);
+            if (flat) { drawPlace(d, t); g.restore(); return; }
             const RX = d.rock ? 90 : d.small ? 125 : 190, RY = d.rock ? 76 : d.small ? 105 : 160;
             const hill = hex(d.hill), ground = hex(d.ground), shut = !d.open && !d.rock;
             const h2 = shut ? dull(hill) : hill, g2 = shut ? dull(ground) : ground;
@@ -399,6 +415,49 @@ const AtlasView = (() => {
             things.sort((a, b) => a.y - b.y).forEach(x => x.draw());
             g.restore();
         }
+        // a place on the map: a marker under it, a ring where you are, fog over somewhere not reached yet
+        function drawPlace(d, t) {
+            const shut = !d.open && !d.rock, r = d.rock ? 46 : d.small ? 60 : 80, c = project(d.x, d.y);
+            if (!c) return;
+            const s = c.s, ground = hex(d.ground);
+            radial({ x: c.x, y: c.y, rx: r * 1.9 * s, ry: r * 1.9 * s }, [[0, css(ground, shut ? 0.15 : 0.55)], [1, css(ground, 0)]]);
+            // a world with a secret still to find: its country glows gold, a gold ring turning round its base
+            if (d.gold) {
+                const pulse = still() ? 0.8 : 0.7 + Math.sin(t / 600 + d.n) * 0.3;
+                radial({ x: c.x, y: c.y - 40 * s, rx: 300 * s, ry: 260 * s }, [[0, `rgba(255, 214, 90, ${0.5 * pulse})`], [0.6, `rgba(255, 190, 60, ${0.22 * pulse})`], [1, "rgba(255, 190, 60, 0)"]]);
+                const spin = still() ? 0 : t / 1400;
+                g.save(); g.translate(c.x, c.y); g.scale(1, 0.55);
+                g.lineWidth = Math.max(4, 26 * s); g.strokeStyle = `rgba(255, 200, 60, ${0.25 * pulse})`;          // (a soft glow under it: cheaper than a shadow blur)
+                g.beginPath(); g.arc(0, 0, r * 1.45 * s, 0, Math.PI * 2); g.stroke();
+                g.lineWidth = Math.max(2, 9 * s); g.strokeStyle = `rgba(255, 220, 110, ${0.9 * pulse})`;
+                g.setLineDash([26 * s, 16 * s]); g.lineDashOffset = -spin * 60 * s;
+                g.beginPath(); g.arc(0, 0, r * 1.45 * s, 0, Math.PI * 2); g.stroke();
+                g.setLineDash([]); g.lineWidth = Math.max(1, 3 * s); g.strokeStyle = `rgba(255, 246, 200, ${pulse})`;
+                g.beginPath(); g.arc(0, 0, r * 1.25 * s, 0, Math.PI * 2); g.stroke();
+                const k = still() ? 0.5 : ((t / 1800 + d.n * 0.3) % 1);                 // and a ring that keeps spreading out
+                g.lineWidth = Math.max(1, 5 * s * (1 - k)); g.strokeStyle = `rgba(255, 214, 90, ${(1 - k) * 0.8})`;
+                g.beginPath(); g.arc(0, 0, r * (1.5 + k * 0.9) * s, 0, Math.PI * 2); g.stroke();
+                g.restore();
+            }
+            g.lineWidth = Math.max(1, 4 * s); g.strokeStyle = "#4a3826"; g.fillStyle = css(mix(ground, WHITE, 0.35), shut ? 0.5 : 0.85);
+            g.beginPath(); g.ellipse(c.x, c.y, r * s, r * 0.55 * s, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+            g.setLineDash([6 * s, 6 * s]); g.beginPath(); g.ellipse(c.x, c.y, r * 0.78 * s, r * 0.42 * s, 0, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+            if (d.n === focusI) { g.lineWidth = Math.max(2, 8 * s); g.strokeStyle = "rgba(255, 246, 200, .9)"; g.beginPath(); g.ellipse(c.x, c.y, r * 1.2 * s, r * 0.68 * s, 0, 0, Math.PI * 2); g.stroke(); }
+            if (d.here) {
+                const k = still() ? 0.5 : ((t / 2000) % 1);
+                g.lineWidth = Math.max(1.5, 7 * s * (1 - k * 0.6)); g.strokeStyle = `rgba(200, 50, 31, ${(1 - k) * 0.9})`;
+                g.beginPath(); g.ellipse(c.x, c.y, r * (1.1 + k * 0.5) * s, r * (0.6 + k * 0.28) * s, 0, 0, Math.PI * 2); g.stroke();
+            }
+            if (d.boss) drawBoss(d, t);
+            if (d.gate) d.box = stand(d.gateKey, d.gate, d.x, d.y - 10, 110, "", 1 + d.hover * 0.1, false);
+            if (d.hero) stand(d.heroKey, d.hero, d.x - 120, d.y + 50, 90);
+            // fog over a land you haven't reached: soft cloud you can just see through
+            if (shut) {
+                const drift = still() ? 0 : Math.sin(t / 7000 * Math.PI + d.n) * 20;
+                for (const [dx, dy, rr] of [[-90, -60, 150], [70, -90, 140], [0, 10, 170], [-60, 70, 120], [90, 50, 130]])
+                    radial({ x: c.x + (dx + drift) * s, y: c.y + (dy - 40) * s, rx: rr * s, ry: rr * 0.75 * s }, [[0, "rgba(246, 240, 226, .78)"], [1, "rgba(246, 240, 226, 0)"]]);
+            }
+        }
         function drawBoss(d, t) {
             const look = d.open ? (d.won ? "faded" : "") : "shadow";
             const box = stand("boss-" + d.world, d.boss, d.x, d.y - (d.small ? 26 : 40), d.small ? 118 : 170, look, 1 + d.hover * 0.1);
@@ -436,7 +495,7 @@ const AtlasView = (() => {
             if (!d.label) return null;
             const b = document.createElement("button");
             b.type = "button";
-            b.className = "at-label" + (d.rock ? " secret" : "");
+            b.className = "at-label" + (d.rock ? " secret" : "") + (d.gold ? " gold" : "");
             if (d.label.world) { b.dataset.world = d.label.world; b.dataset.theme = d.label.theme; }
             b.setAttribute("aria-label", d.label.aria);
             const name = document.createElement("b"); name.textContent = d.label.name;
@@ -453,7 +512,7 @@ const AtlasView = (() => {
             islands.forEach((d, n) => {
                 const t = plates[n];
                 if (!t) return;
-                const p = project(d.x, d.y + (d.rock ? 100 : d.small ? 128 : 190));
+                const p = project(d.x, d.y + (flat ? (d.rock ? 60 : d.small ? 70 : 90) : d.rock ? 100 : d.small ? 128 : 190));
                 const off = !p || p.x < -200 || p.x > vw - ins.right - 30 || p.y < -100 || p.y > vh - ins.bottom - 10;
                 const v = off ? "off" : `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, 0) scale(${Math.max(vw < 700 ? 0.45 : 0.6, Math.min(1, p.s * 1.25)).toFixed(3)})`;
                 if (v === t.last) return;

@@ -774,6 +774,9 @@ const Campaign = (() => {
     data.secrets = data.secrets || {};
     const built = sec => !!(sec.world && Worlds.byId[sec.world] && full && full.some(s => s.world === sec.world));
     const secretOf = si => (map && map[si] ? SECRETS.find(s => s.parent === map[si].world) || null : null);
+    // a world whose boss is beaten but whose secret world hasn't been started yet: the Atlas shows it in gold, its
+    // count with the secret world's 5 levels still to go
+    const secretWaiting = si => { const sec = secretOf(si); return sec && sec.world && cleared(si, 5) && ![1, 2, 3, 4, 5].some(l => data.levels[keyOf(sec.world, l)]) ? sec : null; };
     // "hidden" (its boss still stands), "omen" (something odd is on the island) or "found"
     const secretState = sec => (data.secrets[sec.id] === "found" ? "found" : data.levels[keyOf(sec.parent, 5)] || data.betaUnlock ? "omen" : "hidden");
     const foundSecrets = () => SECRETS.filter(s => secretState(s) === "found" && map && map.some(m => m.world === s.parent));
@@ -1031,7 +1034,7 @@ const Campaign = (() => {
     //   pick an island and its page of the atlas opens beside the sea; pick it again (or Travel, or Enter, or scroll in
     //   all the way) to go there: the view flies down into it
     let atlasOn = false, at = null;
-    const AT_W = 2700, AT_H = 2800, AT_COLS = 4;
+    const AT_W = AtlasMap.W, AT_H = AtlasMap.H, AT_COLS = 4;
     const atlasEl = U.el("div", { class: "at", role: "dialog", "aria-modal": "true", "aria-label": "The atlas of every world", hidden: true });
     view.append(atlasEl);
     // where each island lies on the sea: the worlds of the road four to a row, each row further away and running the
@@ -1039,6 +1042,8 @@ const Campaign = (() => {
     const branchSpot = (p, i) => [p[0] + (i % 2 ? -250 : 250), p[1] + 190];
     function atlasSpots() {
         const pts = [];
+        // every world has its own place on the map (AtlasMap.SPOT); only a world the map doesn't know falls back below
+        if (map.every(s => AtlasMap.SPOT[s.world])) return map.map(s => AtlasMap.SPOT[s.world].slice());
         let n = 0;
         map.forEach((s, i) => {
             if (s.secret) return;
@@ -1067,7 +1072,8 @@ const Campaign = (() => {
         body.append(U.el("div", { class: "dk-folio" }, U.el("span", { class: "eb-ch-n", text: s.secret ? "?" : String(i + 1) }),
             won ? U.el("span", { class: "dk-seal" }, icon("check"), U.el("span", { text: s.secret ? "Rift Sealed" : "Page Won Back" })) : U.el("span", { class: "dk-held", text: `Held by ${b.name}` })),
             U.el("h2", { class: "dk-title", text: w.name }),
-            U.el("p", { class: "dk-facts" }, icon("star"), ` ${worldStars(i)} / ${LV(i).length * 3} · ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length} Cleared`));
+            U.el("p", { class: "dk-facts" }, icon("star"), ` ${worldStars(i)} / ${LV(i).length * 3} · ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length + (secretWaiting(i) ? 5 : 0)} Cleared`));
+        if (secretWaiting(i)) body.append(U.el("p", { class: "eb-small at-gold-note" }, icon("spark"), U.el("span", { text: "5 more levels are hidden in this world." })));
         if (open) body.append(U.el("ol", { class: "at-stops" }, ...LV(i).map(l => { const rec = record(i, l); return U.el("li", { class: rec ? "done" : unlocked(i, l) ? "" : "shut" },
             U.el("b", { text: l === 5 ? "B" : String(l) }), U.el("span", { text: levelName(i, l) }), rec ? starRow(rec.stars) : unlocked(i, l) ? U.el("small", { text: "Next" }) : icon("lock")); })));
         else body.append(U.el("p", { class: "eb-prose", text: b.stakes || `${b.name} holds this page.` }));
@@ -1109,10 +1115,11 @@ const Campaign = (() => {
                 props.push({ ox: Math.cos(a) * rx * sm, oy: Math.sin(a) * ry * sm, k: (0.8 + r() * 0.5) * sm, key: `prop-${i}-${k}`, svg: `<svg viewBox="-40 -84 80 88">${PROPS[b.prop](r)}</svg>` });
             }
             const look = i === here && data.hero ? heroLook() : null;
-            islands.push({ i, x: pts[i][0], y: pts[i][1], world: s.world, small: !!s.secret && s.world !== "rift", ground: b.ground, hill: b.hill, path: b.path, open, won, here: i === here, props, boss: bossSvg(s.world),
+            const waiting = secretWaiting(i), doneHere = LV(i).filter(l => cleared(i, l)).length;
+            islands.push({ i, gold: !!waiting, x: pts[i][0], y: pts[i][1], world: s.world, small: !!s.secret && s.world !== "rift", ground: b.ground, hill: b.hill, path: b.path, open, won, here: i === here, props, boss: bossSvg(s.world),
                 hero: look ? Hero.svg(look, "", { still: true }) : null, heroKey: look ? "hero-" + JSON.stringify(look) : "",
                 label: { name: w.name, world: s.world, theme: Worlds.modeFor(w), aria: `${w.name}: ${open ? worldStars(i) + " of " + LV(i).length * 3 + " stars" : "locked"}`,
-                    sub: [open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : bossOf(s.world).name] } });
+                    sub: waiting ? [icon("spark"), `${doneHere} of ${LV(i).length + 5} Levels`] : [open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : bossOf(s.world).name] } });
             // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
             const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
             if (state === "hidden") return;
@@ -1132,8 +1139,11 @@ const Campaign = (() => {
     // the Atlas's pictures (bosses, scenery, the hero, gates) are made while you look at the island, at the sizes the
     // Atlas opens at, so it opens at once (atlas.js keeps them for the rest of the visit)
     let warmed = "";
+    // the painted map (made once, the first time it's needed or while the island is open and the page is idle)
+    const atlasTerrain = () => AtlasMap.texture(map.map(s => ({ world: s.world, ...biome(s.world) })));
     function warmAtlas() {
         if (!map) return;
+        if (!AtlasMap.ready()) (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => { if (map) atlasTerrain(); }, { timeout: 4000 });
         const sea = atlasSea(atlasSpots()), dpr = Math.min(2, devicePixelRatio || 1), list = [];
         const sig = sea.islands.map(d => (d.open ? 1 : 0) + (d.won ? 2 : 0)).join("") + (sea.islands.find(d => d.hero) || {}).heroKey;
         if (sig === warmed) return;
@@ -1181,7 +1191,7 @@ const Campaign = (() => {
             if (at && at.view) at.view.wake();
         };
         at = { scene, card, pts, focus: data.section, leaving: false, view: null, ro: new ResizeObserver(measure) };
-        at.view = AtlasView.create(scene, { width: AT_W, height: AT_H, ...atlasSea(pts), insets: () => room,
+        at.view = AtlasView.create(scene, { width: AT_W, height: AT_H, flat: true, terrain: atlasTerrain, ...atlasSea(pts), insets: () => room,
             onPick: (d, quiet) => { if (d.rock || d.i !== at.focus || quiet || !sectionOpen(d.i)) atlasFocus(d.i); else atlasTravel(d.i); },
             onTravel: () => atlasTravel(at.focus) });
         measure();
