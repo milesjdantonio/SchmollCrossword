@@ -493,6 +493,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] NEXT (the user, 2026-11-26): "remove all emojis and instead create your own icon everywhere": every emoji in the
       game (ability and item icons, boss moves, effect particles, chips, floating text, notes, companions...) becomes
       a drawn icon (the `icon()` set in campaign.js / an SVG sprite), and FX particle "emoji" shapes become drawn ones.
+      PLAN (in progress): 1,125 emoji, 224 different (powers.js 677, campaign.js 298, howto 51, game 32, css 14...).
+      `js/glyphs.js`: ~100 icons drawn as shape lists (SVG and canvas Path2D from the same data); `Glyph.EMOJI` maps
+      every emoji to an icon; `Glyph.fill(el, text)` puts text with inline icons; U.el's `text` uses it; FX.art.text
+      (canvas particles) draws the icon; CSS emoji become SVG backgrounds; then a browser sweep for any emoji left.
 - [ ] Still to do: the refresh of the non-campaign pages (Home, Daily, Stats, Settings), the user's request; and an
       idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
