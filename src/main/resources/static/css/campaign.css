@@ -1733,3 +1733,44 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 #board .cell .taken-mark { position: absolute; inset: 6%; z-index: 4; pointer-events: none; animation: tm-in .45s cubic-bezier(.3, 1.6, .5, 1); }
 #board .cell .taken-mark svg { width: 100%; height: 100%; filter: drop-shadow(0 0 4px rgba(255, 214, 120, .9)); }
 @keyframes tm-in { from { transform: scale(0) rotate(-40deg); opacity: 0; } }
+
+/* a secret world right after the world it branches off: a smaller window, tucked in, on a dashed branch */
+.ws-tile.branch { position: relative; }
+@media (min-width: 761px) {
+    .ws-tile.branch { width: 42px; height: 42px; margin-left: -4px; align-self: center; }
+    .ws-tile.branch .ws-thumb { width: 42px; height: 42px; box-shadow: 0 0 0 2px var(--surface-solid), 0 0 0 4px color-mix(in srgb, var(--ink) 30%, transparent); outline: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: 4px; }
+    .ws-tile.branch::before { content: ""; position: absolute; right: 100%; top: 50%; width: 10px; border-top: 2px dashed color-mix(in srgb, var(--ink) 35%, transparent); }
+}
+.eb-toc li.branch { margin-left: 22px; }
+.eb-toc li.branch .eb-toc-n { font-size: .8em; }
+
+/* ---- the secret bosses' moves on your board (campaign.js hitMe) ---- */
+/* Pinecone Barrage: prickly squares you can't type in for a while */
+#board .cell.prickly::after { content: "🌲"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: .9em; pointer-events: none;
+    background: repeating-conic-gradient(from 0deg, rgba(90, 60, 20, .28) 0 10deg, transparent 10deg 30deg); border-radius: inherit; }
+/* Barnacles: a crust you knock off with two clicks */
+#board .cell.barnacled { box-shadow: inset 0 0 0 3px #8a9aa8; }
+#board .cell.barnacled::before { content: ""; position: absolute; right: 6%; bottom: 6%; width: 38%; height: 38%; z-index: 3; pointer-events: none; border-radius: 50% 50% 40% 40%;
+    background: radial-gradient(circle at 40% 35%, #e8eef2, #9aa8b4 60%, #6a7884); box-shadow: -8px -4px 0 -3px #b8c4cc, 6px -8px 0 -4px #c8d2d8; }
+/* Sinkhole: a pit spreading through the board */
+#board .cell.sunk::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
+    background: radial-gradient(circle, #2a1a0a 0, #5a3818 45%, #c98a3c 80%, rgba(201, 138, 60, 0) 100%); animation: sink-spin 2.4s linear infinite; }
+@keyframes sink-spin { to { filter: hue-rotate(10deg) brightness(.9); transform: rotate(360deg); } }
+/* Sand Pillar: the column that slides */
+#board .cell.pillared { background-image: repeating-linear-gradient(180deg, rgba(217, 163, 92, .35) 0 6px, rgba(217, 163, 92, .12) 6px 12px); background-size: 100% 24px; animation: pillar-slide 1s linear infinite; }
+@keyframes pillar-slide { to { background-position: 0 24px; } }
+/* Cinders: a wrong letter there burns away */
+#board .cell.cinder::before { content: ""; position: absolute; inset: 18%; z-index: 2; pointer-events: none; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 210, 90, .9), rgba(255, 90, 20, .5) 50%, transparent 72%); animation: cinder-glow 1.1s ease-in-out infinite alternate; }
+@keyframes cinder-glow { to { opacity: .45; transform: scale(.85); } }
+/* Molten Letters: melting unless you retype them */
+#board .cell.molten .ltr { animation: molten-drip 6s linear forwards; color: #e2481a; }
+@keyframes molten-drip { to { transform: translateY(18%) scaleY(1.25); opacity: .25; filter: blur(1px); } }
+/* Sulfur Fumes: every clue but yours lost in smoke */
+html.boss-fumes .clues li:not(.active) { filter: blur(3.5px); opacity: .55; transition: filter .4s, opacity .4s; }
+/* Lava Lamp (an ability): every right letter glows */
+#board .cell.lamp-lit { box-shadow: inset 0 0 0 3px #ffd03e, 0 0 14px rgba(255, 208, 62, .8); }
+/* Tide Chart (an ability): how many letters each clue still needs */
+.clues .tide-n { margin-left: 8px; display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: #1f8fb8; color: #fff; font: 800 .78rem var(--font-body); vertical-align: middle; }
+.clues .tide-n.ok { background: var(--good); }
+@media (prefers-reduced-motion: reduce) { #board .cell.sunk::after, #board .cell.pillared, #board .cell.cinder::before, #board .cell.molten .ltr { animation: none; } }

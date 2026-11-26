@@ -383,23 +383,36 @@ const Campaign = (() => {
         $("#cm-total").replaceChildren(icon("star"), U.el("b", { text: String(t.stars) }), U.el("span", { text: ` / ${t.max * 3}` }));
         $("#cm-coins").replaceChildren(icon("coin"), U.el("b", { text: String(data.coins) }));
     }
+    // the worlds in the order they're shown (the dock, the Everbook's contents): the road, with each secret world
+    // right after the world it branches off (map keeps them at the end, where Campaign.java puts them)
+    function shownOrder() {
+        const out = [];
+        map.forEach((s, i) => {
+            if (s.secret) return;
+            out.push(i);
+            for (const sec of SECRETS.filter(x => x.parent === s.world)) { const j = map.findIndex(m => m.world === sec.world); if (j >= 0) out.push(j); }
+        });
+        map.forEach((s, i) => { if (!out.includes(i)) out.push(i); });
+        return out;
+    }
     // one tile per world: a still of its scene, its name, and a pip for each of its five stops
     let stripFor = 0;
     function drawStrip() {
         if (stripFor !== map.length) {
             stripFor = map.length;
             stripEl.replaceChildren(U.el("button", { type: "button", class: "ws-atlas-btn", "aria-label": "See every world", title: "Every World (M)", onclick: () => openAtlas() }, icon("map")));
-            map.forEach((s, i) => {
-                const w = Worlds.byId[s.world];
+            shownOrder().forEach(i => {
+                const s = map[i], w = Worlds.byId[s.world];
                 const thumb = U.el("canvas", { class: "ws-thumb", "aria-hidden": "true" });
-                const tile = U.el("button", { type: "button", class: "ws-tile", onclick: () => { Sound.play("select"); go(i); } },
+                const tile = U.el("button", { type: "button", class: "ws-tile" + (s.secret ? " branch" : ""), "data-i": i, onclick: () => { Sound.play("select"); go(i); } },
                     thumb, U.el("span", { class: "ws-tile-name", text: w.name }), U.el("span", { class: "ws-pips", "aria-hidden": "true" }, ...LV(i).map(() => U.el("i"))),
                     icon("lock", "ws-tile-lock"), U.el("span", { class: "ws-tile-crown", "aria-hidden": "true" }, icon("star")));
                 stripEl.append(tile);
             });
         }
         const tiles = [...stripEl.querySelectorAll(".ws-tile")];
-        tiles.forEach((tile, i) => {
+        tiles.forEach(tile => {
+            const i = +tile.dataset.i;
             const open = sectionOpen(i), done = LV(i).filter(l => cleared(i, l)).length;
             // its window: the world's boss on a little island of its colours (a shadow until the world is open)
             const look = open ? "" : "shadow", thumb = tile.querySelector(".ws-thumb");
@@ -417,7 +430,7 @@ const Campaign = (() => {
             tile.setAttribute("aria-label", `${Worlds.byId[map[i].world].name}: ${done} of ${LV(i).length} cleared${open ? "" : ", locked"}`);
             [...tile.querySelector(".ws-pips").children].forEach((pip, k) => pip.classList.toggle("on", cleared(i, LV(i)[k])));
         });
-        const on = tiles[data.section];
+        const on = tiles.find(t => +t.dataset.i === data.section);
         if (on && on.scrollIntoView) on.scrollIntoView({ block: "nearest", inline: "center", behavior: U.motion() === "still" ? "auto" : "smooth" });
     }
 
@@ -1663,9 +1676,9 @@ const Campaign = (() => {
                     U.el("div", {}, U.el("dt", { text: "Abilities" }), U.el("dd", { text: `${unlockedAbilities().length} / ${ABILITIES.filter(a => a.world !== "rift" || secretOpen()).length}` })),
                     U.el("div", {}, U.el("dt", { text: "Skills Mastered" }), U.el("dd", { text: `${course().filter(k => k.mastered).length} / ${course().length}` }))));
             const list = U.el("ol", { class: "eb-toc" });
-            map.forEach((s, i) => {
-                const open = sectionOpen(i), w = Worlds.byId[s.world], full = worldStars(i) >= LV(i).length * 3;
-                list.append(U.el("li", { "data-world": s.world, "data-theme": Worlds.modeFor(w), class: (open ? "" : "shut") + (i === data.section ? " here" : "") },
+            shownOrder().forEach(i => {
+                const s = map[i], open = sectionOpen(i), w = Worlds.byId[s.world], full = worldStars(i) >= LV(i).length * 3;
+                list.append(U.el("li", { "data-world": s.world, "data-theme": Worlds.modeFor(w), class: (open ? "" : "shut") + (i === data.section ? " here" : "") + (s.secret ? " branch" : "") },
                     U.el("button", { type: "button", onclick: () => bookGo(i), "aria-label": `${w.name}, ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length} cleared${open ? "" : ", locked"}` },
                         U.el("span", { class: "eb-toc-n", text: s.secret ? "?" : String(i + 1) }), U.el("span", { class: "eb-toc-name", text: w.name }),
                         U.el("span", { class: "eb-toc-dots", "aria-hidden": "true" }), !open ? icon("lock") : full ? icon("check") : pips(i))));
@@ -2099,9 +2112,12 @@ const Campaign = (() => {
         haste: "🛩️ Hasted", snowed: "🌨️ Snowed in" };
     // timers on your side (good ones)
     const MY_BUFFS = { blizzard: "🌨️ Blizzard: keep typing right", sun: "🌱 Words grow letters", tailwind: "🪁 Letters held", lucky: "🌈 Combo locked", fireup: "🔥 Wrong letters burn", hot: "🔥 Words stun", overclock: "⚡ Overclock",
+        cache: "🌰 Acorn cache", hibernate: "💤 Asleep: no mistakes!", conch: "🐚 Conch call", sandclock: "⏳ Sand clock", core: "🌋 Magma core", embers: "🔥 Ember trail",
         armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed", chorus: "🎶 Angel chorus" };
     // what each boss move does to you, for the status chips
-    const ME_TEXT = { thieves: "🐿️ Squirrels have your letters", lavacols: "🌋 Lava in your columns", crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
+    const ME_TEXT = { thieves: "🐿️ Squirrels have your letters", lavacols: "🌋 Lava in your columns", pinecones: "🌲 Prickly squares", sentry: "🐿️ Mistakes feed it",
+        rootbind: "🌳 Rooted to your word", pressure: "🫧 Press twice", deepecho: "🔊 Echoes", sinkhole: "🕳️ Sinkhole", pillar: "🏛️ Sliding column",
+        heatrise: "♨️ Rising heat", fumes: "💨 Fumes", cinder: "🔥 Cinders", crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
         ink: "🦑 Board blurred", whirl: "🌀 Board spinning", freeze: "🥶 Can't type", whiteout: "🌨️ Snowed in", downpour: "🌧️ Letters running", gale: "🌪️ Cursor blown",
         twister: "🌀 Direction flipping", riddle: "🐪 Clues backwards", sandblast: "🏜️ Sandy keys", mirror: "🪞 Mirrored", confetti: "🎉 Confetti", lock: "🔒 Word locked",
         static: "📺 Static", haunting: "👻 Fake letters", lights: "🕯️ Lights out", gravity: "🪐 Heavy keys", flare: "☀️ Blinded",
@@ -2605,7 +2621,10 @@ const Campaign = (() => {
             const left = f.buff.lucky > 0 ? null : Math.max(0, (COMBO_GAP - (performance.now() - f.lastWordAt)) / 1000);
             chips.push(["combo", "combo", `🔥 Combo ×${f.combo}` + (left == null ? " · locked" : ` · ${Math.ceil(left)}s`), left == null ? 1 : left / (COMBO_GAP / 1000)]);
         }
-        for (const [k, v] of Object.entries(f.me)) if (v > 0 && ME_TEXT[k]) chips.push(["m-" + k, "", `${ME_TEXT[k]} · ${Math.ceil(v)}s${COUNTER[k] && !INTERCEPT[k] ? " · " + COUNTER[k] : ""}`]);
+        for (const [k, v] of Object.entries(f.me)) if (v > 0 && ME_TEXT[k]) {
+            const sand = k === "whiteout" && f.world === "dunes";                // (the Sandworm's Sand Dive covers you in sand, not snow)
+            chips.push(["m-" + k, "", `${sand ? "🟫 Buried in sand" : ME_TEXT[k]} · ${Math.ceil(v)}s${sand ? " · " + COUNTER.sanddive : COUNTER[k] && !INTERCEPT[k] ? " · " + COUNTER[k] : ""}`]);
+        }
         if (f.thorns) chips.push(["thorns", "", `🌹 Thorns · ${Math.ceil(f.thorns.t)}s · ${COUNTER.thorns}`]);
         if (f.gum) chips.push(["gum", "", `🫧 Gum: click it ${3 - f.gum.hits}× · ${Math.ceil(f.gum.t)}s`]);
         if (f.bombAt) chips.push(["bomb", "", `💣 Bomb! Type the right letter · ${Math.ceil(f.bombAt.t)}s`, f.bombAt.t / 8]);
@@ -2660,6 +2679,7 @@ const Campaign = (() => {
         let s = f.rate * (f.enraged ? f.th.rageSpeed : CATCH_UP(f.lead)) * (b.haste > 0 ? 2 : 1);
         if (b.slow > 0) s *= 0.33;
         if (b.quick > 0) s /= 1 + 0.18 * (f.quickN || 0);                    // Quicksand: slower with every letter
+        if (f.buff.sandclock > 0) s *= 1 - Math.min(0.6, 0.1 * (f.sandStreak || 0));   // Sand Clock: your streak slows it
         return s;
     }
     function botStep(dt) {
@@ -2698,6 +2718,11 @@ const Campaign = (() => {
         }
         if (vineBlocked(f.word)) { f.word = null; return false; }
         const cells = Game.cellsOf(f.word), empty = cells.find(([r, c]) => !f.letters[r][c]);
+        if (empty && b.kelp && b.kelp.delete(empty[0] + "," + empty[1])) {          // Kelp Forest: 3 seconds to cut through
+            b.dig = 3;
+            if (f.cells) Powers.aura(f.cells[empty[0]][empty[1]], ["🌿"], "pop", 3, 700);
+            return false;
+        }
         if (empty) write(empty);
         else {
             const blot = cells.find(([r, c]) => f.letters[r][c] === BLOT);
@@ -3060,6 +3085,90 @@ const Campaign = (() => {
             case "firewall": f.buff.firewall = 30; if (f.pending) { f.windup *= 2; f.windupMax *= 2; } break;
             case "calm": f.buff.calm = 30; if (f.enraged) { setEnraged(false); speak("...fine. I'll be quiet.", 2000); } break;
             case "haunt": b.haunt = true; break;
+            // the secret worlds' abilities (each does something no other ability does)
+            case "rootnet": {                                    // Root Network: the right letters of every word crossing yours lock
+                const cur = currentMyEntry();
+                if (!cur) break;
+                const mine = new Set(Game.cellsOf(cur).map(([r, c]) => r + "," + c)), seen = new Set(), right = [];
+                for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+                    if (e === cur || !Game.cellsOf(e).some(([r, c]) => mine.has(r + "," + c))) continue;
+                    for (const [r, c] of Game.cellsOf(e)) { const id = r + "," + c; if (!seen.has(id) && g.letters[r][c] === g.puzzle.solution[r][c] && !Game.isLocked(r, c)) { seen.add(id); right.push([r, c]); } }
+                }
+                Game.fillCells(right);
+                floatText(right.length ? `${right.length} letters rooted 🌳` : "Nothing to root yet 🌳", !!right.length);
+                break;
+            }
+            case "cache": f.buff.cache = 30; f.cacheN = 4; break;               // Acorn Cache: see attack()
+            case "hibernate": max("freeze", 15); f.buff.hibernate = 15; break;  // Hibernate: asleep until you type a wrong letter
+            case "sapling": {                                    // Sapling: your word grows in 6 seconds
+                const cur = currentMyEntry();
+                if (!cur) break;
+                floatText("A seed is planted 🌱");
+                setTimeout(() => {
+                    if (fight !== f || f.over || g.solved) return;
+                    const cells = Game.cellsOf(cur).filter(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c)).slice(0, 4);
+                    if (!cells.length) return;
+                    Game.fillCells(cells);
+                    Powers.aura(boardArea(), ["🌱", "🌿"], "rise", 8, 1200);
+                    floatText(`The sapling grew ${cells.length} letters 🌿`);
+                    drawFight();
+                }, U.motion() === "still" ? 0 : 6000);
+                break;
+            }
+            case "diver": {                                      // Pearl Diver: the letter you need most, everywhere it's needed (up to 5)
+                const need = {};
+                scopeAll().forEach(([r, c]) => { const ch = g.puzzle.solution[r][c]; if (g.letters[r][c] !== ch && !Game.isLocked(r, c)) (need[ch] = need[ch] || []).push([r, c]); });
+                const best = Object.entries(need).sort((x, y) => y[1].length - x[1].length)[0];
+                if (best) { Game.fillCells(best[1].slice(0, 5)); floatText(`Every ${best[0]} you needed 🦪`); }
+                break;
+            }
+            case "tidechart": showTideChart(); break;            // Tide Chart: how many letters each clue still needs
+            case "conch": f.buff.conch = 15; f.conchAcc = 0; break;            // Conch Call: see the fight's clock
+            case "kelp": {                                       // Kelp Forest: 5 empty squares of the boss's next words, 3s each to cut through
+                const ahead = [f.word, ...f.queue.filter(e => e !== f.word && !f.done.includes(e))].filter(Boolean), cells = [];
+                for (const e of ahead) for (const [r, c] of Game.cellsOf(e)) if (cells.length < 5 && !f.letters[r][c] && !cells.some(([r2, c2]) => r2 === r && c2 === c)) cells.push([r, c]);
+                b.kelp = new Set(cells.map(([r, c]) => r + "," + c));
+                break;
+            }
+            case "sandclock": f.buff.sandclock = 20; f.sandStreak = 0; break;  // Sand Clock: your streak of right letters slows it (bossSpeed)
+            case "oasis": {                                      // Oasis: the last attack that hit you, undone
+                const h = f.lastHit, back = [];
+                if (h && h.puzzle === g.puzzle) for (let r = 0; r < h.before.length; r++) for (let c = 0; c < h.before[r].length; c++)
+                    if (h.before[r][c] && g.letters[r][c] !== h.before[r][c] && g.letters[r][c] === h.after[r][c] && !Game.isLocked(r, c)) back.push([r, c, h.before[r][c]]);
+                Game.setLetters(back);
+                f.lastHit = null;
+                floatText(back.length ? `${back.length} letters back 🌴` : "Nothing to undo 🌴", !!back.length);
+                break;
+            }
+            case "tumble": {                                     // Tumbleweed: the fullest row of the boss's board
+                let best = -1, most = 0;
+                f.letters.forEach((row, r) => { const k = row.filter(ch => ch && ch !== ".").length; if (k > most) { most = k; best = r; } });
+                if (best >= 0) wipe(f.letters[best].map((ch, c) => [best, c]), true);
+                f.word = null;
+                break;
+            }
+            case "bake": {                                       // Sun Bake: your word's right letters set hard, its wrong ones crumble
+                const cur = currentMyEntry();
+                if (!cur) break;
+                const cells = Game.cellsOf(cur).filter(([r, c]) => !Game.isLocked(r, c) && g.letters[r][c]);
+                Game.setLetters(cells.filter(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]).map(([r, c]) => [r, c, ""]));
+                Game.fillCells(cells.filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c]));
+                break;
+            }
+            case "core": f.buff.core = 30; f.coreN = 0; break;                  // Magma Core: see the typing handler
+            case "embers": f.buff.embers = 15; break;                          // Ember Trail: see the typing handler
+            case "vent": {                                       // Vent: your combo, spent as heat on the boss's board
+                const k = Math.min(10, Math.max(1, f.combo || 0) * 2);
+                wipe(bossFilled().sort(() => Math.random() - 0.5).slice(0, k), true);
+                floatText(`Vented ${k} letters off its board 🌋`);
+                f.combo = 0;
+                break;
+            }
+            case "lamp": {                                       // Lava Lamp: every letter you have right glows for 8s
+                scopeAll().filter(([r, c]) => g.letters[r][c] && g.letters[r][c] === g.puzzle.solution[r][c]).forEach(([r, c]) => { const el = Game.cellEl(r, c); if (el) el.classList.add("lamp-lit"); });
+                setTimeout(() => document.querySelectorAll("#board .lamp-lit").forEach(n => n.classList.remove("lamp-lit")), 8000);
+                break;
+            }
             case "ghost": max("ghost", 12); f.ghostN = 0; break;
             case "hot": f.buff.hot = 20; break;
             case "lavafloor": max("lava", 15); break;
@@ -3155,6 +3264,12 @@ const Campaign = (() => {
     const tipCase = s => s.replace(/(^|[\s(·])(\p{Ll})/gu, (m, a, ch) => a + ch.toUpperCase());
     const COUNTER = {
         acornroll: "finish a word to block it, or click the branch twice", thieves: "click each squirrel 3 times to get its letter back",
+        pinecones: "wait it out: the prickles fall off", hoardcount: "finish words: it counts the ones you haven't", sentry: "type carefully: every mistake feeds it",
+        rootbind: "type 2 right letters in your word", barnacles: "click each barnacle twice", pressure: "press every key twice",
+        backwash: "retype the word the right way round", deepecho: "clear the echoed letters", pearlhoard: "retype the rare letters",
+        sinkhole: "click the square where it started", wormsign: "retype the dug-out diagonal", pillar: "lock that column's letters with right words",
+        heatrise: "finished words hold: finish the top rows", pyroclast: "retype the letters by the black squares", molten: "retype a melting letter to cool it",
+        fumes: "work on the clue you're on", cinder: "type the right letter first time on a cinder",
         trident: "click the trident 3 times to snap it", tornado: "click the tornado twice to break it up", sanddive: "click the sand off your squares",
         sandball: "click the sand ball 3 times: its letters become yours", lavacols: "finish a word through a lava column to cool it",
         rubout: "click the eraser to snatch it", crumple: "finished words don't fold · click a fold to smooth it", inkblot: "click the blot 6× to wipe it",
@@ -3358,6 +3473,8 @@ const Campaign = (() => {
         const id = r + "," + c, puff = (el, looks) => el && Powers.aura(el, looks, "pop", 6, 600);
         let hit = false;
         if (r >= 0) {
+            if (f.barn && f.barn.has(id)) { const left = f.barn.get(id) - 1; if (left <= 0) { f.barn.delete(id); puff(cellEl, ["🐚"]); floatText("Barnacle knocked off! 🐚"); } else { f.barn.set(id, left); U.restart(cellEl, "shake"); } hit = true; }
+            if (f.me.sinkhole > 0 && f.sinkCenter === id) { f.me.sinkhole = 0; f.sink = null; puff(cellEl, ["🟫"]); floatText("Sinkhole filled! 🟫"); hit = true; }
             if (f.snow && f.snow.has(id) && (f.me.whiteout > 0 || f.me.avalanche > 0)) { f.snow.delete(id); f.cleared = f.cleared || new Set(); f.cleared.add(id); puff(cellEl, ["❄️"]); hit = true; }
             if (f.thorns && f.thorns.cells.has(id)) { f.thornHits = f.thornHits || {}; if ((f.thornHits[id] = (f.thornHits[id] || 0) + 1) >= 4) { f.thorns.cells.delete(id); puff(cellEl, ["🍂", "✂️"]); floatText("Thorn cut! ✂️"); } else U.restart(cellEl, "shake"); hit = true; }
             if (f.me.confetti > 0 && f.piles && f.piles.has(id)) { f.piles.delete(id); (f.swept = f.swept || new Set()).add(id); puff(cellEl, ["🎉"]); hit = true; }
@@ -3530,6 +3647,12 @@ const Campaign = (() => {
         const myBefore = Game.state.letters.map(r => [...r]);
         f.unmarked = false;
         hitMe(mv);
+        if (f.buff.cache > 0 && f.cacheN > 0) {                  // Acorn Cache: what it just took snaps back
+            const back = [], now = Game.state.letters;
+            myBefore.forEach((row, r) => row.forEach((ch, c) => { if (ch && now[r][c] !== ch && back.length < f.cacheN && !Game.isLocked(r, c)) back.push([r, c, ch]); }));
+            if (back.length) { Game.setLetters(back); f.cacheN -= back.length; floatText(`The cache gave back ${back.length} 🌰`); if (f.cacheN <= 0) f.buff.cache = 0; }
+        }
+        f.lastHit = { puzzle: Game.state.puzzle, before: myBefore, after: Game.state.letters.map(r => [...r]) };
         if (!f.unmarked) Game.markBossChanges(myBefore);    // what it erased or changed stays marked until you fix it (not the trident's)
         Spells.play("m-" + mv.kind, { cells: myChanges(myBefore), area: selfMove ? (portrait || panel) : document.getElementById("board"),
             from: U.center(portrait || panel), to: U.center(selfMove ? (portrait || panel) : document.getElementById("board")) });
@@ -3771,6 +3894,75 @@ const Campaign = (() => {
                 break;
             }
             case "sandball": bossGain(armor ? 3 : 5); break;                      // Sand Ball: it wasn't broken in time
+            case "pinecones": {                                                  // Pinecone Barrage: 4 letters in different words knocked out, the squares prickly
+                const safe = safeCells(), used = new Set(), picks = [];
+                for (const [r, c] of shuffle(filled().filter(([r, c]) => !safe.has(r + "," + c)))) {
+                    const e = wordsOf().find(w => Game.cellsOf(w).some(([r2, c2]) => r2 === r && c2 === c)), k = e ? e.direction + e.number : r + "," + c;
+                    if (used.has(k)) continue;
+                    used.add(k); picks.push([r, c]);
+                    if (picks.length >= (armor ? 2 : 4)) break;
+                }
+                Game.setLetters(picks.map(([r, c]) => [r, c, ""]));
+                f.prickly = ids(picks); f.me.pinecones = dur;
+                break;
+            }
+            case "hoardcount": bossGain(Math.min(armor ? 3 : 6, wordsOf().filter(w => Game.cellsOf(w).some(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c])).length)); break;   // Hoard Count
+            case "sentry": f.me.sentry = dur; break;                               // Squirrel Sentry: see the typing handler
+            case "rootbind": f.me.rootbind = dur; f.rootWord = currentMyEntry(); f.rootN = 0; break;   // Root Bind: 2 right letters in your word to break free
+            case "barnacles": f.barn = new Map(shuffle(filled()).slice(0, armor ? 2 : 4).map(([r, c]) => [r + "," + c, 2])); break;   // Barnacles: click each twice
+            case "pressure": f.me.pressure = dur; f.pressFirst = null; break;       // Deep Pressure: every key has to be pressed twice
+            case "backwash": {                                                   // Backwash: your word's letters, back to front
+                const e = currentMyEntry() || U.pick(wordsOf());
+                if (e) {
+                    const cells = Game.cellsOf(e).filter(([r, c]) => !Game.isLocked(r, c)), was = cells.map(([r, c]) => g.letters[r][c]), rev = [...was].reverse();
+                    Game.setLetters(cells.map(([r, c], i) => [r, c, rev[i]]).filter((x, i) => rev[i] !== was[i]));
+                }
+                break;
+            }
+            case "deepecho": f.me.deepecho = dur; f.echoN = 0; break;             // Echo of the Deep: see the typing handler
+            case "pearlhoard": {                                                 // Pearl Hoard: your 3 rarest right letters
+                const freq = {};
+                scopeAll().forEach(([r, c]) => { const ch = g.puzzle.solution[r][c]; freq[ch] = (freq[ch] || 0) + 1; });
+                const right = filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c]).sort((x, y) => freq[g.puzzle.solution[x[0]][x[1]]] - freq[g.puzzle.solution[y[0]][y[1]]]);
+                Game.setLetters(right.slice(0, armor ? 2 : 3).map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "sinkhole": {                                                   // Sinkhole: it spreads a square every 1.5s; click where it started
+                const start = U.pick(filled()) || U.pick(open());
+                if (start) {
+                    f.sink = new Set([start[0] + "," + start[1]]); f.sinkCenter = start[0] + "," + start[1]; f.me.sinkhole = dur; f.sinkAcc = 0;
+                    if (g.letters[start[0]][start[1]]) Game.setLetters([[start[0], start[1], ""]]);
+                }
+                break;
+            }
+            case "wormsign": {                                                   // Worm Sign: a diagonal through your board, dug out
+                const diag = {};
+                filled().forEach(([r, c]) => (diag[r - c] = diag[r - c] || []).push([r, c]));
+                const best = Object.values(diag).sort((x, y) => y.length - x.length)[0] || [];
+                Game.setLetters(best.slice(0, armor ? 3 : 99).map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "pillar": {                                                     // Sand Pillar: a column's letters slide down a square every 2s
+                const n = g.puzzle.size, score = [];
+                for (let c = 0; c < n; c++) score.push([c, filled().filter(([, c2]) => c2 === c).length + Math.random() * 0.3]);
+                f.pillarCol = score.sort((x, y) => y[1] - x[1])[0][0]; f.me.pillar = dur; f.pillAcc = 0;
+                break;
+            }
+            case "heatrise": f.me.heatrise = dur; f.heatAcc = 0; break;           // Rising Heat: see the fight's clock
+            case "pyroclast": {                                                  // Pyroclast: letters beside the black squares burn
+                const n = g.puzzle.size, black = (r, c) => r >= 0 && c >= 0 && r < n && c < n && g.puzzle.solution[r][c] === ".";
+                const hot = filled().filter(([r, c]) => black(r - 1, c) || black(r + 1, c) || black(r, c - 1) || black(r, c + 1));
+                Game.setLetters(shuffle(hot).slice(0, armor ? 3 : 6).map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "molten": {                                                     // Molten Letters: 4 right letters melt unless you retype them in 6s
+                const right = shuffle(filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])).slice(0, armor ? 2 : 4), until = performance.now() + 6000;
+                f.molten = new Map(right.map(([r, c]) => [r + "," + c, until]));
+                right.forEach(([r, c]) => { const el = Game.cellEl(r, c); if (el) el.classList.add("molten"); });
+                break;
+            }
+            case "fumes": f.me.fumes = dur; break;                               // Sulfur Fumes: every clue but yours is lost in smoke (CSS)
+            case "cinder": f.cinders = ids(shuffle(open().filter(([r, c]) => !g.letters[r][c])).slice(0, armor ? 2 : 3)); f.me.cinder = dur; break;   // Cinders
             case "lavacols": {                                                   // Lava Columns: the two columns you still need most
                 const need = {};
                 scopeAll().forEach(([r, c]) => { if (g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c)) need[c] = (need[c] || 0) + 1 + Math.random() * 0.3; });
@@ -3904,6 +4096,37 @@ const Campaign = (() => {
         `<circle cx="20" cy="22.5" r="1.8" fill="#5a3a10"/><path d="M20 23.5 v3.5" stroke="#5a3a10" stroke-width="1.6"/></svg>`;
     const takenBy = (r, c) => birds.find(b => b.r === r && b.c === c && b.held);
     const placeBird = (el, x, y) => { el.style.left = x.toFixed(0) + "px"; el.style.top = y.toFixed(0) + "px"; };
+    // Sinkhole: it spreads to a neighbouring square, taking the letter there
+    function spreadSink(f, g) {
+        const n = g.puzzle.size, opts = [];
+        for (const id of f.sink) {
+            const [r, c] = id.split(",").map(Number);
+            for (const [dr, dc] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const rr = r + dr, cc = c + dc; if (rr >= 0 && cc >= 0 && rr < n && cc < n && g.puzzle.solution[rr][cc] !== "." && !f.sink.has(rr + "," + cc)) opts.push([rr, cc]); }
+        }
+        const p = U.pick(opts);
+        if (!p) return;
+        f.sink.add(p[0] + "," + p[1]);
+        if (g.letters[p[0]][p[1]] && !Game.isLocked(p[0], p[1])) bossWipe([[p[0], p[1], ""]]);
+    }
+    // Sand Pillar: the column's loose letters slide down a square (the bottom one comes round to the top)
+    function pillarShift(f, g) {
+        const c = f.pillarCol, cells = scopeAll().filter(([r, cc]) => cc === c && !Game.isLocked(r, cc)).sort((x, y) => x[0] - y[0]);
+        if (cells.length < 2) return;
+        const was = cells.map(([r]) => g.letters[r][c]), moved = was.slice(-1).concat(was.slice(0, -1));
+        bossWipe(cells.map(([r], i) => [r, c, moved[i]]).filter((x, i) => moved[i] !== was[i]));
+    }
+    // Tide Chart: a number on every clue, how many of its letters are still wrong or missing (10 seconds)
+    function showTideChart() {
+        const g = Game.state;
+        document.querySelectorAll(".clues .tide-n").forEach(n => n.remove());
+        for (const e of [...g.puzzle.across, ...g.puzzle.down]) {
+            const item = g.clueItems.get(e);
+            if (!item) continue;
+            const left = Game.cellsOf(e).filter(([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c]).length;
+            item.append(U.el("span", { class: "tide-n" + (left ? "" : " ok"), "aria-hidden": "true", text: left ? String(left) : "✓" }));
+        }
+        setTimeout(() => document.querySelectorAll(".clues .tide-n").forEach(n => n.remove()), 10000);
+    }
     function sendBirds(f, art = DOVE) {
         const g = Game.state;
         if (fight !== f || f.over || !g.puzzle) return;
@@ -4110,6 +4333,7 @@ const Campaign = (() => {
         if (on("mirageclue") || savedClues) fixClueBar();
         else if (f) f.mirage = null;
         // squares: snow, thorns, folds, confetti, gum, ghost and masked letters, the bomb
+        document.documentElement.classList.toggle("boss-fumes", !!f && on("fumes"));
         const g = Game.state;
         if (g.puzzle && g.cells) scopeAll().forEach(([r, c]) => {
             const cell = Game.cellEl(r, c), id = r + "," + c;
@@ -4117,6 +4341,11 @@ const Campaign = (() => {
             cell.classList.toggle("safe", safe.has(id));
             cell.classList.toggle("snowed", (on("whiteout") || on("avalanche")) && !!f.snow && f.snow.has(id));
             cell.classList.toggle("lava-col", on("lavacols") && !!f.lava && f.lava.has(c));
+            cell.classList.toggle("prickly", on("pinecones") && !!f.prickly && f.prickly.has(id));
+            cell.classList.toggle("barnacled", !!f.barn && f.barn.has(id));
+            cell.classList.toggle("sunk", on("sinkhole") && !!f.sink && f.sink.has(id));
+            cell.classList.toggle("pillared", on("pillar") && f.pillarCol === c);
+            cell.classList.toggle("cinder", on("cinder") && !!f.cinders && f.cinders.has(id));
             cell.classList.toggle("thorny", !!(f && f.thorns && f.thorns.cells.has(id)));
             cell.classList.toggle("folded", on("crumple") && !!f.folds && f.folds.has(id));
             cell.classList.toggle("piled", on("confetti") && !!f.piles && f.piles.has(id));
@@ -4169,7 +4398,7 @@ const Campaign = (() => {
         if (fight) fight.rays = null;
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "lava-col", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target", "shattered"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "lava-col", "prickly", "barnacled", "sunk", "pillared", "cinder", "molten", "lamp-lit", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target", "shattered"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
         document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
@@ -4185,6 +4414,10 @@ const Campaign = (() => {
         if (f.me.freeze > 0) return "freeze";
         if (f.me.decree > 0 && f.decree === letter) return "decree";
         if (f.me.lavacols > 0 && f.lava && f.lava.has(g.col)) return "lava";
+        if (f.me.pinecones > 0 && f.prickly && f.prickly.has(here)) return "thorns";
+        if (f.barn && f.barn.has(here)) return "barnacle";
+        if (f.me.sinkhole > 0 && f.sink && f.sink.has(here)) return "sink";
+        if (f.me.pressure > 0) { if (f.pressFirst !== here + letter) { f.pressFirst = here + letter; return "pressure"; } f.pressFirst = null; }
         if (takenBy(g.row, g.col)) return "taken";
         if (f.thorns && f.thorns.cells.has(here)) return "thorns";
         if (f.gum && f.gum.cells.has(here)) return "gum";
@@ -4207,10 +4440,13 @@ const Campaign = (() => {
         if (why === "gum") Powers.aura(cell, ["🩷"], "pop", 2, 600);
         if (why === "slow") Powers.aura(cell, ["🧤"], "pop", 1, 500);
         if (why === "taken") floatText(fight.me.thieves > 0 ? "A squirrel has this letter: click it 3 times to get it back" : "An angel bird has this letter: click the bird 3 times to get it back", false);
+        if (why === "barnacle") floatText("A barnacle! Click it twice to knock it off", false);
+        if (why === "sink") floatText("A sinkhole! Click where it started to fill it", false);
+        if (why === "pressure") { if (cell) Powers.aura(cell, ["🫧"], "pop", 2, 400); floatText("Deep pressure: press it again", false); }
         if (why === "lava") { if (cell) Powers.aura(cell, ["🔥"], "pop", 3, 600); floatText("Lava! Finish a word through this column to cool it", false); }
         if (why === "decree") { if (decreeEl) U.restart(decreeEl, "shake"); floatText(`The angel forbids ${fight.decree}`, false); }
     }
-    const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0);
+    const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0 || fight.me.rootbind > 0);
     addEventListener("keydown", e => {
         if (!waitEl.hidden && /^[a-zA-Z]$|^Backspace$/.test(e.key) && U.view() === "level") { e.preventDefault(); e.stopPropagation(); return; }
         if (!fightOn() || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -4261,6 +4497,31 @@ const Campaign = (() => {
         const f = fight, g = Game.state;
         f.myLog.push([row, col]);
         if (f.myLog.length > 40) f.myLog.shift();
+        const rightL = !!letter && letter === g.puzzle.solution[row][col], wrongL = !!letter && !rightL && !Game.isLocked(row, col), here = row + "," + col;
+        // the secret worlds' abilities
+        if (f.buff.hibernate > 0 && wrongL) { f.buff.hibernate = 0; f.boss.freeze = 0; floatText("A wrong letter woke it up!", false); }
+        if (f.buff.sandclock > 0 && letter) f.sandStreak = rightL ? (f.sandStreak || 0) + 1 : 0;
+        if (f.buff.core > 0 && rightL && (f.coreN = (f.coreN || 0) + 1) >= 10) {      // Magma Core: 10 right letters, then it erupts
+            f.buff.core = 0; f.coreN = 0;
+            const e = f.word || f.done[f.done.length - 1];
+            if (e) wipe(Game.cellsOf(e), true);
+            f.word = null; refreshDone();
+            Powers.aura(bossBoardEl(), ["🌋", "🔥"], "rise", 12, 1400);
+            floatText("Magma Core erupted! 🌋");
+        }
+        if (f.buff.embers > 0 && letter && f.letters[row] && f.letters[row][col] && f.letters[row][col] !== ".") wipe([[row, col]], true);   // Ember Trail
+        // the secret bosses' moves
+        if (f.me.sentry > 0 && wrongL) bossGain(1);                           // Squirrel Sentry: your mistakes feed it
+        if (f.me.rootbind > 0 && rightL && f.rootWord && Game.cellsOf(f.rootWord).some(([r, c]) => r === row && c === col) && ++f.rootN >= 2) { f.me.rootbind = 0; floatText("The roots snapped! 🌳"); }
+        if (f.me.deepecho > 0 && letter && (f.echoN || 0) < 4) {               // Echo of the Deep: a wrong letter echoes into your word
+            const cur = currentMyEntry(), next = cur && Game.cellsOf(cur).find(([r, c]) => !g.letters[r][c] && !(r === row && c === col) && !Game.isLocked(r, c));
+            if (next) { f.echoN = (f.echoN || 0) + 1; setTimeout(() => { if (fightOn() && !g.letters[next[0]][next[1]]) bossWipe([[next[0], next[1], wrongLetter(g.puzzle.solution[next[0]][next[1]])]]); }, 320); }
+        }
+        if (f.molten && f.molten.has(here) && rightL) { f.molten.delete(here); const el = Game.cellEl(row, col); if (el) el.classList.remove("molten"); floatText("Cooled! 🧊"); }
+        if (f.me.cinder > 0 && f.cinders && f.cinders.has(here) && letter) {    // Cinders: a wrong letter burns away, a right one puts it out
+            if (rightL) f.cinders.delete(here);
+            else setTimeout(() => { if (fightOn() && g.letters[row][col] === letter && !Game.isLocked(row, col)) { Game.setLetters([[row, col, ""]]); const el = Game.cellEl(row, col); if (el) U.restart(el, "scorched"); } }, 600);
+        }
         if (f.buff.tailwind > 0 && letter === g.puzzle.solution[row][col]) setTimeout(() => { if (fightOn() && g.letters[row][col] === letter) Game.fillCells([[row, col]]); }, 0);
         if (f.buff.fireup > 0 && letter && letter !== g.puzzle.solution[row][col]) setTimeout(() => {              // Fire Up: a wrong letter burns away
             if (!fightOn() || g.letters[row][col] !== letter || Game.isLocked(row, col)) return;
@@ -4416,6 +4677,28 @@ const Campaign = (() => {
         }
         if (f.me.minion > 0 && (f.minionAcc = (f.minionAcc || 0) + dt) >= 2.5) { f.minionAcc = 0; moveMinion(); }
         if (f.me.ascend > 0 && (f.ascAcc = (f.ascAcc || 0) + dt) >= 2) { f.ascAcc = 0; ascendOne(f, g); }   // Ascension: a letter floats up every 2s
+        if (f.buff.conch > 0 && (f.conchAcc = (f.conchAcc || 0) + dt) >= 3) {      // Conch Call: your companion types a right letter every 3s
+            f.conchAcc = 0;
+            const cur = currentMyEntry(), want = ([r, c]) => g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c);
+            const cell = (cur && Game.cellsOf(cur).find(want)) || scopeAll().find(want);
+            if (cell) { Game.setLetters([[cell[0], cell[1], g.puzzle.solution[cell[0]][cell[1]]]]); const el = Game.cellEl(cell[0], cell[1]); if (el) { U.restart(el, "flip"); Powers.aura(el, ["🐚"], "pop", 2, 500); } }
+        }
+        if (f.me.sinkhole > 0 && f.sink && (f.sinkAcc = (f.sinkAcc || 0) + dt) >= 1.5) { f.sinkAcc = 0; spreadSink(f, g); }
+        if (f.me.pillar > 0 && f.pillarCol != null && (f.pillAcc = (f.pillAcc || 0) + dt) >= 2) { f.pillAcc = 0; pillarShift(f, g); }
+        if (f.me.heatrise > 0 && (f.heatAcc = (f.heatAcc || 0) + dt) >= 1) {   // Rising Heat: it sweeps your board from the top, a letter a second
+            f.heatAcc = 0;
+            const safe = safeCells(), next = scopeAll().filter(([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c)).sort((x, y) => x[0] - y[0] || x[1] - y[1])[0];
+            if (next) bossWipe([[next[0], next[1], ""]]);
+        }
+        if (f.molten && f.molten.size) {                                    // Molten Letters: not retyped in time, they melt away
+            const now = performance.now();
+            for (const [id, until] of [...f.molten]) if (now > until) {
+                f.molten.delete(id);
+                const [r, c] = id.split(",").map(Number), el = Game.cellEl(r, c);
+                if (el) el.classList.remove("molten");
+                if (g.letters[r][c] && !Game.isLocked(r, c)) bossWipe([[r, c, ""]]);
+            }
+        }
         if (f.me.holylight > 0 && f.holy) {                                  // Holy Light wanders over your board
             const h = f.holy;
             h.a += (Math.random() - 0.5) * 2.4 * dt;

@@ -218,6 +218,9 @@ const Powers = (() => {
     //   aura: emojis that swarm the target, and how they move (fall, swirl, rise, pop, orbit, drift, spark)
     //   on:   "boss" (it hits the boss's board) or "me" (it helps you, on your board)
     // ---------------------------------------------------------------------------------------------
+    // the secret worlds' abilities sound like their nearest cousins
+    Object.assign(SND, { rootnet: SND.vines, cache: SND.hint, hibernate: SND.freeze, sapling: SND.sun, diver: SND.autofill, tidechart: SND.check, conch: SND.chorus || SND.lucky,
+        kelp: SND.vines, sandclock: SND.time, oasis: SND.cleanse, tumble: SND.scatter, bake: SND.fireup || SND.hot, core: SND.hot, embers: SND.fireup || SND.hot, vent: SND.lava || SND.knock, lamp: SND.check });
     const A = (world, id, name, icon, kind, flavor, desc, fx) => ({ id: world + "-" + id, world, name, icon, kind, flavor, desc, fx, sound: SND[kind] });
     const ABILITIES = [
         A("paper", "ink", "Ink Splat", "🖋️", "junk", "Flick a fat blot of ink onto the boss's page.", "The boss's next 5 letters come out as ink blots. It has to rub each one out and write it again.",
@@ -320,39 +323,40 @@ const Powers = (() => {
             { proj: null, aura: ["✨", "🕯️"], motion: "rise", color: "#fff1c4", on: "me" }),
         A("rift", "chorus", "Angel Chorus", "🎶", "chorus", "A choir sings every right note back to you.", "For 20s, every right letter you type is sung into another square that needs the same letter (up to 6).",
             { proj: null, aura: ["🎶", "✨"], motion: "orbit", color: "#ffd06b", on: "me" }),
-        // the four other secret worlds: one ability for each of their four levels, like the Rift
-        A("hollow", "roots", "Root Snare", "🌳", "vines", "The old oak's roots grab the boss's page.", "Roots cover 4 empty squares on the boss's board for 20s. It can't write any word through them.",
-            { proj: "🌳", path: "arc", aura: ["🌿", "🌰"], motion: "drift", color: "#5f8f3a", on: "boss" }),
-        A("hollow", "glimpse", "Hoarder's Glimpse", "🌰", "cheat", "A peek into the hoard.", "Flashes the answer to your selected word for 2.5 seconds. Remember it!",
+        // the four other secret worlds: one ability for each of their four levels, like the Rift, and none of them
+        // does what another ability does
+        A("hollow", "roots", "Root Network", "🌳", "rootnet", "The old oak's roots hold everything near you in place.", "Every right letter in the words crossing yours locks in place.",
+            { proj: null, aura: ["🌳", "🌿"], motion: "orbit", color: "#5f8f3a", on: "me" }),
+        A("hollow", "cache", "Acorn Cache", "🌰", "cache", "A squirrel never loses what it's buried.", "For 30s, the next 4 letters the boss takes or changes on your board snap straight back.",
             { proj: null, aura: ["🌰", "✨"], motion: "pop", color: "#c8681c", on: "me" }),
-        A("hollow", "bark", "Bark Shield", "🪵", "shield", "Hide behind the thickest bark in the forest.", "Blocks the boss's next attack completely.",
-            { proj: null, aura: ["🪵", "🍂"], motion: "orbit", color: "#8a5a2c", on: "me" }),
-        A("hollow", "glowcap", "Glowcap Light", "🍄", "lucky", "The mushrooms light the way.", "Your combo jumps up by 2 and can't run out for 30s.",
-            { proj: null, aura: ["🍄", "✨"], motion: "rise", color: "#7dffd4", on: "me" }),
-        A("atlantis", "coral", "Coral Wall", "🪸", "reflect", "A wall of living coral sends things straight back.", "The boss's next attack bounces back at it: the boss is frozen instead of you.",
-            { proj: null, aura: ["🪸", "🫧"], motion: "orbit", color: "#ff7a8a", on: "me" }),
-        A("atlantis", "riptide", "Riptide", "🌊", "wash", "Drag the boss's page out to sea.", "Washes away up to 6 letters from the boss's unfinished words, newest first. Finished words stay.",
-            { proj: "🌊", path: "line", aura: ["🌊", "🫧"], motion: "drift", color: "#1f8fb8", on: "boss" }),
-        A("atlantis", "pearl", "Pearl of Wisdom", "🦪", "autofill", "The oyster knows the last letter.", "Fills in the last missing letter of every word that's one letter from done (up to 4).",
-            { proj: null, aura: ["🦪", "✨"], motion: "pop", color: "#f4fbff", on: "me" }),
-        A("atlantis", "calm", "Calm Waters", "🐚", "calm", "A shell that hums the sea to sleep.", "Calms the boss down: it stops being enraged (and can't get angry) for 30s.",
-            { proj: "🐚", path: "arc", aura: ["🐚", "💤"], motion: "drift", color: "#9fd8ee", on: "boss" }),
-        A("dunes", "devil", "Dust Devil", "🌪️", "scatter", "A spinning column of sand across the boss's board.", "Blows one letter out of each of the last 4 words the boss finished.",
-            { proj: "🌪️", path: "zig", aura: ["🟫", "💨"], motion: "swirl", color: "#d9a35c", on: "boss" }),
-        A("dunes", "map", "Old Map", "🗺️", "check", "An old map marks where the mistakes are buried.", "Your wrong letters glow red, without the Check penalty.",
-            { proj: null, aura: ["🗺️", "✨"], motion: "pop", color: "#e8b66d", on: "me" }),
-        A("dunes", "glass", "Sand Glass", "⏳", "time", "Time runs slow, and your letters set like glass.", "For 30s, every right letter you type locks in place: the boss's attacks can't erase it.",
+        A("hollow", "hibernate", "Hibernate", "💤", "hibernate", "Sing the boss a winter lullaby.", "The boss falls asleep and writes nothing until you type a wrong letter (up to 15s).",
+            { proj: "💤", path: "arc", aura: ["💤", "❄️"], motion: "drift", color: "#9fc6e8", on: "boss" }),
+        A("hollow", "sapling", "Sapling", "🌱", "sapling", "Plant a seed in your word and wait.", "Six seconds later, your word grows up to 4 of its right letters.",
+            { proj: null, aura: ["🌱", "✨"], motion: "rise", color: "#7be36b", on: "me" }),
+        A("atlantis", "diver", "Pearl Diver", "🦪", "diver", "Dive for the letter you need most.", "The letter you still need most appears in every square that needs it (up to 5).",
+            { proj: null, aura: ["🦪", "🫧"], motion: "pop", color: "#f4fbff", on: "me" }),
+        A("atlantis", "chart", "Tide Chart", "🗺️", "tidechart", "The sea's old chart of where you stand.", "For 10s every clue shows how many of its letters are still wrong or missing.",
+            { proj: null, aura: ["🗺️", "✨"], motion: "pop", color: "#d9a93a", on: "me" }),
+        A("atlantis", "conch", "Conch Call", "🐚", "conch", "Blow the conch and your companion swims in to help.", "For 15s, your companion types a right letter into your word every 3 seconds.",
+            { proj: null, aura: ["🐚", "🎵"], motion: "orbit", color: "#ffb0c0", on: "me" }),
+        A("atlantis", "kelp", "Kelp Forest", "🌿", "kelp", "Grow kelp across the boss's path.", "Kelp grows in 5 empty squares of the boss's next words: each one takes it 3 seconds to cut through.",
+            { proj: "🌿", path: "arc", aura: ["🌿", "🫧"], motion: "drift", color: "#2f9e6b", on: "boss" }),
+        A("dunes", "clock", "Sand Clock", "⏳", "sandclock", "Every grain you get right slows the boss's sand.", "For 20s, each right letter in a row slows the boss by 10% more (up to 60%). A wrong letter starts it over.",
             { proj: null, aura: ["⏳", "✨"], motion: "orbit", color: "#f6d48f", on: "me" }),
-        A("dunes", "oasis", "Oasis", "🌴", "silver", "Every dune hides an oasis somewhere.", "For 40s, each attack that hits you gives you a right letter.",
+        A("dunes", "oasis", "Oasis", "🌴", "oasis", "Rest in the shade and it's as if it never happened.", "Undoes the last attack that hit you: the letters it took or changed come back.",
             { proj: null, aura: ["🌴", "💧"], motion: "rise", color: "#2f8f9d", on: "me" }),
-        A("cave", "spring", "Cool Spring", "💧", "cleanse", "Cold water from deep under the rock.", "Washes off everything the boss is doing to you right now.",
-            { proj: null, aura: ["💧", "💨"], motion: "rise", color: "#5fd0e8", on: "me" }),
-        A("cave", "obsidian", "Obsidian Wall", "🪨", "firewall", "A wall of black glass the boss's attacks have to break.", "For 30s the boss's attacks take twice as long to wind up, so they're easier to block.",
-            { proj: null, aura: ["🪨", "✨"], motion: "orbit", color: "#3a2a5a", on: "me" }),
-        A("cave", "magma", "Magma Surge", "🔥", "hot", "The mountain's heat, on your side.", "For 20s, every word you finish stuns the boss for 2s.",
-            { proj: null, aura: ["🔥", "✨"], motion: "rise", color: "#ff6a1f", on: "me" }),
-        A("cave", "crack", "Cave-In", "⚡", "counter", "Bring the roof down at exactly the right moment.", "Cancels an attack that's winding up and stuns the boss for 4s (2s if nothing was coming).",
-            { proj: "🪨", path: "line", aura: ["🪨", "💥"], motion: "fall", color: "#ffb02e", on: "boss" })
+        A("dunes", "tumble", "Tumbleweed", "🌾", "tumble", "A tumbleweed rolls across the boss's board.", "Clears the fullest row of the boss's board.",
+            { proj: "🌾", path: "line", aura: ["🌾", "💨"], motion: "drift", color: "#c9a25c", on: "boss" }),
+        A("dunes", "bake", "Sun Bake", "☀️", "bake", "The desert sun bakes your word hard.", "Your word's right letters lock in place and its wrong letters crumble away.",
+            { proj: null, aura: ["☀️", "✨"], motion: "pop", color: "#ffcf3f", on: "me" }),
+        A("cave", "core", "Magma Core", "🌋", "core", "Heat builds with every right letter.", "For 30s, your 10th right letter erupts on the boss's board and wipes out the word it's on.",
+            { proj: null, aura: ["🌋", "🔥"], motion: "rise", color: "#ff6a1f", on: "me" }),
+        A("cave", "embers", "Ember Trail", "🔥", "embers", "Every letter you write is hot enough to burn.", "For 15s, each letter you type burns away the boss's letter in the same square of its board.",
+            { proj: null, aura: ["🔥", "✨"], motion: "spark", color: "#ff8a2a", on: "me" }),
+        A("cave", "vent", "Vent", "♨️", "vent", "Let all that pressure out at once.", "Spends your combo: the boss's board loses 2 letters for each point of it (up to 10).",
+            { proj: "♨️", path: "line", aura: ["♨️", "💨"], motion: "rise", color: "#ffb02e", on: "boss" }),
+        A("cave", "lamp", "Lava Lamp", "🪔", "lamp", "A warm glow over everything you got right.", "Every letter you have right glows for 8 seconds, so you know what to keep.",
+            { proj: null, aura: ["🪔", "✨"], motion: "pop", color: "#ffd03e", on: "me" })
     ];
 
     // ---------------------------------------------------------------------------------------------
@@ -360,7 +364,10 @@ const Powers = (() => {
     // ---------------------------------------------------------------------------------------------
     // the secret bosses' own moves sound like their nearest cousins
     Object.assign(BSND, { acornroll: BSND.judgment || BSND.acorns, thieves: BSND.ascend || BSND.steal, trident: BSND.lance || BSND.lightning,
-        tornado: BSND.trumpet || BSND.gale, sanddive: BSND.sandblast, sandball: BSND.sandblast, lavacols: BSND.eruption });
+        tornado: BSND.trumpet || BSND.gale, sanddive: BSND.sandblast, sandball: BSND.sandblast, lavacols: BSND.eruption,
+        pinecones: BSND.acorns, hoardcount: BSND.steal, sentry: BSND.hoot, rootbind: BSND.thorns, barnacles: BSND.lock, pressure: BSND.slowmo, backwash: BSND.tidal,
+        deepecho: BSND.echo, pearlhoard: BSND.steal, sinkhole: BSND.quake, wormsign: BSND.shift, pillar: BSND.sandblast, heatrise: BSND.heatwave,
+        pyroclast: BSND.eruption, molten: BSND.heal, fumes: BSND.darkcreep, cinder: BSND.flare });
     const B = (name, icon, kind, d, desc, fx) => ({ name, icon, kind, d, desc, fx, sound: BSND[kind] });
     const MOVES = {
         paper: [B("Rub Out", "🧽", "rubout", 3, "erases 3 of your letters", { proj: "🧽", aura: ["〰️", "✨"], motion: "drift" }),
@@ -454,44 +461,32 @@ const Powers = (() => {
         // sandball, lavacols: see campaign.js hitMe) and borrows the rest
         hollow: [B("Acorn Roll", "🌰", "acornroll", 3, "rolls a giant acorn across your board that clears three whole rows (it shows which ones first)", { proj: "🌰", aura: ["🌰", "🍂"], motion: "fall" }),
             B("Thieving Squirrels", "🐿️", "thieves", 14, "sends squirrels to carry off 5 of your letters: click a squirrel three times to get its letter back", { proj: null, aura: ["🐿️", "🌰"], motion: "drift" }),
-            B("Nut Swap", "🔄", "acorns", 1, "swaps pairs of your letters around", { proj: "🌰", aura: ["🌰", "🔄"], motion: "swirl" }),
-            B("Buried Words", "🕳️", "lag", 4, "buries the last 4 letters you typed", { proj: "🕳️", aura: ["🟫", "🍂"], motion: "fall" }),
-            B("Tail Whip", "💨", "gale", 9, "whips your cursor to random squares", { proj: "💨", aura: ["💨", "🍂"], motion: "drift" }),
-            B("Leaf Pile", "🍂", "flicker", 9, "drops leaves over your squares, hiding them", { proj: "🍂", aura: ["🍂", "🍁"], motion: "fall" }),
-            B("Gnaw", "🦷", "collapse", 1, "gnaws a letter out of each of your finished words", { proj: "🦷", aura: ["🌰", "💥"], motion: "pop" }),
-            B("Squirrelled Away", "🫳", "steal", 1, "steals a use of one of your abilities", { proj: "🐿️", aura: ["🐿️", "✨"], motion: "drift" }),
-            B("Sap Trap", "🍯", "sticky", 10, "sticks your cursor in sap: it won't move on by itself", { proj: "🍯", aura: ["🍯", "🟤"], motion: "drift" }),
-            B("Hundred Winters", "❄️", "slowmo", 9, "a cold old memory: you can only type one letter at a time, slowly", { proj: "❄️", aura: ["❄️", "🍂"], motion: "fall" })],
+            B("Pinecone Barrage", "🌲", "pinecones", 6, "knocks a letter out of 4 different words, and the squares stay too prickly to type in for a while", { proj: "🌲", aura: ["🌲", "💥"], motion: "fall" }),
+            B("Hoard Count", "🧮", "hoardcount", 1, "counts your unfinished words and adds that many letters to its own board (up to 6)", { proj: null, aura: ["🌰", "🧮"], motion: "orbit" }),
+            B("Squirrel Sentry", "👀", "sentry", 12, "posts a sentry: every wrong letter you type gives it a letter", { proj: "🐿️", aura: ["👀", "🌰"], motion: "drift" }),
+            B("Root Bind", "🌳", "rootbind", 12, "roots you to your word: you can't leave it until you type 2 right letters in it", { proj: "🌳", aura: ["🌿", "🌳"], motion: "rise" })],
+
         atlantis: [B("The Trident", "🔱", "trident", 5, "throws its trident into 5 of your letters: break it before it lands, or it takes them to its own board without a mark", { proj: "🔱", aura: ["🔱", "🫧"], motion: "fall" }),
-            B("Tidal Wave", "🌊", "tidal", 8, "a wave washes your board half off the screen", { proj: "🌊", aura: ["🌊", "💦"], motion: "drift" }),
-            B("Siren Song", "🧜", "fakeclue", 12, "a siren sings one of your clues into a lie", { proj: "🧜", aura: ["🎵", "🫧"], motion: "swirl" }),
-            B("Sunken Scrolls", "📜", "scripture", 12, "sinks all of your Across or Down clues", { proj: "📜", aura: ["📜", "🫧"], motion: "fall" }),
-            B("Whirlpool", "🌀", "whirl", 1, "pulls letters down a whirlpool", { proj: "🌀", aura: ["🌀", "💦"], motion: "swirl" }),
-            B("Undertow", "↩️", "shift", 1, "drags the letters of one of your words over by one", { proj: "🌊", aura: ["🌊", "➡️"], motion: "drift" }),
-            B("Deep Pressure", "🫧", "slowmo", 9, "the weight of the sea: you can only type one letter at a time, slowly", { proj: "🫧", aura: ["🫧", "🌊"], motion: "rise" }),
-            B("Ink Cloud", "🦑", "inkblot", 8, "squirts ink across your board", { proj: "🦑", aura: ["🖤", "🫧"], motion: "pop" }),
-            B("Royal Decree", "👑", "decree", 10, "forbids the letter you need most for 10 seconds: you can't type it", { proj: "👑", aura: ["👑", "🫧"], motion: "pop" }),
-            B("Sea King's Rage", "⚡", "lightning", 1, "strikes the word with the most of your letters", { proj: "⚡", aura: ["⚡", "🌊"], motion: "fall" })],
+            B("Barnacles", "🐚", "barnacles", 1, "crusts 4 of your letters with barnacles: you can't change them until you click each one twice", { proj: "🐚", aura: ["🐚", "🫧"], motion: "pop" }),
+            B("Deep Pressure", "🫧", "pressure", 10, "the weight of the sea: every key has to be pressed twice", { proj: "🫧", aura: ["🫧", "🌊"], motion: "rise" }),
+            B("Backwash", "↩️", "backwash", 1, "washes your word's letters back to front", { proj: "🌊", aura: ["🌊", "↩️"], motion: "swirl" }),
+            B("Echo of the Deep", "🔊", "deepecho", 10, "every letter you type echoes a wrong one into the next square of your word (4 at most)", { proj: null, aura: ["🔊", "🫧"], motion: "orbit" }),
+            B("Pearl Hoard", "🦪", "pearlhoard", 1, "takes your 3 rarest right letters for its treasury", { proj: "🦪", aura: ["🦪", "✨"], motion: "pop" })],
+
         dunes: [B("Sand Tornado", "🌪️", "tornado", 1, "sends a sand tornado across your board that scrambles the letters in its path", { proj: "🌪️", aura: ["🟫", "💨"], motion: "swirl" }),
             B("Sand Dive", "🪱", "sanddive", 10, "covers your board in sand and dives through it, taking letters with it", { proj: "🪱", aura: ["🟫", "💥"], motion: "fall" }),
             B("Sand Ball", "🟤", "sandball", 0, "rolls a ball of sand that turns into 5 letters on its board: break it first and the letters are yours", { proj: "🟤", aura: ["🟫", "✨"], motion: "orbit" }),
-            B("Sand Blast", "🏜️", "sandblast", 8, "sand in the keys: some key presses don't count", { proj: "🏜️", aura: ["🟫", "💨"], motion: "drift" }),
-            B("Swallow", "👄", "wordthief", 1, "swallows the last word you finished", { proj: "🪱", aura: ["🟫", "👄"], motion: "pop" }),
-            B("Mirage", "🪞", "fakecheck", 10, "a heat shimmer makes some of your right letters look wrong", { proj: "🪞", aura: ["🌫️", "✨"], motion: "drift" }),
-            B("Heat Haze", "🌫️", "flicker", 9, "a haze drifts over your squares, hiding them", { proj: "🌫️", aura: ["🌫️", "☀️"], motion: "drift" }),
-            B("Tremor", "〰️", "rubout", 3, "shakes 3 of your letters loose", { proj: "〰️", aura: ["🟫", "💥"], motion: "pop" }),
-            B("Buried Road", "🛣️", "lag", 4, "buries the last 4 letters you typed", { proj: "🟫", aura: ["🟫", "⏪"], motion: "fall" }),
-            B("Dust Storm", "💨", "gale", 9, "blows your cursor to random squares", { proj: "💨", aura: ["💨", "🟫"], motion: "drift" })],
+            B("Sinkhole", "🕳️", "sinkhole", 10, "opens a sinkhole that swallows a neighbouring square every second and a half (click where it started to fill it)", { proj: "🕳️", aura: ["🟫", "💥"], motion: "fall" }),
+            B("Worm Sign", "〰️", "wormsign", 1, "burrows a diagonal line through your board, digging out every letter on it", { proj: "🪱", aura: ["🟫", "〰️"], motion: "drift" }),
+            B("Sand Pillar", "🏛️", "pillar", 10, "raises a pillar of sand under a column: its letters slide down a square every 2 seconds", { proj: "🏛️", aura: ["🟫", "💨"], motion: "rise" })],
+
         cave: [B("Lava Columns", "🌋", "lavacols", 14, "pours lava down two columns of your board: you can't type or click there (finish a word through one to cool it)", { proj: "🌋", aura: ["🔥", "🟥"], motion: "fall" }),
-            B("Eruption", "💥", "eruption", 1, "erupts under two spots of your board, scorching the letters around them", { proj: "💥", aura: ["🔥", "💥"], motion: "fall" }),
-            B("Heatwave", "🥵", "heatwave", 10, "makes Check and Reveal too hot to touch", { proj: "🔥", aura: ["🔥", "♨️"], motion: "rise" }),
-            B("Meltdown", "🫠", "collapse", 1, "melts a letter out of each of your finished words", { proj: "🫠", aura: ["🔥", "💧"], motion: "pop" }),
-            B("Firestorm", "🔥", "lightning", 1, "burns the word with the most of your letters", { proj: "🔥", aura: ["🔥", "💥"], motion: "fall" }),
-            B("Obsidian Skin", "🪨", "ward", 8, "grows a skin of black glass: your next hits on its board bounce off", { proj: null, aura: ["🪨", "✨"], motion: "orbit" }),
-            B("Smoke", "💨", "darkcreep", 10, "smoke creeps over your board until it's pitch black", { proj: "💨", aura: ["💨", "🌑"], motion: "drift" }),
-            B("Ember Rain", "🌠", "rubout", 3, "rains embers that burn away 3 of your letters", { proj: "🌠", aura: ["🔥", "✨"], motion: "fall" }),
-            B("Molten Heart", "❤️‍🔥", "heal", 3, "pours lava into its own board: a few more letters for it", { proj: null, aura: ["🔥", "❤️"], motion: "rise" }),
-            B("Rumble", "🫨", "quake", 1, "shakes the whole cave: letters fall out of your words", { proj: "🫨", aura: ["🪨", "💥"], motion: "pop" })]
+            B("Rising Heat", "♨️", "heatrise", 8, "heat rises through your board from the top, burning away a letter every second", { proj: null, aura: ["♨️", "🔥"], motion: "rise" }),
+            B("Pyroclast", "🌋", "pyroclast", 1, "burns the letters next to your black squares (up to 6)", { proj: "🌋", aura: ["🔥", "💥"], motion: "fall" }),
+            B("Molten Letters", "🫠", "molten", 1, "melts 4 of your right letters: retype each within 6 seconds or it's gone", { proj: "🫠", aura: ["🔥", "💧"], motion: "pop" }),
+            B("Sulfur Fumes", "💨", "fumes", 10, "fills the cave with fumes: every clue but the one you're on is lost in the smoke", { proj: null, aura: ["💨", "🌫️"], motion: "drift" }),
+            B("Cinders", "🔥", "cinder", 10, "drops cinders on 3 empty squares: a wrong letter typed there burns away", { proj: "🔥", aura: ["🔥", "✨"], motion: "fall" })]
+
     };
     const WORLD_PITCH = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, robot: -4, library: -6, volcano: -7, space: -8, rift: 9, hollow: -3, atlantis: -4, dunes: -2, cave: -9 };
 
