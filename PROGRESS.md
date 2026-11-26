@@ -295,8 +295,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       while Shatter is (`.shattered`), and the deal animation's class comes off once the squares are dealt
 - [ ] Difficulty slope: measure the curve across all levels, chart it in REVIEW.md, wait for the user's numbers,
       then apply them
-- [ ] The world-arrival animation plays when you move on after a boss or pick the next world's level; the
-      Rift's plays after the Void
+- [x] The world-arrival animation plays when you move on after a boss or pick the next world's level (2026-11-26:
+      Next after a boss opens the map, where `heroOnMap` plays it; going to that world yourself (dock, arrows, Atlas)
+      now plays it too, `go()`. Checked: Notebook's boss, then Next and the map, both show the Garden arrival. The
+      Rift's is now its gate's: it's found like the other secret worlds)
 
 ### Phase 5: The redesign (the user's answer: the campaign screen, big; Home stays)
 - [x] `/demo` on the local server (`DemoPages`, `src/main/resources/demo/`): served when `SHOW_DEMO` is on (default

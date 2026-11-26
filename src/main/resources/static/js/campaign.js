@@ -588,6 +588,9 @@ const Campaign = (() => {
     function go(si, level) {
         if (!map || !map[si] || switching) return;
         if (si === data.section) { if (level) pickLevel(level); return; }
+        // the world you're about to reach for the first time: its arrival plays (and brings you there) instead
+        const f = frontier();
+        if (si === f.si && data.arrived != null && si > data.arrived && !map[si].secret && U.view() === "campaign") { heroOnMap(); return; }
         const dir = si > data.section ? 1 : -1;
         const land = () => {
             data.section = si;
