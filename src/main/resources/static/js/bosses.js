@@ -514,90 +514,202 @@ const Bosses = (() => {
         } };
 
     // ---------- secret: The Great Hollow: The Giant Squirrel ----------
+    // A greedy king of the hollow: a crown of acorn caps, a cape of oak leaves, cheeks stuffed with stolen letter
+    // tiles, a glowing acorn hugged to its belly, a sack of letters at its feet and a huge fur-tufted tail.
     B.hollow = { name: "The Giant Squirrel", color: "#c8681c", taunt: "Every nut is mine. Every word too.", arena: ["#8a4a1c", "#1c0e05"], fx: "leaves",
         art: u => {
-            const tail = "M150 196 C214 196 236 140 222 92 C210 50 168 30 140 52 C170 52 190 74 186 104 C182 134 160 150 150 196 Z";
-            return `<defs>${lin(u("f"), [[0, "#e0883a"], [1, "#a8521a"]])}${lin(u("t"), [[0, "#f2a24e"], [1, "#b85a1c"]], 0, 0, 1, 1)}${rad(u("e"), [[0, "#fff3b0"], [0.6, "#ffb21e"], [1, "#c86a00"]], 0.5, 0.5, 0.6)}</defs>
-            <g class="bz-float">${shadow(224, 84)}
-            <g class="bz-sway" style="transform-origin:150px 196px"><path d="${tail}" fill="url(#${u("t")})" ${st()}/>
-                <path d="M196 70 q10 18 4 40 M210 96 q8 18 0 40 M176 56 q14 6 18 22" stroke="#fff0d8" stroke-width="3" fill="none" opacity=".55"/></g>
-            <path d="M78 52 L70 16 L96 40 Z" fill="#a8521a" ${st()}/><path d="M76 44 L74 26 L88 40 Z" fill="#ffb0a0"/>
-            <path d="M162 52 L170 16 L144 40 Z" fill="#a8521a" ${st()}/><path d="M164 44 L166 26 L152 40 Z" fill="#ffb0a0"/>
-            <ellipse cx="116" cy="150" rx="60" ry="64" fill="url(#${u("f")})" ${st()}/>
-            <ellipse cx="116" cy="164" rx="36" ry="44" fill="#f6dcb0" ${st(3)}/>
-            <circle cx="120" cy="86" r="48" fill="url(#${u("f")})" ${st()}/>
-            <ellipse cx="88" cy="104" rx="22" ry="18" fill="#f2b06a" ${st(3)}/><ellipse cx="152" cy="104" rx="22" ry="18" fill="#f2b06a" ${st(3)}/>
-            ${eyes({ y: 80, gap: 20, r: 14, iris: `url(#${u("e")})`, brow: "angry" })}
-            <ellipse cx="120" cy="100" rx="9" ry="6" fill="#3e2414" ${st(2.5)}/>
-            <path d="M108 112 q12 8 24 0" fill="none" ${st(3)}/><rect x="112" y="112" width="8" height="12" rx="2" fill="#fff" ${st(2.5)}/><rect x="120" y="112" width="8" height="12" rx="2" fill="#fff" ${st(2.5)}/>
-            <g class="bz-sway" style="transform-origin:80px 150px">
-                <ellipse cx="92" cy="176" rx="30" ry="34" fill="#b9773e" ${st()}/><path d="M60 158 a32 22 0 0 1 64 0z" fill="#6e4429" ${st()}/><path d="M92 136 v-10" ${st(6)}/>
-                <path d="M70 166 q6 18 0 30" stroke="#fff" stroke-width="4" opacity=".25" fill="none"/>
-                <ellipse cx="66" cy="172" rx="12" ry="9" fill="#e0883a" ${st(3)}/><ellipse cx="118" cy="172" rx="12" ry="9" fill="#e0883a" ${st(3)}/></g>
-            <ellipse cx="90" cy="214" rx="18" ry="9" fill="#a8521a" ${st(3)}/><ellipse cx="142" cy="214" rx="18" ry="9" fill="#a8521a" ${st(3)}/>
-            ${bits([[30, 60, `<path d="M0 0 q8 -10 14 -2 q-6 10 -14 2z" fill="#e8792b" ${st(2)}/>`], [208, 30, `<ellipse rx="6" ry="7" fill="#b9773e" ${st(2)}/>`], [26, 150, `<ellipse rx="5" ry="6" fill="#b9773e" ${st(2)}/>`]])}
+            const tail = "M150 204 C214 206 240 150 228 96 C218 48 176 18 136 40 C120 50 128 66 142 60 C170 48 196 70 196 104 C196 140 168 158 150 204 Z";
+            const tailFur = Array.from({ length: 16 }, (_, i) => { const a = -1.1 + i * 0.2, r = 70 + (i % 3) * 6, x = 180 + Math.cos(a) * r * 0.62, y = 112 + Math.sin(a) * r; return `<path d="M${f1(x)} ${f1(y)} q${f1(Math.cos(a) * 10)} ${f1(Math.sin(a) * 10 - 4)} ${f1(Math.cos(a + 0.4) * 16)} ${f1(Math.sin(a + 0.4) * 16)}" stroke="#fff0d8" stroke-width="2.2" fill="none" opacity=".55"/>`; }).join("");
+            const leaf = (x, y, r, c) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M0 0 C6 -6 4 -14 10 -18 C12 -12 18 -14 18 -8 C24 -8 22 0 26 4 C18 6 20 12 12 12 C10 18 2 14 0 0Z" fill="${c}" ${st(2)}/>`;
+            const tile = (x, y, r, ch, s = 14) => `<g transform="translate(${x} ${y}) rotate(${r})"><rect x="${-s / 2}" y="${-s / 2}" width="${s}" height="${s}" rx="2" fill="#ffe08a" ${st(2)}/><text x="0" y="${f1(s * 0.3)}" text-anchor="middle" font-family="Patua One, serif" font-size="${f1(s * 0.75)}" fill="#4a2e14">${ch}</text></g>`;
+            return `<defs>${lin(u("f"), [[0, "#ee9a48"], [1, "#a8521a"]])}${lin(u("t"), [[0, "#f6b25e"], [0.6, "#d0762a"], [1, "#9a4a14"]], 0, 0, 1, 1)}${lin(u("b"), [[0, "#fff4dc"], [1, "#f0c482"]])}
+                ${lin(u("g"), [[0, "#fff1a8"], [0.5, "#f2c24e"], [1, "#b8801a"]])}${rad(u("e"), [[0, "#fff8c0"], [0.55, "#ffc21e"], [1, "#c86a00"]], 0.5, 0.5, 0.6)}${rad(u("a"), [[0, "#ffe9a0"], [0.5, "#d9934a"], [1, "#8a5226"]], 0.35, 0.3, 0.8)}${glowFilter(u("gl"), 3)}</defs>
+            <g class="bz-float">${shadow(226, 92)}
+            <g class="bz-sway" style="transform-origin:150px 204px"><path d="${tail}" fill="url(#${u("t")})" ${st()}/>
+                <path d="${fuzzy(186, 110, 46, 82, 30, 1.04, 0.92)}" fill="none" stroke="#9a4a14" stroke-width="2" opacity=".35"/>${tailFur}
+                <path d="M188 64 q16 22 10 52 M206 88 q10 24 2 50" stroke="#fff6e4" stroke-width="5" fill="none" opacity=".45" stroke-linecap="round"/></g>
+            ${leaf(52, 126, -150, "#c8681c")}${leaf(60, 108, -120, "#e3a35a")}${leaf(176, 120, -20, "#a8492a")}${leaf(170, 102, -50, "#d9b04a")}${leaf(44, 150, 170, "#a8492a")}${leaf(186, 146, 10, "#c8681c")}
+            <path d="M74 112 Q120 100 166 112 L178 150 Q120 132 62 150 Z" fill="#6b8f3a" ${st(3)}/><path d="M80 118 Q120 108 160 118" stroke="#9dbf4a" stroke-width="2" fill="none"/>
+            <ellipse cx="116" cy="158" rx="58" ry="58" fill="url(#${u("f")})" ${st()}/>
+            <path d="M84 132 Q116 116 148 132 Q156 168 140 200 Q116 212 92 200 Q76 168 84 132 Z" fill="url(#${u("b")})" ${st(3)}/>
+            <path d="M96 150 q6 4 4 10 M128 146 q-4 6 0 12 M104 178 q6 4 4 10 M130 176 q-4 6 0 12" stroke="#d9a868" stroke-width="2" fill="none"/>
+            <path d="M68 196 q-6 22 18 22 q24 0 22 -12z" fill="url(#${u("f")})" ${st(3.5)}/><path d="M140 202 q-2 18 22 18 q24 -2 18 -22z" fill="url(#${u("f")})" ${st(3.5)}/>
+            <path d="M74 214 v5 M84 214 v6 M94 213 v5 M150 214 v5 M160 215 v5 M170 213 v5" ${st(2.5)}/>
+            <g transform="translate(30 182)"><path d="M0 34 Q-6 10 10 2 Q20 -4 34 2 Q48 10 42 34 Z" fill="#c9a66b" ${st(3)}/><path d="M8 4 Q20 12 34 4" fill="none" stroke="#6e4429" stroke-width="3"/>
+                <path d="M10 16 q6 6 2 14 M30 14 q-4 8 2 14" stroke="#a8864a" stroke-width="2" fill="none"/>${tile(10, -4, -18, "A")}${tile(26, -8, 12, "Z")}${tile(40, 2, 28, "Q", 12)}</g>
+            <g class="bz-sway" style="transform-origin:116px 160px">
+                <g class="bz-glow"><ellipse cx="116" cy="172" rx="34" ry="30" fill="#ffd36b" opacity=".35" filter="url(#${u("gl")})"/></g>
+                <ellipse cx="116" cy="178" rx="27" ry="31" fill="url(#${u("a")})" ${st()}/>
+                <path d="M84 162 a32 22 0 0 1 64 0 q-32 10 -64 0z" fill="#6e4429" ${st()}/><path d="M90 156 h52 M96 150 h40" stroke="#8a5a32" stroke-width="2"/><path d="M116 140 v-10" ${st(6)}/>
+                <path d="M108 180 l8 -10 l8 10 l-8 10z" fill="#fff4c0" stroke="#b8801a" stroke-width="2" filter="url(#${u("gl")})" class="bz-glow"/>
+                <path d="M98 178 q-4 14 2 24" stroke="#fff" stroke-width="4" opacity=".3" fill="none" stroke-linecap="round"/>
+                <ellipse cx="84" cy="176" rx="13" ry="10" fill="#e8913e" ${st(3)}/><ellipse cx="148" cy="176" rx="13" ry="10" fill="#e8913e" ${st(3)}/>
+                <path d="M76 172 l-3 -3 M80 168 l-2 -4 M152 168 l2 -4 M156 172 l3 -3" ${st(2)}/></g>
+            <path d="M72 58 L60 12 L98 40 Z" fill="#a8521a" ${st()}/><path d="M72 46 L68 24 L88 40 Z" fill="#ffb0a0"/><path d="M62 14 l-6 -8 M64 16 l2 -10 M60 18 l-10 -4" ${st(2.5)}/>
+            <path d="M168 58 L180 12 L142 40 Z" fill="#a8521a" ${st()}/><path d="M168 46 L172 24 L152 40 Z" fill="#ffb0a0"/><path d="M178 14 l6 -8 M176 16 l-2 -10 M180 18 l10 -4" ${st(2.5)}/>
+            <circle cx="120" cy="84" r="46" fill="url(#${u("f")})" ${st()}/>
+            <ellipse cx="80" cy="106" rx="27" ry="21" fill="#f6c27a" ${st(3.5)}/><ellipse cx="160" cy="106" rx="27" ry="21" fill="#f6c27a" ${st(3.5)}/>
+            ${tile(64, 112, -24, "B", 12)}${tile(176, 114, 20, "K", 12)}
+            <path d="M88 56 Q120 44 152 56" stroke="#fff0d8" stroke-width="3" fill="none" opacity=".5"/>
+            <path d="M90 46 L96 26 L106 42 L114 22 L120 40 L126 22 L134 42 L144 26 L150 46 Z" fill="url(#${u("g")})" ${st(3)}/>
+            ${[[96, 26], [114, 22], [126, 22], [144, 26]].map(([x, y]) => `<path d="M${x - 6} ${y + 2} a6 5 0 0 1 12 0z" fill="#6e4429" ${st(2)}/><ellipse cx="${x}" cy="${y + 7}" rx="4.5" ry="5" fill="#c8843f" ${st(1.8)}/>`).join("")}
+            <circle cx="120" cy="40" r="4" fill="#7dffd4" filter="url(#${u("gl")})"/>
+            ${eyes({ y: 78, gap: 19, r: 13, iris: `url(#${u("e")})`, brow: "sly", glow: u("gl") })}
+            <ellipse cx="120" cy="98" rx="9" ry="6.5" fill="#3e2414" ${st(2.5)}/><ellipse cx="117" cy="96" rx="2.5" ry="1.6" fill="#fff" opacity=".6"/>
+            <path d="M120 104 v4 M106 110 q14 9 28 0" fill="none" ${st(3)}/>
+            <rect x="111" y="110" width="9" height="14" rx="2" fill="#fffdf2" ${st(2.5)}/><rect x="120" y="110" width="9" height="14" rx="2" fill="#fffdf2" ${st(2.5)}/>
+            <path d="M100 100 l-34 -6 M100 104 l-36 2 M140 100 l34 -6 M140 104 l36 2" stroke="${INK}" stroke-width="1.6" opacity=".7"/>
+            ${bits([[26, 60, `<g transform="rotate(-12)"><rect x="-7" y="-7" width="14" height="14" rx="2" fill="#ffe08a" ${st(2)}/><text y="4.5" text-anchor="middle" font-family="Patua One, serif" font-size="11" fill="#4a2e14">W</text></g>`],
+                [212, 34, `<ellipse rx="6" ry="7" fill="#b9773e" ${st(2)}/><path d="M-7 -3 a7 5 0 0 1 14 0z" fill="#6e4429" ${st(1.6)}/>`], [22, 120, `<path d="M0 0 q8 -10 14 -2 q-6 10 -14 2z" fill="#e8792b" ${st(2)}/>`],
+                [210, 196, `<path d="M0 0 q8 -10 14 -2 q-6 10 -14 2z" fill="#d9b04a" ${st(2)}/>`], [44, 26, sparkle("#ffe08a")]])}
             </g>`;
         } };
 
     // ---------- secret: Atlantis: Poseidon ----------
+    // The sea king rising from a whirlpool on a scaled fish tail: shell pauldrons, a gold strap with a trident
+    // medallion, a beard and hair of curling waves, a crown of gold, pearls and coral, and his trident crackling.
     B.atlantis = { name: "Poseidon", color: "#1f8fb8", taunt: "The sea keeps what it takes. So will I.", arena: ["#0b5a8a", "#01101e"], fx: "bubbles",
-        art: u => `<defs>${lin(u("s"), [[0, "#5ec8c8"], [1, "#2a7f96"]])}${lin(u("g"), [[0, "#ffe27a"], [1, "#c8901a"]])}${lin(u("w"), [[0, "#bfe9ff"], [1, "#2a8fd6"]])}${rad(u("e"), [[0, "#e8ffff"], [0.6, "#4fe0ee"], [1, "#0a8aa6"]], 0.5, 0.5, 0.6)}</defs>
-        <g class="bz-float">
-        <path d="M14 214 q26 -22 52 0 q26 22 52 0 q26 -22 52 0 q26 22 52 0 v20 h-208z" fill="url(#${u("w")})" ${st()}/>
-        <path d="M34 196 q-20 -40 14 -78 q30 -30 72 -30 q42 0 72 30 q34 38 14 78 z" fill="url(#${u("s")})" ${st()}/>
-        <g class="bz-sway" style="transform-origin:190px 150px">
-            <path d="M188 158 L206 30" ${st(10)}/><path d="M188 158 L206 30" stroke="url(#${u("g")})" stroke-width="5" stroke-linecap="round"/>
-            <path d="M184 46 L190 12 M206 40 L208 4 M228 50 L226 14 M186 46 Q206 58 228 50" fill="none" ${st(8)}/><path d="M184 46 L190 12 M206 40 L208 4 M228 50 L226 14 M186 46 Q206 58 228 50" fill="none" stroke="url(#${u("g")})" stroke-width="4" stroke-linecap="round"/>
-            <circle cx="190" cy="156" r="14" fill="url(#${u("s")})" ${st(3)}/></g>
-        <path d="M64 92 q-18 -30 4 -54 q18 -20 52 -18 q34 -2 52 18 q22 24 4 54" fill="#eaf6ff" ${st()}/>
-        <circle cx="120" cy="88" r="40" fill="url(#${u("s")})" ${st()}/>
-        <path d="M80 56 L86 30 L98 50 L108 22 L120 48 L132 22 L142 50 L154 30 L160 56 Z" fill="url(#${u("g")})" ${st(3)}/><circle cx="120" cy="44" r="4" fill="#4fe0ee"/>
-        ${eyes({ y: 84, gap: 18, r: 11, iris: `url(#${u("e")})`, brow: "stern" })}
-        <path d="M80 104 q-8 40 18 74 q10 -12 22 -10 q12 -2 22 10 q26 -34 18 -74 q-14 14 -40 14 q-26 0 -40 -14z" fill="#eaf6ff" ${st()}/>
-        <path d="M96 120 q6 10 0 22 M120 124 q6 12 0 26 M144 120 q-6 10 0 22" stroke="#9fc9e0" stroke-width="2.5" fill="none"/>
-        <path d="M104 106 q16 8 32 0" fill="none" ${st(3)}/>
-        <path d="M40 150 q-10 30 20 46 M44 120 q-16 10 -12 30" stroke="#2f9e6b" stroke-width="5" fill="none" stroke-linecap="round"/>
-        ${bits([[28, 80, `<circle r="5" fill="none" stroke="#bfe9ff" stroke-width="2"/>`], [214, 120, `<circle r="4" fill="none" stroke="#bfe9ff" stroke-width="2"/>`], [40, 40, `<circle r="3" fill="none" stroke="#bfe9ff" stroke-width="2"/>`]])}
-        </g>` };
+        art: u => {
+            const curl = (x, y, s, dir = 1) => `<path d="M${x} ${y} q${8 * s * dir} ${-2 * s} ${10 * s * dir} ${6 * s} q${2 * s * dir} ${8 * s} ${-6 * s * dir} ${8 * s} q${-6 * s * dir} 0 ${-5 * s * dir} ${-5 * s} q${1 * s * dir} ${-3 * s} ${4 * s * dir} ${-2 * s}" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/>`;
+            const scales = Array.from({ length: 18 }, (_, i) => { const r = Math.floor(i / 6), c = i % 6, x = 66 + c * 12 - r * 10, y = 168 + r * 12; return `<path d="M${x - 6} ${y} a6 6 0 0 0 12 0" fill="none" stroke="#1a6a62" stroke-width="1.8"/>`; }).join("");
+            return `<defs>${lin(u("s"), [[0, "#86e0d6"], [1, "#2f8fa0"]])}${lin(u("tl"), [[0, "#3fc8a8"], [1, "#1a6a72"]], 0, 0, 1, 1)}${lin(u("g"), [[0, "#fff1a0"], [0.5, "#f2c24e"], [1, "#b8801a"]])}
+                ${lin(u("h"), [[0, "#ffffff"], [0.6, "#d8f0fa"], [1, "#8ac4e0"]])}${lin(u("w"), [[0, "#bff4ff"], [0.5, "#4fb8e8"], [1, "#1a5a9a"]])}${rad(u("e"), [[0, "#f0ffff"], [0.5, "#5fe8f4"], [1, "#0a8aa6"]], 0.5, 0.5, 0.6)}
+                ${glowFilter(u("gl"), 3)}${glowFilter(u("gl2"), 6)}</defs>
+            <g class="bz-float">
+            <g class="bz-spin" style="transform-origin:120px 214px"><ellipse cx="120" cy="214" rx="96" ry="18" fill="none" stroke="#bff4ff" stroke-width="3" stroke-dasharray="20 14" opacity=".6"/></g>
+            <path d="M14 222 q14 -28 40 -18 q10 -20 34 -8 q14 -18 32 -4 q18 -14 32 4 q24 -12 34 8 q26 -10 40 18 v12 h-212 z" fill="url(#${u("w")})" ${st()}/>
+            <path d="M30 210 q8 -10 18 -4 M72 200 q10 -8 20 2 M150 200 q10 -8 20 2 M196 208 q10 -8 18 0" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M100 150 C70 160 54 180 60 206 C40 204 26 196 20 182 C24 196 22 206 10 214 C30 218 50 214 64 206 C70 196 88 186 112 178 Z" fill="url(#${u("tl")})" ${st()}/>${scales}
+            <path d="M20 182 L4 172 L12 194 M10 214 L-2 222" fill="none" ${st(3)}/><path d="M18 184 q-6 6 -8 14 M14 206 q-6 4 -10 10" stroke="#9ff0e0" stroke-width="2" fill="none"/>
+            <path d="M84 104 Q120 92 156 104 Q166 136 150 168 Q120 180 90 168 Q74 136 84 104 Z" fill="url(#${u("s")})" ${st()}/>
+            <path d="M100 124 q20 10 40 0 M120 122 v34 M104 146 q16 6 32 0" stroke="#1a6a72" stroke-width="2" fill="none" opacity=".7"/>
+            <path d="M88 108 L150 166" stroke="url(#${u("g")})" stroke-width="7" ${st(0)}/><path d="M88 108 L150 166" stroke="${INK}" stroke-width="1.5" fill="none" opacity=".6"/>
+            <circle cx="120" cy="137" r="9" fill="url(#${u("g")})" ${st(2.5)}/><path d="M120 131 v12 M116 133 v3 h8 v-3" stroke="#6a4a0c" stroke-width="1.8" fill="none"/>
+            ${[[-1, 76], [1, 164]].map(([k, x]) => `<g transform="translate(${x} 106) scale(${k} 1)"><path d="M-18 6 Q-14 -18 6 -20 Q24 -16 22 6 Z" fill="#f4d6c0" ${st(3)}/><path d="M-12 4 L2 -18 M-4 4 L6 -18 M4 4 L12 -16 M12 4 L18 -10" stroke="#c8987a" stroke-width="1.6"/><path d="M-18 6 Q2 10 22 6" stroke="url(#${u("g")})" stroke-width="4" fill="none"/></g>`).join("")}
+            <path d="M84 116 Q64 136 66 160 L78 162 Q80 142 96 128 Z" fill="url(#${u("s")})" ${st(3)}/><circle cx="72" cy="166" r="9" fill="url(#${u("s")})" ${st(3)}/>
+            <path d="M66 170 q-4 10 4 14 M74 172 q0 10 8 12" stroke="#ffffff" stroke-width="2" fill="none" opacity=".6"/>
+            <path d="M156 112 Q182 108 194 84 L184 78 Q174 96 152 100 Z" fill="url(#${u("s")})" ${st(3)}/>
+            <g class="bz-sway" style="transform-origin:192px 80px"><g transform="translate(0 14)">
+                <path d="M196 214 L196 28" ${st(9)}/><path d="M196 214 L196 28" stroke="url(#${u("g")})" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M176 44 L176 16 M196 34 L196 2 M216 44 L216 16 M176 44 Q196 56 216 44" fill="none" ${st(8)}/><path d="M176 44 L176 16 M196 34 L196 2 M216 44 L216 16 M176 44 Q196 56 216 44" fill="none" stroke="url(#${u("g")})" stroke-width="4" stroke-linecap="round"/>
+                <path d="M172 18 L176 8 L180 18 M192 6 L196 -4 L200 6 M212 18 L216 8 L220 18" fill="url(#${u("g")})" ${st(2)}/>
+                <g class="bz-glow"><circle cx="196" cy="20" r="22" fill="#9ff0ff" opacity=".3" filter="url(#${u("gl2")})"/>
+                    <path d="M176 12 l-8 -6 l4 -4 l-8 -4 M216 12 l8 -6 l-4 -4 l8 -4 M196 0 l-4 -8 l6 -2 l-4 -8" stroke="#dffaff" stroke-width="2" fill="none" filter="url(#${u("gl")})"/></g>
+                </g><circle cx="190" cy="82" r="11" fill="url(#${u("s")})" ${st(3)}/></g>
+            <path d="M94 56 C68 62 56 94 62 132 C68 120 74 116 84 114 C76 100 80 84 92 74 Z M146 56 C172 62 184 94 178 132 C172 120 166 116 156 114 C164 100 160 84 148 74 Z" fill="url(#${u("h")})" ${st(3)}/>
+            ${curl(66, 96, 1, -1)}${curl(174, 96, 1, 1)}${curl(64, 120, 0.8, -1)}${curl(176, 120, 0.8, 1)}
+            <ellipse cx="120" cy="76" rx="30" ry="33" fill="url(#${u("s")})" ${st()}/>
+            <path d="M88 52 Q120 34 152 52 Q140 44 120 44 Q100 44 88 52Z" fill="url(#${u("h")})" ${st(2.5)}/>
+            <path d="M88 50 L90 22 L102 40 L110 14 L120 36 L130 14 L138 40 L150 22 L152 50 Q120 42 88 50 Z" fill="url(#${u("g")})" ${st(3)}/>
+            <circle cx="110" cy="16" r="3.5" fill="#fffaf0" ${st(1.5)}/><circle cx="130" cy="16" r="3.5" fill="#fffaf0" ${st(1.5)}/><circle cx="120" cy="40" r="4.5" fill="#5fe8f4" filter="url(#${u("gl")})"/>
+            <path d="M92 26 q-6 -8 -2 -14 M92 26 q-8 -2 -10 -8 M148 26 q6 -8 2 -14 M148 26 q8 -2 10 -8" stroke="#ff7a8a" stroke-width="3" fill="none" stroke-linecap="round"/>
+            ${eyes({ y: 74, gap: 13, r: 9.5, iris: `url(#${u("e")})`, brow: "stern", glow: u("gl") })}
+            <path d="M88 92 C82 120 92 146 104 160 C108 150 114 148 120 156 C126 148 132 150 136 160 C148 146 158 120 152 92 C140 104 132 106 120 106 C108 106 100 104 88 92 Z" fill="url(#${u("h")})" ${st()}/>
+            ${curl(96, 118, 0.9, -1)}${curl(144, 118, 0.9, 1)}${curl(108, 140, 0.8, -1)}${curl(132, 140, 0.8, 1)}${curl(118, 126, 0.7, 1)}
+            <path d="M98 98 q11 -8 22 0 q11 -8 22 0 q-4 6 -11 4 q-6 -2 -11 2 q-5 -4 -11 -2 q-7 2 -11 -4z" fill="#f4fbff" ${st(2.5)}/><path d="M110 106 q10 6 20 0" fill="#1a4a5a" ${st(2.5)}/>
+            ${bits([[26, 92, `<circle r="5" fill="none" stroke="#bff4ff" stroke-width="2"/><circle cx="-1.5" cy="-1.5" r="1.2" fill="#fff"/>`], [36, 132, `<circle r="3" fill="none" stroke="#bff4ff" stroke-width="2"/>`],
+                [222, 120, `<path d="M-8 0 q8 -6 14 0 q-6 6 -14 0z M6 0 l6 -5 v10z" fill="#ffb36b" ${st(1.5)}/>`], [30, 40, `<circle r="4" fill="#fffaf0" ${st(1.5)}/>`], [150, 196, sparkle("#bff4ff")]])}
+            </g>`;
+        } };
 
     // ---------- secret: the Sunken Dunes: The Sandworm ----------
+    // A colossal worm bursting out of the sand: one great armoured body curving up out of the dune, ribbed segments with
+    // spines down its back and a paler belly, and a huge round maw facing you, its jaws flared out like a flower round
+    // rings of hooked teeth and a burning throat, small eyes glowing on its collar, sand pouring off it.
     B.dunes = { name: "The Sandworm", color: "#c4621e", taunt: "I swallow sentences whole.", arena: ["#c98a3c", "#3a1c0a"], fx: "sand",
         art: u => {
-            let rings = "";
-            for (let i = 0; i < 6; i++) { const y = 196 - i * 22, x = 120 + Math.sin(i * 0.9) * 26 - 10; rings += `<path d="M${x - 34 + i * 2} ${y} q${34 - i * 2} 10 ${68 - i * 4} 0" fill="none" stroke="#8a4f22" stroke-width="3" opacity=".7"/>`; }
-            let teeth = "";
-            for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, x = 124 + Math.cos(a) * 30, y = 56 + Math.sin(a) * 22, ix = 124 + Math.cos(a) * 20, iy = 56 + Math.sin(a) * 14;
-                teeth += `<path d="M${f1(x - Math.sin(a) * 4)} ${f1(y + Math.cos(a) * 3)} L${f1(ix)} ${f1(iy)} L${f1(x + Math.sin(a) * 4)} ${f1(y - Math.cos(a) * 3)}" fill="#fff6e0" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/>`; }
-            return `<defs>${lin(u("b"), [[0, "#e8b06a"], [1, "#a8642a"]], 0, 0, 1, 0)}${rad(u("m"), [[0, "#3a0a0a"], [0.7, "#7a1a14"], [1, "#c8402a"]], 0.5, 0.5, 0.55)}${rad(u("e"), [[0, "#fff3b0"], [0.6, "#ff9f2e"], [1, "#b84a00"]], 0.5, 0.5, 0.6)}</defs>
-            <g class="bz-float">${shadow(226, 92)}
-            <path d="M10 226 q60 -40 110 -36 q60 2 110 36z" fill="#e0a95f" ${st()}/>
-            <g class="bz-sway" style="transform-origin:120px 210px">
-            <path d="M84 210 C70 170 110 150 96 112 C86 84 96 60 124 48 C152 60 164 84 152 112 C140 150 168 170 156 210 Z" fill="url(#${u("b")})" ${st()}/>
-            ${rings}
-            <ellipse cx="124" cy="56" rx="38" ry="28" fill="#c87a3a" ${st()}/>
-            <ellipse cx="124" cy="56" rx="30" ry="22" fill="url(#${u("m")})" ${st(3)}/>${teeth}
-            <ellipse cx="124" cy="56" rx="10" ry="7" fill="#1a0404"/>
-            ${eyes({ x: 124, y: 96, gap: 30, r: 8, iris: `url(#${u("e")})`, brow: "angry" })}</g>
-            <path d="M26 214 q10 -10 22 -4 M190 212 q12 -8 24 0" stroke="#b8803a" stroke-width="3" fill="none"/>
-            ${bits([[40, 120, `<circle r="3" fill="#e0a95f"/>`], [200, 100, `<circle r="2.5" fill="#e0a95f"/>`], [60, 70, `<circle r="2" fill="#e0a95f"/>`]])}
+            const bez = (t, a, b, c, d) => (1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t * t * c + t ** 3 * d;
+            const P = [[112, 236], [60, 176], [186, 136], [122, 92]], N = 28, L = [], R = [], mids = [];
+            for (let i = 0; i <= N; i++) {
+                const t = i / N, x = bez(t, P[0][0], P[1][0], P[2][0], P[3][0]), y = bez(t, P[0][1], P[1][1], P[2][1], P[3][1]);
+                const t2 = Math.min(1, t + 0.01), x2 = bez(t2, P[0][0], P[1][0], P[2][0], P[3][0]), y2 = bez(t2, P[0][1], P[1][1], P[2][1], P[3][1]);
+                const a = Math.atan2(y2 - y, x2 - x) || -Math.PI / 2, w = 46 - t * 12, nx = -Math.sin(a), ny = Math.cos(a);
+                L.push([x + nx * w, y + ny * w]); R.push([x - nx * w, y - ny * w]); mids.push([x, y, nx, ny, w]);
+            }
+            const body = "M" + L.map(p => p.map(f1).join(" ")).join(" L") + " L" + R.reverse().map(p => p.map(f1).join(" ")).join(" L") + " Z";
+            R.reverse();
+            const belly = "M" + mids.map(([x, y, nx, ny, w]) => `${f1(x - nx * w * 0.35)} ${f1(y - ny * w * 0.35)}`).join(" L") + " L" + [...mids].reverse().map(([x, y, nx, ny, w]) => `${f1(x - nx * w * 0.9)} ${f1(y - ny * w * 0.9)}`).join(" L") + " Z";
+            let rings = "", spines = "";
+            for (let i = 2; i < N - 1; i += 2) {
+                const [x, y, nx, ny, w] = mids[i], [x2, y2] = mids[i + 1];
+                const bend = [(x2 - x) * 1.4, (y2 - y) * 1.4];
+                rings += `<path d="M${f1(L[i][0])} ${f1(L[i][1])} Q${f1(x + bend[0])} ${f1(y + bend[1])} ${f1(R[i][0])} ${f1(R[i][1])}" fill="none" stroke="#5a2c0e" stroke-width="3" stroke-linecap="round"/>`;
+                rings += `<path d="M${f1(L[i][0] * 0.9 + x * 0.1)} ${f1(L[i][1] * 0.9 + y * 0.1 - 3)} Q${f1(x + bend[0] * 0.7)} ${f1(y + bend[1] * 0.7 - 3)} ${f1(x)} ${f1(y - 3)}" fill="none" stroke="#ffe0a8" stroke-width="2" opacity=".45" stroke-linecap="round"/>`;
+                const [lx, ly] = L[i]; spines += `<path d="M${f1(lx - ny * 4)} ${f1(ly + nx * 4)} L${f1(lx + nx * 14)} ${f1(ly + ny * 14)} L${f1(lx + ny * 4)} ${f1(ly - nx * 4)} Z" fill="#f3e6cc" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>`;
+            }
+            const cx = 122, cy = 70;
+            const jaws = Array.from({ length: 5 }, (_, i) => {
+                const a = -Math.PI / 2 + (i / 5) * Math.PI * 2, l = 66, w = 0.34, tip = [cx + Math.cos(a) * l, cy + Math.sin(a) * l * 0.86];
+                const b1 = [cx + Math.cos(a - w) * 34, cy + Math.sin(a - w) * 30], b2 = [cx + Math.cos(a + w) * 34, cy + Math.sin(a + w) * 30];
+                const hooks = [0.3, 0.5, 0.7].map(k => { const p = [b1[0] + (tip[0] - b1[0]) * k, b1[1] + (tip[1] - b1[1]) * k], q = [b2[0] + (tip[0] - b2[0]) * k, b2[1] + (tip[1] - b2[1]) * k];
+                    return `<path d="M${f1(p[0])} ${f1(p[1])} Q${f1((p[0] + q[0]) / 2 - Math.cos(a) * 8)} ${f1((p[1] + q[1]) / 2 - Math.sin(a) * 8)} ${f1(q[0])} ${f1(q[1])}" fill="none" stroke="#fff6e0" stroke-width="3" stroke-linecap="round"/>`; }).join("");
+                return `<path d="M${f1(b1[0])} ${f1(b1[1])} Q${f1(cx + Math.cos(a - 0.3) * l * 0.85)} ${f1(cy + Math.sin(a - 0.3) * l * 0.72)} ${f1(tip[0])} ${f1(tip[1])} Q${f1(cx + Math.cos(a + 0.3) * l * 0.85)} ${f1(cy + Math.sin(a + 0.3) * l * 0.72)} ${f1(b2[0])} ${f1(b2[1])} Z" fill="url(#${u("p")})" ${st(3)}/>
+                    <path d="M${f1(b1[0] * 0.7 + tip[0] * 0.3)} ${f1(b1[1] * 0.7 + tip[1] * 0.3)} Q${f1(cx + Math.cos(a) * l * 0.6)} ${f1(cy + Math.sin(a) * l * 0.5)} ${f1(b2[0] * 0.7 + tip[0] * 0.3)} ${f1(b2[1] * 0.7 + tip[1] * 0.3)}" fill="#6a1410" opacity=".85"/>${hooks}`;
+            }).join("");
+            const ring = (r, n, k) => Array.from({ length: n }, (_, i) => { const a = (i / n) * Math.PI * 2 + k, x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r * 0.86, ix = cx + Math.cos(a + 0.12) * r * 0.62, iy = cy + Math.sin(a + 0.12) * r * 0.53, px = Math.sin(a) * 3.2, py = Math.cos(a) * 2.8;
+                return `<path d="M${f1(x - px)} ${f1(y + py)} L${f1(ix)} ${f1(iy)} L${f1(x + px)} ${f1(y - py)}" fill="#fff6e0" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>`; }).join("");
+            const eyesRow = [-1, 1].map(s => [0, 1, 2].map(k => { const x = cx + s * (40 + k * 6), y = cy + 30 + k * 5; return `<circle cx="${f1(x)}" cy="${f1(y)}" r="${4 - k * 0.6}" fill="#ffcf3f" stroke="${INK}" stroke-width="1.6" filter="url(#${u("gl")})"/><circle cx="${f1(x)}" cy="${f1(y)}" r="1.4" fill="${INK}"/>`; }).join("")).join("");
+            const sand = [[58, 110, -1], [70, 150, -1], [184, 112, 1], [176, 160, 1]].map(([x, y, s], i) => `<path d="M${x} ${y} q${s * 8} 30 ${s * 3} 66" stroke="#e0b872" stroke-width="${4 - i * 0.6}" fill="none" stroke-linecap="round" opacity=".85" stroke-dasharray="7 5"/>`).join("");
+            return `<defs>${lin(u("b"), [[0, "#f2c070"], [0.45, "#c8823a"], [1, "#7a3e16"]], 0, 0, 1, 0)}${lin(u("p"), [[0, "#f0b468"], [1, "#9a4a22"]])}${lin(u("bl"), [[0, "#f6dcaa"], [1, "#d9a868"]])}
+                ${rad(u("m"), [[0, "#fff1a0"], [0.2, "#ff8a2e"], [0.55, "#7a1a14"], [1, "#1a0404"]], 0.5, 0.5, 0.55)}${lin(u("s"), [[0, "#f2d39a"], [1, "#b8803a"]])}${glowFilter(u("gl"), 2.5)}${glowFilter(u("gl2"), 7)}</defs>
+            <g class="bz-float">${shadow(230, 108)}
+            <g class="bz-sway" style="transform-origin:112px 226px">
+                <path d="${body}" fill="url(#${u("b")})" ${st()}/><path d="${belly}" fill="url(#${u("bl")})" opacity=".7"/>${rings}${spines}
+                <ellipse cx="${cx}" cy="${cy + 8}" rx="50" ry="42" fill="url(#${u("b")})" ${st()}/>
+                ${jaws}
+                <ellipse cx="${cx}" cy="${cy}" rx="34" ry="29" fill="#3a0c08" ${st(3.5)}/>
+                <ellipse cx="${cx}" cy="${cy}" rx="30" ry="26" fill="url(#${u("m")})"/>${ring(29, 18, 0)}${ring(20, 13, 0.25)}${ring(12, 9, 0.5)}
+                <g class="bz-glow"><ellipse cx="${cx}" cy="${cy}" rx="9" ry="8" fill="#ffd56b" filter="url(#${u("gl2")})"/></g>
+                <g class="bz-eyes">${eyesRow}</g>${sand}</g>
+            <path d="M4 232 Q26 200 66 204 Q94 186 120 200 Q150 184 176 204 Q214 198 236 232 Z" fill="url(#${u("s")})" ${st()}/>
+            <path d="M34 214 q14 -8 26 0 M160 212 q14 -8 26 0 M100 204 q12 -6 24 0" stroke="#fff0c8" stroke-width="3" fill="none" stroke-linecap="round" opacity=".7"/>
+            <g transform="translate(206 212) rotate(-18)"><rect x="-6" y="-26" width="12" height="28" fill="#d9c49a" ${st(2.5)}/><rect x="-9" y="-30" width="18" height="6" fill="#e8d6b0" ${st(2)}/></g>
+            ${bits([[30, 150, `<circle r="3" fill="#e0a95f"/>`], [214, 90, `<circle r="2.5" fill="#e0a95f"/>`], [30, 60, `<path d="M-4 -2 l8 0 l-2 4 l-4 0z" fill="#b8803a" ${st(1.4)}/>`],
+                [210, 30, `<circle r="2" fill="#f2d39a"/>`], [22, 196, `<path d="M-6 0 q6 -4 12 0 q-6 4 -12 0z" fill="#f3e6cc" ${st(1.4)}/>`]])}
             </g>`;
         } };
 
     // ---------- secret: the Lava Cave: The Lava Beast ----------
+    // A hulking golem of obsidian plates with magma glowing through the cracks and a molten core in its chest; curled
+    // horns, a mouth of lava, volcanic vents on its shoulders puffing smoke, crystals growing on one, fists dripping lava.
     B.cave = { name: "The Lava Beast", color: "#ff6a1f", taunt: "I am the mountain. Burn.", arena: ["#8a2a0a", "#120402"], fx: "embers",
-        art: u => `<defs>${lin(u("r"), [[0, "#4a3438"], [1, "#1c1216"]])}${lin(u("l"), [[0, "#fff1a0"], [0.5, "#ffb02e"], [1, "#ff4a10"]])}${rad(u("e"), [[0, "#ffffff"], [0.5, "#ffd03e"], [1, "#ff4a10"]], 0.5, 0.5, 0.6)}</defs>
-        <g class="bz-float">
-        <ellipse cx="120" cy="222" rx="96" ry="14" fill="url(#${u("l")})" ${st(3)}/>
-        <path d="M60 60 L44 18 L80 46 Z" fill="url(#${u("r")})" ${st()}/><path d="M180 60 L196 18 L160 46 Z" fill="url(#${u("r")})" ${st()}/>
-        <path d="M58 200 L46 120 L70 64 L120 48 L170 64 L194 120 L182 200 Z" fill="url(#${u("r")})" ${st()}/>
-        <path d="M80 80 L100 110 L88 140 L104 176 M150 76 L136 104 L156 132 L142 170 M120 120 L118 150 L126 196" fill="none" stroke="url(#${u("l")})" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="bz-glow"/>
-        <g class="bz-sway" style="transform-origin:58px 120px"><path d="M58 112 L22 150 L30 192 L62 182 L60 150 Z" fill="url(#${u("r")})" ${st()}/><path d="M34 160 l14 14 M40 182 l12 -6" stroke="url(#${u("l")})" stroke-width="4" stroke-linecap="round"/></g>
-        <g class="bz-sway" style="transform-origin:182px 120px;animation-delay:-1s"><path d="M182 112 L218 150 L210 192 L178 182 L180 150 Z" fill="url(#${u("r")})" ${st()}/><path d="M206 160 l-14 14 M200 182 l-12 -6" stroke="url(#${u("l")})" stroke-width="4" stroke-linecap="round"/></g>
-        ${eyes({ y: 92, gap: 22, r: 12, iris: `url(#${u("e")})`, brow: "angry", white: "#2a1a1e" })}
-        <path d="M92 124 L104 132 L116 124 L128 132 L140 124 L148 130 Q120 150 92 130 Z" fill="url(#${u("l")})" ${st(3)}/>
-        <path d="M110 140 q2 14 -2 22 M132 140 q-2 12 2 18" stroke="#ffb02e" stroke-width="4" stroke-linecap="round" fill="none" class="bz-glow"/>
-        ${bits([[30, 70, `<circle r="3" fill="#ffd03e"/>`], [210, 60, `<circle r="2.5" fill="#ff8a2a"/>`], [200, 200, `<circle r="3" fill="#ffd03e"/>`]])}
-        </g>` };
+        art: u => {
+            const crack = `url(#${u("l")})`;
+            const plate = (d, fill = `url(#${u("r")})`) => `<path d="${d}" fill="${fill}" ${st(3.5)}/>`;
+            const drip = (x, y, s) => `<path d="M${x} ${y} q${s * 0.6} ${s} 0 ${s * 1.6} q${-s * 0.6} ${-s * 0.6} 0 ${-s * 1.6}z" fill="${crack}" stroke="#8a1e08" stroke-width="1"/>`;
+            const crystal = (x, y, r, h) => `<path transform="translate(${x} ${y}) rotate(${r})" d="M-5 0 L-5 ${-h * 0.8} L0 ${-h} L5 ${-h * 0.8} L5 0 Z" fill="url(#${u("c")})" ${st(2)}/>`;
+            return `<defs>${lin(u("r"), [[0, "#54404a"], [0.5, "#2e2228"], [1, "#160e12"]], 0, 0, 1, 1)}${lin(u("l"), [[0, "#fff1a0"], [0.45, "#ffb02e"], [1, "#ff3d0a"]])}${rad(u("k"), [[0, "#ffffff"], [0.3, "#fff1a0"], [0.65, "#ff8a1f"], [1, "#a8200a"]], 0.5, 0.5, 0.55)}
+                ${rad(u("e"), [[0, "#ffffff"], [0.5, "#ffd03e"], [1, "#ff4a10"]], 0.5, 0.5, 0.6)}${lin(u("c"), [[0, "#e0ccff"], [0.5, "#9a7dff"], [1, "#4a2e8a"]], 0, 0, 1, 0)}${glowFilter(u("gl"), 3)}${glowFilter(u("gl2"), 7)}</defs>
+            <g class="bz-float">
+            <ellipse cx="120" cy="222" rx="104" ry="15" fill="${crack}" ${st(3)}/><g class="bz-glow"><ellipse cx="120" cy="220" rx="90" ry="10" fill="#fff1a0" opacity=".45" filter="url(#${u("gl2")})"/></g>
+            ${plate("M78 212 L74 168 L100 160 L104 214 Z")}${plate("M162 212 L166 168 L140 160 L136 214 Z")}
+            ${plate("M50 130 L66 76 L120 60 L174 76 L190 130 L172 178 L120 192 L68 178 Z")}
+            ${plate("M66 80 L96 68 L104 110 L74 124 Z", "#3a2c32")}${plate("M174 80 L144 68 L136 110 L166 124 Z", "#3a2c32")}${plate("M78 150 L100 140 L104 176 L82 172 Z", "#2a1e24")}${plate("M162 150 L140 140 L136 176 L158 172 Z", "#2a1e24")}
+            <g class="bz-glow"><circle cx="120" cy="140" r="30" fill="#ff8a1f" opacity=".5" filter="url(#${u("gl2")})"/></g>
+            <path d="M102 120 L116 112 L132 118 L142 134 L136 156 L120 164 L104 156 L98 138 Z" fill="url(#${u("k")})" ${st(3)}/>
+            <path d="M106 124 L100 104 M134 122 L144 104 M100 150 L84 158 M140 150 L156 160 M120 164 L120 190 M98 138 L74 130 M142 134 L166 130" stroke="${crack}" stroke-width="4" stroke-linecap="round" filter="url(#${u("gl")})" class="bz-glow"/>
+            <g class="bz-sway" style="transform-origin:62px 96px">${plate("M60 86 L30 112 L18 160 L30 190 L56 186 L64 150 L80 110 Z")}
+                ${plate("M10 184 L18 162 L50 160 L62 186 L48 204 L18 204 Z", "#3a2c32")}<path d="M22 180 l10 6 M36 176 l4 12 M50 178 l-4 10" stroke="${crack}" stroke-width="3.5" stroke-linecap="round" filter="url(#${u("gl")})"/>
+                ${drip(24, 204, 8)}${drip(44, 206, 6)}</g>
+            <g class="bz-sway" style="transform-origin:178px 96px;animation-delay:-1.2s">${plate("M180 86 L210 112 L222 160 L210 190 L184 186 L176 150 L160 110 Z")}
+                ${plate("M230 184 L222 162 L190 160 L178 186 L192 204 L222 204 Z", "#3a2c32")}<path d="M218 180 l-10 6 M204 176 l-4 12 M190 178 l4 10" stroke="${crack}" stroke-width="3.5" stroke-linecap="round" filter="url(#${u("gl")})"/>
+                ${drip(216, 204, 8)}${drip(198, 206, 6)}</g>
+            ${plate("M44 92 L56 60 L92 56 L98 84 Z", "#3a2c32")}${plate("M196 92 L184 60 L148 56 L142 84 Z", "#3a2c32")}
+            <path d="M62 62 L70 44 L80 44 L86 60 Z" fill="#2a1e24" ${st(2.5)}/><ellipse cx="75" cy="45" rx="6" ry="2.5" fill="${crack}"/>
+            <g class="bz-bit"><circle cx="76" cy="34" r="7" fill="#7a7076" opacity=".6"/><circle cx="70" cy="24" r="9" fill="#8a8086" opacity=".45"/><circle cx="80" cy="14" r="11" fill="#9a9096" opacity=".3"/></g>
+            ${crystal(160, 64, -20, 24)}${crystal(172, 62, 8, 32)}${crystal(184, 66, 30, 20)}
+            <g class="bz-glow"><circle cx="172" cy="46" r="16" fill="#c3a0ff" opacity=".35" filter="url(#${u("gl2")})"/></g>
+            <path d="M92 58 C64 48 58 20 76 10 C78 26 88 34 100 36" fill="#1a1216" ${st(3.5)}/><path d="M148 58 C176 48 182 20 164 10 C162 26 152 34 140 36" fill="#1a1216" ${st(3.5)}/>
+            <path d="M78 16 C74 28 82 40 96 44 M162 16 C166 28 158 40 144 44" stroke="${crack}" stroke-width="2.5" fill="none" filter="url(#${u("gl")})"/>
+            ${plate("M92 44 L120 34 L148 44 L154 72 L140 96 L100 96 L86 72 Z")}
+            <path d="M98 50 L110 46 M130 46 L142 50 M104 62 L116 60" stroke="#6a5a62" stroke-width="2"/>
+            ${eyes({ y: 66, gap: 15, r: 9, iris: `url(#${u("e")})`, brow: "angry", white: "#1a0e0e", glow: u("gl") })}
+            <path d="M100 82 L108 90 L114 82 L120 90 L126 82 L132 90 L140 82 Q140 98 120 100 Q100 98 100 82 Z" fill="${crack}" ${st(2.5)} filter="url(#${u("gl")})"/>
+            <path d="M112 98 q0 10 -3 16 M128 98 q2 8 0 14" stroke="#ffb02e" stroke-width="3.5" stroke-linecap="round" fill="none" class="bz-glow"/>
+            ${bits([[26, 60, `<circle r="3" fill="#ffd03e" filter="url(#${u("gl")})"/>`], [214, 30, `<circle r="2.5" fill="#ff8a2a"/>`], [204, 136, `<path d="M-5 -3 l7 -2 l3 5 l-6 3z" fill="#3a2c32" ${st(1.4)}/>`],
+                [30, 130, `<circle r="2" fill="#ffb02e"/>`], [120, 14, `<circle r="2.5" fill="#ffd03e" filter="url(#${u("gl")})"/>`]])}
+            </g>`;
+        } };
 
     // =============================================================================================
     // Rendering

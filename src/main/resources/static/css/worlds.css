@@ -2023,7 +2023,7 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
 /* ======================= the four secret worlds (js/worlds/secret-worlds.js) ======================= */
 /* The Great Hollow: inside the oldest oak (Acorn Woods' type, warmer and darker) */
 [data-world="hollow"] {
-    --bg: #2a170c; --surface: rgba(255, 244, 226, .92); --surface-solid: #fff4e2; --surface-2: #f3e0c2; --ink: #3a2210; --muted: #7a5636;
+    --bg: #f6e6c8; --surface: rgba(255, 244, 226, .92); --surface-solid: #fff4e2; --surface-2: #f3e0c2; --ink: #3a2210; --muted: #7a5636;
     --line: #dcbf94; --hover: #f1dcb8; --cell: #fff8ec; --cell-ink: #3a2210; --grid: #4e2c14; --num: #8a6040;
     --block: repeating-linear-gradient(90deg, rgba(0, 0, 0, .2) 0 2px, transparent 2px 6px), linear-gradient(#5a3418, #3a200c);
     --accent: #c8681c; --accent-2: #2f9e7a; --accent-ink: #ffffff; --word: #fbdcae; --sel: #f0a85c; --solved: #f7e6c6;
@@ -2041,7 +2041,7 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
 }
 /* Atlantis: marble, gold and deep water */
 [data-world="atlantis"] {
-    --bg: #0b5a8a; --surface: rgba(244, 251, 255, .92); --surface-solid: #f4fbff; --surface-2: #dcf0fa; --ink: #0d2c44; --muted: #4f7590;
+    --bg: #dff4fb; --surface: rgba(244, 251, 255, .92); --surface-solid: #f4fbff; --surface-2: #dcf0fa; --ink: #0d2c44; --muted: #4f7590;
     --line: #b6d8ea; --hover: #e2f3fb; --cell: #ffffff; --cell-ink: #0d2c44; --grid: #12466a; --num: #4f7590;
     --block: linear-gradient(135deg, #1d6f99, #0b3a5e);
     --accent: #1f8fb8; --accent-2: #d9a93a; --accent-ink: #ffffff; --word: #cdeefa; --sel: #8fd3ef; --solved: #e6f6fd;
@@ -2077,7 +2077,7 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
 }
 /* The Lava Cave: obsidian and fire (always a little dark, even in light) */
 [data-world="cave"] {
-    --bg: #3a1408; --surface: rgba(255, 240, 226, .92); --surface-solid: #fff0e2; --surface-2: #f6dcc6; --ink: #3a1408; --muted: #84482a;
+    --bg: #f8e0c4; --surface: rgba(255, 240, 226, .92); --surface-solid: #fff0e2; --surface-2: #f6dcc6; --ink: #3a1408; --muted: #84482a;
     --line: #e6bfa0; --hover: #f8e0cc; --cell: #fff7ef; --cell-ink: #2a0e04; --grid: #2a1410; --num: #8a4a2a;
     --block: linear-gradient(135deg, #2a1a24, #120a10);
     --accent: #e2481a; --accent-2: #ffb02e; --accent-ink: #ffffff; --word: #ffd8bc; --sel: #ff9a62; --solved: #ffe8d6;
