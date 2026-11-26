@@ -59,8 +59,10 @@ const Worlds = (() => {
     let cap = 1.25, slow = 0;
     function size() {
         dpr = Math.min(devicePixelRatio || 1, U.motion() === "lite" ? 1 : cap);
-        W = innerWidth;
-        H = innerHeight;
+        // (the size it's shown at: width 100% leaves out a classic scrollbar, which innerWidth counts, and drawing for
+        // innerWidth squeezed every frame sideways in Chrome on Windows)
+        W = document.documentElement.clientWidth || innerWidth;
+        H = document.documentElement.clientHeight || innerHeight;
         cv.width = Math.round(W * dpr);
         cv.height = Math.round(H * dpr);
         input.W = W;
@@ -116,12 +118,17 @@ const Worlds = (() => {
     }
 
     document.addEventListener("visibilitychange", () => { if (!document.hidden) loop(); });
-    addEventListener("resize", U.debounce(() => {
+    const resized = U.debounce(() => {
+        const de = document.documentElement;
+        if (scene && W === (de.clientWidth || innerWidth) && H === (de.clientHeight || innerHeight) && dpr === Math.min(devicePixelRatio || 1, U.motion() === "lite" ? 1 : cap)) return;
         size();
         if (scene && scene.resize) scene.resize(W, H);
         else if (current) build();
         loop();
-    }, 150));
+    }, 150);
+    addEventListener("resize", resized);
+    // (a scrollbar coming or going changes the page's width without resizing the window)
+    if (typeof ResizeObserver === "function") new ResizeObserver(resized).observe(document.documentElement);
     Settings.on(key => {
         if (key === "design") use(Settings.get("design"));
         if (key === "theme" && current) use(current.id, { force: true });

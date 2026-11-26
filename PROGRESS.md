@@ -432,7 +432,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Cursed Angel 1
 - [x] Cursed Angel: swap phases 3 and 4 (2026-11-26: rift-p3 is now Determined Pursuit, rift-p4 the Boss Battle #2
       chorus; files, songs.json loops, credits.json and CREDITS.txt swapped together)
-- [ ] Chrome stretched background (check every page and window shape)
+- [x] Chrome stretched background (2026-11-26: the world background and the effects layer were drawn for innerWidth,
+      which counts Chrome's classic scrollbar, and shown at 100%, which doesn't, so every frame was squeezed sideways;
+      Vivaldi's overlay scrollbars take no room. They now use the shown size, and follow a scrollbar coming or going
+      (ResizeObserver). Measured 1.000 drawn-to-shown on pages with and without a scrollbar. Asked in REVIEW.md)
 - [x] Deep Space: no black box behind the black hole (2026-11-26: not found on the island, the Atlas or the scene
       in either mode; it was most likely on the old scrolling map, which is gone. Asked in REVIEW.md)
 - [x] Celestial Rift: chains attached to the blocks beside them (2026-11-26: every lantern hung from the same point,

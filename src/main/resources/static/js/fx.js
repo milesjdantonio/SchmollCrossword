@@ -18,13 +18,14 @@ const FX = (() => {
 
     function size() {
         dpr = Math.min(devicePixelRatio || 1, 1.5);          // (sparks and bursts don't need more, and it's a full-screen canvas)
-        W = innerWidth;
-        H = innerHeight;
+        W = document.documentElement.clientWidth || innerWidth;     // (the size it's shown at: see worlds.js size())
+        H = document.documentElement.clientHeight || innerHeight;
         cv.width = W * dpr;
         cv.height = H * dpr;
     }
     size();
     addEventListener("resize", size);
+    if (typeof ResizeObserver === "function") new ResizeObserver(() => { if (W !== document.documentElement.clientWidth || H !== document.documentElement.clientHeight) size(); }).observe(document.documentElement);
 
     // (the canvas is hidden while nothing is on it: a full-screen layer costs the graphics chip every frame even when
     // it's empty)
