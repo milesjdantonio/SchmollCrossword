@@ -61,10 +61,10 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       Lava Cave after Volcano Island). Each now has its own scene, board decorations, boss, arena, arrival scene,
       hero gifts, music, 4 abilities and 6 boss moves (none copies of another world's), each with its own animation.
       Still borrowed from the parent: the title card, screen transition and sounds. Tell me what to change first.
-- [ ] **The secret worlds' music.** 29 CC0 songs. Listening copies are in `boss-music/17-hollow (The Giant Squirrel)`,
-      `18-atlantis...`, `19-dunes...`, `20-cave (The Lava Beast)` (each boss phase, with a loop-seam preview) and
-      `boss-music/levels (secret worlds)` (the 16 level songs). Each boss phase should sound more intense than the
-      one before. Say which ones to swap.
+- [ ] **The secret worlds' music.** Poseidon's phases 1-2, all three of the Sandworm's and all five of the Lava Beast's
+      are now composed for the game (2026-11-26). Listen in `boss-music/18-atlantis (Poseidon)`, `19-dunes (The Sandworm)`
+      and `20-cave (The Lava Beast)` ("as the game plays it", and "whole loop, then past the seam" to check the loop).
+      The level songs and the Giant Squirrel's are still the CC0 picks in `17-hollow...` and `levels (secret worlds)`.
 - [ ] **The Celestial Rift is now a secret like the others.** After the Void: four fallen stars on Deep Space blink in
       turn (repeat the order), then a riddle, then a gate.
 - [x] **The live site closes on November 29** (pushed to `main`): a countdown until then, then a "sorry, under

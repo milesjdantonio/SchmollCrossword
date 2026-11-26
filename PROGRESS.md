@@ -454,6 +454,19 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [x] Every move and ability has its own staged effect (`js/spells-secret.js`, 033a11b; tested in real fights)
 - [x] Board decorations: a mark per typed square, a trim along finished words (`deco` in secret-worlds.js, `hw-`,
       `at-`, `dn-`, `lc-` in worlds.css)
+- [x] 2026-11-26 (the user: "as detailed and grand as Celestial Rift", "the sunken dunes needs a full rework", the
+      bosses "need some serious work", "re color the corruption bar", music, "each song for each level is unique"):
+      new backgrounds in `js/worlds/secret-scenes-a.js` (Hollow, Atlantis) and `-b.js` (Dunes rebuilt with a breaching
+      worm, Cave); the four bosses redrawn in bosses.js; every secret world's level meter is its own (corruption.js
+      THEMES: window, meter name, tricks, spells, seep, sounds, lines, colours, balance, easiest Hollow to hardest
+      Rift); composed boss songs (Poseidon 1-2, Sandworm 1-3, Lava Beast 1-5; kit and script copied to
+      `boss-music/drafts/composed-2026-11-26/`); Atlantis level 4 swapped (Aquaria was also Coral Reef 3); light
+      modes made readable (--bg was dark under dark text).
+- [x] Speed (the user: "lags out for 3 seconds when switching light to dark"): scene warm-ups draw into a 1x1
+      canvas (worlds.js `scratch`), world cards paint a few a frame and are cached (app.js `previewCache`). Found:
+      the first visit to each page in a browser session costs ~1.3 s of GPU raster (shader/glyph warm-up), then
+      ~0.2 s. Not fixed yet: an idle-time warm-up of the Campaign and Daily pages (they build on demand and the
+      campaign switches worlds, so it needs care).
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
       is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to
