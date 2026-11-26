@@ -28,7 +28,7 @@
         const MARBLE = night ? ["#cfc4e6", "#8a7cae", "#5e5286"] : ["#fffaf0", "#e2d6c2", "#bfae94"];
         const TRIM = night ? "#e8c66a" : "#d9a640";
         function sprite(kind, s) {
-            const w = Math.ceil(s * 2.4), h = Math.ceil(s * 3), cv = Worlds.canvas(w, h), g = cv.getContext("2d");
+            const w = Math.ceil(s * 2.4), h = Math.ceil(s * (kind === "column" ? 3.4 : 3)), cv = Worlds.canvas(w, h), g = cv.getContext("2d");   // (the column's rock base reaches lower)
             const lg = g.createLinearGradient(0, 0, w, 0);
             lg.addColorStop(0, MARBLE[1]); lg.addColorStop(0.35, MARBLE[0]); lg.addColorStop(1, MARBLE[2]);
             g.translate(w / 2, h * 0.55);
@@ -163,6 +163,9 @@
             g.globalAlpha = 1;
             g.restore();
         }
+        // where each ruin's lantern hangs from, in its own size: the tip of the column's rock base, the underside of
+        // the arch's crown, the wing's lower edge
+        const HOOK = { column: [0.25, 1.42], arch: [0.22, -0.74], wing: [-0.2, 0.22], slab: [0, 0.6] };
         // a crystal lantern of starlight hanging off a ruin on a thin golden cord, swaying
         function drawLantern(g, x, y, s, t, ph) {
             const sway = Math.sin(t * 0.9 + ph) * 0.18, len = s * 0.8;
@@ -278,7 +281,13 @@
                     g.globalAlpha = 0.55 + r.z * 0.4;
                     g.drawImage(r.img, -r.img.width / 2, -r.img.height * 0.55);
                     g.globalAlpha = 1;
-                    if (r.lantern) drawLantern(g, r.s * 0.3, r.s * 0.75, r.s, t, r.ph);
+                    if (r.lantern) {                            // hung from a point on the stone itself, the cord straight down
+                        const [hx, hy] = HOOK[r.kind];
+                        g.translate(r.s * hx, r.s * hy); g.rotate(-(r.rot + Math.sin(t * 0.3 + r.ph) * 0.03));
+                        g.strokeStyle = TRIM; g.lineWidth = Math.max(1, r.s * 0.025);
+                        g.beginPath(); g.arc(0, r.s * 0.03, r.s * 0.035, 0, TAU); g.stroke();
+                        drawLantern(g, 0, r.s * 0.065, r.s, t, r.ph);
+                    }
                     g.restore();
                 }
                 // feathers falling, black ones too at night (the angel's)

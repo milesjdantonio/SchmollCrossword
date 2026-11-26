@@ -5,6 +5,14 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
+- [ ] **The black box behind Deep Space's black hole.** I couldn't find it (2026-11-26): the island, the Atlas and
+      the scene behind Home show no box in light or dark. It was probably on the old scrolling map, which is gone.
+      If you still see one, say where (which screen, light or dark, which browser).
+- [ ] **Home, Stats and Settings** (2026-11-26) were redone so they don't read as AI-made: the greeting is the
+      title with what's left today, each daily is a row with a small grid of its size, the week is a row of
+      crossword squares, and every panel is flat in the world's own colours. Open Home, Stats and Settings in a few
+      worlds and say if anything feels off.
+
 - [x] **Pick a campaign design.** Answered (2026-11-07): a mix of A (World Stage) and B (The Everbook), combined
       as I see fit. The combined version will be at http://localhost:8080/demo before it goes into the game.
 - [x] **Redesign direction.** Answered: the campaign screen gets the big redesign; Home gets a refresh, not a

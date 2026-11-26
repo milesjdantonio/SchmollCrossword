@@ -321,19 +321,19 @@
   "file": "rift-p3.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 72.7069,
-  "title": "Boss Battle #2 (Symphonic Metal), with the melody of its 8-bit original",
-  "author": "nene",
-  "page": "boss-battle-2-symphonic-metal"
+  "loopEnd": 114.5,
+  "title": "Determined Pursuit (Epic Orchestra Loop)",
+  "author": "Emma_MA",
+  "page": "determined-pursuit-epic-orchestra-loop"
  },
  "rift-p4": {
   "file": "rift-p4.mp3",
   "hit": 6.5,
   "loopStart": 6.5,
-  "loopEnd": 114.5,
-  "title": "Determined Pursuit (Epic Orchestra Loop)",
-  "author": "Emma_MA",
-  "page": "determined-pursuit-epic-orchestra-loop"
+  "loopEnd": 72.7069,
+  "title": "Boss Battle #2 (Symphonic Metal), with the melody of its 8-bit original",
+  "author": "nene",
+  "page": "boss-battle-2-symphonic-metal"
  },
  "rift-p5": {
   "file": "rift-p5.mp3",

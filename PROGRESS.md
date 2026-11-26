@@ -428,10 +428,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Loop fixes (measured; previews for the user to listen to): Old Grumble Owl 1, King Sourgum 1, Kraken 1,
       Yeti 1, Thunderhead 1, Sir Squall 2, Sphinx 1, Ringmaster 1, Mega Unit X 1-3, Magma Wyrm 1-3, Void 2-5,
       Cursed Angel 1
-- [ ] Cursed Angel: swap phases 3 and 4
+- [x] Cursed Angel: swap phases 3 and 4 (2026-11-26: rift-p3 is now Determined Pursuit, rift-p4 the Boss Battle #2
+      chorus; files, songs.json loops, credits.json and CREDITS.txt swapped together)
 - [ ] Chrome stretched background (check every page and window shape)
-- [ ] Deep Space: no black box behind the black hole
-- [ ] Celestial Rift: chains attached to the blocks beside them
+- [x] Deep Space: no black box behind the black hole (2026-11-26: not found on the island, the Atlas or the scene
+      in either mode; it was most likely on the old scrolling map, which is gone. Asked in REVIEW.md)
+- [x] Celestial Rift: chains attached to the blocks beside them (2026-11-26: every lantern hung from the same point,
+      which was air beside the column, inside the arch and under the wing; each ruin now has its own hook on the
+      stone (`HOOK` in rift.js) with a gold ring, the cord hangs straight down, and the column's rock base is no
+      longer cut off its picture)
 - [ ] Credits after the Cursed Angel: no boss screens; the caption matches the background
 - [ ] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged)
 
@@ -510,7 +515,7 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       labels lose their emoji), FX's text sprites draw the icon, three canvas spots draw icons, the CSS ::after
       pictures use `var(--g-name)`, index.html's symbols are `<i class="gi gi-...">`. The emoji in the source are only
       names now. A browser sweep of every page, the Everbook, a boss fight and How to Play found none left.
-- [x] The refresh of the non-campaign pages (done 2026-11-26; see "Home, Stats and Settings refreshed" above; the
+- [x] The refresh of the non-campaign pages (done 2026-11-26; see "Home, Stats and Settings without the generated look" above; the
       Daily page is the play stage, already redone).
 - [x] First-visit lag (2026-11-26, the user: "fix the first-visit lag on campaign and daily"): the first opening of a
       page made the GPU build its programs for everything on it (gradients alone were half). While Home sits idle

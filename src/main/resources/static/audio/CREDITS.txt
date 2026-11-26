@@ -63,8 +63,8 @@ All from https://opengameart.org/content/<page>
                   CC-BY 3.0. Changes: looped, mastered, MP3.
   rift-p2.mp3     Blackmoor Colossus (Colossal Boss Battle Theme)  Music by Matthew Pablo, www.matthewpablo.com  colossal-boss-battle-theme
                   CC-BY 3.0. Changes: looped, mastered, MP3.
-  rift-p3.mp3     Boss Battle #2 (Symphonic Metal)              nene                                  boss-battle-2-symphonic-metal   (+ the melody of the original 8-bit Boss Battle #2, nene, CC0: opengameart.org/content/boss-battle-2-8-bit)
-  rift-p4.mp3     Determined Pursuit (Epic Orchestra Loop)      Emma_MA                               determined-pursuit-epic-orchestra-loop
+  rift-p4.mp3     Boss Battle #2 (Symphonic Metal)              nene                                  boss-battle-2-symphonic-metal   (+ the melody of the original 8-bit Boss Battle #2, nene, CC0: opengameart.org/content/boss-battle-2-8-bit)
+  rift-p3.mp3     Determined Pursuit (Epic Orchestra Loop)      Emma_MA                               determined-pursuit-epic-orchestra-loop
   rift-p5.mp3     Boss Battle 8 (metal)                         nene                                  boss-battle-8-metal
   The Giant Squirrel (the Great Hollow) (a secret world, 2026-11-25):
   hollow.mp3      Fairy Boss Battles                            MintoDog                              fairy-boss-battles
