@@ -364,21 +364,21 @@
  },
  "atlantis": {
   "file": "atlantis.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 61.3831,
-  "title": "A Legend Will Rise (Orchestral)",
-  "author": "CodeManu",
-  "page": "a-legend-will-rise-orchestral"
+  "hit": 6.8182,
+  "loopStart": 6.8182,
+  "loopEnd": 61.3636,
+  "title": "The Tide King",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "atlantis-p2": {
   "file": "atlantis-p2.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 59.6995,
-  "title": "RPG Battle Theme II",
-  "author": "CleytonKauffman",
-  "page": "rpg-battle-theme-ii"
+  "hit": 6.4,
+  "loopStart": 6.4,
+  "loopEnd": 57.6,
+  "title": "Wrath of the Deep",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "atlantis-p3": {
   "file": "atlantis-p3.mp3",
@@ -391,74 +391,74 @@
  },
  "dunes": {
   "file": "dunes.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 111.9,
-  "title": "Darbuka Delight",
-  "author": "Adiutorium",
-  "page": "darbuka-delight"
+  "hit": 6.4286,
+  "loopStart": 6.4286,
+  "loopEnd": 75.0,
+  "title": "The Ground Trembles",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "dunes-p2": {
   "file": "dunes-p2.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 110.15,
-  "title": "White Limestone",
-  "author": "Bobjt",
-  "page": "white-limestone"
+  "hit": 6.6667,
+  "loopStart": 6.6667,
+  "loopEnd": 77.7778,
+  "title": "Out of the Sand",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "dunes-p3": {
   "file": "dunes-p3.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 61.5545,
-  "title": "Desert Zone",
-  "author": "Concongames",
-  "page": "desert-zone-0"
+  "hit": 6.3636,
+  "loopStart": 6.3636,
+  "loopEnd": 64.5455,
+  "title": "Swallowed Whole",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "cave": {
   "file": "cave.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 122.5,
-  "title": "Fight, run, breath deeply",
-  "author": "Loyalty Freak Music",
-  "page": "fight-run-breath-deeply"
+  "hit": 6.8571,
+  "loopStart": 6.8571,
+  "loopEnd": 61.7143,
+  "title": "Magma Rising",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "cave-p2": {
   "file": "cave-p2.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 31.0,
-  "title": "Lava Dungeon Battle",
-  "author": "Sorth",
-  "page": "lava-dungeon-battle"
+  "hit": 6.4,
+  "loopStart": 6.4,
+  "loopEnd": 57.6,
+  "title": "Molten Core",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "cave-p3": {
   "file": "cave-p3.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 45.3519,
-  "title": "Boss Battle #7 (Metal)",
-  "author": "nene",
-  "page": "boss-battle-7-metal"
+  "hit": 6.0,
+  "loopStart": 6.0,
+  "loopEnd": 54.0,
+  "title": "Fire Within the Mountain",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "cave-p4": {
   "file": "cave-p4.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 111.0,
-  "title": "8-bit Danger!! Strong Boss",
-  "author": "HydroGene",
-  "page": "8-bit-danger-strong-boss"
+  "hit": 7.0588,
+  "loopStart": 7.0588,
+  "loopEnd": 52.2353,
+  "title": "Eruption",
+  "author": "Composed for the game",
+  "page": "composed"
  },
  "cave-p5": {
   "file": "cave-p5.mp3",
-  "hit": 6.5,
-  "loopStart": 8.5,
-  "loopEnd": 28.55,
-  "title": "Fast fight / battle music",
-  "author": "Bonsaiheldin",
-  "page": "fast-fight-battle-music"
+  "hit": 6.6667,
+  "loopStart": 6.6667,
+  "loopEnd": 49.3333,
+  "title": "Heart of the Volcano",
+  "author": "Composed for the game",
+  "page": "composed"
  }
 }

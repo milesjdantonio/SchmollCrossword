@@ -69,20 +69,9 @@ All from https://opengameart.org/content/<page>
   The Giant Squirrel (the Great Hollow) (a secret world, 2026-11-25):
   hollow.mp3      Fairy Boss Battles                            MintoDog                              fairy-boss-battles
   hollow-p2.mp3   Fairy Battles                                 MintoDog                              fairy-battles
-  Poseidon (Atlantis) (a secret world, 2026-11-25):
-  atlantis.mp3    A Legend Will Rise (Orchestral)               CodeManu                              a-legend-will-rise-orchestral
-  atlantis-p2.mp3 RPG Battle Theme II                           CleytonKauffman                       rpg-battle-theme-ii
+  Poseidon (Atlantis) (a secret world, 2026-11-25; phases 1 and 2 are composed, below):
   atlantis-p3.mp3 Great Boss                                    Spring Spring                         great-boss
-  The Sandworm (the Sunken Dunes) (a secret world, 2026-11-25):
-  dunes.mp3       Darbuka Delight                               Adiutorium                            darbuka-delight
-  dunes-p2.mp3    White Limestone                               Bobjt                                 white-limestone
-  dunes-p3.mp3    Desert Zone                                   Concongames                           desert-zone-0
-  The Lava Beast (the Lava Cave) (a secret world, 2026-11-25):
-  cave.mp3        Fight, run, breath deeply                     Loyalty Freak Music                   fight-run-breath-deeply
-  cave-p2.mp3     Lava Dungeon Battle                           Sorth                                 lava-dungeon-battle
-  cave-p3.mp3     Boss Battle #7 (Metal)                        nene                                  boss-battle-7-metal
-  cave-p4.mp3     8-bit Danger!! Strong Boss                    HydroGene                             8-bit-danger-strong-boss
-  cave-p5.mp3     Fast fight / battle music                     Bonsaiheldin                          fast-fight-battle-music
+  (The Sandworm's and the Lava Beast's songs, and Poseidon's first two, are composed for the game: see below.)
 
 Composed for this game (composed by Claude as MIDI, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
@@ -98,6 +87,18 @@ FluidSynth):
                   bassoon, xylophone, bells, organ, choir; no guitar: the user, 2026-10-14)
   library-p2.mp3  Ink and Fury: an organ toccata in C minor (organ, harpsichord, spiccato strings, horns, trombones,
                   trumpets, choir, timpani, orchestral drums)
+  atlantis.mp3    The Tide King: Poseidon's first phase, a rolling 6/8 sea epic in D minor (strings in waves, horns, trumpets,
+                  choir, harp, timpani)
+  atlantis-p2.mp3 Wrath of the Deep: Poseidon's second phase, 150 bpm in E minor (spiccato strings, war drums, low brass, choir)
+  dunes.mp3       The Ground Trembles: the Sandworm's first phase, 84 bpm in E Phrygian dominant (taiko, low brass, choir, shanai)
+  dunes-p2.mp3    Out of the Sand: its second phase, 108 bpm (darbuka groove, oud, running strings, shanai, trumpets)
+  dunes-p3.mp3    Swallowed Whole: its third phase, 132 bpm (full orchestra and choir, fanfares)
+  cave.mp3        Magma Rising: the Lava Beast's first phase, symphonic metal at 140 bpm in E minor (distorted guitars, bass,
+                  drums, strings, choir, brass)
+  cave-p2.mp3     Molten Core: its second phase, 150 bpm, galloping
+  cave-p3.mp3     Fire Within the Mountain: its third phase, 160 bpm, brass stabs, choir, a harmonised lead
+  cave-p4.mp3     Eruption: its fourth phase, 170 bpm, tremolo riffs, blast beats, organ, racing strings
+  cave-p5.mp3     Heart of the Volcano: its last phase, 180 bpm in F# minor, a half-time breakdown into blast beats
 
 Level music (audio/music/level-<world>-<1..4>.mp3, added 2026-10-10): a calm song for every campaign level, each one
 different, picked to fit its world. All CC0 from https://opengameart.org/content/<page> (each page checked). For the

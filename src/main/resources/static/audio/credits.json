@@ -210,70 +210,10 @@
    "page": "fairy-battles"
   },
   {
-   "file": "atlantis.mp3",
-   "title": "A Legend Will Rise (Orchestral)",
-   "author": "CodeManu",
-   "page": "a-legend-will-rise-orchestral"
-  },
-  {
-   "file": "atlantis-p2.mp3",
-   "title": "RPG Battle Theme II",
-   "author": "CleytonKauffman",
-   "page": "rpg-battle-theme-ii"
-  },
-  {
    "file": "atlantis-p3.mp3",
    "title": "Great Boss",
    "author": "Spring Spring",
    "page": "great-boss"
-  },
-  {
-   "file": "dunes.mp3",
-   "title": "Darbuka Delight",
-   "author": "Adiutorium",
-   "page": "darbuka-delight"
-  },
-  {
-   "file": "dunes-p2.mp3",
-   "title": "White Limestone",
-   "author": "Bobjt",
-   "page": "white-limestone"
-  },
-  {
-   "file": "dunes-p3.mp3",
-   "title": "Desert Zone",
-   "author": "Concongames",
-   "page": "desert-zone-0"
-  },
-  {
-   "file": "cave.mp3",
-   "title": "Fight, run, breath deeply",
-   "author": "Loyalty Freak Music",
-   "page": "fight-run-breath-deeply"
-  },
-  {
-   "file": "cave-p2.mp3",
-   "title": "Lava Dungeon Battle",
-   "author": "Sorth",
-   "page": "lava-dungeon-battle"
-  },
-  {
-   "file": "cave-p3.mp3",
-   "title": "Boss Battle #7 (Metal)",
-   "author": "nene",
-   "page": "boss-battle-7-metal"
-  },
-  {
-   "file": "cave-p4.mp3",
-   "title": "8-bit Danger!! Strong Boss",
-   "author": "HydroGene",
-   "page": "8-bit-danger-strong-boss"
-  },
-  {
-   "file": "cave-p5.mp3",
-   "title": "Fast fight / battle music",
-   "author": "Bonsaiheldin",
-   "page": "fast-fight-battle-music"
   }
  ],
  "level": [
@@ -760,6 +700,16 @@
   "Victory",
   "Defeat",
   "The Restless Stacks (the Phantom Librarian's first phase)",
-  "Ink and Fury (the Phantom Librarian's second phase)"
+  "Ink and Fury (the Phantom Librarian's second phase)",
+  "The Tide King (Poseidon's first phase)",
+  "Wrath of the Deep (Poseidon's second phase)",
+  "The Ground Trembles (the Sandworm's first phase)",
+  "Out of the Sand (the Sandworm's second phase)",
+  "Swallowed Whole (the Sandworm's third phase)",
+  "Magma Rising (the Lava Beast's first phase)",
+  "Molten Core (the Lava Beast's second phase)",
+  "Fire Within the Mountain (the Lava Beast's third phase)",
+  "Eruption (the Lava Beast's fourth phase)",
+  "Heart of the Volcano (the Lava Beast's last phase)"
  ]
 }
