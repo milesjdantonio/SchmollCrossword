@@ -437,7 +437,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       which was air beside the column, inside the arch and under the wing; each ruin now has its own hook on the
       stone (`HOOK` in rift.js) with a gold ring, the cord hangs straight down, and the column's rock base is no
       longer cut off its picture)
-- [ ] Credits after the Cursed Angel: no boss screens; the caption matches the background
+- [x] Credits after the Cursed Angel: no boss screens; the caption matches the background (2026-11-26: the fight's
+      `.in-boss #world-bg { opacity: 0 }` was still on, so the world never showed while the caption named each one,
+      and the angel's arena stayed up; credits.css now hides a fight's arena and shows the world while the roll is on,
+      and the ending roll (`Credits.show({ ending: true })`) has the worlds only. Checked by faking a fight's end)
 - [ ] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged)
 
 ### Phase 7: Retention

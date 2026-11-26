@@ -45,3 +45,6 @@ html.credits-on, html.credits-on body { overflow: hidden; }
 /* a boss arena behind the credits (credits.js): the same backdrop and chaos as a boss's later phases */
 html.credits-on .boss-arena.cr-show { display: block; }
 html.credits-on:has(.boss-arena.cr-show) #world-bg { opacity: 0 !important; }
+/* a fight's arena (still up behind the roll after the Cursed Angel) steps aside, so the worlds named are the ones seen */
+html.credits-on .boss-arena:not(.cr-show) { display: none; }
+html.credits-on:not(:has(.boss-arena.cr-show)) #world-bg { opacity: 1 !important; }

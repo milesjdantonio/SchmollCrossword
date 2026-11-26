@@ -2,7 +2,8 @@
 // background moves through every world, with a calm level song playing (the Level Music slider
 // applies). Escape, the Close button or reaching the end closes it and puts the player's own world back.
 // Every music credit comes from audio/credits.json (made from audio/CREDITS.txt, so the two always agree).
-// Credits.show({ ending: true }) also rolls them after the Cursed Angel's epilogue, the end of the story: it resolves when they close, and puts back the world being played instead of the Settings one.
+// Credits.show({ ending: true }) also rolls them after the Cursed Angel's epilogue, the end of the story: worlds only (no boss arenas), it
+// resolves when they close, and puts back the world being played instead of the Settings one.
 const Credits = (() => {
     const SONG = "level-sky-2";                // Napping On A Cloud by congusbongus (CC0): calm, and it loops
     const WORLD_MS = 6500;                     // how long each world shows behind the roll
@@ -67,10 +68,11 @@ const Credits = (() => {
         scroller.focus();
         Sound.levelSong(SONG, { v: 0.5, fade: 1.5 });
 
-        // behind the roll, in a random order: every world's calm
-        // scene, and every boss's arena going wild (its own chaos from a boss's later phase: chaos.js). A shuffled bag,
-        // so each one shows once before any repeats.
-        const scenes = [...worlds.map(id => ({ id })), ...Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretEarned())).map(id => ({ id, boss: true }))];
+        // behind the roll, in a random order: every world's calm scene, and (from Settings) every boss's arena going
+        // wild (its own chaos from a boss's later phase: chaos.js). After the story's end the bosses are beaten, so it's
+        // the worlds alone. A shuffled bag, so each one shows once before any repeats.
+        const bossScenes = afterStory ? [] : Chaos.worlds.filter(id => Worlds.byId[id] && Bosses.info(id) && (!Worlds.byId[id].secret || Campaign.secretEarned())).map(id => ({ id, boss: true }));
+        const scenes = [...worlds.map(id => ({ id })), ...bossScenes];
         let bag = [], shown = null;
         const draw = () => {
             if (!bag.length) bag = scenes.slice().sort(() => Math.random() - 0.5);
@@ -90,6 +92,7 @@ const Credits = (() => {
             label.textContent = s.boss ? `${Bosses.info(s.id).name} · ${Worlds.byId[s.id].name}` : Worlds.byId[s.id].name;
             label.classList.remove("in"); void label.offsetWidth; label.classList.add("in");
         };
+        arenaOff();
         nextWorld();
         const worldTimer = still ? 0 : setInterval(nextWorld, WORLD_MS);
 
