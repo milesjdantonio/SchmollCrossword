@@ -424,7 +424,9 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       customisable keys, the grid usable with a screen reader (role grid, live clue announcements), boss assist
 
 ### Phase 6: Audio and visual polish
-- [ ] Volume: default 80 sounds like today's 100; 100 is louder
+- [x] Volume: default 80 sounds like today's 100; 100 is louder (2026-11-26: Master Volume has its own curve in util.js,
+      `masterGainOf`: 80% = full, 1% = 50 dB below, 100% = +6 dB (2x), sound.js's compressor in front of the speakers;
+      saved volumes move to the same loudness on it (`soundV: 3`, `masterPosOf`: 96% -> 77%); new players start at 80%)
 - [ ] Loop fixes (measured; previews for the user to listen to): Old Grumble Owl 1, King Sourgum 1, Kraken 1,
       Yeti 1, Thunderhead 1, Sir Squall 2, Sphinx 1, Ringmaster 1, Mega Unit X 1-3, Magma Wyrm 1-3, Void 2-5,
       Cursed Angel 1

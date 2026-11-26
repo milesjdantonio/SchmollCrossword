@@ -346,7 +346,7 @@ const Settings = (() => {
         // Sound. Every
         // volume is a slider position from 0 to 1; Settings.gain(key) turns it into loudness (see VOLUME_DB).
         sound: true,            // all sound on or off: the mute button by Master Volume (sound effects are made in code, see sound.js)
-        volume: 0.96,           // Master Volume: everything
+        volume: 0.8,            // Master Volume: everything (80% is full loudness; above that is louder still, see masterGainOf)
         levelMusicVolume: 1,    // each campaign level's own chill song (audio/music/level-<world>-<n>.mp3), and the credits
         bossMusicVolume: 1,     // boss fights, the story, winning and losing (also the slider in every boss fight); 0 = off
         fxVolume: 1,            // All Effects
@@ -363,6 +363,16 @@ const Settings = (() => {
     const gainOf = x => (x > 0 ? Math.pow(10, (Math.min(1, x) - 1) * VOLUME_DB / 20) : 0);
     // the slider position that's as loud as an old straight-line volume (older saves)
     const posOf = linear => (linear > 0 ? Math.max(0.01, Math.round((1 + 20 * Math.log10(Math.min(1, linear)) / VOLUME_DB) * 100) / 100) : 0);
+    // Master Volume has headroom: 80% is full loudness (1% is VOLUME_DB below it) and 100% is MASTER_BOOST_DB above it
+    // (sound.js's compressor keeps that from clipping)
+    const MASTER_FULL = 0.8, MASTER_BOOST_DB = 6;
+    const masterGainOf = x => {
+        if (!(x > 0)) return 0;
+        const db = x <= MASTER_FULL ? (x - MASTER_FULL) / (MASTER_FULL - 0.01) * VOLUME_DB : (Math.min(1, x) - MASTER_FULL) / (1 - MASTER_FULL) * MASTER_BOOST_DB;
+        return Math.pow(10, db / 20);
+    };
+    // a Master Volume saved on the old curve (100% = full) becomes the position that's just as loud on this one
+    const masterPosOf = old => (old > 0 ? Math.max(0.01, Math.round((MASTER_FULL + (Math.min(1, old) - 1) * (MASTER_FULL - 0.01)) * 100) / 100) : 0);
     let values = load();
     const listeners = [];
 
@@ -377,16 +387,22 @@ const Settings = (() => {
     // Old sound settings (one Music Volume with Level Music and Boss Music switches, straight-line volumes) become the
     // new sliders at the same loudness; a switched-off music is a slider at 0.
     function migrate(v, raw) {
-        if (raw.soundV === 2 || !["volume", "musicVolume", "fxVolume", "bossFxVolume", "bossMusic", "levelMusic"].some(k => k in raw)) { v.soundV = 2; return v; }
+        if (raw.soundV === 3 || !["volume", "musicVolume", "fxVolume", "bossFxVolume", "bossMusic", "levelMusic"].some(k => k in raw)) { v.soundV = 3; return v; }
+        if (raw.soundV === 2) {                      // the sliders are right; only Master Volume moves to its new curve
+            v.volume = masterPosOf(typeof raw.volume === "number" ? raw.volume : 0.96);
+            v.soundV = 3;
+            U.saveRaw(KEY, JSON.stringify(v));
+            return v;
+        }
         const lin = (k, d) => (typeof raw[k] === "number" ? raw[k] : d);
-        v.volume = posOf(lin("volume", 0.8));
+        v.volume = masterPosOf(posOf(lin("volume", 0.8)));
         v.fxVolume = posOf(lin("fxVolume", 1));
         v.bossFxVolume = posOf(lin("bossFxVolume", 1));
         const music = posOf(lin("musicVolume", 1));
         v.levelMusicVolume = raw.levelMusic === false ? 0 : music;
         v.bossMusicVolume = raw.bossMusic === false ? 0 : music;
         delete v.musicVolume; delete v.bossMusic; delete v.levelMusic;
-        v.soundV = 2;
+        v.soundV = 3;
         U.saveRaw(KEY, JSON.stringify(v));
         return v;
     }
@@ -395,7 +411,7 @@ const Settings = (() => {
     }
     return {
         get: key => values[key],
-        gain: key => gainOf(values[key] ?? 1),         // a volume setting as loudness (0-1), along the curve above
+        gain: key => (key === "volume" ? masterGainOf(values.volume ?? MASTER_FULL) : gainOf(values[key] ?? 1)),   // a volume setting as loudness, along the curves above
         all: () => ({ ...values }),
         set(key, value) {
             if (values[key] === value) return;
