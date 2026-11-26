@@ -14,195 +14,6 @@
     const dark = () => document.documentElement.dataset.theme === "dark";
 
     // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let sky, stars, ground, tent, wheel, bunting, clouds, balloons = [], fireworks = [], nextBalloon = preview ? 999 : U.rand(4, 9), nextFirework = preview ? 999 : U.rand(2, 5);
-
-        function setup() {
-            const R = U.rng(8888);
-            sky = null;
-            stars = night ? Array.from({ length: preview ? 30 : 110 }, () => ({ x: R() * W, y: R() * H * 0.55, r: 0.6 + R() * 1.3, tw: R() * TAU })) : [];
-            clouds = night ? [] : Array.from({ length: preview ? 2 : 5 }, () => ({ x: R() * W, y: H * (0.06 + R() * 0.2), s: 0.6 + R() * 0.7, sp: 5 + R() * 6 }));
-            const unit = Math.min(W, H);
-            wheel = { x: W * 0.8, y: H * 0.42, r: Math.min(unit * 0.3, W * 0.2), cars: 10 };
-            tent = { x: W * 0.28, base: H * 0.78, w: Math.min(W * 0.42, unit * 0.7), h: Math.min(H * 0.42, unit * 0.5) };
-            // the ground: grass, a path, a popcorn cart and a ticket booth (drawn once)
-            ground = Worlds.canvas(W + 60, H);
-            {
-                const g = ground.getContext("2d"), gy = H * 0.76;
-                const gr = g.createLinearGradient(0, gy, 0, H);
-                gr.addColorStop(0, night ? "#14261c" : "#6ac25a"); gr.addColorStop(1, night ? "#0a140e" : "#4a9a42");
-                g.fillStyle = gr; g.fillRect(0, gy, W + 60, H - gy);
-                g.fillStyle = night ? "#2a2420" : "#e8d2a0";
-                g.beginPath(); g.moveTo(W * 0.45, gy); g.lineTo(W * 0.6, gy); g.lineTo(W * 0.75, H); g.lineTo(W * 0.3, H); g.fill();
-                g.fillStyle = night ? "rgba(255,255,255,.04)" : "rgba(255,255,255,.18)";
-                for (let i = 0; i < 80; i++) g.fillRect(R() * (W + 60), gy + R() * (H - gy), 2, 4);
-                // popcorn cart
-                const px = W * 0.06 + 30, py = H * 0.9;
-                g.fillStyle = night ? "#6a1a22" : "#e8344e"; g.fillRect(px - 30, py - 40, 60, 40);
-                g.fillStyle = night ? "#c8b88a" : "#ffffff"; for (let i = 0; i < 5; i++) g.fillRect(px - 30 + i * 12 + 3, py - 40, 6, 40);
-                g.fillStyle = night ? "#2a3a4a" : "#bfe6ff"; g.fillRect(px - 26, py - 70, 52, 30);
-                g.fillStyle = night ? "#d8c890" : "#fff6d0"; for (let i = 0; i < 14; i++) { g.beginPath(); g.arc(px - 22 + R() * 44, py - 46 - R() * 18, 3.5, 0, TAU); g.fill(); }
-                g.fillStyle = night ? "#6a1a22" : "#e8344e"; g.beginPath(); g.moveTo(px - 34, py - 70); g.lineTo(px, py - 86); g.lineTo(px + 34, py - 70); g.fill();
-                g.fillStyle = "#3a3a3a"; for (const wx of [px - 20, px + 20]) { g.beginPath(); g.arc(wx, py + 2, 8, 0, TAU); g.fill(); }
-            }
-            bunting = [{ y0: -2, sag: Math.min(40, H * 0.045), n: Math.ceil(W / 30), ph: 0 }];
-        }
-        setup();
-
-        function cloud(g, x, y, s) {
-            g.fillStyle = "rgba(255,255,255,.9)";
-            for (const [dx, dy, r] of [[0, 0, 22], [22, -10, 26], [46, 0, 20], [24, 8, 20]]) { g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, TAU); g.fill(); }
-        }
-        function drawTent(g, t, px) {
-            const { base, w, h } = tent, x = tent.x - px, top = base - h, wall = h * 0.45;
-            // the striped walls
-            for (let i = 0; i < 10; i++) {
-                const x0 = x - w / 2 + i * w / 10;
-                g.fillStyle = i % 2 ? (night ? "#d8c8b0" : "#ffffff") : (night ? "#8a1622" : "#e8344e");
-                g.fillRect(x0, base - wall, w / 10 + 0.5, wall);
-            }
-            g.fillStyle = night ? "#1a0a10" : "#3a1a1e";                                      // the entrance
-            g.beginPath(); g.moveTo(x - w * 0.08, base); g.lineTo(x, base - wall * 0.85); g.lineTo(x + w * 0.08, base); g.fill();
-            if (night) { g.fillStyle = "rgba(255,200,100,.5)"; g.beginPath(); g.moveTo(x - w * 0.05, base); g.lineTo(x, base - wall * 0.6); g.lineTo(x + w * 0.05, base); g.fill(); }
-            // the striped roof
-            for (let i = 0; i < 10; i++) {
-                const a = x - w / 2 - 10 + i * (w + 20) / 10, b = a + (w + 20) / 10;
-                g.fillStyle = i % 2 ? (night ? "#d8c8b0" : "#ffffff") : (night ? "#8a1622" : "#e8344e");
-                g.beginPath(); g.moveTo(x, top); g.lineTo(a, base - wall); g.lineTo(b, base - wall); g.fill();
-            }
-            // scalloped trim
-            g.fillStyle = night ? "#b8902a" : "#ffcf3a";
-            for (let i = 0; i < 12; i++) { const sx = x - w / 2 - 10 + (i + 0.5) * (w + 20) / 12; g.beginPath(); g.arc(sx, base - wall, (w + 20) / 24, 0, Math.PI); g.fill(); }
-            // string lights along the roof (night)
-            if (night) for (let i = 0; i <= 16; i++) {
-                const k = i / 16, lx = U.lerp(x - w / 2 - 10, x, k), ly = U.lerp(base - wall, top, k);
-                const on = Math.sin(t * 3 - i * 0.6) > -0.3;
-                g.fillStyle = on ? FLAGS[i % 6] : "#3a3030"; g.beginPath(); g.arc(lx, ly + 3, 3, 0, TAU); g.fill();
-                const rx = U.lerp(x + w / 2 + 10, x, k);
-                g.beginPath(); g.arc(rx, ly + 3, 3, 0, TAU); g.fill();
-            }
-            // the flagpole and a waving flag on top
-            g.strokeStyle = night ? "#8a8a8a" : "#6a6a6a"; g.lineWidth = 3;
-            g.beginPath(); g.moveTo(x, top); g.lineTo(x, top - h * 0.18); g.stroke();
-            g.fillStyle = night ? "#c8a02a" : "#ffcf3a";
-            g.beginPath(); g.moveTo(x, top - h * 0.18);
-            for (let i = 0; i <= 6; i++) g.lineTo(x + i * 6, top - h * 0.18 + Math.sin(t * 6 - i * 0.8) * 3 * (i / 6));
-            for (let i = 6; i >= 0; i--) g.lineTo(x + i * 6, top - h * 0.18 + 16 + Math.sin(t * 6 - i * 0.8) * 3 * (i / 6));
-            g.fill();
-        }
-        function drawWheel(g, t, px) {
-            const { y, r, cars } = wheel, x = wheel.x - px, a0 = t * 0.18;
-            g.strokeStyle = night ? "#5a5a6a" : "#ffffff"; g.lineWidth = 4;
-            g.beginPath(); g.moveTo(x - r * 0.5, H * 0.8); g.lineTo(x, y); g.lineTo(x + r * 0.5, H * 0.8); g.stroke();      // the stand
-            g.strokeStyle = night ? "#3a3a4a" : "#d0d8e0"; g.lineWidth = 2;
-            g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke();
-            g.beginPath(); g.arc(x, y, r * 0.92, 0, TAU); g.stroke();
-            for (let i = 0; i < cars; i++) { const a = a0 + i / cars * TAU; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); g.stroke(); }
-            // bulbs chasing around the rim (night)
-            if (night) for (let i = 0; i < 40; i++) {
-                const a = a0 + i / 40 * TAU, on = (Math.floor(t * 8) + i) % 4 !== 0;
-                g.fillStyle = on ? FLAGS[i % 6] : "#2a2a34";
-                g.beginPath(); g.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, 3, 0, TAU); g.fill();
-            }
-            // the cars, always hanging straight down
-            for (let i = 0; i < cars; i++) {
-                const a = a0 + i / cars * TAU, cx = x + Math.cos(a) * r, cy = y + Math.sin(a) * r, sw = Math.sin(t * 1.4 + i) * 0.08;
-                g.save(); g.translate(cx, cy); g.rotate(sw);
-                g.strokeStyle = night ? "#6a6a7a" : "#9aa4ae"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 8); g.stroke();
-                g.fillStyle = FLAGS[i % 6]; g.beginPath(); g.roundRect(-10, 8, 20, 13, [2, 2, 7, 7]); g.fill();
-                if (night) { g.fillStyle = "rgba(255,240,180,.6)"; g.fillRect(-7, 10, 14, 4); }
-                g.restore();
-            }
-            g.fillStyle = night ? "#c8a02a" : "#ffcf3a"; g.beginPath(); g.arc(x, y, 7, 0, TAU); g.fill();
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!sky) {
-                    sky = g.createLinearGradient(0, 0, 0, H * 0.8);
-                    if (night) { sky.addColorStop(0, "#0a0a24"); sky.addColorStop(0.7, "#24184a"); sky.addColorStop(1, "#4a2a5a"); }
-                    else { sky.addColorStop(0, "#5ab4f4"); sky.addColorStop(0.7, "#a8e0fa"); sky.addColorStop(1, "#e8f8ff"); }
-                }
-                g.fillStyle = sky; g.fillRect(0, 0, W, H);
-                if (night) {
-                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 1.1 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(255,255,240)"); }
-                    // searchlights sweeping the sky
-                    for (const [bx, sp] of [[W * 0.15, 0.5], [W * 0.62, -0.4]]) {
-                        const a = -Math.PI / 2 + Math.sin(t * sp) * 0.5, L = H;
-                        const sg = g.createLinearGradient(bx, H * 0.78, bx + Math.cos(a) * L, H * 0.78 + Math.sin(a) * L);
-                        sg.addColorStop(0, "rgba(200,220,255,.22)"); sg.addColorStop(1, "rgba(200,220,255,0)");
-                        g.fillStyle = sg; g.beginPath(); g.moveTo(bx - inp.px * 6, H * 0.78); g.lineTo(bx - inp.px * 6 + Math.cos(a - 0.06) * L, H * 0.78 + Math.sin(a - 0.06) * L); g.lineTo(bx - inp.px * 6 + Math.cos(a + 0.06) * L, H * 0.78 + Math.sin(a + 0.06) * L); g.fill();
-                    }
-                    // small fireworks far away
-                    nextFirework -= dt;
-                    if (nextFirework <= 0) { const c = U.pick(FLAGS); fireworks.push({ x: W * U.rand(0.1, 0.9), y: H * U.rand(0.1, 0.3), age: 0, c, n: 18 }); nextFirework = U.rand(3, 7); }
-                    fireworks = fireworks.filter(f => (f.age += dt) < 1.6);
-                    // each one: a rocket climbs with a spark trail, bursts with a flash into streaks that droop as they
-                    // fall, an inner ring of white sparks, and glitter that twinkles on the way down
-                    g.lineCap = "round";
-                    for (const f of fireworks) {
-                        const x0 = f.x - inp.px * 3;
-                        if (f.age < 0.45) {
-                            const k = f.age / 0.45, y = f.y + (1 - U.ease.outCubic(k)) * H * 0.25;
-                            g.strokeStyle = "rgba(255,230,180,.7)"; g.lineWidth = 1.5;
-                            g.beginPath(); g.moveTo(x0 + Math.sin(f.age * 40) * 1.5, y + 18); g.lineTo(x0, y); g.stroke();
-                            Worlds.glow(g, x0, y, 7, "#fff2c0", 0.9);
-                            continue;
-                        }
-                        const k = (f.age - 0.45) / 1.15, r = 10 + U.ease.outCubic(k) * 50, drop = k * k * 20;
-                        if (k < 0.25) Worlds.glow(g, x0, f.y, 70 * (1 - k * 2), f.c, 0.8 * (1 - k * 4));
-                        g.strokeStyle = f.c; g.lineWidth = 2; g.globalAlpha = 1 - k;
-                        g.beginPath();
-                        for (let i = 0; i < f.n; i++) { const a = i / f.n * TAU, cx = Math.cos(a), sy = Math.sin(a); g.moveTo(x0 + cx * r * 0.76, f.y + sy * r * 0.76 + drop * 0.8); g.lineTo(x0 + cx * r, f.y + sy * r + drop); }
-                        g.stroke();
-                        g.fillStyle = "#ffffff";
-                        for (let i = 0; i < f.n; i += 2) { const a = i / f.n * TAU + 0.17; if (Math.sin(f.age * 30 + i) > 0.2) g.fillRect(x0 + Math.cos(a) * r * 0.55 - 1, f.y + Math.sin(a) * r * 0.55 + drop * 1.2 - 1, 2, 2); }
-                        g.globalAlpha = 1;
-                    }
-                } else {
-                    const sx = W * 0.55 - inp.px * 3, sy = H * 0.12, sr = Math.min(W, H) * 0.055;
-                    const sg = g.createRadialGradient(sx, sy, sr * 0.6, sx, sy, sr * 4);
-                    sg.addColorStop(0, "rgba(255,250,210,.9)"); sg.addColorStop(1, "rgba(255,250,210,0)");
-                    g.fillStyle = sg; g.fillRect(sx - sr * 4, sy - sr * 4, sr * 8, sr * 8);
-                    g.fillStyle = "#fff8d0"; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
-                    for (const cl of clouds) { cl.x += cl.sp * dt; if (cl.x > W + 100) cl.x = -120; cloud(g, cl.x - inp.px * 4, cl.y, cl.s); }
-                }
-                drawWheel(g, t, inp.px * 8);
-                drawTent(g, t, inp.px * 12);
-                g.drawImage(ground, -30 - inp.px * 16, 0);
-                // balloons escaping now and then
-                nextBalloon -= dt;
-                if (nextBalloon <= 0) { balloons.push({ x: W * U.rand(0.05, 0.4), y: H * 0.85, vy: U.rand(30, 45), c: U.pick(FLAGS), ph: Math.random() * TAU }); nextBalloon = U.rand(6, 12); }
-                balloons = balloons.filter(b => (b.y -= b.vy * dt) > -60);
-                for (const b of balloons) {
-                    const x = b.x + Math.sin(t * 1.3 + b.ph) * 12 - inp.px * 18;
-                    g.strokeStyle = night ? "rgba(255,255,255,.4)" : "rgba(60,60,60,.5)"; g.lineWidth = 1;
-                    g.beginPath(); g.moveTo(x, b.y + 14); g.quadraticCurveTo(x + 6, b.y + 30, x - 2, b.y + 44); g.stroke();
-                    g.fillStyle = b.c; g.beginPath(); g.ellipse(x, b.y, 11, 14, 0, 0, TAU); g.fill();
-                    g.fillStyle = "rgba(255,255,255,.4)"; g.beginPath(); g.ellipse(x - 4, b.y - 5, 3, 5, 0.4, 0, TAU); g.fill();
-                }
-                // strings of pennants swaying across the top
-                for (const bt of bunting) {
-                    const sway = Math.sin(t * 1.2 + bt.ph) * 4;
-                    g.strokeStyle = night ? "rgba(255,255,255,.3)" : "rgba(80,60,40,.6)"; g.lineWidth = 1.2;
-                    g.beginPath(); for (let x = 0; x <= W; x += 10) { const k = x / W; g.lineTo(x, bt.y0 + Math.sin(k * Math.PI) * bt.sag + sway * Math.sin(k * Math.PI)); } g.stroke();
-                    for (let i = 0; i < bt.n; i++) {
-                        const k = (i + 0.5) / bt.n, x = k * W, y = bt.y0 + Math.sin(k * Math.PI) * bt.sag + sway * Math.sin(k * Math.PI), flut = Math.sin(t * 4 + i) * 2;
-                        g.fillStyle = FLAGS[(i + Math.round(bt.ph)) % 6]; g.globalAlpha = night ? 0.7 : 1;
-                        g.beginPath(); g.moveTo(x - 7, y); g.lineTo(x + 7, y); g.lineTo(x + flut, y + 15); g.fill();
-                        if (night && i % 2) { g.globalAlpha = 1; g.fillStyle = Math.sin(t * 4 + i) > 0 ? "#fff2b0" : "#5a4a3a"; g.beginPath(); g.arc(x - 7, y + 2, 2.5, 0, TAU); g.fill(); }
-                        g.globalAlpha = 1;
-                    }
-                }
-            }
-        };
-    }
-
-    // ---------------------------------------------------------------------------------------------
     // The board: a fair keepsake in each typed square; marquee bulbs chasing along finished words
     // ---------------------------------------------------------------------------------------------
     const KEEPSAKES = [
@@ -250,26 +61,24 @@
         const W = innerWidth, H = innerHeight, b = boardEl.getBoundingClientRect();
         const overlay = document.getElementById("overlay");
         const th = Math.min(H * 0.8, 520), tx = Math.min(W - 70, b.right + 30), ty = H - th - 10;
-        // 1. the tower slides up beside the board
-        const tower = U.el("div", { class: "cv-tower", html: `<i class="cv-bell"></i>${TOWER}<i class="cv-puck"></i>`, style: { left: tx - 40 + "px", top: ty + "px", height: th + "px" } });
-        overlay.appendChild(tower);
-        c.cleanup(() => tower.remove());
+        // 1. the tower slides up beside the board (Rive: rive/carnival-win.riv plays the whole tower: the puck,
+        //    the bulbs lighting, the bell, the chase, and sliding away, timed to the sounds below)
+        const tw = th * 0.3, art = Anim.play("carnival-win", { ms: 4400, fadeMs: 200, rect: { x: tx - tw / 2, y: ty, w: tw, h: th } });
+        c.cleanup(() => art.stop());
+        const bellAt = { x: tx, y: ty + th * (84 / 800) };
         Sound.play("whoosh");
-        tower.animate([{ transform: "translateY(110%)" }, { transform: "none" }], { duration: 600, easing: "cubic-bezier(.2,1.2,.4,1)", fill: "backwards" });
         await c.wait(800);
         if (c.skipped) return;
         // 2. WHACK: a hammer hit at the bottom sends the puck flying up
         Sound.play("whack");
         FX.shake(8, 250);
         FX.burst({ x: tx, y: H - 20, n: 18, colors: ["#ffcf3a", "#ffffff"], shape: "star", angle: -Math.PI / 2, spread: 1.2, speed: [120, 300], gravity: 400, life: [0.5, 0.8], size: [4, 7] });
-        tower.classList.add("go");
         Sound.play("rise");
         await c.wait(650);
         if (c.skipped) return;
         // 3. DING DING DING! the bell rings
-        tower.classList.add("rung");
         Sound.play("bell");
-        const bell = U.center(tower.querySelector(".cv-bell"));
+        const bell = bellAt;
         FX.ring({ x: bell.x, y: bell.y, color: "#ffcf3a", r1: 220, dur: 0.7, width: 8, glow: dark() });
         FX.flash("#fff6d0", 300, 0.45);
         await c.wait(250);
@@ -279,9 +88,7 @@
         FX.burst({ x: W / 2, y: -20, jitter: W / 2, jitterY: 10, n: 130, colors: FLAGS, shape: "rect", angle: Math.PI / 2, spread: 0.4, speed: [60, 200], gravity: 260, drag: 0.4, life: [2.4, 3.4], size: [6, 10], delay: [0, 0.9] });
         FX.burst({ x: W / 2, y: -20, jitter: W / 2, jitterY: 10, n: 40, colors: ["#fff6d0", "#ffeeb0"], shape: "circle", angle: Math.PI / 2, spread: 0.3, speed: [80, 200], gravity: 400, life: [1.8, 2.6], size: [5, 8], delay: [0.2, 1.1] });
         Sound.play("fanfare");
-        await c.wait(2400);
-        tower.animate([{ transform: "none" }, { transform: "translateY(110%)" }], { duration: 500, easing: "ease-in", fill: "forwards" });
-        await c.wait(450);
+        await c.wait(2900);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -386,7 +193,7 @@
     Worlds.register({
         id: "carnival", name: "Big Top Carnival", icon: "\u{1F3AA}", tagline: "Step Right Up to the Big Top.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "curtain",
+        scene: (W, H, opts) => CarnivalScene(W, H, opts), rive: "carnival-win", board, celebrate, titleCard, sounds, transition: "curtain",
         mascot: { name: "KERNEL", draw: drawKernel },
         lines: {
             hello: ["Step right up! I'm Kernel, and the puzzle's about to start!", "Welcome to the greatest crossword on Earth!", "Grab some popcorn, it's showtime!"],
