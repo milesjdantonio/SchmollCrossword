@@ -16,160 +16,6 @@
     const dark = () => document.documentElement.dataset.theme === "dark";
 
     // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let sky, stars, dunes, ridgeY, cacti, caravanX = 0, weeds = [], nextWeed = preview ? 999 : U.rand(4, 9), fire, sparks = [];
-
-        // a dune ridge: a smooth wavy line at height y across the width
-        const ridge = (x, base, amp, f, ph) => base + Math.sin(x * f + ph) * amp + Math.sin(x * f * 2.3 + ph * 1.7) * amp * 0.35;
-        function setup() {
-            const R = U.rng(4242);
-            sky = null;
-            stars = night ? Array.from({ length: preview ? 50 : 220 }, () => { const band = R() < 0.45; const x = R() * W; return { x, y: band ? H * 0.1 + x * 0.25 + (R() - 0.5) * H * 0.18 : R() * H * 0.6, r: 0.5 + R() * 1.4, tw: R() * TAU }; }) : [];
-            ridgeY = x => ridge(x, H * 0.6, H * 0.025, 0.004, 1);
-            // three layers of dunes, drawn once (the far one also has a mesa and a pyramid)
-            dunes = [0, 1, 2].map(i => {
-                const c = Worlds.canvas(W + 80, H), g = c.getContext("2d");
-                const base = H * [0.6, 0.72, 0.84][i], amp = H * [0.025, 0.04, 0.05][i], f = [0.004, 0.006, 0.005][i], ph = [1, 2.5, 4][i];
-                const cols = night ? [["#2a3a5e", "#1e2a48"], ["#24324f", "#1a2440"], ["#1c2840", "#121a30"]][i] : [["#f0c98a", "#dcae68"], ["#e6b468", "#cf9a4e"], ["#dca556", "#c08440"]][i];
-                if (i === 0) {
-                    g.fillStyle = night ? "#2e3a62" : "#d9a070";                    // a far mesa
-                    g.beginPath(); g.moveTo(W * 0.05, base); g.lineTo(W * 0.09, base - H * 0.1); g.lineTo(W * 0.24, base - H * 0.1); g.lineTo(W * 0.28, base); g.fill();
-                    g.fillStyle = night ? "rgba(0,0,0,.15)" : "rgba(160,80,40,.2)"; g.fillRect(W * 0.09, base - H * 0.07, W * 0.15, 3);
-                    const px = W * 0.7 + 40, ph2 = H * 0.14;                     // a pyramid with a lit and a shaded side
-                    g.fillStyle = night ? "#3a4a72" : "#e8c48a"; g.beginPath(); g.moveTo(px - ph2, base + 6); g.lineTo(px, base - ph2); g.lineTo(px + ph2 * 0.3, base + 6); g.fill();
-                    g.fillStyle = night ? "#26325a" : "#c49a5e"; g.beginPath(); g.moveTo(px, base - ph2); g.lineTo(px + ph2, base + 6); g.lineTo(px + ph2 * 0.3, base + 6); g.fill();
-                }
-                const gr = g.createLinearGradient(0, base - amp, 0, H);
-                gr.addColorStop(0, cols[0]); gr.addColorStop(1, cols[1]);
-                g.fillStyle = gr;
-                g.beginPath(); g.moveTo(0, H);
-                for (let x = 0; x <= W + 80; x += 8) g.lineTo(x, ridge(x, base, amp, f, ph));
-                g.lineTo(W + 80, H); g.fill();
-                // the shaded side of each crest and wind ripples in the sand
-                g.strokeStyle = night ? "rgba(140,170,230,.15)" : "rgba(255,240,200,.6)"; g.lineWidth = 2;
-                g.beginPath(); for (let x = 0; x <= W + 80; x += 8) g[x ? "lineTo" : "moveTo"](x, ridge(x, base, amp, f, ph)); g.stroke();
-                g.strokeStyle = night ? "rgba(0,0,0,.15)" : "rgba(150,90,30,.18)"; g.lineWidth = 1.2;
-                for (let k = 0; k < 18 + i * 10; k++) {
-                    const x = R() * (W + 80), y = ridge(x, base, amp, f, ph) + 10 + R() * (H - base) * 0.8, w = 30 + R() * 60;
-                    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + w / 2, y - 4, x + w, y); g.stroke();
-                }
-                return c;
-            });
-            cacti = Array.from({ length: preview ? 2 : 4 }, (_, i) => ({ x: i % 2 ? W * (0.82 + R() * 0.15) : W * (0.03 + R() * 0.15), base: H * (0.86 + R() * 0.08), h: H * (0.14 + R() * 0.1), arms: R() < 0.5 ? 1 : 2 }));
-            fire = night ? { x: W * 0.8, y: H * 0.93 } : null;
-            caravanX = W * 0.1;
-        }
-        setup();
-
-        function cactus(g, c, px) {
-            const x = c.x - px, w = Math.max(10, c.h * 0.14);
-            g.fillStyle = night ? "#142030" : "#3f8a4a";
-            g.beginPath(); g.roundRect(x - w / 2, c.base - c.h, w, c.h, w / 2); g.fill();
-            for (let a = 0; a < c.arms; a++) {
-                const side = a ? 1 : -1, ay = c.base - c.h * (0.45 + a * 0.15);
-                g.beginPath(); g.roundRect(side > 0 ? x : x - w * 1.6, ay, w * 1.6, w * 0.8, w * 0.4); g.fill();
-                g.beginPath(); g.roundRect(x + side * w * 1.2 - w * 0.4, ay - c.h * 0.3, w * 0.8, c.h * 0.3 + w * 0.6, w * 0.4); g.fill();
-            }
-            if (!night) { g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - w * 0.15, c.base - c.h + w); g.lineTo(x - w * 0.15, c.base - 4); g.stroke(); }
-        }
-        function camel(g, x, y, s, t, ph) {
-            const step = Math.sin(t * 3 + ph);
-            g.save(); g.translate(x, y); g.scale(s, s);
-            g.fillStyle = night ? "#0e1424" : "#8a5a2e";
-            g.beginPath(); g.ellipse(0, -22, 16, 9, 0, 0, TAU); g.fill();                         // body
-            g.beginPath(); g.ellipse(-2, -30, 8, 7, 0, 0, TAU); g.fill();                         // hump
-            g.beginPath(); g.moveTo(13, -24); g.quadraticCurveTo(22, -30, 22, -40); g.lineTo(28, -40); g.lineTo(28, -36); g.lineTo(24, -34); g.quadraticCurveTo(22, -24, 15, -18); g.fill();   // neck and head
-            g.strokeStyle = g.fillStyle; g.lineWidth = 3; g.lineCap = "round";
-            for (const [lx, k] of [[-10, 1], [-6, -1], [8, -1], [12, 1]]) { g.beginPath(); g.moveTo(lx, -16); g.lineTo(lx + step * k * 3, 0); g.stroke(); }
-            if (night) {                                                                          // a lantern hanging from the saddle
-                const lg = g.createRadialGradient(-14, -14, 0, -14, -14, 16);
-                lg.addColorStop(0, "rgba(255,200,100,.8)"); lg.addColorStop(1, "rgba(255,160,60,0)");
-                g.fillStyle = lg; g.beginPath(); g.arc(-14, -14, 16, 0, TAU); g.fill();
-                g.fillStyle = "#ffd37a"; g.fillRect(-16, -17, 4, 6);
-            }
-            g.restore();
-        }
-        function weed(g, w, t) {
-            g.save(); g.translate(w.x, w.y - Math.abs(Math.sin(t * 3 + w.ph)) * 18); g.rotate(w.x * 0.03);
-            g.strokeStyle = night ? "rgba(120,130,160,.7)" : "rgba(140,100,50,.85)"; g.lineWidth = 1.5;
-            for (let i = 0; i < 9; i++) { const a = i / 9 * TAU; g.beginPath(); g.ellipse(0, 0, w.r, w.r * 0.45, a, 0, TAU); g.stroke(); }
-            g.restore();
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!sky) {
-                    sky = g.createLinearGradient(0, 0, 0, H * 0.62);
-                    if (night) { sky.addColorStop(0, "#060a1e"); sky.addColorStop(0.7, "#14204a"); sky.addColorStop(1, "#2a3a6a"); }
-                    else { sky.addColorStop(0, "#5aa8e8"); sky.addColorStop(0.65, "#a8d8f0"); sky.addColorStop(1, "#ffe8b8"); }
-                }
-                g.fillStyle = sky; g.fillRect(0, 0, W, H);
-                if (night) {
-                    for (const s of stars) { const tw = Math.abs(Math.sin(t * 0.9 + s.tw)), x = s.x - inp.px * 2; g.fillStyle = `rgba(230,240,255,${(0.25 + 0.75 * tw).toFixed(2)})`; g.fillRect(x, s.y, s.r, s.r); if (s.r > 1.2) Worlds.twinkle(g, x + s.r / 2, s.y + s.r / 2, s.r, tw, "rgb(230,240,255)"); }
-                    const mx = W * 0.3 - inp.px * 3, my = H * 0.24, mr = Math.min(W, H) * 0.13;           // a giant moon
-                    const mg = g.createRadialGradient(mx, my, mr, mx, my, mr * 2.6);
-                    mg.addColorStop(0, "rgba(200,220,255,.25)"); mg.addColorStop(1, "rgba(200,220,255,0)");
-                    g.fillStyle = mg; g.fillRect(mx - mr * 3, my - mr * 3, mr * 6, mr * 6);
-                    const mf = g.createRadialGradient(mx - mr * 0.3, my - mr * 0.3, mr * 0.2, mx, my, mr);
-                    mf.addColorStop(0, "#fbf8ec"); mf.addColorStop(1, "#d8d4c4");
-                    g.fillStyle = mf; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
-                    g.fillStyle = "rgba(150,150,140,.25)";
-                    for (const [dx, dy, r] of [[-0.3, -0.2, 0.18], [0.25, 0.1, 0.24], [-0.1, 0.4, 0.12], [0.4, -0.35, 0.1]]) { g.beginPath(); g.arc(mx + dx * mr, my + dy * mr, r * mr, 0, TAU); g.fill(); }
-                } else {
-                    const sx = W * 0.78 - inp.px * 3, sy = H * 0.16, sr = Math.min(W, H) * 0.075;          // a blazing sun
-                    const sg = g.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 5);
-                    sg.addColorStop(0, "rgba(255,250,220,.95)"); sg.addColorStop(0.25, "rgba(255,230,160,.4)"); sg.addColorStop(1, "rgba(255,220,150,0)");
-                    g.fillStyle = sg; g.fillRect(0, 0, W, H * 0.7);
-                    g.fillStyle = "#fffbe8"; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
-                }
-                g.drawImage(dunes[0], -40 - inp.px * 5, 0);
-                // the caravan plodding along the far ridge
-                caravanX += dt * 9; if (caravanX > W + 220) caravanX = -200;
-                const cs = U.clamp(H / 1100, 0.45, 0.9);
-                for (let i = 0; i < 4; i++) { const x = caravanX - i * 55 * cs; camel(g, x - inp.px * 5, ridgeY(x + 40) + 2, cs * (i === 3 ? 0.8 : 1), t, i * 1.3); }
-                // heat shimmer: wavering light bands just above the sand (day)
-                if (!night) for (let i = 0; i < 5; i++) {
-                    const y = H * 0.56 + i * 6, a = 0.06 + 0.04 * Math.sin(t * 3 + i);
-                    g.strokeStyle = `rgba(255,250,235,${a.toFixed(3)})`; g.lineWidth = 3;
-                    g.beginPath(); for (let x = 0; x <= W; x += 20) g[x ? "lineTo" : "moveTo"](x, y + Math.sin(x * 0.03 + t * 4 + i) * 2); g.stroke();
-                }
-                g.drawImage(dunes[1], -40 - inp.px * 10, 0);
-                for (const c of cacti) cactus(g, c, inp.px * 16);
-                g.drawImage(dunes[2], -40 - inp.px * 18, 0);
-                // the campfire (night): logs, dancing flames, a warm glow and rising sparks
-                if (fire) {
-                    const x = fire.x - inp.px * 18, y = fire.y, fl = 0.85 + 0.15 * Math.sin(t * 11) * Math.sin(t * 7.1);
-                    const gl = g.createRadialGradient(x, y - 10, 0, x, y - 10, 140 * fl);
-                    gl.addColorStop(0, "rgba(255,170,80,.45)"); gl.addColorStop(1, "rgba(255,120,40,0)");
-                    g.fillStyle = gl; g.beginPath(); g.arc(x, y - 10, 140 * fl, 0, TAU); g.fill();
-                    g.fillStyle = "#3a2214"; g.save(); g.translate(x, y); g.rotate(0.3); g.fillRect(-22, -4, 44, 8); g.rotate(-0.6); g.fillRect(-22, -4, 44, 8); g.restore();
-                    for (const [col, s, ph] of [["#ff5a1a", 1, 0], ["#ffa020", 0.72, 1.3], ["#ffe680", 0.42, 2.1]]) {
-                        const h = 46 * s * fl;
-                        g.fillStyle = col;
-                        g.beginPath(); g.moveTo(x - 16 * s, y - 2); g.quadraticCurveTo(x - 14 * s, y - h * 0.6, x + Math.sin(t * 8 + ph) * 5, y - h); g.quadraticCurveTo(x + 14 * s, y - h * 0.6, x + 16 * s, y - 2); g.fill();
-                    }
-                    if (Math.random() < dt * 8) sparks.push({ x, y: y - 30, vx: (Math.random() - 0.5) * 20, vy: -40 - Math.random() * 40, life: 1.5 });
-                }
-                sparks = sparks.filter(s => (s.life -= dt) > 0);
-                // campfire sparks: they wiggle up, glowing, and wink out
-                for (const s of sparks) { s.x += s.vx * dt + Math.sin(t * 6 + s.vy) * 0.3; s.y += s.vy * dt; const a = (s.life / 1.5) * (0.7 + 0.3 * Math.sin(t * 17 + s.vx)); g.fillStyle = `rgba(255,${170 + Math.round(a * 60)},90,${a.toFixed(2)})`; g.fillRect(s.x, s.y, 2, 2); Worlds.glow(g, s.x + 1, s.y + 1, 7, "#ffb050", a * 0.55); }
-                // tumbleweeds rolling by
-                nextWeed -= dt;
-                if (nextWeed <= 0) { weeds.push({ x: -40, y: H * U.rand(0.86, 0.95), vx: U.rand(60, 110), r: U.rand(12, 22), ph: Math.random() * TAU }); nextWeed = U.rand(9, 18); }
-                weeds = weeds.filter(w => (w.x += w.vx * dt) < W + 60);
-                for (const w of weeds) weed(g, w, t);
-                // blowing sand drifting low over the ground
-                g.fillStyle = night ? "rgba(160,180,220,.2)" : "rgba(255,235,190,.5)";
-                for (let i = 0; i < (preview ? 15 : 50); i++) { const x = (i * 131.7 + t * (40 + i % 7 * 12)) % (W + 40) - 20, y = H * 0.8 + ((i * 37) % 100) / 100 * H * 0.2 + Math.sin(t * 2 + i) * 3; g.fillRect(x, y, 3, 1); }
-            }
-        };
-    }
-
-    // ---------------------------------------------------------------------------------------------
     // The board: a carved symbol in each typed square; a sandstone border along finished words
     // ---------------------------------------------------------------------------------------------
     const GLYPHS = [
@@ -227,23 +73,19 @@
         FX.shake(4, 900);
         await c.wait(1300);
         if (c.skipped) return;
-        // 2. a treasure chest rises out of the sand in front of the board
-        const chest = U.el("div", { class: "ds-chest", html: `<i class="ds-rays"></i>${CHEST}`, style: { left: cx - 90 + "px", top: cy - 70 + "px" } });
-        overlay.appendChild(chest);
-        FX.follow(c, boardEl, chest);
-        c.cleanup(() => chest.remove());
+        // 2. a treasure chest rises out of the sand in front of the board, wobbles and bursts open (Rive:
+        //    rive/desert-win.riv plays the whole chest, timed to the coins below)
+        const side = Math.min(W * 0.9, b.width * 1.15);
+        const art = Anim.play("desert-win", { follow: boardEl, ms: 4700, fadeMs: 300, rect: r => ({ x: r.left + r.width / 2 - side / 2, y: r.top + r.height / 2 - side * 0.6, w: side, h: side }) });
+        c.cleanup(() => art.stop());
         Sound.play("thud");
-        chest.animate([{ transform: "translateY(60px) scale(.3)", opacity: 0 }, { transform: "translateY(-10px) scale(1.05)", opacity: 1, offset: 0.7 }, { transform: "none", opacity: 1 }], { duration: 700, easing: "ease-out", fill: "backwards" });
         await c.wait(800);
         if (c.skipped) return;
-        // 3. it wobbles, then bursts open
-        chest.animate([{ transform: "none" }, { transform: "rotate(-6deg)" }, { transform: "rotate(6deg)" }, { transform: "none" }], { duration: 400 });
         Sound.play("rattle");
-        await c.wait(500);
+        await c.wait(520);
         if (c.skipped) return;
-        chest.classList.add("open");
         Sound.play("treasure");
-        const p = U.center(chest);
+        const p = { x: cx, y: cy - side * 0.6 + side * (260 / 600) };
         FX.flash("#fff2b0", 400, 0.5);
         FX.burst({ x: p.x, y: p.y - 20, n: 90, colors: GOLD, shape: "circle", angle: -Math.PI / 2, spread: 0.9, speed: [300, 800], gravity: 900, drag: 0.4, life: [1.6, 2.4], size: [5, 8] });
         FX.burst({ x: p.x, y: p.y - 20, n: 30, colors: GEMS, shape: "star", angle: -Math.PI / 2, spread: 0.7, speed: [300, 700], gravity: 700, life: [1.6, 2.2], size: [6, 10], spin: 6 });
@@ -252,9 +94,7 @@
         // 4. glints over everything
         FX.burst({ x: W / 2, y: H / 2, jitter: W / 2, jitterY: H / 2, n: 40, colors: GOLD, shape: "star", speed: [5, 20], gravity: 0, life: [0.8, 1.4], size: [4, 8], delay: [0, 1], spin: 3 });
         Sound.play("sparkle");
-        await c.wait(1600);
-        chest.animate([{ opacity: 1 }, { opacity: 0, transform: "scale(.6)" }], { duration: 400, fill: "forwards" });
-        await c.wait(350);
+        await c.wait(1900);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -358,7 +198,7 @@
     Worlds.register({
         id: "desert", name: "Desert Caravan", icon: "\u{1F3DC}️", tagline: "Golden Dunes. Endless Sky.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "sandstorm",
+        scene: (W, H, opts) => DesertScene(W, H, opts), rive: "desert-win", board, celebrate, titleCard, sounds, transition: "sandstorm",
         mascot: { name: "SANDY", draw: drawSandy },
         lines: {
             hello: ["Hi, I'm Sandy! My ears heard a puzzle coming.", "Welcome to the desert! Plenty of words buried here.", "Grab some water, it's puzzle time!"],
