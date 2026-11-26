@@ -68,14 +68,21 @@ c212d72), except the new sections (below):
 - How to Play's Campaign chapter shows the island, the boss holding its page, the Everbook (Shop/Skills/Hero) and
   the Atlas.
 
-**Next: the new sections (Phase 9, the four secret worlds).** The plan, per world, in this order (The Great Hollow
-first, then Atlantis, the Sunken Dunes, the Lava Cave), each committed as it goes:
-1. Server: a `Campaign.SECRET` section (a step harder than its parent), lessons, 25 puzzles per level + boss boards
-   + phases in `campaign/` (unique boards, clues from the hand-written bank; only new answers need new clues).
-2. Client: `SECRETS` entry gets `world`, a `worlds/<id>.js` (scene light/dark, board decorations, win, transition,
-   font), its companion (the parent world's), the boss (SVG, lore, 10 moves with counterplay, arena chaos), 4
-   abilities (one per level), corruption-style levels, an arrival scene, hero gifts, achievements, credits.
-3. Music: CC0/CC BY picks measured by intensity (the user listens before it's final).
+**The user, 2026-11-25 (later):** "push to main a timer until shutdown ... once it reaches Nov 29 the page is instead a
+page that says Sorry for the inconvenience ..." (done: `main` 025812f; the countdown, then a closed page with no way
+past it; the server refuses every paid Claude call from Nov 29 New York time, `CLOSED_FROM`); "leave it on" (the Beta
+strip stays); "playable version of all" (the four secret worlds first as playable versions, then polish).
+
+**The four secret worlds are playable (commits 5f0593f, 877e03a).** What's done and what's still a stand-in:
+- Done: server sections, lessons, phases (2/3/3/5), 25 puzzles a level (825, from the clue bank: plain clues, no lesson
+  styles yet; local tool `src/test/java/com/crossword/SecretBatch.java`, git-excluded); scenes (light/dark), colours,
+  bosses (art, lore, 10 moves, 7 of them new kinds), 4 abilities each (existing kinds renamed), corruption on levels,
+  companion lines, omen -> riddle -> gate -> arrival, Atlas islands, dock, neighbours.
+- Stand-ins to replace: music (parent's level songs; boss phases on existing songs: `SONGS_OF` in campaign.js), the
+  arrival scene (the parent's: `KIN` in travel.js), arena scenery and chaos (parent's), the title card, sounds and
+  board decorations (parent's or none), abilities that are other worlds' kinds renamed, 3 borrowed moves per boss
+  that other bosses have too (the original rule: every move different), no staged visuals for the 7 new move kinds,
+  no hero gifts, no achievements, no How to Play chapter, plain (not lesson-styled) clues.
 
 ## The user's decisions (2026-11-07)
 
@@ -434,6 +441,7 @@ first, then Atlantis, the Sunken Dunes, the Lava Cave), each committed as it goe
 ### Phase 9: Campaign expansion (100 levels)
 - [ ] Map: secret branches off Acorn Woods (3), Coral Reef (5), Desert (9) and Volcano (14); unlock after that
       world's boss; optional (come back any time)
+- [x] All four playable (2026-11-25); the stand-ins listed in "START HERE" still to replace
 - [ ] Secret world 1: the giant squirrel (hidden Acorn Woods), 2 phases
 - [ ] Secret world 2: Poseidon (Atlantis), 3 phases; trident that takes 5 letters to its board, unmarked
 - [ ] Secret world 3: the Sandworm (desert), 3 phases; sand tornado, sand dive, sand ball
@@ -483,5 +491,7 @@ first, then Atlantis, the Sunken Dunes, the Lava Cave), each committed as it goe
   `const`), the story intro playing on after leaving the map, a flaky leaderboard cache. Paid calls: still $0.04.
 - 2026-11-16: the campaign map rebuilt as the Island and the Everbook (Phase 5). JS tests pass (14); Java untouched. Paid calls: still $0.04.
 - 2026-11-25: the Atlas on one canvas (js/atlas.js), 60 fps; see "START HERE". JS tests pass (14). Paid calls: still $0.04.
+- 2026-11-25: `main`: countdown to Nov 29, then closed; no paid calls from then. The Rift found like the other
+  secrets. The four secret worlds playable. 158 JUnit, 14 JS tests pass. Paid calls: still $0.04.
 - 2026-11-25: campaign performance pass, the Rift as a secret world, dock pictures, Everbook page turns, How to Play's
   campaign chapter. JS tests pass (14). Paid calls: still $0.04.

@@ -55,7 +55,14 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
       The email comes at 8:00 each morning: dailies ready, failures, what Claude cost, players, reports.
       `/admin.html` shows the same, lists reports, and can switch off a bad daily or hide a name.
-- [ ] **The Beta strip** (+500 Coins, Unlock All, on the campaign map). Keep it for the relaunch or switch it off?
+- [x] **The Beta strip** stays on (2026-11-25: "leave it on").
+- [ ] **The four secret worlds (playable first versions).** Turn on Unlock All in the Beta strip, then pick them at the
+      end of the dock (the Great Hollow, Atlantis, the Sunken Dunes, the Lava Cave). Each has its own scene, boss and
+      moves; music, arrival scenes and arenas are borrowed from the parent world for now. Tell me what to change first.
+- [ ] **The Celestial Rift is now a secret like the others.** After the Void: four fallen stars on Deep Space blink in
+      turn (repeat the order), then a riddle, then a gate.
+- [x] **The live site closes on November 29** (pushed to `main`): a countdown until then, then a "sorry, under
+      development" page with no way in; no paid Claude calls from that day.
 - [ ] **"Giant Steps but Smooth"** (Rainy City level 3, `src/main/resources/static/audio/music/level-rain-3.mp3`).
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
