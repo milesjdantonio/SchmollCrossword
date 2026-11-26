@@ -465,8 +465,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         **Notebook** (paper-scene.js: lamplit paper with fibres, steel spiral, mug with steam, pencil, eraser,
         sticky note, clip; blueprint by night with drafting tools and a title block; graphite doodles; win: Rive
         `paper-win` pencil circle, doodles and gold-foil stars, the stamp with a Motion press).
-      - To do, in this order: Deep Space, Neon Arcade, Snow Day, Acorn Woods, Coral Reef, Candy Hills, Haunted
-        Library, Volcano Island, Sky Kingdom, Desert Caravan, Robot Factory, Big Top Carnival, Rainy City, Classic.
+        **Rainy City** (rain-scene.js: cloud deck lit by far lightning, three depths of skyline, windows lighting
+        up at night, café with awning, neon and drips, lamps, a wet street mirroring the lights, ringing puddles,
+        umbrellas, cars; win: Rive umbrella `rain-win`). **Desert Caravan** (desert-scene.js: striped mesas, lit
+        pyramids, oasis, sculpted dunes with shaded far sides, caravan, saguaros, tumbleweed, vultures; Milky Way,
+        moon, lanterns, campfire by night; win: Rive treasure chest `desert-win`).
+      - To do, weakest first (from a contact sheet of every scene): Big Top Carnival, Robot Factory, Sky Kingdom,
+        Volcano Island, Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space,
+        Classic (its win only).
 
 ### Phase 7: Retention
 - [ ] Daily Archive (practice, no points/streak; works with offline)
