@@ -150,7 +150,7 @@
                 if (worm) {
                     const w = worm; w.age += dt;
                     const ox = -px * 30 * dunes[1].z, oy = -py * 10 * dunes[1].z, ground = x => crestAt(1, x) + 6;
-                    const head = Math.min(1.35, w.age / (w.life * 0.62)), len = 0.55;      // how far along the arc its head is, and its length (of the arc)
+                    const head = w.age / (w.life * 0.62), len = 0.55;                      // how far along the arc its head is, and its length (of the arc)
                     const along = u => { const x = w.dir > 0 ? lerp(w.ax, w.bx, u) : lerp(w.bx, w.ax, u), gy = ground(x); return [x + ox, lerp(gy, w.top, Math.sin(Math.PI * Math.min(1, Math.max(0, u)))) + oy + (u < 0 || u > 1 ? Math.abs(u < 0 ? u : u - 1) * w.r * 6 : 0)]; };
                     if (w.age < 0.9) { const [x, y] = along(0); if (Math.random() < 0.6) dust(x, y, 3, 120, w.r * 2); }     // the sand boils where it will come up
                     const n = 30;
@@ -178,7 +178,7 @@
                     const [ex, ey] = along(0), [dx, dy] = along(1);
                     if (head > 0 && head - len < 0.05 && Math.random() < 0.5) dust(ex, ey, 2, 180, w.r * 2);
                     if (head > 0.95 && head - len < 1 && Math.random() < 0.6) dust(dx, dy, 3, 220, w.r * 2.4);
-                    if (w.age > w.life) { worm = null; nextWorm = U.rand(14, 22); }
+                    if (head - len > 1.05) { worm = null; nextWorm = U.rand(14, 22); }      // gone once its tail is under the sand
                 }
                 g.drawImage(dunes[1].img, ...off(1));
                 const [o1x, o1y] = off(1), [o2x, o2y] = off(2);
