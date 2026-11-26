@@ -56,9 +56,15 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       The email comes at 8:00 each morning: dailies ready, failures, what Claude cost, players, reports.
       `/admin.html` shows the same, lists reports, and can switch off a bad daily or hide a name.
 - [x] **The Beta strip** stays on (2026-11-25: "leave it on").
-- [ ] **The four secret worlds (playable first versions).** Turn on Unlock All in the Beta strip, then pick them at the
-      end of the dock (the Great Hollow, Atlantis, the Sunken Dunes, the Lava Cave). Each has its own scene, boss and
-      moves; music, arrival scenes and arenas are borrowed from the parent world for now. Tell me what to change first.
+- [ ] **The four secret worlds.** Turn on Unlock All in the Beta strip; each sits in the dock right after its parent
+      world (the Great Hollow after Acorn Woods, Atlantis after Coral Reef, the Sunken Dunes after Desert Caravan, the
+      Lava Cave after Volcano Island). Each now has its own scene, board decorations, boss, arena, arrival scene,
+      hero gifts, music, 4 abilities and 6 boss moves (none copies of another world's), each with its own animation.
+      Still borrowed from the parent: the title card, screen transition and sounds. Tell me what to change first.
+- [ ] **The secret worlds' music.** 29 CC0 songs. Listening copies are in `boss-music/17-hollow (The Giant Squirrel)`,
+      `18-atlantis...`, `19-dunes...`, `20-cave (The Lava Beast)` (each boss phase, with a loop-seam preview) and
+      `boss-music/levels (secret worlds)` (the 16 level songs). Each boss phase should sound more intense than the
+      one before. Say which ones to swap.
 - [ ] **The Celestial Rift is now a secret like the others.** After the Void: four fallen stars on Deep Space blink in
       turn (repeat the order), then a riddle, then a gate.
 - [x] **The live site closes on November 29** (pushed to `main`): a countdown until then, then a "sorry, under
@@ -77,6 +83,4 @@ These aren't ready yet. Each one moves up when it is.
       Listen for clicks, jumps, beats out of step or a cut-off note. Tracks: Old Grumble Owl 1, King Sourgum 1,
       Kraken 1, Yeti 1, Thunderhead 1, Sir Squall 2, Sphinx 1, Ringmaster 1, Mega Unit X 1-3, Magma Wyrm 1-3,
       Void 2-5, Cursed Angel 1, and the Cursed Angel's swapped phases 3 and 4.
-- [ ] **New music.** The songs picked or composed for the four secret worlds (boss phases and levels).
-- [ ] **Secret worlds.** Each one's look, boss, story scene and arrival animation, as they're finished.
 - [ ] **Before the merge.** A play-through checklist of the finished update before it replaces the live site.

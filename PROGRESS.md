@@ -442,10 +442,20 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Map: secret branches off Acorn Woods (3), Coral Reef (5), Desert (9) and Volcano (14); unlock after that
       world's boss; optional (come back any time)
 - [x] All four playable (2026-11-25); the stand-ins listed in "START HERE" still to replace
-- [ ] Secret world 1: the giant squirrel (hidden Acorn Woods), 2 phases
-- [ ] Secret world 2: Poseidon (Atlantis), 3 phases; trident that takes 5 letters to its board, unmarked
-- [ ] Secret world 3: the Sandworm (desert), 3 phases; sand tornado, sand dive, sand ball
-- [ ] Secret world 4: the lava beast (Lava Cave), 5 phases; lava columns
+- [x] Secret world 1: the giant squirrel (hidden Acorn Woods), 2 phases
+- [x] Secret world 2: Poseidon (Atlantis), 3 phases; trident that takes 5 letters to its board, unmarked
+- [x] Secret world 3: the Sandworm (desert), 3 phases; sand tornado, sand dive, sand ball
+- [x] Secret world 4: the lava beast (Lava Cave), 5 phases; lava columns
+- [x] Next to their parent world in the dock and the Everbook's contents (commit bf94677)
+- [x] Unique abilities (16) and boss moves (6 each, 24), none a copy of another world's (bf94677)
+- [x] Own arenas, chaos, hero gifts (4 tops, outfits, items) and arrival scenes (d4fc08c)
+- [x] Own music: 16 level songs, 13 boss phase songs, all CC0, credited (a67f791; listening copies in
+      `boss-music/17-hollow...` to `20-cave...` and `boss-music/levels (secret worlds)`)
+- [x] Every move and ability has its own staged effect (`js/spells-secret.js`, 033a11b; tested in real fights)
+- [x] Board decorations: a mark per typed square, a trim along finished words (`deco` in secret-worlds.js, `hw-`,
+      `at-`, `dn-`, `lc-` in worlds.css)
+- [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
+      is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to
       go, an arrival animation, 4 levels + boss, corruption on every level, 4 player abilities (one per level, like
       the Rift), 10 boss moves with counterplay, arena and chaos, music (per phase + levels), hero gifts,

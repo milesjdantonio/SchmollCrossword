@@ -2093,3 +2093,27 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
     --good: #9ce07a; --wrong: #ff7a5c; --revealed: #c3a0ff; --shadow: 0 8px 22px rgba(0, 0, 0, .6);
     --board-shadow: 0 0 0 5px #1a0a08, 0 0 0 9px #c8401a, 0 0 46px rgba(255, 106, 31, .22), 0 16px 34px rgba(0, 0, 0, .6); color-scheme: dark;
 }
+
+/* The secret worlds' boards: a mark in each typed square, a trim along each finished word */
+.hw-nut { fill: #b9773e; } .hw-cap { fill: #6e4429; } .hw-stem { fill: #f3e6cc; } .hw-shroom { fill: #d9472b; } .hw-spot { fill: #fff6e6; }
+.hw-leaf { fill: #6b8f3a; } .hw-line { fill: none; stroke: #4a2e14; stroke-width: .008; stroke-linecap: round; }
+.hw-root { fill: none; stroke: #7a4a24; stroke-width: .022; stroke-linecap: round; } .hw-root.thin { stroke-width: .01; } .hw-sprout { fill: #7bbf4a; }
+[data-theme="dark"] .hw-nut { fill: #d99a5a; } [data-theme="dark"] .hw-leaf { fill: #8fd06b; } [data-theme="dark"] .hw-shroom { fill: #7dffd4; } [data-theme="dark"] .hw-spot { fill: #1a3a30; }
+[data-theme="dark"] .hw-root { stroke: #e3a35a; } [data-theme="dark"] .hw-sprout { fill: #7dffd4; }
+.board.hw-solved { box-shadow: 0 0 0 4px #ffd36b, 0 0 0 10px #7a4a24, 0 0 40px rgba(255, 179, 71, .65); }
+.at-pearl { fill: #f4f0ff; stroke: #b7a9d9; stroke-width: .006; } .at-shine { fill: #fff; }
+.at-coral { fill: none; stroke: #ff7a8a; stroke-width: .011; stroke-linecap: round; } .at-tri { fill: none; stroke: #c79a2e; stroke-width: .01; stroke-linecap: round; }
+.at-band { fill: none; stroke: #d9a93a; stroke-width: .02; stroke-linecap: round; } .at-band.thin { stroke-width: .008; stroke: #2a8fd6; } .at-bead { fill: #5fd0e8; }
+[data-theme="dark"] .at-band { stroke: #ffd98a; } [data-theme="dark"] .at-band.thin { stroke: #7fd4ff; } [data-theme="dark"] .at-tri { stroke: #ffd98a; }
+.board.at-solved { box-shadow: 0 0 0 4px #ffd98a, 0 0 0 10px #1c6a9a, 0 0 40px rgba(95, 208, 232, .7); }
+.dn-track { fill: none; stroke: rgba(140, 90, 30, .6); stroke-width: .012; stroke-linecap: round; } .dn-ring { fill: none; stroke: rgba(140, 90, 30, .55); stroke-width: .01; } .dn-grain { fill: rgba(140, 90, 30, .6); }
+.dn-ripple { fill: none; stroke: #c47f3e; stroke-width: .018; stroke-linecap: round; } .dn-ripple.thin { stroke-width: .009; stroke: #e0a95f; }
+[data-theme="dark"] .dn-track, [data-theme="dark"] .dn-ring { stroke: rgba(255, 200, 120, .55); } [data-theme="dark"] .dn-grain { fill: rgba(255, 200, 120, .6); } [data-theme="dark"] .dn-ripple { stroke: #f6d48f; }
+.board.dn-solved { box-shadow: 0 0 0 4px #f6d48f, 0 0 0 10px #8a5a2b, 0 0 40px rgba(246, 212, 143, .7); }
+.lc-crystal { fill: #9a7dff; stroke: #4a2e8a; stroke-width: .006; } .lc-facet { fill: none; stroke: rgba(255, 255, 255, .6); stroke-width: .005; }
+.lc-ember { fill: #ff6a1f; opacity: .85; } .lc-core { fill: #ffe08a; } .lc-drop { fill: #ff5a1f; stroke: #8a1e08; stroke-width: .005; }
+.lc-vein { fill: none; stroke: #ff8a1f; stroke-width: .014; stroke-linecap: round; stroke-linejoin: round; }
+.lc-vein-glow { fill: none; stroke: rgba(255, 106, 31, .4); stroke-width: .05; stroke-linecap: round; stroke-linejoin: round; }
+[data-theme="dark"] .lc-vein { stroke: #ffd03e; } [data-theme="dark"] .lc-crystal { fill: #c3a0ff; }
+.board.lc-solved { box-shadow: 0 0 0 4px #ffb02e, 0 0 0 10px #c8401a, 0 0 46px rgba(255, 106, 31, .75); }
+.deco-word.grow .hw-root, .deco-word.grow .at-band, .deco-word.grow .dn-ripple, .deco-word.grow .lc-vein, .deco-word.grow .lc-vein-glow { stroke-dasharray: 1; animation: deco-draw .7s ease-out backwards; }
