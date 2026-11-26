@@ -536,7 +536,9 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       free map. Measured at 200% scaling: Campaign's first open 0.51-0.67 s of stall down to 0.06-0.09 s (Classic:
       0.61 to 0.12, the rest is building the world's scene), Daily's 0.21 to 0.07-0.1 s.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
-      is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
+      is the parent's mascot). 6 boss moves each, not 10. No How to Play chapters yet. (Achievements done
+      2026-11-26: four each, hidden like the Rift's until won: a level cleared, a level with its meter never above
+      25%, the boss, every level at 3 stars; `hw-`, `at-`, `dn-`, `lc-` in achievements.js, 81 in all.)
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to
       go, an arrival animation, 4 levels + boss, corruption on every level, 4 player abilities (one per level, like
       the Rift), 10 boss moves with counterplay, arena and chaos, music (per phase + levels), hero gifts,

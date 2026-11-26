@@ -73,7 +73,24 @@ const Achievements = (() => {
         { id: "rf-pure", icon: "\u{1F56F}️", name: "Pure Light", desc: "Clear a Celestial Rift level with the corruption never above 25%.", campaign: true, secret: true },
         { id: "rf-angel", icon: "\u{1FAB6}", name: "Fallen Angel", desc: "Beat the Cursed Angel.", campaign: true, secret: true },
         { id: "rf-halo", icon: "\u{1F607}", name: "Halo Breaker", desc: "Beat the Cursed Angel with 3 stars.", campaign: true, secret: true },
-        { id: "rf-perfect", icon: "\u{1F31F}", name: "Starlit", desc: "Get 3 stars on every Celestial Rift level, the angel included.", campaign: true, secret: true }
+        { id: "rf-perfect", icon: "\u{1F31F}", name: "Starlit", desc: "Get 3 stars on every Celestial Rift level, the angel included.", campaign: true, secret: true },
+        // the other secret worlds, each hidden until it's yours: in, its meter kept low, its boss, every level at 3 stars
+        { id: "hw-enter", icon: "\u{1F330}", name: "Into the Hollow", desc: "Clear a level in the Great Hollow.", campaign: true, secret: true },
+        { id: "hw-calm", icon: "\u{1F43F}️", name: "Nothing Hoarded", desc: "Clear a Great Hollow level with the Hoard never above 25%.", campaign: true, secret: true },
+        { id: "hw-boss", icon: "\u{1F3C6}", name: "Nutcracker", desc: "Beat the Giant Squirrel.", campaign: true, secret: true },
+        { id: "hw-perfect", icon: "\u{1F31F}", name: "Every Acorn", desc: "Get 3 stars on every Great Hollow level, the boss included.", campaign: true, secret: true },
+        { id: "at-enter", icon: "\u{1F41A}", name: "The Drowned City", desc: "Clear a level in Atlantis.", campaign: true, secret: true },
+        { id: "at-calm", icon: "\u{1F4A7}", name: "Holding Your Breath", desc: "Clear an Atlantis level with the Pressure never above 25%.", campaign: true, secret: true },
+        { id: "at-boss", icon: "\u{1F531}", name: "Trident Taken", desc: "Beat Poseidon.", campaign: true, secret: true },
+        { id: "at-perfect", icon: "\u{1F30A}", name: "Master of the Deep", desc: "Get 3 stars on every Atlantis level, the boss included.", campaign: true, secret: true },
+        { id: "dn-enter", icon: "\u{1F3DC}️", name: "Sunken Sands", desc: "Clear a level in the Sunken Dunes.", campaign: true, secret: true },
+        { id: "dn-calm", icon: "\u{1F4A7}", name: "Sure Footing", desc: "Clear a Sunken Dunes level with the Quicksand never above 25%.", campaign: true, secret: true },
+        { id: "dn-boss", icon: "\u{1FAB1}", name: "Worm Turned", desc: "Beat the Sandworm.", campaign: true, secret: true },
+        { id: "dn-perfect", icon: "\u{1F31F}", name: "Not a Grain Lost", desc: "Get 3 stars on every Sunken Dunes level, the boss included.", campaign: true, secret: true },
+        { id: "lc-enter", icon: "\u{1F30B}", name: "Into the Fire", desc: "Clear a level in the Lava Cave.", campaign: true, secret: true },
+        { id: "lc-calm", icon: "\u{1F9CA}", name: "Cool Head", desc: "Clear a Lava Cave level with the Heat never above 25%.", campaign: true, secret: true },
+        { id: "lc-boss", icon: "\u{1F525}", name: "Heart of the Mountain", desc: "Beat the Lava Beast.", campaign: true, secret: true },
+        { id: "lc-perfect", icon: "\u{1F31F}", name: "Forged", desc: "Get 3 stars on every Lava Cave level, the boss included.", campaign: true, secret: true }
     ];
     const blank = () => ({ unlocked: {}, counts: {}, worlds: {} });
     const load = () => ({ ...blank(), ...U.store.get("achievements", {}) });
@@ -203,6 +220,13 @@ const Achievements = (() => {
             if (st.corruptPeak != null && st.corruptPeak <= 25) unlock("rf-pure");
             if (st.boss) { unlock("rf-angel"); if (st.bossStars === 3) unlock("rf-halo"); }
             if (st.riftPerfect) unlock("rf-perfect");
+        }
+        const SECRET = { hollow: "hw", atlantis: "at", dunes: "dn", cave: "lc" }, pre = SECRET[st.world];
+        if (pre && !st.special) {
+            unlock(pre + "-enter");
+            if (st.corruptPeak != null && st.corruptPeak <= 25) unlock(pre + "-calm");
+            if (st.boss) unlock(pre + "-boss");
+            if (st.riftPerfect) unlock(pre + "-perfect");          // (every level of the secret world being played at 3 stars)
         }
         if (got.length) U.store.set("achievements", data);
         return got;
