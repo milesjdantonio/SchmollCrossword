@@ -66,6 +66,23 @@ All from https://opengameart.org/content/<page>
   rift-p3.mp3     Boss Battle #2 (Symphonic Metal)              nene                                  boss-battle-2-symphonic-metal   (+ the melody of the original 8-bit Boss Battle #2, nene, CC0: opengameart.org/content/boss-battle-2-8-bit)
   rift-p4.mp3     Determined Pursuit (Epic Orchestra Loop)      Emma_MA                               determined-pursuit-epic-orchestra-loop
   rift-p5.mp3     Boss Battle 8 (metal)                         nene                                  boss-battle-8-metal
+  The Giant Squirrel (the Great Hollow) (a secret world, 2026-11-25):
+  hollow.mp3      Fairy Boss Battles                            MintoDog                              fairy-boss-battles
+  hollow-p2.mp3   Fairy Battles                                 MintoDog                              fairy-battles
+  Poseidon (Atlantis) (a secret world, 2026-11-25):
+  atlantis.mp3    A Legend Will Rise (Orchestral)               CodeManu                              a-legend-will-rise-orchestral
+  atlantis-p2.mp3 RPG Battle Theme II                           CleytonKauffman                       rpg-battle-theme-ii
+  atlantis-p3.mp3 Great Boss                                    Spring Spring                         great-boss
+  The Sandworm (the Sunken Dunes) (a secret world, 2026-11-25):
+  dunes.mp3       Darbuka Delight                               Adiutorium                            darbuka-delight
+  dunes-p2.mp3    White Limestone                               Bobjt                                 white-limestone
+  dunes-p3.mp3    Desert Zone                                   Concongames                           desert-zone-0
+  The Lava Beast (the Lava Cave) (a secret world, 2026-11-25):
+  cave.mp3        Fight, run, breath deeply                     Loyalty Freak Music                   fight-run-breath-deeply
+  cave-p2.mp3     Lava Dungeon Battle                           Sorth                                 lava-dungeon-battle
+  cave-p3.mp3     Boss Battle #7 (Metal)                        nene                                  boss-battle-7-metal
+  cave-p4.mp3     8-bit Danger!! Strong Boss                    HydroGene                             8-bit-danger-strong-boss
+  cave-p5.mp3     Fast fight / battle music                     Bonsaiheldin                          fast-fight-battle-music
 
 Composed for this game (composed by Claude as MIDI, played with the GeneralUser GS SoundFont by S. Christian Collins,
 https://schristiancollins.com/generaluser.php, whose license allows any use of music made with it, rendered with
@@ -154,3 +171,19 @@ matches, the whole song end to start, or a song that fades out running its last 
   level-rift-1.mp3         Heavenly Loop                                isaiah658                  heavenly-loop
   level-rift-2.mp3         The Magnificent Cosmos                       Adiutorium                 the-magnificent-cosmos
   level-rift-3.mp3         Across the Stars                             Indieteur                  across-the-stars
+  level-hollow-1.mp3       The Field Of Dreams                          pauliuw                    the-field-of-dreams
+  level-hollow-2.mp3       Beautiful Forest [Orchestra]                 nene                       beautiful-forest-orchestra
+  level-hollow-3.mp3       The Winged Forest                            Tsorthan Grove             the-winged-forest
+  level-hollow-4.mp3       Dark Forest Theme                            cynicmusic                 dark-forest-theme
+  level-atlantis-1.mp3     Eyes of the Ocean                            Tsorthan Grove             eyes-of-the-ocean
+  level-atlantis-2.mp3     Nautilus                                     poinl                      nautilus
+  level-atlantis-3.mp3     Orien                                        Tozan                      orien
+  level-atlantis-4.mp3     Aquaria                                      cynicmusic                 aquaria
+  level-dunes-1.mp3        Egyptian meditation music                    HaelDB                     egyptian-meditation-music
+  level-dunes-2.mp3        Watch The Sand                               SpringySpringo             watch-the-sand
+  level-dunes-3.mp3        Hyyoshi Arabian Syle Backgound Music RPG     Tozan                      hyyoshi-arabian-syle-backgound-music-rpg
+  level-dunes-4.mp3        Hidden Temple                                Eldritch Grim              hidden-temple
+  level-cave-1.mp3         Cave Theme                                   HaelDB                     cave-theme
+  level-cave-2.mp3         Dark Cavern Ambient                          Paul Wortmann              dark-cavern-ambient
+  level-cave-3.mp3         Deep Humidity                                TinyWorlds                 deep-humidity
+  level-cave-4.mp3         Fire Level                                   Spring Spring              fire-level

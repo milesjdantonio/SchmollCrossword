@@ -2474,13 +2474,8 @@ const Campaign = (() => {
 
     // ---- the level's own song, and a music control by the
     // timer to change it quickly ("add a music slider to the levels"). Songs: audio/music/level-<world>-<1..4>.mp3
-    // Music for the four newest secret worlds: songs from the game's own set until they get their own (their levels
-    // play their parent world's level music; each boss phase a song that gets more intense)
-    const LEVEL_KIN = { hollow: "squirrel", atlantis: "ocean", dunes: "desert", cave: "volcano" };
-    const SONGS_OF = { hollow: ["squirrel", "snow-p2"], atlantis: ["ocean", "snow-p2", "robot-p2"], dunes: ["desert", "desert-p2", "volcano-p2"],
-        cave: ["volcano", "volcano-p2", "volcano-p3", "robot-p3", "space-p4"] };
-    const bossSong = (world, phase) => (SONGS_OF[world] ? SONGS_OF[world][Math.min(phase, SONGS_OF[world].length) - 1] : phase > 1 ? `${world}-p${phase}` : world);
-    const songFor = (world, level) => `level-${LEVEL_KIN[world] || world}-${level}`;
+    const bossSong = (world, phase) => (phase > 1 ? `${world}-p${phase}` : world);
+    const songFor = (world, level) => `level-${world}-${level}`;
     const musicCtl = U.el("div", { class: "music-ctl", hidden: true, title: "Level Music (also in Settings and the sound menu)" },
         U.el("button", { type: "button", class: "mc-mute", "aria-label": "Level music on or off" }),
         U.el("input", { type: "range", min: "0", max: "100", step: "1", "aria-label": "Level music volume" }),

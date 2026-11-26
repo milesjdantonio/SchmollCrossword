@@ -250,5 +250,69 @@
  "level-volcano-4": {
   "loopStart": 37.0,
   "loopEnd": 87.0006
+ },
+ "level-hollow-1": {
+  "loopStart": 2.0,
+  "loopEnd": 74.9341
+ },
+ "level-hollow-2": {
+  "loopStart": 2.0,
+  "loopEnd": 65.8654
+ },
+ "level-hollow-3": {
+  "loopStart": 2.0,
+  "loopEnd": 146.1
+ },
+ "level-hollow-4": {
+  "loopStart": 2.0,
+  "loopEnd": 90.8117
+ },
+ "level-atlantis-1": {
+  "loopStart": 2.0,
+  "loopEnd": 73.6795
+ },
+ "level-atlantis-2": {
+  "loopStart": 2.0,
+  "loopEnd": 148.95
+ },
+ "level-atlantis-3": {
+  "loopStart": 2.0,
+  "loopEnd": 135.9444
+ },
+ "level-atlantis-4": {
+  "loopStart": 2.0,
+  "loopEnd": 39.9612
+ },
+ "level-dunes-1": {
+  "loopStart": 2.0,
+  "loopEnd": 123.5885
+ },
+ "level-dunes-2": {
+  "loopStart": 2.0,
+  "loopEnd": 71.1948
+ },
+ "level-dunes-3": {
+  "loopStart": 2.0,
+  "loopEnd": 134.3
+ },
+ "level-dunes-4": {
+  "loopStart": 2.0,
+  "loopEnd": 50.0961
+ },
+ "level-cave-1": {
+  "loopStart": 2.0,
+  "loopEnd": 139.65
+ },
+ "level-cave-2": {
+  "loopStart": 2.0,
+  "loopEnd": 109.9464
+ },
+ "level-cave-3": {
+  "loopStart": 2.0,
+  "loopEnd": 121.853
+ },
+ "level-cave-4": {
+  "loopStart": 2.0,
+  "loopEnd": 87.4668
  }
 }

@@ -343,5 +343,122 @@
   "title": "Boss Battle 8 (metal)",
   "author": "nene",
   "page": "boss-battle-8-metal"
+ },
+ "hollow": {
+  "file": "hollow.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 103.1838,
+  "title": "Fairy Boss Battles",
+  "author": "MintoDog",
+  "page": "fairy-boss-battles"
+ },
+ "hollow-p2": {
+  "file": "hollow-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 103.2833,
+  "title": "Fairy Battles",
+  "author": "MintoDog",
+  "page": "fairy-battles"
+ },
+ "atlantis": {
+  "file": "atlantis.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 61.3831,
+  "title": "A Legend Will Rise (Orchestral)",
+  "author": "CodeManu",
+  "page": "a-legend-will-rise-orchestral"
+ },
+ "atlantis-p2": {
+  "file": "atlantis-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 59.6995,
+  "title": "RPG Battle Theme II",
+  "author": "CleytonKauffman",
+  "page": "rpg-battle-theme-ii"
+ },
+ "atlantis-p3": {
+  "file": "atlantis-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 114.914,
+  "title": "Great Boss",
+  "author": "Spring Spring",
+  "page": "great-boss"
+ },
+ "dunes": {
+  "file": "dunes.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 111.9,
+  "title": "Darbuka Delight",
+  "author": "Adiutorium",
+  "page": "darbuka-delight"
+ },
+ "dunes-p2": {
+  "file": "dunes-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 110.15,
+  "title": "White Limestone",
+  "author": "Bobjt",
+  "page": "white-limestone"
+ },
+ "dunes-p3": {
+  "file": "dunes-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 61.5545,
+  "title": "Desert Zone",
+  "author": "Concongames",
+  "page": "desert-zone-0"
+ },
+ "cave": {
+  "file": "cave.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 122.5,
+  "title": "Fight, run, breath deeply",
+  "author": "Loyalty Freak Music",
+  "page": "fight-run-breath-deeply"
+ },
+ "cave-p2": {
+  "file": "cave-p2.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 31.0,
+  "title": "Lava Dungeon Battle",
+  "author": "Sorth",
+  "page": "lava-dungeon-battle"
+ },
+ "cave-p3": {
+  "file": "cave-p3.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 45.3519,
+  "title": "Boss Battle #7 (Metal)",
+  "author": "nene",
+  "page": "boss-battle-7-metal"
+ },
+ "cave-p4": {
+  "file": "cave-p4.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 111.0,
+  "title": "8-bit Danger!! Strong Boss",
+  "author": "HydroGene",
+  "page": "8-bit-danger-strong-boss"
+ },
+ "cave-p5": {
+  "file": "cave-p5.mp3",
+  "hit": 6.5,
+  "loopStart": 8.5,
+  "loopEnd": 28.55,
+  "title": "Fast fight / battle music",
+  "author": "Bonsaiheldin",
+  "page": "fast-fight-battle-music"
  }
 }
