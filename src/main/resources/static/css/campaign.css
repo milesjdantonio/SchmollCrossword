@@ -1036,7 +1036,7 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 @keyframes bp-pop { 40% { transform: scale(1.25); background: var(--boss); } }
 .bp-fog { position: absolute; inset: -4px; border-radius: 10px; background: radial-gradient(circle at 30% 40%, rgba(60, 50, 80, .95), rgba(30, 25, 45, .92)); opacity: 0; pointer-events: none; transition: opacity .3s; }
 .bp-fog.on { opacity: 1; }
-.bp-fog.on::after { content: "🙈"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 46px; }
+.bp-fog.on::after { content: ""; position: absolute; inset: 0; background: var(--g-monkey) center / 46px no-repeat; }
 .boss-panel.frozen .bp-board { box-shadow: 0 0 0 4px #9fd8ff, 0 0 18px #9fd8ff; filter: saturate(.5) brightness(1.08); }
 .boss-panel.frozen .bp-portrait .boss-art { filter: drop-shadow(0 0 12px #9fd8ff) saturate(.5) brightness(1.15); }
 .boss-panel.frozen .bp-portrait .boss-art * { animation-play-state: paused !important; }
@@ -1257,12 +1257,12 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .boss-panel.st-slow .bp-portrait .boss-art * { animation-duration: 6s !important; }
 .boss-panel.st-stutter .bp-portrait { animation: st-sneeze 3s infinite; }
 @keyframes st-sneeze { 0%, 60% { transform: none; } 66% { transform: scale(1.12) rotate(-6deg); } 72% { transform: scale(.9) translateY(10px) rotate(4deg); } 80% { transform: none; } }
-.boss-panel.st-hypno .bp-portrait::after { content: "🌀"; position: absolute; left: 50%; top: 30%; font-size: 44px; margin: -22px 0 0 -22px; animation: bz-spin 1.2s linear infinite; opacity: .85; }
-.boss-panel.st-crash .bp-portrait::after { content: "💤"; position: absolute; right: 6px; top: 6px; font-size: 34px; animation: cm-bob .8s ease-in-out infinite alternate; }
+.boss-panel.st-hypno .bp-portrait::after { content: ""; position: absolute; left: 50%; top: 30%; width: 44px; height: 44px; background: var(--g-swirl) center / contain no-repeat; margin: -22px 0 0 -22px; animation: bz-spin 1.2s linear infinite; opacity: .85; }
+.boss-panel.st-crash .bp-portrait::after { content: ""; position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; background: var(--g-sleep) center / contain no-repeat; animation: cm-bob .8s ease-in-out infinite alternate; }
 .boss-panel.st-bubble .bp-portrait::before { content: ""; position: absolute; inset: -14px; border-radius: 50%; z-index: 2;
     background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, .9) 0 6%, rgba(160, 230, 255, .25) 14%, rgba(120, 210, 255, .18) 60%, rgba(180, 240, 255, .6) 72%, transparent 74%); }
 .boss-panel.st-bubble .bp-portrait { animation: cm-bob 1.4s ease-in-out infinite alternate; }
-.boss-panel.st-dig .bp-board-wrap::after { content: "🍂🍁🍂"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; background: rgba(224, 122, 46, .35); border-radius: 8px; }
+.boss-panel.st-dig .bp-board-wrap::after { content: ""; position: absolute; inset: 0; border-radius: 8px; background: var(--g-leafAutumn) 30% 50% / 30px no-repeat, var(--g-maple) 50% 50% / 30px no-repeat, var(--g-leafAutumn) 70% 50% / 30px no-repeat, rgba(224, 122, 46, .35); }
 .boss-panel.st-quick .bp-portrait { transform: translateY(26px); filter: sepia(.5); transition: transform 1s, filter 1s; }
 .boss-panel.st-quick .bp-stage::before { background: radial-gradient(ellipse, #b9823e, #8a5a26); height: 46px; opacity: .9; }
 .boss-panel.st-sand .bp-board-wrap::after { content: ""; position: absolute; inset: -4px; border-radius: 10px; pointer-events: none;
@@ -1275,15 +1275,15 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .boss-panel.st-worm .bp-board-wrap::before { content: ""; position: absolute; inset: -12px; z-index: -1; border-radius: 50%;
     background: conic-gradient(#c06bff, #2b2233, #58d6ff, #2b2233, #c06bff); filter: blur(4px); animation: bz-spin 1.6s linear infinite; }
 .boss-panel.st-ghost .bp-portrait .boss-art { opacity: .55; filter: drop-shadow(0 0 14px #a99bff); }
-.boss-panel.st-haunt .bp-stage::after { content: "👻"; background: none; font-size: 30px; inset: auto 10px 10px auto; animation: cm-bob 1s ease-in-out infinite alternate; }
+.boss-panel.st-haunt .bp-stage::after { content: ""; background: var(--g-ghost) center / contain no-repeat; width: 30px; height: 30px; inset: auto 10px 10px auto; animation: cm-bob 1s ease-in-out infinite alternate; }
 .boss-panel.st-calm { box-shadow: var(--shadow), 0 0 0 5px rgba(185, 166, 232, .5), 0 0 40px rgba(185, 166, 232, .6); animation: none; }
 .boss-panel.st-blind .bp-portrait .boss-art { filter: brightness(1.6) blur(1px); }
 .bp-cell.blot .bp-ltr { color: #2b2233; font-size: calc(150px / var(--size, 5)); }
 .bp-cell.blot { background: radial-gradient(circle, #2b2233 0 30%, #fff 45%); }
 .bp-cell.vine { background: #c9f0c9; }
-.bp-cell.vine::after { content: "🌿"; position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(110px / var(--size, 5)); }
+.bp-cell.vine::after { content: ""; position: absolute; inset: 0; background: var(--g-leaf) center / 70% no-repeat; }
 .bp-cell.chomped { background: #ffd23f; }
-.bp-cell.chomped::after { content: "👾"; position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(110px / var(--size, 5)); }
+.bp-cell.chomped::after { content: ""; position: absolute; inset: 0; background: var(--g-invader) center / 70% no-repeat; }
 .bp-cell.blown { animation: st-blown .5s; }
 @keyframes st-blown { 30% { background: #e8c48a; transform: translateX(4px) rotate(4deg); } }
 
@@ -1321,7 +1321,7 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
     box-shadow: inset 0 0 12px rgba(255, 240, 160, .8), 0 0 14px rgba(255, 90, 20, .7); animation: lava-flow 1.6s linear infinite; mix-blend-mode: multiply; }
 @keyframes lava-flow { to { background-position: 0 200%; } }
 @media (prefers-reduced-motion: reduce) { #board .cell.lava-col::after { animation: none; } }
-#board .cell.thorny::after { content: "🌹"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: 1.6em; background: rgba(70, 120, 60, .35); border-radius: inherit; }
+#board .cell.thorny::after { content: ""; position: absolute; inset: 0; z-index: 3; background: var(--g-rose) center / 62% no-repeat, rgba(70, 120, 60, .35); border-radius: inherit; }
 #board .cell .ghost-ltr, #board .cell .cheat-ltr { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1.6em var(--font-body); pointer-events: none; }
 #board .cell .ghost-ltr { color: rgba(140, 120, 220, .55); text-shadow: 0 0 8px rgba(160, 140, 255, .8); animation: bz-glow 1.2s ease-in-out infinite alternate; }
 #board .cell.filled .ghost-ltr { display: none; }
@@ -1371,8 +1371,8 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 #board .cell.piled::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit;
     background: radial-gradient(circle at 20% 30%, #ff5c6c 0 12%, transparent 13%), radial-gradient(circle at 70% 25%, #ffd23f 0 14%, transparent 15%), radial-gradient(circle at 40% 75%, #4fc3f7 0 13%, transparent 14%),
         radial-gradient(circle at 80% 70%, #7be36b 0 12%, transparent 13%), radial-gradient(circle at 55% 50%, #c08bff 0 12%, transparent 13%), #fff3d6; }
-#board .cell.gummed::after { content: "🫧"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: 1.4em; border-radius: inherit; background: rgba(255, 140, 200, .75); cursor: pointer; }
-#board .cell.bombed::after { content: "💣"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: 1.5em; animation: bp-blink .3s infinite alternate; pointer-events: none; }
+#board .cell.gummed::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: var(--g-bubble) center / 60% no-repeat, rgba(255, 140, 200, .75); cursor: pointer; }
+#board .cell.bombed::after { content: ""; position: absolute; inset: 0; z-index: 3; background: var(--g-bomb) center / 64% no-repeat; animation: bp-blink .3s infinite alternate; pointer-events: none; }
 #board .cell.clouded::after { content: ""; position: absolute; inset: -2px; z-index: 3; border-radius: 40%; background: radial-gradient(circle, #fff 40%, #eef4fb 70%); }
 #board .cell.masked .ltr { color: transparent !important; }
 #board .cell .mask-ltr { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1.6em var(--font-body); color: var(--ink); pointer-events: none; }
@@ -1446,7 +1446,7 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .rb-knot { position: absolute; top: 50%; left: var(--x); width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; display: grid; place-items: center; z-index: 2;
     background: radial-gradient(circle at 40% 35%, #fff, #ffe066 55%, #ffb21e); border: 3px solid #2b2233; box-shadow: 0 0 0 4px rgba(255, 224, 102, .35), 0 0 18px rgba(255, 210, 63, .8);
     transition: left .45s cubic-bezier(.3, 1.3, .5, 1); }
-.rb-knot i::before { content: "⚔️"; font-style: normal; font-size: 20px; }
+.rb-knot i::before { content: ""; display: inline-block; width: 20px; height: 20px; background: var(--g-swords) center / contain no-repeat; }
 .rb-knot.push { animation: rb-knot-push .45s ease-out; }
 @keyframes rb-knot-push { 30% { transform: translate(-50%, -50%) scale(1.35); box-shadow: 0 0 0 10px rgba(255, 224, 102, .4), 0 0 34px #fff; } }
 .rb-lead { position: absolute; left: 50%; top: calc(100% + 3px); transform: translateX(-50%); font: 900 .78rem/1.2 var(--font-body); color: var(--ink); white-space: nowrap;
@@ -1756,8 +1756,8 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 
 /* ---- the secret bosses' moves on your board (campaign.js hitMe) ---- */
 /* Pinecone Barrage: prickly squares you can't type in for a while */
-#board .cell.prickly::after { content: "🌲"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: .9em; pointer-events: none;
-    background: repeating-conic-gradient(from 0deg, rgba(90, 60, 20, .28) 0 10deg, transparent 10deg 30deg); border-radius: inherit; }
+#board .cell.prickly::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: var(--g-pine) 85% 15% / 34% no-repeat, repeating-conic-gradient(from 0deg, rgba(90, 60, 20, .28) 0 10deg, transparent 10deg 30deg); border-radius: inherit; }
 /* Barnacles: a crust you knock off with two clicks */
 #board .cell.barnacled { box-shadow: inset 0 0 0 3px #8a9aa8; }
 #board .cell.barnacled::before { content: ""; position: absolute; right: 6%; bottom: 6%; width: 38%; height: 38%; z-index: 3; pointer-events: none; border-radius: 50% 50% 40% 40%;

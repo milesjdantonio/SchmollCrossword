@@ -490,13 +490,13 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       fairground, the neon Arcade, the Library's gothic towers, the Factory and rails, the Volcano and the Cave),
       the open country filled (hills, copses, hamlets), the sky with constellations and planets, the sea pouring off
       the edge of the world, sea names, serpent, Kraken, ships, compass rose, title ribbon, scale, patterned border.
-- [ ] NEXT (the user, 2026-11-26): "remove all emojis and instead create your own icon everywhere": every emoji in the
-      game (ability and item icons, boss moves, effect particles, chips, floating text, notes, companions...) becomes
-      a drawn icon (the `icon()` set in campaign.js / an SVG sprite), and FX particle "emoji" shapes become drawn ones.
-      PLAN (in progress): 1,125 emoji, 224 different (powers.js 677, campaign.js 298, howto 51, game 32, css 14...).
-      `js/glyphs.js`: ~100 icons drawn as shape lists (SVG and canvas Path2D from the same data); `Glyph.EMOJI` maps
-      every emoji to an icon; `Glyph.fill(el, text)` puts text with inline icons; U.el's `text` uses it; FX.art.text
-      (canvas particles) draws the icon; CSS emoji become SVG backgrounds; then a browser sweep for any emoji left.
+- [x] No emoji anywhere (the user, 2026-11-26: "remove all emojis and instead create your own icon everywhere"):
+      `js/glyphs.js` draws ~130 icons for the game (shape lists, the same data as inline SVG, canvas sprites and CSS
+      images `--g-name`) and maps all 224 emoji the game used to them (`Glyph.EMOJI`). It hooks every way text reaches
+      the page (an element's text or HTML, strings given to append/prepend/replaceChildren/before/after; titles and
+      labels lose their emoji), FX's text sprites draw the icon, three canvas spots draw icons, the CSS ::after
+      pictures use `var(--g-name)`, index.html's symbols are `<i class="gi gi-...">`. The emoji in the source are only
+      names now. A browser sweep of every page, the Everbook, a boss fight and How to Play found none left.
 - [ ] Still to do: the refresh of the non-campaign pages (Home, Daily, Stats, Settings), the user's request; and an
       idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion

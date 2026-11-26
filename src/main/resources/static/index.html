@@ -60,7 +60,7 @@
                 </nav>
                 <div class="tools">
                     <button type="button" class="tool" id="howto-btn" title="How to Play"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.8"/><path class="dot" d="M12 17.2v.1"/></svg><span class="sr">How to Play</span></button>
-                    <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="world-pop"><span class="wt-icon" aria-hidden="true">&#127757;</span><span class="sr">Change world</span></button>
+                    <button type="button" class="tool" id="world-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="world-pop"><span class="wt-icon" aria-hidden="true"><i class="gi gi-globe" aria-hidden="true"></i></span><span class="sr">Change world</span></button>
                     <button type="button" class="tool" id="sound-toggle" title="Sound" aria-haspopup="true" aria-expanded="false" aria-controls="sound-pop"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M4 9h4l5-4v14l-5-4H4z"/><path class="waves" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/><path class="x" d="M16 9l6 6M22 9l-6 6"/></svg><span class="sr">Sound</span></button>
                 </div>
             </div>
@@ -68,8 +68,8 @@
                 <div class="world-pop-head">
                     <b>Pick a World</b>
                     <div class="pop-mode" role="group" aria-label="Light or dark mode">
-                        <button type="button" data-mode="light">&#9728; Light</button>
-                        <button type="button" data-mode="dark">&#9790; Dark</button>
+                        <button type="button" data-mode="light"><i class="gi gi-sun" aria-hidden="true"></i> Light</button>
+                        <button type="button" data-mode="dark"><i class="gi gi-moon" aria-hidden="true"></i> Dark</button>
                     </div>
                 </div>
                 <div class="world-pop-cards" id="world-pop-cards"></div>
@@ -102,7 +102,7 @@
                             <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
                             <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true">&#9733;</span><span class="chip-name">Challenge</span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true"><i class="gi gi-star" aria-hidden="true"></i></span><span class="chip-name">Challenge</span><span class="chip-state">Play</span></a>
                             <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub"></span><span class="chip-state">Fight</span></span></button>
                         </div>
                         <p class="card-status" id="daily-status"></p>
@@ -133,7 +133,7 @@
                         <button type="button" data-difficulty="easy">Easy</button>
                         <button type="button" data-difficulty="medium">Medium</button>
                         <button type="button" data-difficulty="hard">Hard</button>
-                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="A bigger grid, 6&times;6 to 9&times;9, with longer words and more points"><span aria-hidden="true">&#9733;</span> Challenge</button>
+                        <button type="button" class="challenge-btn" data-difficulty="challenge" title="A bigger grid, 6&times;6 to 9&times;9, with longer words and more points"><span aria-hidden="true"><i class="gi gi-star" aria-hidden="true"></i></span> Challenge</button>
                         <button type="button" class="boss-mode-btn" id="boss-mode" hidden title="Race today's boss">Boss</button>
                     </nav>
                 </div>
@@ -271,8 +271,8 @@
                     <fieldset class="card">
                         <legend>Mode</legend>
                         <div class="options">
-                            <label class="opt"><input type="radio" name="theme" value="light"><span>&#9728; Light</span></label>
-                            <label class="opt"><input type="radio" name="theme" value="dark"><span>&#9790; Dark</span></label>
+                            <label class="opt"><input type="radio" name="theme" value="light"><span><i class="gi gi-sun" aria-hidden="true"></i> Light</span></label>
+                            <label class="opt"><input type="radio" name="theme" value="dark"><span><i class="gi gi-moon" aria-hidden="true"></i> Dark</span></label>
                         </div>
                         <p class="hint" id="mode-note">This world is always dark.</p>
                     </fieldset>
@@ -360,6 +360,7 @@
     <!-- the start-up intro -->
     <div id="intro" class="intro" hidden></div>
 
+    <script src="js/glyphs.js"></script>
     <script src="js/util.js"></script>
     <script src="js/score.js"></script>
     <script src="js/sound.js"></script>

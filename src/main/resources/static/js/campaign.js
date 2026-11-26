@@ -1690,7 +1690,7 @@ const Campaign = (() => {
                     U.el("div", {}, U.el("dt", { text: "Abilities" }), U.el("dd", { text: `${unlockedAbilities().length} / ${ABILITIES.filter(a => a.world !== "rift" || secretOpen()).length}` })),
                     U.el("div", {}, U.el("dt", { text: "Skills Mastered" }), U.el("dd", { text: `${course().filter(k => k.mastered).length} / ${course().length}` }))));
             const list = U.el("ol", { class: "eb-toc" });
-            order.forEach(i => {
+            shownOrder().forEach(i => {
                 const s = map[i], open = sectionOpen(i), w = Worlds.byId[s.world], full = worldStars(i) >= LV(i).length * 3;
                 list.append(U.el("li", { "data-world": s.world, "data-theme": Worlds.modeFor(w), class: (open ? "" : "shut") + (i === data.section ? " here" : "") + (s.secret ? " branch" : "") },
                     U.el("button", { type: "button", onclick: () => bookGo(i), "aria-label": `${w.name}, ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length} cleared${open ? "" : ", locked"}` },

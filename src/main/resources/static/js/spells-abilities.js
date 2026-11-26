@@ -1053,7 +1053,7 @@
                 const ang = i / 12 * TAU + t * 1.6, rx = b.width * 0.62, ry = b.height * 0.62, x = o.x + Math.cos(ang) * rx, y = o.y + Math.sin(ang) * ry;
                 K.haloAt(ctx, x, y, 18, "#ffd06b", a * 0.8);
                 ctx.globalAlpha = a; ctx.fillStyle = "#fff6d8"; ctx.font = "900 22px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText(i % 2 ? "♪" : "♫", x, y);
+                { const ic = Glyph.sprite(i % 2 ? "note" : "notes", 64), z = parseFloat(ctx.font) || 24; ctx.drawImage(ic, x - z / 2, y - z / 2, z, z); }
             }
         } });
         spray({ x: o.x, y: b.bottom }, 24, { color: ["#fff6d8", "#ffd06b"], shape: "star", angle: -Math.PI / 2, spread: 0.9, speed: [120, 300], size: [2, 4], g: -60, life: [0.8, 1.4], add: true });

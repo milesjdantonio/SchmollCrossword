@@ -505,7 +505,7 @@
             const x = lerp(b.left + 20, b.right - 20, (Math.sin(k * Math.PI * 2 - Math.PI / 2) + 1) / 2), base = b.bottom, h = b.height * 1.1;
             ctx.globalAlpha = Math.sin(k * Math.PI);
             for (const p of parts) { p.a += 0.25 + (1 - p.k) * 0.2; const y = base - p.k * h, r = 10 + p.k * p.k * 70; ctx.fillStyle = Math.sin(p.a) > 0 ? "rgba(220,230,245,.9)" : "rgba(160,175,200,.7)"; ctx.beginPath(); ctx.arc(x + Math.cos(p.a) * r, y, 4 + p.k * 4, 0, TAU); ctx.fill(); }
-            ctx.font = "900 22px sans-serif"; ctx.fillStyle = "#2b2233"; ctx.textAlign = "center"; ctx.fillText(Math.floor(t * 4) % 2 ? "↕" : "↔", x, base - h * 0.5);
+            ctx.drawImage(Glyph.sprite(Math.floor(t * 4) % 2 ? "arrowUD" : "arrowLR", 48), x - 12, base - h * 0.5 - 12, 24, 24);
         } });
         await wait(1500);
     });
@@ -786,7 +786,7 @@
             ctx.fillRect(b.left - 14 - (1 - slam) * 60, b.top - 6, 12, b.bottom - b.top + 12); ctx.strokeRect(b.left - 14 - (1 - slam) * 60, b.top - 6, 12, b.bottom - b.top + 12);
             ctx.fillRect(b.right + 2 + (1 - slam) * 60, b.top - 6, 12, b.bottom - b.top + 12); ctx.strokeRect(b.right + 2 + (1 - slam) * 60, b.top - 6, 12, b.bottom - b.top + 12);
             if (slam >= 1) { ctx.strokeStyle = "rgba(255,60,60,.8)"; ctx.lineWidth = 1.5; for (let y = b.top; y <= b.bottom; y += 8) { ctx.beginPath(); ctx.moveTo(b.left, y); ctx.lineTo(b.right, y); ctx.stroke(); }
-                if (Math.sin(t * 30) > -0.3) { ctx.fillStyle = "#ff3b3b"; ctx.font = "900 16px monospace"; ctx.textAlign = "center"; ctx.fillText("🔒 LOCKED", (b.left + b.right) / 2, b.top - 12); } }
+                if (Math.sin(t * 30) > -0.3) { ctx.fillStyle = "#ff3b3b"; ctx.font = "900 16px monospace"; ctx.textAlign = "center"; ctx.fillText("LOCKED", (b.left + b.right) / 2 + 10, b.top - 12); ctx.drawImage(Glyph.sprite("lock", 48), (b.left + b.right) / 2 - 52, b.top - 30, 20, 20); } }
         } });
         setTimeout(() => { FX.shake(6, 200); tone({ f: 180, f2: 90, d: 0.12, v: 0.25, type: "square" }); }, K.still() ? 0 : 400);
         await wait(1400);

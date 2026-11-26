@@ -263,6 +263,8 @@ const FX = (() => {
     }
     // text and emoji, drawn once each (with a soft shadow) and then just placed: drawing an emoji is slow
     const textSprite = (text, color) => sprite("t" + text + color, 80, (c, n) => {
+        const icon = typeof Glyph !== "undefined" && Glyph.has(text) && Glyph.sprite(text, 64);
+        if (icon) { c.shadowColor = "rgba(0,0,0,.3)"; c.shadowBlur = 8; c.shadowOffsetY = 3; c.drawImage(icon, (n - 60) / 2, (n - 60) / 2, 60, 60); return; }
         c.font = "56px sans-serif";
         c.textAlign = "center";
         c.textBaseline = "middle";

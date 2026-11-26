@@ -1443,3 +1443,10 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 .lb-line { margin: 4px 0; font-weight: 700; }
 .lb-link { color: var(--accent); font-weight: 800; text-decoration: none; }
 @media (max-width: 370px) { .modes a { padding: 5px 5px; font-size: .74rem; } }
+
+/* the game's drawn icons (glyphs.js), sitting in a line of text like a letter */
+svg.glyph { width: 1.15em; height: 1.15em; flex: none; }
+svg.glyph.inline { display: inline-block; vertical-align: -0.2em; }
+/* a drawn icon written into the page's own markup (index.html): the same pictures as glyphs.js, as CSS images */
+.gi { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -0.2em; background: center / contain no-repeat; font-style: normal; }
+.gi-sun { background-image: var(--g-sun); } .gi-moon { background-image: var(--g-moon); } .gi-star { background-image: var(--g-star); } .gi-globe { background-image: var(--g-globe); }
