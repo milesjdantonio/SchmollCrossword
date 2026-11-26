@@ -95,7 +95,7 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     // Screens: the part of the URL after "#" picks one (so Back and bookmarks work)
     // ---------------------------------------------------------------------------------------------
-    let firstShow = true;
+    let firstShow = true, warmQueued = false;
     function showView() {
         const view = U.view();
         const gameView = view === "daily" || view === "level";
@@ -121,6 +121,11 @@ const App = (() => {
         else if (view === "level") Campaign.ready().then(() => { if (U.view() === "level") Game.show(view); }, () => Game.show(view));
         else if (view !== "campaign") Game.show(view);
         scrollTo({ top: 0 });
+        if (!warmQueued && (view === "home" || view === "stats" || view === "settings")) {
+            // once the page has settled, draw the campaign's stage and the play stage unseen so their first openings don't stall
+            warmQueued = true;
+            setTimeout(() => (window.requestIdleCallback || (f => setTimeout(f, 0)))(() => Campaign.warmStage().then(() => { if (!["daily", "level"].includes(U.view())) return Game.warmStage(); }).catch(err => console.error(err)), { timeout: 3000 }), 2500);
+        }
     }
 
     // on a phone-sized game screen the mascot and its speech bubble would cover the board

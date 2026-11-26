@@ -1789,3 +1789,6 @@ html.boss-fumes .clues li:not(.active) { filter: blur(3.5px); opacity: .55; tran
 .at-label.gold { box-shadow: 0 0 0 2px #ffd65a, 0 0 18px rgba(255, 200, 60, .75); }
 .at-label.gold small { color: #ffe08a; }
 .at-gold-note { color: #a8740a; font-weight: 800; }
+
+/* drawn once while Home is idle so the GPU has its programs ready (Campaign.warmStage): there, but not seen */
+#campaign-view.warming { position: fixed; inset: 0; z-index: 2147483000; opacity: .004; pointer-events: none; }

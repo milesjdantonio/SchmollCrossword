@@ -218,3 +218,6 @@ html[data-view="game"] #world-bg { filter: saturate(calc(.4 + var(--solve, 1) * 
         radial-gradient(120% 100% at 38% 52%, transparent 55%, color-mix(in srgb, var(--bg) 50%, transparent) 100%); }
 }
 @media (prefers-reduced-motion: reduce) { .jr-hero, .jr-letter, .jr-page, .jr-boss { animation: none !important; } }
+
+/* a world's title card played unseen while Home is idle (Game.warmStage): drawn, but not seen or clickable */
+html.tc-warming #overlay > .tc { opacity: .004 !important; pointer-events: none !important; }

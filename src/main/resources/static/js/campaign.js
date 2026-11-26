@@ -1282,6 +1282,33 @@ const Campaign = (() => {
         } else setTimeout(() => heroOnMap(fresh), fresh ? 700 : 450);
     }
 
+    // The first time a page is drawn, the browser builds the GPU programs for everything on it (its gradients,
+    // shadows, 3D and filters), which stalls that first frame for about half a second. While Home sits idle the stage
+    // is drawn once at near-zero opacity, so opening the campaign later finds them ready. Nothing is fetched but the
+    // free map, and the world doesn't change.
+    let stageWarmed = false;
+    async function warmStage() {
+        const idle = () => ["home", "stats", "settings"].includes(U.view());
+        if (stageWarmed || !idle()) return;
+        try { await fetchMap(); } catch (err) { return; }
+        if (stageWarmed || !idle() || !map) return;
+        stageWarmed = true;
+        const view = $("#campaign-view");
+        data = { ...data, ...U.store.get("campaign", {}) };
+        data.section = U.clamp(data.section || 0, 0, map.length - 1);
+        if (!LV(data.section).includes(data.sel)) data.sel = restStop(data.section);
+        view.classList.add("warming");
+        view.hidden = false;
+        try {
+            drawBar(); drawStage({ deal: true }); drawPage(); drawStrip(); drawHero();
+            await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(res))));
+            await U.wait(700);
+        } catch (err) { console.error("warm stage", err); }
+        view.classList.remove("warming");
+        if (U.view() !== "campaign") view.hidden = true;
+        warmAtlas();                       // (and the Atlas's pictures, which the first opening would otherwise start)
+    }
+
     function play(world, level) {
         data.playing = { world, level };
         // (the stage comes back to this level's world, with the hero standing on it)
@@ -5092,7 +5119,7 @@ const Campaign = (() => {
     phone.addEventListener("change", () => { if (onStage()) { drawStage(); drawPage(); } });
 
     return {
-        onView, showMap, play, playSpecial, heroLook, hero: () => (data.hero ? heroLook() : null), biome, prop: (world, r) => PROPS[biome(world).prop](r), editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
+        onView, showMap, warmStage, play, playSpecial, heroLook, hero: () => (data.hero ? heroLook() : null), biome, prop: (world, r) => PROPS[biome(world).prop](r), editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
         isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };

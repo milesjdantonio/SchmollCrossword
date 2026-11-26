@@ -338,6 +338,101 @@ const Game = (() => {
         dealTimer = setTimeout(() => { if (boardEl.firstChild === dealt) boardEl.classList.remove("deal"); }, 600 + puzzle.size * puzzle.size * 20);
     }
     let dealTimer = 0;
+
+    // The first time the play stage is drawn, the browser builds the GPU programs for everything on it, which stalls
+    // that frame. While Home sits idle, a stand-in of the stage (a copy of the screen with a sample board, clue bar and
+    // clues) is drawn once at near-zero opacity and removed: nothing is fetched and the real screen isn't touched. The
+    // play stage's rules hang off the page root (html[data-view="game"]), so they're copied onto the stand-in.
+    let stageWarmed = false;
+    async function warmStage() {
+        if (stageWarmed || game.puzzle) return;
+        stageWarmed = true;
+        const PREFIX = 'html[data-view="game"]:not(.boss-stage):not(.in-boss)';
+        const split = sel => { const out = []; let depth = 0, start = 0;
+            for (let i = 0; i < sel.length; i++) { const ch = sel[i]; if (ch === "(") depth++; else if (ch === ")") depth--; else if (ch === "," && !depth) { out.push(sel.slice(start, i)); start = i + 1; } }
+            return out.concat(sel.slice(start)).map(s => s.trim()); };
+        const copy = rules => {
+            let css = "";
+            for (const r of rules) {
+                if (r instanceof CSSMediaRule) { const inner = copy(r.cssRules); if (inner) css += `@media ${r.conditionText}{${inner}}`; continue; }
+                if (!(r instanceof CSSStyleRule) || !r.selectorText.includes(PREFIX)) continue;
+                const sels = split(r.selectorText).filter(s => s.startsWith(PREFIX)).map(s => ".warm-play" + s.slice(PREFIX.length));
+                if (sels.length) css += `${sels.join(",")}{${r.style.cssText}}`;
+            }
+            return css;
+        };
+        let css = "";
+        for (const sheet of document.styleSheets) { try { if (sheet.href && /play\.css/.test(sheet.href)) css += copy(sheet.cssRules); } catch (err) { /* not readable */ } }
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync(css + ".warm-play{position:fixed;inset:0;z-index:2147483000;opacity:.004;pointer-events:none;overflow:hidden}");
+        document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+        // the stand-in: the screen's own markup, a 5x5 board mid-solve, the spotlight and both clue lists
+        const view = gameViewEl.cloneNode(true);
+        view.hidden = false;
+        view.querySelectorAll("[hidden]").forEach(el => { if (el.id === "puzzle") el.hidden = false; });
+        view.querySelector("#status").hidden = true;
+        const board = view.querySelector("#board"), word = "CRANE", blocks = new Set(["0,4", "4,0"]);
+        board.style.setProperty("--size", 5);
+        board.dataset.dir = "across";
+        for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+            const cell = U.el("div", { class: "cell", style: { "--i": r * 5 + c } });
+            if (blocks.has(r + "," + c)) cell.classList.add("block");
+            else {
+                if (r === 0 || c === 0) cell.append(U.el("span", { class: "num", text: String(r * 5 + c + 1) }));
+                const ch = r === 1 ? word[c] : r === 2 && c < 2 ? "AB"[c] : "";
+                cell.append(U.el("span", { class: "ltr", text: ch }));
+                cell.classList.toggle("filled", !!ch);
+                cell.classList.toggle("in-word", r === 1);
+                cell.classList.toggle("selected", r === 1 && c === 2);
+                if (r === 2 && c === 1) cell.classList.add("pencil");
+                if (r === 3 && c === 3) cell.classList.add("locked");
+            }
+            board.append(cell);
+        }
+        const bar = view.querySelector("#clue-bar");
+        bar.append(U.el("span", { class: "cb-num", text: "5A" }), U.el("span", { class: "cb-dir", text: "" }), U.el("span", { class: "cb-text", text: "Tall wading bird" }),
+            U.el("span", { class: "cb-slots" }, ...[...word].map((ch, i) => U.el("i", { class: "cb-slot" + (i === 2 ? " cur" : ""), text: ch })), U.el("small", { text: "5 Letters" })),
+            U.el("span", { class: "cb-cross" }, U.el("b", { text: "3 Down" }), U.el("span", { text: "Sample clue" })));
+        for (const id of ["#across-clues", "#down-clues"]) {
+            const list = view.querySelector(id);
+            for (let i = 0; i < 5; i++) list.append(U.el("li", { class: i === 1 && id === "#across-clues" ? "active" : i === 0 ? "done" : "", style: { "--i": i, "--k": (i / 5).toFixed(2) } },
+                U.el("span", { class: "clue-num", text: String(i + 1) }), U.el("span", { class: "clue-text", text: "A sample clue for the board" })));
+        }
+        // (it keeps the screen's ids, which its styles use; it's added at the end of the page, so anything looking one
+        // up still finds the real screen first, and it's gone within a second)
+        const holder = U.el("div", { class: "warm-play", "aria-hidden": "true", inert: "" }, U.el("main", {}, view));
+        document.body.append(holder);
+        try {
+            await new Promise(res => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(res))));
+            await U.wait(700);
+        } finally {
+            holder.remove();
+            document.adoptedStyleSheets = document.adoptedStyleSheets.filter(s => s !== sheet);
+        }
+        await warmTitleCard();
+    }
+    // The world's title card is the biggest first-time cost of all: it's played once, unseen and unheard (its sounds,
+    // bursts and shakes held back for that moment), and cut short.
+    async function warmTitleCard() {
+        const w = Worlds.current;
+        if (!w || !w.titleCard || U.motion() === "still" || FX.playing || ["daily", "level"].includes(U.view())) return;
+        const held = { play: Sound.play, burst: FX.burst, shake: FX.shake, flash: FX.flash, ring: FX.ring }, none = () => {};
+        Object.assign(Sound, { play: none });
+        Object.assign(FX, { burst: none, shake: none, flash: none, ring: none });
+        document.documentElement.classList.add("tc-warming");
+        const cleanups = [], c = { skipped: false, wait: ms => U.wait(Math.min(ms, 450)), cleanup: fn => cleanups.push(fn), later: none };
+        const d = new Date();
+        try {
+            await w.titleCard(c, { mode: "daily", difficulty: "medium", kicker: "TODAY'S DAILY", title: "Daily · Medium",
+                sub: d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }), stardate: "2026.01.01" });
+        } catch (err) { console.error("warm title card", err); }
+        finally {
+            for (const fn of cleanups) { try { fn(); } catch (err) { /* already gone */ } }
+            document.documentElement.classList.remove("tc-warming");
+            Object.assign(Sound, { play: held.play });
+            Object.assign(FX, { burst: held.burst, shake: held.shake, flash: held.flash, ring: held.ring });
+        }
+    }
     function drawClues(puzzle) {
         game.clueItems = new Map();
         fillClueList(acrossEl, puzzle.across);
@@ -1545,7 +1640,7 @@ const Game = (() => {
     return {
         restartSlot, forgetSlot, endLoss, stopSaving, checkWin: checkForWin, markBossChanges, restoreAllHits, hitCount, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
         openReport,
-        state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, drawDifficultyMarks, streakBadge, render,
+        state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, warmStage, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),
         openCells: () => game.cells.flat().filter(c => !c.classList.contains("block")),
         closeResults, playTitleCard
