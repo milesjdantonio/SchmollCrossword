@@ -410,6 +410,7 @@ const Game = (() => {
             document.adoptedStyleSheets = document.adoptedStyleSheets.filter(s => s !== sheet);
         }
         await warmTitleCard();
+        Anim.warm(Worlds.current && Worlds.current.rive ? [Worlds.current.rive] : []);     // (the win's Rive set piece, loaded ahead)
     }
     // The world's title card is the biggest first-time cost of all: it's played once, unseen and unheard (its sounds,
     // bursts and shakes held back for that moment), and cut short.

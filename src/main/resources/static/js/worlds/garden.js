@@ -627,243 +627,57 @@
     });
 
     // ---------------------------------------------------------------------------------------------
-    // The background: a meadow under the sky (day) or under the moon with fireflies (night)
+    // The win: the board's squares bloom out from the middle on a spring (Motion), a wreath of vines and flowers
+    // grows round the board (Rive: rive/garden-win.riv), a rainbow arcs across the sky with light along it, and
+    // petals and sparkles drift down
     // ---------------------------------------------------------------------------------------------
-    function cloudSprite(R, night) {
-        const c = document.createElement("canvas");
-        c.width = 240;
-        c.height = 100;
-        const x = c.getContext("2d");
-        x.fillStyle = night ? "rgba(150,170,210,.22)" : "rgba(255,255,255,.92)";
-        for (let i = 0; i < 7; i++) {
-            x.beginPath();
-            x.arc(40 + i * 26 + R() * 10, 62 - Math.sin(i / 6 * Math.PI) * 26 + R() * 6, 22 + R() * 16, 0, Math.PI * 2);
-            x.fill();
-        }
-        x.fillRect(40, 62, 170, 26);
-        return c;
-    }
-
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let hills, blades, blooms, clouds, motes, stars, sky = null;
-        let birds = [], nextBirds = preview ? 999 : U.rand(5, 12), flies = [], nextFly = preview ? 999 : U.rand(2, 6);
-        const k = () => (preview ? 0.5 : W < 700 ? 0.7 : 1);
-
-        function setup() {
-            const R = U.rng(31337);
-            hills = [0, 1, 2].map(i => ({
-                base: H * (0.6 + i * 0.1), amp: H * (0.06 - i * 0.012), f1: 0.0021 + i * 0.0011, f2: 0.0053 + i * 0.0018, ph: R() * 10,
-                color: night ? ["#1d3628", "#163023", "#10271b"][i] : ["#b2d896", "#93c674", "#73b258"][i], par: [4, 9, 16][i]
-            }));
-            const n = Math.round(W / (preview ? 6 : 4));
-            blades = Array.from({ length: n }, (_, i) => ({
-                x: (i + R() * 0.8) / n * W, h: U.lerp(24, 72, R()) * k(), w: 2 + R() * 2.4, ph: R() * 6.28,
-                c: night ? ["#1f4a2a", "#28583a", "#1a3f24"][i % 3] : ["#4f9a3d", "#5fae4a", "#3f8a34", "#6cba54"][i % 4]
-            }));
-            blooms = Array.from({ length: Math.round(W / 46) }, () => ({
-                x: R() * W, h: U.lerp(36, 84, R()) * k(), r: U.lerp(3.5, 6.5, R()), ph: R() * 6.28,
-                c: ["#e8798f", "#f3a65a", "#b48ad8", "#ffffff", "#f2c94c", "#7fb4e8"][Math.floor(R() * 6)]
-            }));
-            clouds = Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: U.lerp(0.05, 0.3, R()) * H, s: U.lerp(0.5, 1.3, R()) * (preview ? 0.5 : 1), sp: U.lerp(5, 14, R()), sprite: cloudSprite(R, night) }));
-            motes = Array.from({ length: preview ? 14 : 48 }, () => ({ x: R() * W, y: R() * H * 0.9, vx: U.lerp(-6, 14, R()), vy: U.lerp(-12, -3, R()), ph: R() * 6.28, r: U.lerp(1, 2.6, R()) }));
-            stars = night ? Array.from({ length: preview ? 40 : 120 }, () => ({ x: R() * W, y: R() * H * 0.55, r: R() * 1.3 + 0.3, tw: R() * 6.28 })) : [];
-            sky = null;
-        }
-        setup();
-
-        function hillY(h, x, shift) { const xx = x - shift; return h.base + Math.sin(xx * h.f1 + h.ph) * h.amp + Math.sin(xx * h.f2 + h.ph * 2) * h.amp * 0.4; }
-
-        function butterfly(g, f, t) {
-            const flap = Math.abs(Math.sin(t * 13 + f.ph)) * 0.85 + 0.15;
-            g.save();
-            g.translate(f.x, f.y);
-            g.scale(f.vx > 0 ? 1 : -1, 1);
-            for (const side of [-1, 1]) {
-                g.save();
-                g.scale(side * flap, 1);
-                g.fillStyle = f.c;
-                g.beginPath(); g.ellipse(6, -5, 7, 9, 0.5, 0, Math.PI * 2); g.fill();
-                g.fillStyle = f.c2;
-                g.beginPath(); g.ellipse(5, 5, 5, 6, -0.4, 0, Math.PI * 2); g.fill();
-                g.restore();
-            }
-            g.fillStyle = "#3a2f2a";
-            g.fillRect(-1, -8, 2, 15);
-            g.restore();
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!sky) {
-                    sky = g.createLinearGradient(0, 0, 0, H);
-                    if (night) { sky.addColorStop(0, "#08122b"); sky.addColorStop(0.55, "#1a2a4e"); sky.addColorStop(1, "#33466b"); }
-                    else { sky.addColorStop(0, "#86c9f2"); sky.addColorStop(0.55, "#c8e9f7"); sky.addColorStop(1, "#fdf0d2"); }
-                }
-                g.fillStyle = sky;
-                g.fillRect(0, 0, W, H);
-                const sx = W * (preview ? 0.8 : 0.84) - inp.px * 6, sy = H * (preview ? 0.22 : 0.15) - inp.py * 4, sr = Math.min(W, H) * (preview ? 0.09 : 0.055);
-                if (night) {
-                    for (const s of stars) {
-                        const tw = Math.abs(Math.sin(t * 0.8 + s.tw));
-                        g.fillStyle = `rgba(255,255,240,${(0.3 + 0.7 * tw).toFixed(2)})`;
-                        g.fillRect(s.x, s.y, s.r, s.r);
-                        if (s.r > 1.2) Worlds.twinkle(g, s.x + s.r / 2, s.y + s.r / 2, s.r, tw, "#fffff0");
-                    }
-                    const mg = g.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 4);
-                    mg.addColorStop(0, "rgba(255,250,220,.25)");
-                    mg.addColorStop(1, "rgba(255,250,220,0)");
-                    g.fillStyle = mg;
-                    g.fillRect(sx - sr * 4, sy - sr * 4, sr * 8, sr * 8);
-                    g.fillStyle = "#f6f2df";
-                    g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
-                    g.fillStyle = "rgba(190,184,160,.55)";
-                    g.beginPath(); g.arc(sx - sr * 0.3, sy - sr * 0.2, sr * 0.22, 0, 7); g.arc(sx + sr * 0.35, sy + sr * 0.3, sr * 0.16, 0, 7); g.arc(sx + sr * 0.1, sy - sr * 0.45, sr * 0.1, 0, 7); g.fill();
-                } else {
-                    g.save();
-                    g.translate(sx, sy);
-                    g.rotate(t * 0.08);
-                    g.fillStyle = "rgba(255,246,200,.22)";
-                    for (let i = 0; i < 12; i++) {
-                        g.rotate(Math.PI / 6);
-                        g.beginPath(); g.moveTo(0, 0); g.lineTo(sr * 5, -sr * 0.45); g.lineTo(sr * 5, sr * 0.45); g.fill();
-                    }
-                    g.restore();
-                    const sg = g.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 2.8);
-                    sg.addColorStop(0, "rgba(255,248,200,.9)");
-                    sg.addColorStop(1, "rgba(255,248,200,0)");
-                    g.fillStyle = sg;
-                    g.fillRect(sx - sr * 3, sy - sr * 3, sr * 6, sr * 6);
-                    g.fillStyle = "#fff4b8";
-                    g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
-                }
-                for (const c of clouds) {
-                    c.x += c.sp * dt;
-                    if (c.x > W + 260 * c.s) c.x = -260 * c.s;
-                    g.drawImage(c.sprite, c.x - inp.px * 8 * c.s, c.y, 240 * c.s, 100 * c.s);
-                }
-                // a flock of birds now and then (by day)
-                if (!night) {
-                    nextBirds -= dt;
-                    if (nextBirds <= 0) {
-                        nextBirds = U.rand(10, 20);
-                        const y = U.rand(0.1, 0.35) * H;
-                        for (let i = 0; i < U.rand(3, 6); i++) birds.push({ x: -40 - i * 26, y: y + Math.abs(i - 2) * 12, ph: Math.random() * 6, sp: U.rand(70, 90) });
-                    }
-                    g.strokeStyle = "rgba(60,70,90,.7)";
-                    g.lineWidth = 1.8;
-                    for (const b of birds) {
-                        b.x += b.sp * dt;
-                        const f = Math.sin(t * 9 + b.ph) * 4;
-                        g.beginPath(); g.moveTo(b.x - 8, b.y - f); g.quadraticCurveTo(b.x - 4, b.y - 3, b.x, b.y); g.quadraticCurveTo(b.x + 4, b.y - 3, b.x + 8, b.y - f); g.stroke();
-                    }
-                    birds = birds.filter(b => b.x < W + 60);
-                }
-                // rolling hills
-                for (const h of hills) {
-                    const shift = inp.px * h.par;
-                    g.fillStyle = h.color;
-                    g.beginPath();
-                    g.moveTo(0, H);
-                    for (let x = 0; x <= W + 16; x += 16) g.lineTo(x, hillY(h, x, shift));
-                    g.lineTo(W, H);
-                    g.closePath();
-                    g.fill();
-                }
-                // butterflies drifting over the meadow
-                nextFly -= dt;
-                if (nextFly <= 0 && flies.length < 3) {
-                    nextFly = U.rand(6, 13);
-                    const left = Math.random() < 0.5, cols = U.pick([["#f3a65a", "#e8798f"], ["#7fb4e8", "#b48ad8"], ["#f2c94c", "#f3a65a"], ["#ffffff", "#ef8fb7"]]);
-                    flies.push({ x: left ? -20 : W + 20, y: U.rand(0.45, 0.8) * H, vx: (left ? 1 : -1) * U.rand(35, 60), ph: Math.random() * 6, c: cols[0], c2: cols[1] });
-                }
-                for (const f of flies) {
-                    f.x += f.vx * dt;
-                    f.y += Math.sin(t * 2 + f.ph) * 26 * dt;
-                    butterfly(g, f, t);
-                }
-                flies = flies.filter(f => f.x > -40 && f.x < W + 40);
-                // pollen (day) or fireflies (night)
-                g.globalCompositeOperation = "lighter";
-                for (const m of motes) {
-                    m.x += (m.vx + Math.sin(t + m.ph) * 8) * dt;
-                    m.y += m.vy * dt;
-                    if (m.y < -10) { m.y = H + 5; m.x = Math.random() * W; }
-                    if (m.x > W + 10) m.x = -10;
-                    if (m.x < -10) m.x = W + 10;
-                    if (night) {
-                        const a = Math.max(0, Math.sin(t * 1.6 + m.ph * 3));
-                        if (a < 0.05) continue;
-                        // a firefly: a wide soft glow, a brighter one close in, and a hot little body
-                        Worlds.glow(g, m.x, m.y, m.r * 8, "#c8ff6a", a * 0.55);
-                        Worlds.glow(g, m.x, m.y, m.r * 3, "#f0ffb0", a);
-                        g.fillStyle = `rgba(255,255,220,${a.toFixed(2)})`;
-                        g.beginPath(); g.arc(m.x, m.y, m.r * 0.7, 0, 7); g.fill();
-                    } else {
-                        const a = 0.35 + 0.3 * Math.sin(t * 2 + m.ph);
-                        g.fillStyle = `rgba(255,236,150,${a.toFixed(2)})`;
-                        g.beginPath(); g.arc(m.x, m.y, m.r, 0, 7); g.fill();
-                        if (a > 0.6) Worlds.glint(g, m.x, m.y, m.r * 3.5, (a - 0.6) * 6, "#fff4c0");      // pollen catching the sun
-                    }
-                }
-                g.globalCompositeOperation = "source-over";
-                // the grass, swaying in the wind (with gusts), and wildflowers poking out of it
-                const gust = Math.sin(t * 0.45) * 0.12 + Math.sin(t * 0.17) * 0.06;
-                g.lineCap = "round";
-                for (const b of blades) {
-                    const sway = Math.sin(t * 1.6 + b.x * 0.011 + b.ph * 0.3) * 0.2 + gust;
-                    g.strokeStyle = b.c;
-                    g.lineWidth = b.w;
-                    g.beginPath();
-                    g.moveTo(b.x, H + 2);
-                    g.quadraticCurveTo(b.x + sway * b.h * 0.3, H - b.h * 0.55, b.x + sway * b.h, H - b.h);
-                    g.stroke();
-                }
-                for (const f of blooms) {
-                    const sway = Math.sin(t * 1.6 + f.x * 0.011) * 0.18 + gust;
-                    const tx = f.x + sway * f.h, ty = H - f.h;
-                    g.strokeStyle = night ? "#1f4a2a" : "#3f8a34";
-                    g.lineWidth = 1.6;
-                    g.beginPath(); g.moveTo(f.x, H + 2); g.quadraticCurveTo(f.x + sway * f.h * 0.3, H - f.h * 0.5, tx, ty); g.stroke();
-                    g.fillStyle = night ? "rgba(200,200,230,.55)" : f.c;
-                    for (let i = 0; i < 5; i++) { const a = i * 1.2566 + f.ph; g.beginPath(); g.arc(tx + Math.cos(a) * f.r * 0.8, ty + Math.sin(a) * f.r * 0.8, f.r * 0.62, 0, 7); g.fill(); }
-                    g.fillStyle = "#f2c94c";
-                    g.beginPath(); g.arc(tx, ty, f.r * 0.45, 0, 7); g.fill();
-                }
-            }
-        };
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // The win, as a cinematic: the garden takes over, and a rainbow arcs across the sky
-    // ---------------------------------------------------------------------------------------------
-    async function celebrateCine(c, { game }) {
+    async function celebrateCine(c, { game, boardEl }) {
         if (game.surrendered) return;
         const still = U.motion() === "still";
         bloomWin(game, still);
         Sound.play("bloom");
         if (still) return;
+        const board = boardEl || document.getElementById("board");
+        const wreath = Anim.play("garden-win", { follow: board, ms: 5200, rect: r => ({ x: r.left - r.width * 0.38, y: r.top - r.height * 0.38, w: r.width * 1.76, h: r.height * 1.76 }) });
+        c.cleanup(() => wreath.stop());
+        Anim.motion().then(({ animate, stagger }) => {
+            if (c.skipped) return;
+            const cells = [...board.querySelectorAll(".cell:not(.block)")];
+            const run = animate(cells, { scale: [1, 1.16, 0.96, 1], filter: ["brightness(1)", "brightness(1.25) saturate(1.3)", "brightness(1)"] },
+                { duration: 0.9, delay: stagger(0.035, { from: "center" }), ease: "easeOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; el.style.filter = ""; }); });
+        }).catch(() => null);
         const W = innerWidth, H = innerHeight, cx = W / 2, cy = H * 1.08, R = Math.max(W * 0.62, H * 0.75);
         const BOW = ["#ff5d5d", "#ff9f43", "#ffd84d", "#6ad06a", "#5aa9f0", "#6b6be0", "#b06be0"];
         let rt = 0;
         FX.add({
-            update: dt => (rt += dt) < 5.5,
+            fixed: true,                                         // the sky's rainbow, not the board's
+            update: dt => (rt += dt) < 6,
             draw(g) {
-                const grow = U.ease.outCubic(Math.min(1, rt / 1.4)), fade = rt < 3.5 ? 1 : 1 - (rt - 3.5) / 2;
-                g.globalAlpha = 0.32 * fade;
-                g.lineWidth = R * 0.028;
+                const grow = U.ease.outCubic(Math.min(1, rt / 1.6)), fade = rt < 4 ? 1 : 1 - (rt - 4) / 2, w = R * 0.026;
+                const end = Math.PI + Math.PI * grow;
+                g.save();
+                g.globalAlpha = 0.12 * fade; g.lineWidth = w * 9;                // a soft halo under the bands
+                g.strokeStyle = "#fff6e0"; g.beginPath(); g.arc(cx, cy, R - w * 3, Math.PI, end); g.stroke();
+                g.lineWidth = w * 1.1;
                 BOW.forEach((col, i) => {
-                    g.strokeStyle = col;
-                    g.beginPath();
-                    g.arc(cx, cy, R - i * R * 0.028, Math.PI, Math.PI + Math.PI * grow);
-                    g.stroke();
+                    g.globalAlpha = 0.42 * fade; g.strokeStyle = col;
+                    g.beginPath(); g.arc(cx, cy, R - i * w, Math.PI, end); g.stroke();
                 });
-                g.globalAlpha = 1;
+                g.globalAlpha = 0.35 * fade; g.lineWidth = w * 0.35; g.strokeStyle = "#ffffff";
+                g.beginPath(); g.arc(cx, cy, R + w * 0.2, Math.PI, end); g.stroke();
+                g.restore();
+                if (grow < 1) {                                  // light running ahead along the bow as it grows
+                    const hx = cx + Math.cos(end) * (R - w * 3), hy = cy + Math.sin(end) * (R - w * 3);
+                    Worlds.glow(g, hx, hy, w * 10, "#fff8d8", 0.8);
+                    Worlds.glint(g, hx, hy, w * 7, 0.9, "#ffffff");
+                }
             }
         });
-        FX.burst({ x: W / 2, y: -20, n: 70, colors: PETAL_COLORS, shape: "petal", angle: Math.PI / 2, spread: 1.2, speed: [60, 260], gravity: 60, drag: 0.6, life: [3.5, 5.5], size: [5, 9], wobble: 40, jitter: W * 0.45, jitterY: 10, spin: 3 });
-        await c.wait(2600);
+        FX.burst({ x: W / 2, y: -20, n: 80, colors: PETAL_COLORS, shape: "petal", angle: Math.PI / 2, spread: 1.2, speed: [60, 260], gravity: 60, drag: 0.6, life: [3.5, 5.5], size: [5, 9], wobble: 40, jitter: W * 0.45, jitterY: 10, spin: 3 });
+        const b = board.getBoundingClientRect();
+        c.later(() => FX.burst({ x: b.left + b.width / 2, y: b.top + b.height / 2, n: 40, colors: ["#fff6c0", "#ffffff", "#ffd84d"], shape: "star", glow: true, speed: [120, 420], gravity: 40, drag: 1.2, life: [0.8, 1.5], size: [3, 7], spin: 2 }), 900);
+        await c.wait(3400);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -989,7 +803,7 @@
     Worlds.register({
         id: "garden", name: "Garden", icon: "\u{1F33B}", tagline: "Blooms by Day. Fireflies by Night.",
         modes: ["light", "dark"],
-        scene, sounds, titleCard, transition: "leaves",
+        scene: (W, H, opts) => GardenScene(W, H, opts), rive: "garden-win", sounds, titleCard, transition: "leaves",
         celebrate: celebrateCine,
         board: { update, wordDone, clear, reset, restoreSolved: (boardEl, game) => { if (!game.surrendered) buildSides(true); } },
         mascot: { name: "BUMBLE", draw: drawBumble },

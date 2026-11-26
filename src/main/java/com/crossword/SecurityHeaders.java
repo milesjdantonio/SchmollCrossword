@@ -35,7 +35,7 @@ public class SecurityHeaders implements Filter {
 
     static final String CSP = String.join("; ",
             "default-src 'self'",
-            "script-src 'self'",
+            "script-src 'self' 'wasm-unsafe-eval'",                        // (the Rive runtime is WebAssembly: this lets it compile, nothing more)
             "style-src 'self' 'unsafe-inline'",   // inline style="" attributes drive the animations
             "font-src 'self'",                                              // the fonts are served from this site (fonts.css)
             "img-src 'self' data: blob:",

@@ -84,6 +84,33 @@ const Worlds = (() => {
         loop();
     }
 
+    // The finish every scene gets: a fine grain and a soft falloff toward the edges, so flat fills read as paint and
+    // light instead of plastic. Both are made once (a small noise tile, a gradient per screen size) and laid over each frame.
+    let grain = null, vig = null, vigFor = "";
+    function finish(g) {
+        if (!current || current.plain || U.motion() === "lite") return;
+        const dark = document.documentElement.dataset.theme === "dark";
+        if (!grain) {
+            const tile = document.createElement("canvas"); tile.width = tile.height = 160;
+            const tg = tile.getContext("2d"), img = tg.createImageData(160, 160), R = U.rng(2711);
+            for (let i = 0; i < img.data.length; i += 4) { const v = 128 + (R() - 0.5) * 120 + (R() - 0.5) * 50; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+            tg.putImageData(img, 0, 0);
+            grain = g.createPattern(tile, "repeat");
+        }
+        const key = W + "x" + H + (dark ? "d" : "l");
+        if (vigFor !== key) {
+            vigFor = key;
+            vig = g.createRadialGradient(W / 2, H * 0.45, Math.min(W, H) * 0.35, W / 2, H * 0.45, Math.hypot(W, H) * 0.62);
+            vig.addColorStop(0, "rgba(0,0,0,0)");
+            vig.addColorStop(1, dark ? "rgba(0,0,8,.34)" : "rgba(70,50,30,.16)");
+        }
+        g.save();
+        g.fillStyle = vig; g.fillRect(0, 0, W, H);
+        g.globalCompositeOperation = "overlay"; g.globalAlpha = dark ? 0.09 : 0.07;
+        g.fillStyle = grain; g.fillRect(0, 0, W, H);
+        g.restore();
+    }
+
     function loop() {
         cancelAnimationFrame(raf);
         clearTimeout(timer);
@@ -107,6 +134,7 @@ const Worlds = (() => {
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
         try {
             scene.draw(g, t, dt, input);
+            finish(g);
         } catch (err) {
             console.error("scene draw", err);
             return;
