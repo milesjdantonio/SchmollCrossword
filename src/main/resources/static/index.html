@@ -84,39 +84,34 @@
         <main>
             <!-- ======================== HOME ======================== -->
             <section id="home-view" class="screen" hidden>
-                <div class="hero">
-                    <div class="hero-logo" aria-hidden="true"><i>S</i><i>C</i><i class="b"></i><i>R</i><i class="b"></i><i>O</i></div>
-                    <div>
-                        <p class="greeting" id="greeting"></p>
-                        <h1 class="hero-title">Today's Puzzles</h1>
-                        <p class="today-date" id="today-date"></p>
-                    </div>
-                </div>
+                <header class="home-title">
+                    <h1 class="hero-title"><span id="greeting"></span><span id="hello-fact"></span></h1>
+                    <p class="today-date" id="today-date"></p>
+                </header>
                 <div class="home-grid">
                     <article class="card campaign-card">
-                        <header class="card-head"><h2 class="ico ico-map">Campaign</h2></header>
+                        <header class="card-head"><h2>Campaign</h2></header>
                         <div class="home-campaign" id="home-campaign"></div>
                     </article>
                     <article class="card daily-card">
-                        <header class="card-head"><h2 class="ico ico-pencil">Daily</h2></header>
+                        <header class="card-head"><h2>Daily</h2><p class="countdown" id="countdown"></p></header>
                         <div class="daily-chips">
-                            <a class="daily-chip" href="#daily" data-difficulty="easy"><span class="pips" aria-hidden="true"><i></i></span><span class="chip-name">Easy</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip" href="#daily" data-difficulty="medium"><span class="pips" aria-hidden="true"><i></i><i></i></span><span class="chip-name">Medium</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip" href="#daily" data-difficulty="hard"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="chip-name">Hard</span><span class="chip-state">Play</span></a>
-                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><span class="pips star" aria-hidden="true"><i class="gi gi-star" aria-hidden="true"></i></span><span class="chip-name">Challenge</span><span class="chip-state">Play</span></a>
-                            <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub"></span><span class="chip-state">Fight</span></span></button>
+                            <a class="daily-chip" href="#daily" data-difficulty="easy"><svg class="mg" viewBox="0 0 5 5" aria-hidden="true"><rect class="mg-b" width="5" height="5"/><rect x="0.1" y="0.1" width=".8" height=".8"/><rect x="1.1" y="0.1" width=".8" height=".8"/><rect x="2.1" y="0.1" width=".8" height=".8"/><rect x="3.1" y="0.1" width=".8" height=".8"/><rect x="0.1" y="1.1" width=".8" height=".8"/><rect x="1.1" y="1.1" width=".8" height=".8"/><rect x="2.1" y="1.1" width=".8" height=".8"/><rect x="3.1" y="1.1" width=".8" height=".8"/><rect x="4.1" y="1.1" width=".8" height=".8"/><rect x="0.1" y="2.1" width=".8" height=".8"/><rect x="1.1" y="2.1" width=".8" height=".8"/><rect x="2.1" y="2.1" width=".8" height=".8"/><rect x="3.1" y="2.1" width=".8" height=".8"/><rect x="4.1" y="2.1" width=".8" height=".8"/><rect x="0.1" y="3.1" width=".8" height=".8"/><rect x="1.1" y="3.1" width=".8" height=".8"/><rect x="2.1" y="3.1" width=".8" height=".8"/><rect x="3.1" y="3.1" width=".8" height=".8"/><rect x="4.1" y="3.1" width=".8" height=".8"/><rect x="1.1" y="4.1" width=".8" height=".8"/><rect x="2.1" y="4.1" width=".8" height=".8"/><rect x="3.1" y="4.1" width=".8" height=".8"/><rect x="4.1" y="4.1" width=".8" height=".8"/></svg><span class="chip-text"><span class="chip-name">Easy</span><span class="chip-size">5&times;5</span></span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip" href="#daily" data-difficulty="medium"><svg class="mg" viewBox="0 0 5 5" aria-hidden="true"><rect class="mg-b" width="5" height="5"/><rect x="1.1" y="0.1" width=".8" height=".8"/><rect x="2.1" y="0.1" width=".8" height=".8"/><rect x="3.1" y="0.1" width=".8" height=".8"/><rect x="0.1" y="1.1" width=".8" height=".8"/><rect x="1.1" y="1.1" width=".8" height=".8"/><rect x="2.1" y="1.1" width=".8" height=".8"/><rect x="3.1" y="1.1" width=".8" height=".8"/><rect x="4.1" y="1.1" width=".8" height=".8"/><rect x="0.1" y="2.1" width=".8" height=".8"/><rect x="1.1" y="2.1" width=".8" height=".8"/><rect x="2.1" y="2.1" width=".8" height=".8"/><rect x="3.1" y="2.1" width=".8" height=".8"/><rect x="4.1" y="2.1" width=".8" height=".8"/><rect x="0.1" y="3.1" width=".8" height=".8"/><rect x="1.1" y="3.1" width=".8" height=".8"/><rect x="2.1" y="3.1" width=".8" height=".8"/><rect x="3.1" y="3.1" width=".8" height=".8"/><rect x="4.1" y="3.1" width=".8" height=".8"/><rect x="1.1" y="4.1" width=".8" height=".8"/><rect x="2.1" y="4.1" width=".8" height=".8"/><rect x="3.1" y="4.1" width=".8" height=".8"/></svg><span class="chip-text"><span class="chip-name">Medium</span><span class="chip-size">5&times;5</span></span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip" href="#daily" data-difficulty="hard"><svg class="mg" viewBox="0 0 5 5" aria-hidden="true"><rect class="mg-b" width="5" height="5"/><rect x="2.1" y="0.1" width=".8" height=".8"/><rect x="3.1" y="0.1" width=".8" height=".8"/><rect x="4.1" y="0.1" width=".8" height=".8"/><rect x="1.1" y="1.1" width=".8" height=".8"/><rect x="2.1" y="1.1" width=".8" height=".8"/><rect x="3.1" y="1.1" width=".8" height=".8"/><rect x="4.1" y="1.1" width=".8" height=".8"/><rect x="0.1" y="2.1" width=".8" height=".8"/><rect x="1.1" y="2.1" width=".8" height=".8"/><rect x="2.1" y="2.1" width=".8" height=".8"/><rect x="3.1" y="2.1" width=".8" height=".8"/><rect x="4.1" y="2.1" width=".8" height=".8"/><rect x="0.1" y="3.1" width=".8" height=".8"/><rect x="1.1" y="3.1" width=".8" height=".8"/><rect x="2.1" y="3.1" width=".8" height=".8"/><rect x="3.1" y="3.1" width=".8" height=".8"/><rect x="0.1" y="4.1" width=".8" height=".8"/><rect x="1.1" y="4.1" width=".8" height=".8"/><rect x="2.1" y="4.1" width=".8" height=".8"/></svg><span class="chip-text"><span class="chip-name">Hard</span><span class="chip-size">5&times;5</span></span><span class="chip-state">Play</span></a>
+                            <a class="daily-chip challenge" href="#daily" data-difficulty="challenge"><svg class="mg" viewBox="0 0 7 7" aria-hidden="true"><rect class="mg-b" width="7" height="7"/><rect x="0.1" y="0.1" width=".8" height=".8"/><rect x="1.1" y="0.1" width=".8" height=".8"/><rect x="2.1" y="0.1" width=".8" height=".8"/><rect x="4.1" y="0.1" width=".8" height=".8"/><rect x="5.1" y="0.1" width=".8" height=".8"/><rect x="6.1" y="0.1" width=".8" height=".8"/><rect x="0.1" y="1.1" width=".8" height=".8"/><rect x="1.1" y="1.1" width=".8" height=".8"/><rect x="2.1" y="1.1" width=".8" height=".8"/><rect x="4.1" y="1.1" width=".8" height=".8"/><rect x="5.1" y="1.1" width=".8" height=".8"/><rect x="6.1" y="1.1" width=".8" height=".8"/><rect x="0.1" y="2.1" width=".8" height=".8"/><rect x="1.1" y="2.1" width=".8" height=".8"/><rect x="2.1" y="2.1" width=".8" height=".8"/><rect x="3.1" y="2.1" width=".8" height=".8"/><rect x="4.1" y="2.1" width=".8" height=".8"/><rect x="5.1" y="2.1" width=".8" height=".8"/><rect x="6.1" y="2.1" width=".8" height=".8"/><rect x="2.1" y="3.1" width=".8" height=".8"/><rect x="4.1" y="3.1" width=".8" height=".8"/><rect x="0.1" y="4.1" width=".8" height=".8"/><rect x="1.1" y="4.1" width=".8" height=".8"/><rect x="2.1" y="4.1" width=".8" height=".8"/><rect x="3.1" y="4.1" width=".8" height=".8"/><rect x="4.1" y="4.1" width=".8" height=".8"/><rect x="5.1" y="4.1" width=".8" height=".8"/><rect x="6.1" y="4.1" width=".8" height=".8"/><rect x="0.1" y="5.1" width=".8" height=".8"/><rect x="1.1" y="5.1" width=".8" height=".8"/><rect x="2.1" y="5.1" width=".8" height=".8"/><rect x="4.1" y="5.1" width=".8" height=".8"/><rect x="5.1" y="5.1" width=".8" height=".8"/><rect x="6.1" y="5.1" width=".8" height=".8"/><rect x="0.1" y="6.1" width=".8" height=".8"/><rect x="1.1" y="6.1" width=".8" height=".8"/><rect x="2.1" y="6.1" width=".8" height=".8"/><rect x="4.1" y="6.1" width=".8" height=".8"/><rect x="5.1" y="6.1" width=".8" height=".8"/><rect x="6.1" y="6.1" width=".8" height=".8"/></svg><span class="chip-text"><span class="chip-name">Challenge</span><span class="chip-size">6&times;6 to 9&times;9</span></span><span class="chip-state">Play</span></a>
+                            <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub"></span></span><span class="chip-state">Fight</span></button>
                         </div>
-                        <p class="card-status" id="daily-status"></p>
-                        <p class="countdown" id="countdown"></p>
+                        <p class="card-status" id="daily-status" hidden></p>
                     </article>
                     <article class="card streak-card">
-                        <header class="card-head"><h2 class="ico ico-flame">Your Streak</h2><a class="kicker link" href="#stats">All Stats &rsaquo;</a></header>
-                        <div class="streak-line" id="home-streak"></div>
+                        <header class="card-head"><h2>Your Streak</h2><a class="kicker link" href="#stats">All Stats</a></header>
+                        <div class="streak-fig" id="home-streak"></div>
                         <div class="week" id="home-week" aria-label="This week"></div>
-                        <p class="home-ach" id="home-ach"></p>
+                        <div class="home-ach" id="home-ach"></div>
                     </article>
                     <article class="card leader-card">
-                        <header class="card-head"><h2 class="ico ico-trophy">Leaderboard</h2><span class="kicker" id="home-lb-count"></span></header>
+                        <header class="card-head"><h2>Leaderboard</h2><span class="kicker" id="home-lb-count"></span></header>
                         <div id="home-leaderboard"></div>
                     </article>
                 </div>
@@ -233,26 +228,25 @@
 
             <!-- ======================== STATS ======================== -->
             <section id="stats-view" class="screen" hidden>
-                <div class="page-head"><h1>Your Stats</h1></div>
+                <header class="page-head"><h1>Your Stats</h1><p class="page-sub" id="stats-sub"></p></header>
                 <article class="card leaderboard-card" id="stats-leaderboard"></article>
-                <div class="stats-top"><div class="stats-streak" id="stats-streak"></div></div>
                 <div class="stat-tiles" id="stat-tiles"></div>
                 <div class="stats-grid">
                     <article class="card">
-                        <header class="card-head"><h2 class="ico ico-sunrise" id="heatmap-title">Last 18 Weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i><i data-n="4"></i><i data-n="5"></i> 0&ndash;5 Solved</span></header>
+                        <header class="card-head"><h2 id="heatmap-title">Last 18 Weeks</h2><span class="kicker hm-key"><i data-n="0"></i><i data-n="1"></i><i data-n="2"></i><i data-n="3"></i><i data-n="4"></i><i data-n="5"></i> 0&ndash;5 Solved</span></header>
                         <div class="heatmap" id="heatmap"></div>
                     </article>
                     <article class="card">
-                        <header class="card-head"><h2 class="ico ico-stopwatch">Times</h2><span class="kicker"><i class="key-best"></i> Best &nbsp;<i class="key-avg"></i> Average</span></header>
+                        <header class="card-head"><h2>Times</h2><span class="kicker"><i class="key-best"></i> Best &nbsp;<i class="key-avg"></i> Average</span></header>
                         <div class="times-chart" id="times-chart"></div>
                     </article>
                 </div>
                 <article class="card">
-                    <header class="card-head"><h2 class="ico ico-medal">Achievements</h2><span class="kicker" id="ach-count"></span></header>
+                    <header class="card-head"><h2>Achievements</h2><span class="kicker" id="ach-count"></span></header>
                     <div class="ach-grid" id="ach-grid"></div>
                 </article>
                 <article class="card">
-                    <header class="card-head"><h2 class="ico ico-scroll">History</h2></header>
+                    <header class="card-head"><h2>History</h2></header>
                     <table class="history" id="history" hidden>
                         <thead><tr><th>Date</th><th>Difficulty</th><th class="num">Time</th><th class="num">Points</th></tr></thead>
                         <tbody id="history-rows"></tbody>
@@ -266,11 +260,11 @@
                 <div class="page-head"><h1>Settings</h1></div>
                 <form class="settings" id="settings-form">
                     <fieldset class="card wide">
-                        <legend class="ico ico-globe">World</legend>
+                        <legend>World</legend>
                         <div class="world-cards" id="world-cards"></div>
                     </fieldset>
                     <fieldset class="card">
-                        <legend class="ico ico-moon">Mode</legend>
+                        <legend>Mode</legend>
                         <div class="options">
                             <label class="opt"><input type="radio" name="theme" value="light"><span><i class="gi gi-sun" aria-hidden="true"></i> Light</span></label>
                             <label class="opt"><input type="radio" name="theme" value="dark"><span><i class="gi gi-moon" aria-hidden="true"></i> Dark</span></label>
@@ -278,17 +272,17 @@
                         <p class="hint" id="mode-note">This world is always dark.</p>
                     </fieldset>
                     <fieldset class="card" id="zoom-card" hidden>
-                        <legend class="ico ico-magnifier">Zoom</legend>
+                        <legend>Zoom</legend>
                         <div class="range snd-row zoom-row"><span class="snd-label">Page Size</span><output id="zoom-out">100%</output>
                             <div class="snd-line"><input type="range" name="zoom" min="60" max="140" step="1" list="zoom-marks" aria-label="Zoom"><datalist id="zoom-marks"><option value="100"></option></datalist></div></div>
                         <button type="button" class="btn small" id="zoom-reset">Reset</button>
                     </fieldset>
                     <fieldset class="card">
-                        <legend class="ico ico-speaker">Sound</legend>
+                        <legend>Sound</legend>
                         <div class="sound-controls" id="sound-controls"></div>
                     </fieldset>
                     <fieldset class="card">
-                        <legend class="ico ico-sparkle">Effects</legend>
+                        <legend>Effects</legend>
                         <div class="options">
                             <label class="opt"><input type="radio" name="effects" value="full"><span>Full</span></label>
                             <label class="opt"><input type="radio" name="effects" value="lite"><span>Lite</span></label>
@@ -300,24 +294,15 @@
                         <button type="button" class="btn small" id="replay-intro">Replay Intro</button>
                     </fieldset>
                     <fieldset class="card">
-                        <legend class="ico ico-target">Default Difficulty</legend>
+                        <legend>Default Difficulty</legend>
                         <div class="options">
                             <label class="opt"><input type="radio" name="difficulty" value="easy"><span>Easy</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="medium"><span>Medium</span></label>
                             <label class="opt"><input type="radio" name="difficulty" value="hard"><span>Hard</span></label>
                         </div>
                     </fieldset>
-                    <fieldset class="card">
-                        <legend class="ico ico-eraser">Reset</legend>
-                        <div class="hl-buttons">
-                            <button type="button" class="btn danger" id="reset-leaderboard">Erase Leaderboard Data</button>
-                            <button type="button" class="btn danger" id="reset-campaign">Erase Campaign Data</button>
-                            <button type="button" class="btn danger" id="reset-data">Erase All Data</button>
-                        </div>
-                        <p class="hint">This can't be undone.</p>
-                    </fieldset>
                     <fieldset class="card help-legal">
-                        <legend class="ico ico-question">Help &amp; Legal</legend>
+                        <legend>Help &amp; Legal</legend>
                         <div class="hl-buttons">
                             <button type="button" class="btn" data-open="credits">Credits</button>
                             <button type="button" class="btn" data-open="faq">FAQ</button>
@@ -326,7 +311,7 @@
                         </div>
                     </fieldset>
                     <fieldset class="card about" id="about">
-                        <legend class="ico ico-book">About</legend>
+                        <legend>About</legend>
                         <p><b>Schmoll Crossword</b> is free, with no ads. Five new puzzles every day: Easy, Medium, Hard, a bigger Challenge and a Boss.</p>
                         <dl class="credits">
                             <dt>Code</dt>
@@ -350,6 +335,15 @@
                             <dt>Art &amp; Sound</dt>
                             <dd>Every scene and animation is drawn in code for this game, and most sounds are made live in code.</dd>
                         </dl>
+                    </fieldset>
+                    <fieldset class="card danger-zone">
+                        <legend>Reset</legend>
+                        <div class="hl-buttons">
+                            <button type="button" class="btn danger" id="reset-leaderboard">Erase Leaderboard Data</button>
+                            <button type="button" class="btn danger" id="reset-campaign">Erase Campaign Data</button>
+                            <button type="button" class="btn danger" id="reset-data">Erase All Data</button>
+                        </div>
+                        <p class="hint">This can't be undone.</p>
                     </fieldset>
                 </form>
             </section>

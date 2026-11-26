@@ -162,11 +162,15 @@ const App = (() => {
         if (all[today + "-boss"] && !all[today + "-boss"].surrendered) solved++;          // the Daily Boss is the 5th daily
         const total = document.querySelectorAll(".daily-chip").length + 1;
         $("#daily-status").textContent = solved === total ? "All Done for Today" : solved ? `${solved} of ${total} Done Today` : "";
+        // the title says what's left of today's puzzles
+        const WORDS = ["None", "One", "Two", "Three", "Four", "Five"], left = total - solved;
+        $("#hello-fact").textContent = left <= 0 ? ". All Done for Today" : !solved ? `. ${WORDS[total] || total} Puzzles Today` : `. ${WORDS[left] || left} Left Today`;
         drawCountdown();
         const streaks = calculateStreaks(all);
-        const holder = $("#home-streak");
-        holder.innerHTML = "";
-        holder.appendChild(Game.streakBadge(streaks));
+        $("#home-streak").replaceChildren(
+            U.el("b", { class: "sf-num", text: String(streaks.current) }),
+            U.el("span", { class: "sf-label", text: "Day Streak" }),
+            U.el("span", { class: "sf-best", text: `Best ${streaks.best}` }));
         // this week, Sunday to Saturday
         const week = $("#home-week");
         week.innerHTML = "";
@@ -176,10 +180,15 @@ const App = (() => {
             const n = ["easy", "medium", "hard", "challenge", "boss"].filter(x => all[key + "-" + x] && !all[key + "-" + x].surrendered).length + (all[key] && !all[key].surrendered ? 1 : 0);
             week.appendChild(U.el("div", { class: "wk-day" + (key === today ? " today" : "") + (d > now ? " future" : ""), "data-n": Math.min(5, n), title: d.toDateString() + (n ? ` · ${n} solved` : "") },
                 U.el("span", { text: d.toLocaleDateString(undefined, { weekday: "narrow" }) }),
-                U.el("i", { text: n ? "✓" : "" })));
+                U.el("i", { text: n ? String(Math.min(5, n)) : "" })));
         }
         const ach = Achievements.load(), got = Object.keys(ach.unlocked);
-        $("#home-ach").textContent = got.length ? `${got.length} of ${Achievements.LIST.length} Achievements  ` + Achievements.LIST.filter(a => ach.unlocked[a.id]).slice(-5).map(a => a.icon).join(" ") : `0 of ${Achievements.LIST.length} Achievements`;
+        // the latest three achievements won, or (before any) the next three to win
+        const won = Achievements.LIST.filter(a => ach.unlocked[a.id]).sort((x, y) => String(ach.unlocked[y.id]).localeCompare(String(ach.unlocked[x.id])));
+        const shown = won.length ? won.slice(0, 3) : Achievements.LIST.filter(a => !a.secret).slice(0, 3);
+        $("#home-ach").replaceChildren(
+            U.el("p", { class: "ha-head" }, U.el("span", { text: won.length ? "Latest Achievements" : "Next Achievements" }), U.el("span", { class: "ha-count", text: `${got.length} of ${Achievements.LIST.length}` })),
+            U.el("ul", { class: "ha-list" }, ...shown.map(a => U.el("li", { class: won.length ? "got" : "" }, U.el("b", { text: a.name }), U.el("small", { text: a.desc })))));
         Campaign.drawHomeCard();
         Leaderboard.drawHome($("#home-leaderboard"), $("#home-lb-count"));
     }
@@ -229,9 +238,12 @@ const App = (() => {
             tilesEl.appendChild(U.el("div", { class: "stat-tile", style: { "--i": i } }, v, U.el("div", { class: "label", text: label })));
             if (value != null) setTimeout(() => FX.countUp(v, value, { dur: 900, fmt }), 120 + i * 70);
         });
-        const s = $("#stats-streak");
-        s.innerHTML = "";
-        s.appendChild(Game.streakBadge(streaks));
+        // one line under the title: the thing in these numbers that needs doing (or what they add up to)
+        const today = dayKey(new Date()), doneToday = solved.filter(k => dayOf(k) === today).length;
+        $("#stats-sub").textContent = !solved.length ? "No dailies solved yet. Today's are ready."
+            : streaks.current > 0 && !doneToday ? `Solve one today to keep your ${streaks.current}-day streak.`
+            : doneToday ? `${doneToday} solved today, ${solved.length} in all.`
+            : `${solved.length} ${solved.length === 1 ? "daily" : "dailies"} solved in all.`;
         drawHeatmap(all);
         drawTimes(all, solved);
         $("#ach-count").textContent = (() => { const r = Achievements.render($("#ach-grid")); return `${r.got} of ${r.total} unlocked`; })();

@@ -346,14 +346,21 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Island follow-ups: boss fight screen and level screen redesign; the Beta strip's place (asked in REVIEW.md)
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
-- [x] Home, Stats and Settings refreshed (2026-11-26; the user: "continue with the refresh of the other pages"; same
-      layout, content and flow): `css/pages.css` (after app.css, so every world's own overrides still win). Cards are
-      solid sheets with a lit top edge and soft depth, and no blur over the moving scene (cheaper); every heading has
-      an icon badge (`.ico .ico-<glyph>` on the h2/legend); the greeting is a small live tag; dailies have a rising
-      difficulty meter, a state pill and a drawn check; stat tiles have icons; heatmap, times, achievements and
-      history rows are softer; Settings' choices are segmented controls; world cards lift calmly with a check badge.
-      Fixed on the way: the Challenge chip showed a blue square instead of its star. Built straight in (no `/demo`).
-      Checked in Garden, Classic and Deep Space dark at 1440x900 and on a phone: no errors.
+- [x] Home, Stats and Settings without the generated look (2026-11-26; the user: "use the skills to make the pages
+      not look AI generated"; design-taste-frontend's app-screen run, style "editorial greeting", seed 1170179221,
+      worlds' own colours and type kept). `css/pages.css`: flat panels in the world's colours (no shadows, gradients,
+      blur or icon badges), a left-aligned title row on every screen with one line of data under it. Home: the
+      greeting is the title with what's left today ("Good Morning. Three Left Today"), Campaign leads with its
+      figure, the dailies are rows with a small grid of their size and Play on the right, the streak is a figure,
+      the week a row of crossword squares in the world's board colours (the day where a clue number goes, how many
+      solved written in), then the latest achievements (or the next three). Stats: a finding under the title
+      ("Solve one today to keep your 2-day streak."), the headline figures in one panel split by hairlines, plain
+      difficulty labels, no padlock on every locked achievement. Settings: two columns of panels as tall as their
+      content, neutral segmented choices, switches on in ink, the world in use marked In Use, Reset last. The top
+      bar's current screen is a tone step, not the world's colour. Checked with the skill's inspector (run through
+      `tools/browser-test/cdp.mjs`: its own launcher tracks only the first Edge process) in Garden, Classic and
+      Deep Space dark at 1440, 768 and 390. Kept on purpose: the soft halo on titles written on the scene, the
+      crossword's dark grid ink, each world card's own lettering. The Daily page (the play stage) wasn't part of it.
 - [x] The puzzle screen (the user, 2026-11-16: "make some major advancements to the actual crossword gameplay ... it
       feels like its lacking behind now"; built straight in, no demo). `css/play.css`, game.js:
       **the play stage** (a computer-sized window, not a boss fight: `html[data-view="game"]:not(.boss-stage)`): the
@@ -505,7 +512,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       names now. A browser sweep of every page, the Everbook, a boss fight and How to Play found none left.
 - [x] The refresh of the non-campaign pages (done 2026-11-26; see "Home, Stats and Settings refreshed" above; the
       Daily page is the play stage, already redone).
-- [ ] Still to do: an idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
+- [x] First-visit lag (2026-11-26, the user: "fix the first-visit lag on campaign and daily"): the first opening of a
+      page made the GPU build its programs for everything on it (gradients alone were half). While Home sits idle
+      (2.5 s after it settles, in idle time), `Campaign.warmStage` draws the stage once at 0.4% opacity (and warms
+      the Atlas), then `Game.warmStage` draws a stand-in of the play stage (the screen's markup, a sample board, the
+      play.css rules copied onto `.warm-play` through a constructed sheet) and plays the world's title card unseen
+      and unheard (`warmTitleCard`: sounds, bursts and shakes held back for that moment). Nothing is fetched but the
+      free map. Measured at 200% scaling: Campaign's first open 0.51-0.67 s of stall down to 0.06-0.09 s (Classic:
+      0.61 to 0.12, the rest is building the world's scene), Daily's 0.21 to 0.07-0.1 s.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
       is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to

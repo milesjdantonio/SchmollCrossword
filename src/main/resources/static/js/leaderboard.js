@@ -170,7 +170,7 @@ const Leaderboard = (() => {
     async function drawFull(el) {
         if (!el) return;
         el.innerHTML = "";
-        const head = U.el("header", { class: "card-head" }, U.el("h2", { class: "ico ico-trophy", text: "World Leaderboard" }), U.el("span", { class: "kicker", text: "Today" }));
+        const head = U.el("header", { class: "card-head" }, U.el("h2", { text: "World Leaderboard" }), U.el("span", { class: "kicker", text: "Today" }));
         el.appendChild(head);
         const body = U.el("div", { class: "lb-body", text: "Loading…" });
         el.appendChild(body);
