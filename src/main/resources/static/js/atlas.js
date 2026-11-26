@@ -421,23 +421,31 @@ const AtlasView = (() => {
             if (!c) return;
             const s = c.s, ground = hex(d.ground);
             radial({ x: c.x, y: c.y, rx: r * 1.9 * s, ry: r * 1.9 * s }, [[0, css(ground, shut ? 0.15 : 0.55)], [1, css(ground, 0)]]);
-            // a world with a secret still to find: its country glows gold, a gold ring turning round its base
+            // a world with a secret still to find: its country glows gold, a solid gold ring round its base with a bright
+            // shine sweeping round it, sparkles circling, and a ring that keeps spreading out
             if (d.gold) {
-                const pulse = still() ? 0.8 : 0.7 + Math.sin(t / 600 + d.n) * 0.3;
-                radial({ x: c.x, y: c.y - 40 * s, rx: 300 * s, ry: 260 * s }, [[0, `rgba(255, 214, 90, ${0.5 * pulse})`], [0.6, `rgba(255, 190, 60, ${0.22 * pulse})`], [1, "rgba(255, 190, 60, 0)"]]);
-                const spin = still() ? 0 : t / 1400;
+                const pulse = still() ? 0.85 : 0.8 + Math.sin(t / 500 + d.n) * 0.2, spin = still() ? 0 : t / 900;
+                radial({ x: c.x, y: c.y - 40 * s, rx: 320 * s, ry: 280 * s }, [[0, `rgba(255, 214, 90, ${0.65 * pulse})`], [0.5, `rgba(255, 190, 60, ${0.35 * pulse})`], [1, "rgba(255, 190, 60, 0)"]]);
                 g.save(); g.translate(c.x, c.y); g.scale(1, 0.55);
-                g.lineWidth = Math.max(4, 26 * s); g.strokeStyle = `rgba(255, 200, 60, ${0.25 * pulse})`;          // (a soft glow under it: cheaper than a shadow blur)
-                g.beginPath(); g.arc(0, 0, r * 1.45 * s, 0, Math.PI * 2); g.stroke();
-                g.lineWidth = Math.max(2, 9 * s); g.strokeStyle = `rgba(255, 220, 110, ${0.9 * pulse})`;
-                g.setLineDash([26 * s, 16 * s]); g.lineDashOffset = -spin * 60 * s;
-                g.beginPath(); g.arc(0, 0, r * 1.45 * s, 0, Math.PI * 2); g.stroke();
-                g.setLineDash([]); g.lineWidth = Math.max(1, 3 * s); g.strokeStyle = `rgba(255, 246, 200, ${pulse})`;
-                g.beginPath(); g.arc(0, 0, r * 1.25 * s, 0, Math.PI * 2); g.stroke();
-                const k = still() ? 0.5 : ((t / 1800 + d.n * 0.3) % 1);                 // and a ring that keeps spreading out
-                g.lineWidth = Math.max(1, 5 * s * (1 - k)); g.strokeStyle = `rgba(255, 214, 90, ${(1 - k) * 0.8})`;
-                g.beginPath(); g.arc(0, 0, r * (1.5 + k * 0.9) * s, 0, Math.PI * 2); g.stroke();
+                const R1 = r * 1.4 * s;
+                const fill = g.createRadialGradient(0, 0, 0, 0, 0, R1);
+                fill.addColorStop(0, "rgba(255, 236, 160, .75)"); fill.addColorStop(0.75, "rgba(255, 200, 70, .6)"); fill.addColorStop(1, "rgba(220, 150, 30, .85)");
+                g.fillStyle = fill; g.beginPath(); g.arc(0, 0, R1, 0, Math.PI * 2); g.fill();
+                g.lineWidth = Math.max(3, 14 * s); g.strokeStyle = "#e0a52a"; g.stroke();
+                g.lineWidth = Math.max(2, 7 * s); g.strokeStyle = "#ffd65a"; g.stroke();
+                g.lineWidth = Math.max(2, 9 * s); g.strokeStyle = "rgba(255, 252, 230, .95)"; g.lineCap = "round";
+                g.beginPath(); g.arc(0, 0, R1, spin, spin + 1.1); g.stroke();
+                g.beginPath(); g.arc(0, 0, R1, spin + Math.PI, spin + Math.PI + 0.6); g.stroke();
+                const k = still() ? 0.5 : ((t / 1600 + d.n * 0.3) % 1);
+                g.lineWidth = Math.max(1.5, 8 * s * (1 - k)); g.strokeStyle = `rgba(255, 214, 90, ${(1 - k) * 0.9})`;
+                g.beginPath(); g.arc(0, 0, R1 * (1.05 + k * 0.7), 0, Math.PI * 2); g.stroke();
                 g.restore();
+                for (let q = 0; q < 4; q++) {                                     // sparkles circling the ring
+                    const a = -spin * 1.3 + q * Math.PI / 2, sx = c.x + Math.cos(a) * R1 * 1.12, sy = c.y + Math.sin(a) * R1 * 1.12 * 0.55, sr = Math.max(3, 14 * s) * (0.7 + 0.3 * Math.sin(t / 200 + q));
+                    radial({ x: sx, y: sy, rx: sr * 2, ry: sr * 2 }, [[0, "rgba(255, 246, 200, .9)"], [1, "rgba(255, 220, 110, 0)"]]);
+                    g.fillStyle = "#fffbe8"; g.beginPath(); g.moveTo(sx, sy - sr); g.lineTo(sx + sr * 0.3, sy); g.lineTo(sx, sy + sr); g.lineTo(sx - sr * 0.3, sy); g.closePath(); g.fill();
+                    g.beginPath(); g.moveTo(sx - sr, sy); g.lineTo(sx, sy - sr * 0.3); g.lineTo(sx + sr, sy); g.lineTo(sx, sy + sr * 0.3); g.closePath(); g.fill();
+                }
             }
             g.lineWidth = Math.max(1, 4 * s); g.strokeStyle = "#4a3826"; g.fillStyle = css(mix(ground, WHITE, 0.35), shut ? 0.5 : 0.85);
             g.beginPath(); g.ellipse(c.x, c.y, r * s, r * 0.55 * s, 0, 0, Math.PI * 2); g.fill(); g.stroke();

@@ -476,6 +476,16 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [x] Gold for a secret waiting (the user: "if the player beat the boss in an area that has a secret world but hasnt
       started the secret world, highlight the area in gold..."): `secretWaiting(si)` in campaign.js; the country
       glows gold with a turning gold ring at its base, its plate and Atlas page count the secret world's 5 levels.
+- [x] Secret worlds next to their parent on the abilities pages (`BOOK_ORDER` in campaign.js; WORLD_ORDER still sets
+      prices). No secret-world icon until the secret world is started (no "?" badge, no dock tile, no Atlas glimmer
+      or rock); the parent world gets the gold instead (dock: a spinning gold ring `.ws-tile.gold`; Atlas: a solid
+      gold disc and ring with a sweeping shine and circling sparkles). The user, 2026-11-26.
+- [ ] NEXT (the user, 2026-11-26): "really design this atlas map and put a lot of effort into its design" (js/atlas-map.js).
+- [ ] NEXT (the user, 2026-11-26): "remove all emojis and instead create your own icon everywhere": every emoji in the
+      game (ability and item icons, boss moves, effect particles, chips, floating text, notes, companions...) becomes
+      a drawn icon (the `icon()` set in campaign.js / an SVG sprite), and FX particle "emoji" shapes become drawn ones.
+- [ ] Still to do: the refresh of the non-campaign pages (Home, Daily, Stats, Settings), the user's request; and an
+      idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
       is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to

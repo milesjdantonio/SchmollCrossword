@@ -780,7 +780,17 @@ html.cm-book-on .mascot, html.cm-book-on .cm-beta { opacity: 0; pointer-events: 
 @keyframes om-rise { from { translate: 0 60px; opacity: 0; scale: 1 .2; } }
 .ws-gate-name { display: block; width: max-content; margin: 4px 0 0 50%; translate: -50% 0; padding: 4px 10px; border-radius: 9px; background: #1c1030; color: #ffd66b; font: 800 .78rem var(--font-body); }
 .ws-gate:hover svg { scale: 1.08; }
-.ws-tile.secret::before { content: "?"; position: absolute; left: -3px; top: -4px; z-index: 1; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; background: #2a1646; color: #ffd66b; font: 900 .72rem Georgia, serif; box-shadow: 0 1px 4px rgba(0, 0, 0, .4); }
+/* a world whose secret world is waiting: a solid gold border with a shine running round it, and a glow that breathes */
+@property --gold-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.ws-tile.gold::after { content: ""; position: absolute; inset: -6px; z-index: 2; border-radius: inherit; padding: 4px; pointer-events: none;
+    background: conic-gradient(from var(--gold-a), #c8901a, #ffd65a 20%, #fffbe8 25%, #ffd65a 30%, #c8901a 50%, #ffd65a 70%, #fffbe8 75%, #ffd65a 80%, #c8901a);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); animation: ws-gold-spin 2.2s linear infinite; }
+.ws-tile.gold::before { content: ""; position: absolute; inset: -6px; z-index: 1; border-radius: inherit; pointer-events: none; animation: ws-gold-glow 1.4s ease-in-out infinite alternate; }
+.ws-tile.gold .ws-tile-name { color: #a8740a; }
+@keyframes ws-gold-spin { to { --gold-a: 360deg; } }
+@keyframes ws-gold-glow { from { box-shadow: 0 0 8px 2px rgba(255, 200, 60, .55); } to { box-shadow: 0 0 22px 6px rgba(255, 200, 60, .95); } }
+@media (prefers-reduced-motion: reduce) { .ws-tile.gold::after { animation: none; } .ws-tile.gold::before { animation: none; box-shadow: 0 0 12px rgba(255, 200, 60, .8); } }
 /* the torn scrap and its riddle */
 .results.sc-layer { z-index: 5; background: rgba(18, 8, 26, .78); transition: none; animation: dk-veil .25s ease; }
 .sc-scrap { width: min(440px, 94vw); padding: 26px 28px 22px; text-align: center; color: #4a3a22; background: linear-gradient(160deg, #fbf3dc, #ecdcae); rotate: -1.5deg;

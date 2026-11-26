@@ -390,18 +390,18 @@ const Campaign = (() => {
         map.forEach((s, i) => {
             if (s.secret) return;
             out.push(i);
-            for (const sec of SECRETS.filter(x => x.parent === s.world)) { const j = map.findIndex(m => m.world === sec.world); if (j >= 0) out.push(j); }
+            for (const sec of SECRETS.filter(x => x.parent === s.world)) { const j = map.findIndex(m => m.world === sec.world); if (j >= 0 && secretStarted(sec.world)) out.push(j); }
         });
-        map.forEach((s, i) => { if (!out.includes(i)) out.push(i); });
         return out;
     }
     // one tile per world: a still of its scene, its name, and a pip for each of its five stops
-    let stripFor = 0;
+    let stripFor = "";
     function drawStrip() {
-        if (stripFor !== map.length) {
-            stripFor = map.length;
+        const order = shownOrder();
+        if (stripFor !== order.join()) {
+            stripFor = order.join();
             stripEl.replaceChildren(U.el("button", { type: "button", class: "ws-atlas-btn", "aria-label": "See every world", title: "Every World (M)", onclick: () => openAtlas() }, icon("map")));
-            shownOrder().forEach(i => {
+            order.forEach(i => {
                 const s = map[i], w = Worlds.byId[s.world];
                 const thumb = U.el("canvas", { class: "ws-thumb", "aria-hidden": "true" });
                 const tile = U.el("button", { type: "button", class: "ws-tile" + (s.secret ? " branch" : ""), "data-i": i, onclick: () => { Sound.play("select"); go(i); } },
@@ -425,7 +425,7 @@ const Campaign = (() => {
             tile.classList.toggle("shut", !open);
             tile.classList.toggle("won", cleared(i, 5));
             tile.classList.toggle("full", worldStars(i) >= LV(i).length * 3);
-            tile.classList.toggle("secret", !!secretOf(i) && secretState(secretOf(i)) === "found");
+            tile.classList.toggle("gold", !!secretWaiting(i));                 // its secret world is waiting: a gold ring, not a badge
             tile.setAttribute("aria-current", i === data.section ? "true" : "false");
             tile.setAttribute("aria-label", `${Worlds.byId[map[i].world].name}: ${done} of ${LV(i).length} cleared${open ? "" : ", locked"}`);
             [...tile.querySelector(".ws-pips").children].forEach((pip, k) => pip.classList.toggle("on", cleared(i, LV(i)[k])));
@@ -776,7 +776,8 @@ const Campaign = (() => {
     const secretOf = si => (map && map[si] ? SECRETS.find(s => s.parent === map[si].world) || null : null);
     // a world whose boss is beaten but whose secret world hasn't been started yet: the Atlas shows it in gold, its
     // count with the secret world's 5 levels still to go
-    const secretWaiting = si => { const sec = secretOf(si); return sec && sec.world && cleared(si, 5) && ![1, 2, 3, 4, 5].some(l => data.levels[keyOf(sec.world, l)]) ? sec : null; };
+    const secretStarted = world => [1, 2, 3, 4, 5].some(l => data.levels[keyOf(world, l)]) || !!(data.playing && data.playing.world === world);
+    const secretWaiting = si => { const sec = secretOf(si); return sec && sec.world && cleared(si, 5) && !secretStarted(sec.world) ? sec : null; };
     // "hidden" (its boss still stands), "omen" (something odd is on the island) or "found"
     const secretState = sec => (data.secrets[sec.id] === "found" ? "found" : data.levels[keyOf(sec.parent, 5)] || data.betaUnlock ? "omen" : "hidden");
     const foundSecrets = () => SECRETS.filter(s => secretState(s) === "found" && map && map.some(m => m.world === s.parent));
@@ -1122,7 +1123,7 @@ const Campaign = (() => {
                     sub: waiting ? [icon("spark"), `${doneHere} of ${LV(i).length + 5} Levels`] : [open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : bossOf(s.world).name] } });
             // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
             const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
-            if (state === "hidden") return;
+            if (state === "hidden" || !(sec.world && map.some(m => m.world === sec.world) && secretStarted(sec.world))) return;
             const wi = sec.world ? map.findIndex(m => m.world === sec.world) : -1;
             const [sx, sy] = wi >= 0 && pts[wi] ? pts[wi] : branchSpot(pts[i], i);       // (a world on the map: its own spot)
             if (state === "omen") { glimmers.push([sx, sy]); return; }
@@ -1518,6 +1519,8 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift", "hollow", "atlantis", "dunes", "cave"];   // the map order (Campaign.java)
     const ABILITIES = Powers.ABILITIES.map(a => ({ ...a, price: 30 + WORLD_ORDER.indexOf(a.world) * 8 }));
+    // the order the Everbook lists worlds in: each secret world straight after the world it's hidden in
+    const BOOK_ORDER = WORLD_ORDER.filter(w => !SECRETS.some(x => x.world === w)).flatMap(w => [w, ...SECRETS.filter(x => x.parent === w && x.world).map(x => x.world)]);
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
     // Unlocking: a world's 1st ability unlocks when you clear its level 1, the 2nd at level 3,
@@ -1686,7 +1689,7 @@ const Campaign = (() => {
                     U.el("div", {}, U.el("dt", { text: "Abilities" }), U.el("dd", { text: `${unlockedAbilities().length} / ${ABILITIES.filter(a => a.world !== "rift" || secretOpen()).length}` })),
                     U.el("div", {}, U.el("dt", { text: "Skills Mastered" }), U.el("dd", { text: `${course().filter(k => k.mastered).length} / ${course().length}` }))));
             const list = U.el("ol", { class: "eb-toc" });
-            shownOrder().forEach(i => {
+            order.forEach(i => {
                 const s = map[i], open = sectionOpen(i), w = Worlds.byId[s.world], full = worldStars(i) >= LV(i).length * 3;
                 list.append(U.el("li", { "data-world": s.world, "data-theme": Worlds.modeFor(w), class: (open ? "" : "shut") + (i === data.section ? " here" : "") + (s.secret ? " branch" : "") },
                     U.el("button", { type: "button", onclick: () => bookGo(i), "aria-label": `${w.name}, ${LV(i).filter(l => cleared(i, l)).length} of ${LV(i).length} cleared${open ? "" : ", locked"}` },
@@ -1746,7 +1749,7 @@ const Campaign = (() => {
                 return;
             }
             const eq = loadout();
-            for (const world of WORLD_ORDER) {
+            for (const world of BOOK_ORDER) {
                 const w = Worlds.byId[world];
                 if (!w || (isSecretWorld(world) && !secretOpen(world))) continue;        // a secret world stays a secret
                 right.append(U.el("h3", { class: "eb-world", "data-world": world, "data-theme": Worlds.modeFor(w) }, U.el("span", { text: w.name }), U.el("small", { text: bossOf(world).name })));
@@ -1778,7 +1781,7 @@ const Campaign = (() => {
                 U.el("button", { type: "button", class: "eb-quiet", onclick: () => pickDone() }, icon("back"), U.el("span", { text: "Back" })));
             right.append(U.el("h2", { class: "eb-h", text: "Choose an Ability" }));
             let any = false;
-            for (const world of WORLD_ORDER) {
+            for (const world of BOOK_ORDER) {
                 const list = ABILITIES.filter(a => a.world === world && unlockedAbility(a)), w = Worlds.byId[world];
                 if (!list.length || !w) continue;
                 any = true;
