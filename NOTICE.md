@@ -64,6 +64,13 @@ Google Fonts' own Latin and Latin Extended files.
 Libraries fetched by Maven (Spring Boot, Jackson, the Anthropic Java SDK and others) keep their own
 licenses, mostly Apache 2.0 and MIT. See each library's own notice.
 
+Two browser libraries ship with the game, unchanged, in `src/main/resources/static/vendor/`, each with its
+license beside it:
+
+- **Rive web runtime** (`@rive-app/canvas` 2.49.0, `vendor/rive/`): MIT, © 2020 Rive. It plays the game's own
+  animations (`static/rive/*.riv`), which are made in code for this game.
+- **Motion** (`motion` 14.9.0, `vendor/motion/`): MIT, © 2024 Motion B.V.
+
 ## Names
 
 Schmoll Crossword is an independent project. It is not affiliated with or endorsed by The New York Times or

@@ -34,6 +34,8 @@ const Credits = (() => {
                 U.el("p", { class: "cr-note" }, "Composed by Claude and played with the ", link("GeneralUser GS", "https://schristiancollins.com/generaluser.php"), " SoundFont by S. Christian Collins.")),
             section("Sound Effects", line("", "Kenney"), note("Impact, Interface, Sci-fi, RPG Audio and Music Jingles packs."),
                 note("Most other sounds are made live in code.")),
+            section("Animation Libraries", line("Rive web runtime", "Rive (MIT)"), line("Motion", "Motion B.V. (MIT)"),
+                note("The animations they play are made for this game.")),
             section("Fonts", note("Nunito, Caveat, Patrick Hand, Orbitron, Exo 2, Fredoka, Press Start 2P, VT323, Quicksand, Patua One, Baloo 2, Lilita One, IM Fell English SC, Courier Prime, Bungee, Comfortaa, Rye, Russo One, Share Tech Mono, Shrikhand, Pacifico, Josefin Sans and Cinzel."),
                 note("All under the SIL Open Font License, served from this site.")),
             section("Licenses",
