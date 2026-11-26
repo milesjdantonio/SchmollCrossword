@@ -38,6 +38,10 @@ const Worlds = (() => {
         return world.modes.includes(want) ? want : world.modes[0];
     }
 
+    // a 1x1 canvas for warming scenes up: they draw into it, so their particles move on without anything being painted
+    let scratchCtx = null;
+    const scratch = () => { if (!scratchCtx) { const c = document.createElement("canvas"); c.width = c.height = 1; scratchCtx = c.getContext("2d"); } scratchCtx.setTransform(1, 0, 0, 1, 0, 0); return scratchCtx; };
+
     function use(id, { force = false } = {}) {
         const world = byId[id] || byId.paper || list[0];
         if (world === current && scene && !force) return;
@@ -72,8 +76,9 @@ const Worlds = (() => {
             scene = null;
         }
         t = 0;
-        // warm up particle systems so the first frame isn't empty
-        if (scene) for (let i = 0; i < 30; i++) { t += 0.05; scene.draw(g, t, 0.05, input); }
+        // warm up particle systems so the first frame isn't empty (drawn into a 1x1 scratch canvas: the state moves on,
+        // but nothing is painted, so the GPU isn't handed 30 full-screen frames at once)
+        if (scene) for (let i = 0; i < 30; i++) { t += 0.05; scene.draw(scratch(), t, 0.05, input); }
         loop();
     }
 
@@ -144,7 +149,8 @@ const Worlds = (() => {
         const inp = { px: 0, py: 0, W: w, H: h };
         let tt = 0;
         c.setTransform(r, 0, 0, r, 0, 0);
-        for (let i = 0; i < 40; i++) { tt += 0.05; sc.draw(c, tt, 0.05, inp); }
+        for (let i = 0; i < 40; i++) { tt += 0.05; sc.draw(scratch(), tt, 0.05, inp); }
+        c.setTransform(r, 0, 0, r, 0, 0); sc.draw(c, tt, 0.05, inp);
         // returns a function that animates it (used while the preview is hovered)
         return {
             step(dt) { tt += dt; c.setTransform(r, 0, 0, r, 0, 0); sc.draw(c, tt, dt, inp); }

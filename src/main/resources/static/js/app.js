@@ -39,6 +39,7 @@ const App = (() => {
         root.classList.toggle("mode-locked", w.modes.length < 2);
     }
 
+    const previewCache = new Map();                 // world|mode|size -> its preview picture
     // a card for each world, with a little live preview of its scene
     function worldCards(container, { compact = false } = {}) {
         container.innerHTML = "";
@@ -60,15 +61,35 @@ const App = (() => {
             bar.addEventListener("click", () => switchWorld(plain.id));
             container.appendChild(bar);
         }
-        // draw the previews once laid out; animate one while it's hovered
-        requestAnimationFrame(() => container.querySelectorAll(".world-card").forEach(card => {
-            const cv = card.querySelector("canvas");
+        // draw the previews once laid out, a few each frame so the page never stalls (each world and mode's picture is
+        // kept, so they come back at once); one animates while it's hovered
+        const cards = [...container.querySelectorAll(".world-card")], theme = Settings.get("theme");
+        const paint = card => {
+            const cv = card.querySelector("canvas"), key = `${card.dataset.wid}|${theme}|${cv.clientWidth}x${cv.clientHeight}`;
             let anim = null, raf = 0, last = 0;
-            try { anim = Worlds.preview(cv, card.dataset.wid, Settings.get("theme")); } catch (err) { console.error(err); }
+            const kept = previewCache.get(key);
+            if (kept) { cv.width = kept.width; cv.height = kept.height; cv.getContext("2d").drawImage(kept, 0, 0); }
+            else try {
+                anim = Worlds.preview(cv, card.dataset.wid, theme);
+                const copy = document.createElement("canvas"); copy.width = cv.width; copy.height = cv.height; copy.getContext("2d").drawImage(cv, 0, 0);
+                previewCache.set(key, copy);
+            } catch (err) { console.error(err); }
             const loop = now => { const dt = U.clamp((now - last) / 1000, 0, 0.05); last = now; anim.step(dt); raf = requestAnimationFrame(loop); };
-            card.addEventListener("pointerenter", () => { if (anim && !raf && U.motion() !== "still") { last = performance.now(); raf = requestAnimationFrame(loop); } });
+            card.addEventListener("pointerenter", () => {
+                if (raf || U.motion() === "still") return;
+                if (!anim) try { anim = Worlds.preview(cv, card.dataset.wid, theme); } catch (err) { return; }
+                last = performance.now(); raf = requestAnimationFrame(loop);
+            });
             card.addEventListener("pointerleave", () => { cancelAnimationFrame(raf); raf = 0; });
-        }));
+        };
+        let i = 0;
+        const next = () => {
+            if (!container.isConnected || Settings.get("theme") !== theme) return;
+            const t0 = performance.now();
+            while (i < cards.length && performance.now() - t0 < 10) paint(cards[i++]);
+            if (i < cards.length) requestAnimationFrame(next);
+        };
+        requestAnimationFrame(next);
     }
 
     // ---------------------------------------------------------------------------------------------
