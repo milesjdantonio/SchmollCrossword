@@ -31,170 +31,6 @@
     }
 
     // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let wall, beltY, crates, gears, lights, sparks = [], steam = [], drone = null, nextDrone = preview ? 999 : U.rand(5, 10), arms, unit;
-        const C = night
-            ? { wall: ["#1a2230", "#121820"], panel: "rgba(255,255,255,.04)", gear: "#2a3442", gear2: "#33404f", hole: "#141a22", belt: "#1e242c", crate: ["#5a4a30", "#3a4a5a", "#4a3a4a"], arm: "#c87a1e", pipe: "#2a3644" }
-            : { wall: ["#eef2f6", "#d8e0e8"], panel: "rgba(40,60,90,.06)", gear: "#c4ccd6", gear2: "#b0bac6", hole: "#e8edf2", belt: "#3a424c", crate: ["#e8b45a", "#5aa8e0", "#e86a5a"], arm: "#ff8a1e", pipe: "#a8b4c0" };
-
-        function setup() {
-            const R = U.rng(9001);
-            unit = Math.min(W, H);
-            beltY = H * 0.8;
-            wall = Worlds.canvas(W + 40, H);
-            {
-                const g = wall.getContext("2d");
-                const gr = g.createLinearGradient(0, 0, 0, H);
-                gr.addColorStop(0, C.wall[0]); gr.addColorStop(1, C.wall[1]);
-                g.fillStyle = gr; g.fillRect(0, 0, W + 40, H);
-                // wall panels with rivets
-                g.strokeStyle = C.panel; g.lineWidth = 2;
-                for (let x = 0; x < W + 40; x += 140) for (let y = H * 0.12; y < beltY; y += 120) {
-                    g.strokeRect(x + 6, y + 6, 128, 108);
-                    g.fillStyle = C.panel; for (const [dx, dy] of [[14, 14], [126, 14], [14, 106], [126, 106]]) { g.beginPath(); g.arc(x + dx, y + dy, 2.5, 0, TAU); g.fill(); }
-                }
-                // pipes along the top
-                for (const [y, w] of [[H * 0.04, 18], [H * 0.08, 10]]) {
-                    const pg = g.createLinearGradient(0, y - w / 2, 0, y + w / 2);
-                    pg.addColorStop(0, C.pipe); pg.addColorStop(0.4, night ? "#3e4c5c" : "#dfe6ee"); pg.addColorStop(1, C.pipe);
-                    g.fillStyle = pg; g.fillRect(0, y - w / 2, W + 40, w);
-                    g.fillStyle = night ? "#1a222c" : "#8a96a2"; for (let x = 60; x < W + 40; x += 180) g.fillRect(x, y - w / 2 - 3, 10, w + 6);
-                }
-                // hazard stripes along the floor line
-                g.save(); g.beginPath(); g.rect(0, beltY + H * 0.08, W + 40, 12); g.clip();
-                g.fillStyle = "#ffcc1a"; g.fillRect(0, beltY + H * 0.08, W + 40, 12);
-                g.fillStyle = night ? "#121820" : "#2a2e34"; for (let x = -20; x < W + 60; x += 30) { g.beginPath(); g.moveTo(x, beltY + H * 0.08 + 12); g.lineTo(x + 14, beltY + H * 0.08 + 12); g.lineTo(x + 26, beltY + H * 0.08); g.lineTo(x + 12, beltY + H * 0.08); g.fill(); }
-                g.restore();
-                g.fillStyle = night ? "#0e1218" : "#9aa4ae"; g.fillRect(0, beltY + H * 0.08 + 12, W + 40, H);
-            }
-            gears = [
-                { x: W * 0.12, y: H * 0.3, r: unit * 0.11, n: 14, sp: 0.3 },
-                { x: W * 0.12 + unit * 0.11 * 1.62, y: H * 0.3 + unit * 0.05, r: unit * 0.07, n: 9, sp: -0.3 * 14 / 9 },
-                { x: W * 0.88, y: H * 0.22, r: unit * 0.09, n: 12, sp: -0.25 },
-                { x: W * 0.88 - unit * 0.09 * 0.6, y: H * 0.22 + unit * 0.09 * 1.45, r: unit * 0.06, n: 8, sp: 0.25 * 12 / 8 }
-            ];
-            crates = Array.from({ length: Math.ceil(W / 160) + 2 }, (_, i) => ({ x: i * 160 + R() * 40, s: 26 + R() * 14, c: C.crate[i % 3] }));
-            lights = Array.from({ length: 15 }, (_, i) => ({ u: (i % 5 + 0.5) / 5, v: (Math.floor(i / 5) + 0.5) / 3, c: LEDS[Math.floor(R() * 4)], ph: R() * TAU, sp: 1 + R() * 3 }));
-            arms = [{ x: W * 0.07, ph: 0 }, { x: W * 0.93, ph: Math.PI }];
-            sparks = []; steam = [];
-        }
-        setup();
-
-        // a robot arm on the ceiling-side: base, two segments and a gripper, swinging down to the belt
-        function arm(g, a, t, px) {
-            const x0 = a.x - px, y0 = H * 0.12, L = Math.min(H * 0.3, unit * 0.32), side = a.x < W / 2 ? 1 : -1;
-            const k = (Math.sin(t * 0.9 + a.ph) + 1) / 2;
-            const a1 = Math.PI / 2 - side * (0.15 + Math.sin(t * 0.9 + a.ph) * 0.2), a2 = side * (0.5 - k * 0.6);
-            const x1 = x0 + Math.cos(a1) * L, y1 = y0 + Math.sin(a1) * L;
-            const x2 = x1 + Math.cos(a1 + a2) * L * 0.8, y2 = y1 + Math.sin(a1 + a2) * L * 0.8;
-            g.lineCap = "round";
-            g.fillStyle = night ? "#2a3442" : "#5a6672"; g.fillRect(x0 - 26, y0 - 14, 52, 18);
-            for (const [xa, ya, xb, yb, w] of [[x0, y0, x1, y1, 16], [x1, y1, x2, y2, 12]]) {
-                g.strokeStyle = night ? "#8a5014" : "#c86a10"; g.lineWidth = w + 4; g.beginPath(); g.moveTo(xa, ya); g.lineTo(xb, yb); g.stroke();
-                g.strokeStyle = C.arm; g.lineWidth = w; g.beginPath(); g.moveTo(xa, ya); g.lineTo(xb, yb); g.stroke();
-            }
-            for (const [x, y, r] of [[x0, y0, 12], [x1, y1, 10]]) { g.fillStyle = night ? "#3a4656" : "#4a5662"; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.fillStyle = night ? "#6a7a8a" : "#c8d0d8"; g.beginPath(); g.arc(x, y, r * 0.4, 0, TAU); g.fill(); }
-            // the gripper
-            const ga = a1 + a2, open = 0.35 + 0.25 * Math.sin(t * 1.8 + a.ph);
-            g.strokeStyle = night ? "#6a7a8a" : "#4a5662"; g.lineWidth = 5;
-            for (const side of [-1, 1]) { g.beginPath(); g.moveTo(x2, y2); g.lineTo(x2 + Math.cos(ga + side * open) * 18, y2 + Math.sin(ga + side * open) * 18); g.stroke(); }
-            return { x: x2, y: y2 };
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                g.drawImage(wall, -20 - inp.px * 4, 0);
-                // gears turning on the wall
-                for (const gr of gears) gear(g, gr.x - inp.px * 8, gr.y, gr.r, gr.n, t * gr.sp, gr.sp > 0 ? C.gear : C.gear2, C.hole);
-                // a control panel with blinking lights and a little screen
-                const cpx = W * 0.66 - inp.px * 8, cpy = H * 0.56, cw = Math.min(W * 0.34, 340);
-                g.fillStyle = night ? "#202a36" : "#c4ccd6"; g.beginPath(); g.roundRect(cpx - cw / 2, cpy, cw, H * 0.17, 10); g.fill();
-                g.fillStyle = night ? "#161e28" : "#a8b2bc"; g.fillRect(cpx - 6, cpy + H * 0.17, 12, beltY - cpy - H * 0.17);      // its stand
-                g.fillStyle = night ? "#0a1a14" : "#1e2a24"; g.fillRect(cpx - cw * 0.4, cpy + 14, cw * 0.36, H * 0.12);
-                g.strokeStyle = "#3cff9a"; g.lineWidth = 1.5; g.globalAlpha = 0.8;                  // a heartbeat line on the screen
-                g.beginPath();
-                for (let i = 0; i <= 40; i++) { const x = cpx - cw * 0.4 + i / 40 * cw * 0.36, ph = (i / 40 * 4 - t * 1.5) % 1, y = cpy + 14 + H * 0.06 + (Math.abs(ph - 0.5) < 0.04 ? -H * 0.04 : Math.sin(i + t * 3) * 2); i ? g.lineTo(x, y) : g.moveTo(x, y); }
-                g.stroke(); g.globalAlpha = 1;
-                for (const l of lights) {
-                    const on = Math.sin(t * l.sp + l.ph) > 0;
-                    const x = cpx + cw * (0.06 + l.u * 0.38), y = cpy + 14 + l.v * H * 0.12;
-                    g.fillStyle = on ? l.c : night ? "#2a333e" : "#8a96a2"; g.beginPath(); g.arc(x, y, 5, 0, TAU); g.fill();
-                    if (on && night) { g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.35; g.beginPath(); g.arc(x, y, 12, 0, TAU); g.fill(); g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; }
-                }
-                // orange warning beacons sweeping the walls (night)
-                if (night) for (const bx of [W * 0.04, W * 0.96]) {
-                    const a = t * 3 + bx, x = bx - inp.px * 8, y = H * 0.12;
-                    const bg = g.createRadialGradient(x, y, 0, x, y, unit * 0.6);
-                    bg.addColorStop(0, "rgba(255,150,40,.32)"); bg.addColorStop(1, "rgba(255,150,40,0)");
-                    g.fillStyle = bg; g.beginPath(); g.moveTo(x, y); g.arc(x, y, unit * 0.6, a - 0.25, a + 0.25); g.fill();
-                    g.fillStyle = "#ff9a2a"; g.beginPath(); g.arc(x, y, 9, Math.PI, TAU); g.fill();
-                }
-                // the conveyor belt with crates riding along it
-                const by = beltY, bh = H * 0.05;
-                g.fillStyle = C.belt; g.fillRect(-10, by, W + 20, bh);
-                g.strokeStyle = night ? "#2e3640" : "#5a646e"; g.lineWidth = 2;
-                const off = (t * 50) % 24;
-                for (let x = -24 + off; x < W + 24; x += 24) { g.beginPath(); g.moveTo(x - inp.px * 12, by + 3); g.lineTo(x - 6 - inp.px * 12, by + bh - 3); g.stroke(); }
-                g.fillStyle = night ? "#3a4656" : "#7a848e";
-                for (let x = 0; x < W + 40; x += 48) { g.beginPath(); g.arc(x + (t * 50 % 48) * 0 - inp.px * 12, by + bh + 8, 8, 0, TAU); g.fill(); }
-                for (const cr of crates) {
-                    cr.x += 50 * dt; if (cr.x > W + 80) cr.x -= crates.length * 160;
-                    const x = cr.x - inp.px * 12, y = by - cr.s;
-                    g.fillStyle = cr.c; g.fillRect(x, y, cr.s, cr.s);
-                    g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = 2; g.strokeRect(x + 1, y + 1, cr.s - 2, cr.s - 2);
-                    g.beginPath(); g.moveTo(x, y + cr.s / 2); g.lineTo(x + cr.s, y + cr.s / 2); g.stroke();
-                }
-                // two robot arms working over the belt; at night the right one welds, throwing sparks
-                for (let i = 0; i < arms.length; i++) {
-                    const tip = arm(g, arms[i], t, inp.px * 12);
-                    if (night && i === 1 && !preview && Math.sin(t * 0.9 + arms[i].ph) > 0.3) {
-                        for (let k = 0; k < 3; k++) sparks.push({ x: tip.x, y: tip.y, vx: (Math.random() - 0.5) * 220, vy: -Math.random() * 160, life: 0.6 + Math.random() * 0.5 });
-                        // the weld: a white-blue flare that flickers, with a hot core
-                        const fl = 0.7 + Math.random() * 0.3;
-                        Worlds.glow(g, tip.x, tip.y, 40 * fl, "#a8dcff", 0.8);
-                        Worlds.glow(g, tip.x, tip.y, 14 * fl, "#ffffff", 1);
-                        Worlds.glint(g, tip.x, tip.y, 26 * fl, 0.7, "#e8f6ff");
-                    }
-                }
-                if (sparks.length > 260) sparks.splice(0, sparks.length - 260);
-                sparks = sparks.filter(s => (s.life -= dt) > 0);
-                // weld sparks: streaks along their path that cool from white-yellow to orange, the hottest glowing
-                g.lineCap = "round"; g.lineWidth = 1.6;
-                for (const s of sparks) {
-                    s.vy += 500 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
-                    const a = Math.min(1, s.life * 1.5);
-                    g.strokeStyle = `rgba(255,${170 + Math.round(s.life * 80)},${Math.round(60 + s.life * 120)},${a.toFixed(2)})`;
-                    g.beginPath(); g.moveTo(s.x - s.vx * 0.025, s.y - s.vy * 0.025); g.lineTo(s.x, s.y); g.stroke();
-                    if (s.life > 0.55) Worlds.glow(g, s.x, s.y, 5, "#ffd890", a * 0.6);
-                }
-                // steam puffing from a pipe now and then
-                if (!preview && Math.random() < dt * 1.2) steam.push({ x: W * U.rand(0.2, 0.8), y: H * 0.04 + 10, age: 0 });
-                steam = steam.filter(s => (s.age += dt) < 2);
-                // steam: a billow of three puffs that spreads and fades
-                for (const s of steam) { const k = s.age / 2, x = s.x - inp.px * 4 + k * 20, y = s.y + k * 30, r = 6 + k * 26; g.fillStyle = night ? `rgba(160,180,200,${(0.25 * (1 - k)).toFixed(3)})` : `rgba(255,255,255,${(0.7 * (1 - k)).toFixed(3)})`; g.beginPath(); g.arc(x, y, r, 0, TAU); g.arc(x + r * 0.7, y + r * 0.25, r * 0.65, 0, TAU); g.arc(x - r * 0.6, y + r * 0.3, r * 0.55, 0, TAU); g.fill(); }
-                // a little delivery drone buzzing across
-                nextDrone -= dt;
-                if (!drone && nextDrone <= 0) drone = { x: -40, y: H * U.rand(0.42, 0.6), vx: U.rand(70, 110) };
-                if (drone) {
-                    drone.x += drone.vx * dt;
-                    const x = drone.x - inp.px * 16, y = drone.y + Math.sin(t * 4) * 6;
-                    g.fillStyle = night ? "#4a5a6a" : "#5a6672"; g.beginPath(); g.roundRect(x - 16, y - 6, 32, 12, 5); g.fill();
-                    g.fillStyle = Math.sin(t * 8) > 0 ? "#3cff9a" : "#ff5a7a"; g.beginPath(); g.arc(x + 12, y, 2.5, 0, TAU); g.fill();
-                    g.strokeStyle = night ? "rgba(200,220,240,.6)" : "rgba(40,50,60,.6)"; g.lineWidth = 2;
-                    for (const side of [-1, 1]) { const w = 12 * Math.abs(Math.sin(t * 40 + side)); g.beginPath(); g.moveTo(x + side * 16 - w, y - 9); g.lineTo(x + side * 16 + w, y - 9); g.stroke(); }
-                    g.fillStyle = C.crate[0]; g.fillRect(x - 8, y + 8, 16, 12);
-                    g.strokeStyle = night ? "#4a5a6a" : "#5a6672"; g.beginPath(); g.moveTo(x, y + 6); g.lineTo(x, y + 8); g.stroke();
-                    if (drone.x > W + 60) { drone = null; nextDrone = U.rand(12, 22); }
-                }
-            }
-        };
-    }
-
-    // ---------------------------------------------------------------------------------------------
     // The board: a machine part in each typed square; an LED strip along finished words
     // ---------------------------------------------------------------------------------------------
     const PARTS = [
@@ -255,9 +91,12 @@
         await c.wait(450);
         if (c.skipped) return;
         // 2. a trophy rides in on it and stops in the middle
-        const trophy = U.el("div", { class: "rb-trophy", html: TROPHY, style: { left: cx - 60 + "px" } });
+        // (the trophy element rides the belt and lifts; Rive's trophy, rive/robot-win.riv, follows it, larger)
+        const trophy = U.el("div", { class: "rb-trophy", style: { left: cx - 60 + "px" } });
         overlay.appendChild(trophy);
         c.cleanup(() => trophy.remove());
+        const art = Anim.play("robot-win", { follow: trophy, ms: 5600, fadeMs: 300, z: 834, rect: r => ({ x: r.left + r.width / 2 - r.width * 1.55, y: r.top + r.height * 0.5 - r.width * 1.75, w: r.width * 3.1, h: r.width * 3.1 }) });
+        c.cleanup(() => art.stop());
         Sound.play("conveyor");
         trophy.animate([{ transform: `translateX(${-cx - 140}px)` }, { transform: "translateX(8px)", offset: 0.9 }, { transform: "none" }], { duration: 1400, easing: "cubic-bezier(.3,.6,.4,1)", fill: "backwards" });
         await c.wait(1450);
@@ -393,7 +232,7 @@
     Worlds.register({
         id: "robot", name: "Robot Factory", icon: "\u{1F916}", tagline: "Gears, Belts and Sparks.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "shutter",
+        scene: (W, H, opts) => RobotScene(W, H, opts), rive: "robot-win", board, celebrate, titleCard, sounds, transition: "shutter",
         mascot: { name: "BOLT", draw: drawBolt },
         lines: {
             hello: ["BEEP BOOP. I am Bolt. Puzzle module loaded!", "Welcome to the factory! Today we build words.", "Systems online. Ready to solve!"],
