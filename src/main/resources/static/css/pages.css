@@ -2,7 +2,7 @@
    Flat panels in the world's own colours and lettering (worlds.css), no shadows, gradients or icon badges; each
    screen opens with a left-aligned title and one line about the data, and every number is set as plain type.
    Home is one 12-column grid whose spans share their edges (12, then 8 + 4, then 12). The crossword shows through
-   in the things only this game has: a small grid of each daily's size, and the week drawn as a row of squares. */
+   in the week, drawn as a row of squares in the world's board colours. */
 
 :root {
     --panel: var(--surface-solid);
@@ -53,14 +53,14 @@
 .hc-bar i { min-width: 0; background: var(--accent); }
 .home-campaign .btn.primary { padding: 10px 18px; }
 
-/* the dailies: one row each, a grid of its size, its name, and what you got (or Play) in one column on the right */
+/* the dailies: one row each, its name and size, and what you got (or Play) in one column on the right */
 .daily-card .card-head { margin-bottom: 12px; }
 .countdown { margin: 0; font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .countdown b { padding: 0; background: none; font-weight: 700; }
 .daily-chips { display: flex; flex-direction: column; gap: 8px; margin: 0; }
 .daily-chip, .boss-chip, .daily-chip.challenge {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 14px;
     min-height: 62px;
@@ -77,10 +77,6 @@
 .daily-chip:focus-visible, .boss-chip:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .daily-chip.done::after { content: none; }
 .daily-chip.given-up { opacity: 1; border-style: dashed; }
-.mg { display: block; width: 36px; height: 36px; justify-self: center; }
-.mg-b { fill: var(--grid); }
-.mg rect:not(.mg-b) { fill: var(--cell); }
-.daily-chip.done .mg rect:not(.mg-b) { fill: color-mix(in srgb, var(--good) 35%, var(--cell)); }
 .chip-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .daily-chip .chip-name, .boss-chip .chip-name { font: 700 1.05rem var(--font-body); line-height: 1.2; }
 .chip-size { color: var(--muted); font-size: .86rem; font-weight: 600; }
@@ -100,8 +96,8 @@
 .daily-chip:hover .chip-state, .boss-chip:hover .chip-state { background: var(--panel); border-color: var(--ink); color: var(--ink); }
 .daily-chip.done .chip-state, .boss-chip.done .chip-state, .daily-chip.done:hover .chip-state { padding: 6px 0; border-color: transparent; background: none; color: var(--good); }
 .daily-chip.given-up .chip-state { padding: 6px 0; border-color: transparent; background: none; color: var(--muted); }
-/* today's boss: the same row, its art in the first column, tinted lightly in its own colour */
-.boss-chip { background: color-mix(in srgb, var(--boss, var(--accent)) 9%, var(--raised)); border-color: color-mix(in srgb, var(--boss, var(--accent)) 28%, transparent); }
+/* today's boss: the same row, its art in a first column, tinted lightly in its own colour */
+.boss-chip { grid-template-columns: 44px minmax(0, 1fr) auto; background: color-mix(in srgb, var(--boss, var(--accent)) 9%, var(--raised)); border-color: color-mix(in srgb, var(--boss, var(--accent)) 28%, transparent); }
 .boss-chip:hover { background: color-mix(in srgb, var(--boss, var(--accent)) 14%, var(--raised)); border-color: color-mix(in srgb, var(--boss, var(--accent)) 50%, transparent); }
 .boss-chip .bchip-art { width: 44px; height: 44px; animation: none; filter: none; }
 .boss-chip .bchip-text { gap: 2px; }
@@ -225,8 +221,8 @@ html[data-world] .modes a.active { background: color-mix(in srgb, var(--ink) 10%
     .hero-title, .page-head h1 { font-size: calc(1.6rem * var(--head-scale)); }
     .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stat-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
-    .daily-chip, .boss-chip, .daily-chip.challenge { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; padding: 9px 12px; }
-    .mg { width: 30px; height: 30px; }
+    .daily-chip, .daily-chip.challenge { padding: 9px 12px; }
+    .boss-chip { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 12px; padding: 9px 12px; }
 }
 .leader-card .lb-hint, .leader-card .lb-empty { text-align: left; }
 .leader-card .lb-list:not(.two), .leader-card .lb-you { max-width: none; margin-left: 0; margin-right: 0; }

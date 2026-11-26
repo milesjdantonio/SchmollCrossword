@@ -653,6 +653,7 @@
             }
         }
         FX.add({
+            fixed: true,                                        // full-screen: the hole sits in the middle of the screen, not on the board
             update(dt) {
                 hole.t += dt;
                 if (hole.phase === "grow") hole.r += (hole.target - hole.r) * Math.min(1, dt * 2.6);
@@ -666,8 +667,11 @@
                 return hole.alive;
             },
             draw(g) {
-                g.fillStyle = `rgba(2,0,10,${Math.min(0.78, hole.t * 0.7)})`;
-                g.fillRect(0, 0, W, H);
+                // space darkens toward the hole: a soft falloff, no edge
+                const dim = Math.min(0.78, hole.t * 0.7), vg = g.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(W, H) * 0.6);
+                vg.addColorStop(0, `rgba(2,0,10,${dim.toFixed(3)})`); vg.addColorStop(0.55, `rgba(4,0,16,${(dim * 0.85).toFixed(3)})`); vg.addColorStop(1, `rgba(6,2,22,${(dim * 0.55).toFixed(3)})`);
+                g.fillStyle = vg;
+                g.fillRect(-W, -H, W * 3, H * 3);
                 g.globalCompositeOperation = "lighter";
                 for (const d of hole.debris) {
                     if (d.d < hole.r * 1.05) continue;
