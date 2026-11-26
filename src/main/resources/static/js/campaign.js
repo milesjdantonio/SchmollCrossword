@@ -1195,6 +1195,7 @@ const Campaign = (() => {
         at.view = AtlasView.create(scene, { width: AT_W, height: AT_H, flat: true, terrain: atlasTerrain, ...atlasSea(pts), insets: () => room,
             onPick: (d, quiet) => { if (d.rock || d.i !== at.focus || quiet || !sectionOpen(d.i)) atlasFocus(d.i); else atlasTravel(d.i); },
             onTravel: () => atlasTravel(at.focus) });
+        if (!AtlasMap.ready()) AtlasMap.onReady(() => at.view && at.view.redraw());
         measure();
         at.ro.observe(card);
         // the camera starts low over where you are, then rises to show it and the island the road leads to next

@@ -480,7 +480,16 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       prices). No secret-world icon until the secret world is started (no "?" badge, no dock tile, no Atlas glimmer
       or rock); the parent world gets the gold instead (dock: a spinning gold ring `.ws-tile.gold`; Atlas: a solid
       gold disc and ring with a sweeping shine and circling sparkles). The user, 2026-11-26.
-- [ ] NEXT (the user, 2026-11-26): "really design this atlas map and put a lot of effort into its design" (js/atlas-map.js).
+- [x] The Atlas map designed properly (the user, 2026-11-26: "really design this atlas map and put a lot of effort into
+      its design"): `js/atlas-paint.js` paints it in a worker (atlas-map.js runs it; in the page where workers can't
+      draw): countries with wandering, blended borders in a map palette, hill shading, coast contour lines, deepening
+      sea, compass lines, wind curls, beaches and hatched cliffs, rivers with names, mountain ranges and foothills,
+      every world's landmark scene (ruled Notebook with a pencil, patchwork Garden and windmill, the autumn forest and
+      the oldest oak, peppermint Candy Hills, the reef and lighthouse, Snow Day's lake and igloo, walled Rainy City,
+      the Sky Kingdom's floating isles, dunes, oasis and pyramids, the Sunken Sands' ribs and worm trail, the
+      fairground, the neon Arcade, the Library's gothic towers, the Factory and rails, the Volcano and the Cave),
+      the open country filled (hills, copses, hamlets), the sky with constellations and planets, the sea pouring off
+      the edge of the world, sea names, serpent, Kraken, ships, compass rose, title ribbon, scale, patterned border.
 - [ ] NEXT (the user, 2026-11-26): "remove all emojis and instead create your own icon everywhere": every emoji in the
       game (ability and item icons, boss moves, effect particles, chips, floating text, notes, companions...) becomes
       a drawn icon (the `icon()` set in campaign.js / an SVG sprite), and FX particle "emoji" shapes become drawn ones.

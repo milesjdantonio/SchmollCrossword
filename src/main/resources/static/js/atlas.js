@@ -304,7 +304,7 @@ const AtlasView = (() => {
             g.clearRect(0, 0, vw, vh);
             if (flat) {
                 const a = project(0, 0), b = project(W, H), tex = opts.terrain && opts.terrain();
-                if (a && b && tex) g.drawImage(tex, a.x, a.y, b.x - a.x, b.y - a.y);
+                if (a && b) { if (tex) g.drawImage(tex, a.x, a.y, b.x - a.x, b.y - a.y); else { g.fillStyle = "#3f7d9a"; g.fillRect(a.x, a.y, b.x - a.x, b.y - a.y); } }
                 return;
             }
             // a soft purple pool of light on the water, and rings on it
@@ -462,8 +462,8 @@ const AtlasView = (() => {
             // fog over a land you haven't reached: soft cloud you can just see through
             if (shut) {
                 const drift = still() ? 0 : Math.sin(t / 7000 * Math.PI + d.n) * 20;
-                for (const [dx, dy, rr] of [[-90, -60, 150], [70, -90, 140], [0, 10, 170], [-60, 70, 120], [90, 50, 130]])
-                    radial({ x: c.x + (dx + drift) * s, y: c.y + (dy - 40) * s, rx: rr * s, ry: rr * 0.75 * s }, [[0, "rgba(246, 240, 226, .78)"], [1, "rgba(246, 240, 226, 0)"]]);
+                for (const [dx, dy, rr] of [[-70, -50, 120], [60, -80, 110], [0, 10, 130], [-50, 60, 95], [70, 40, 100]])
+                    radial({ x: c.x + (dx + drift) * s, y: c.y + (dy - 40) * s, rx: rr * s, ry: rr * 0.7 * s }, [[0, "rgba(246, 240, 226, .5)"], [1, "rgba(246, 240, 226, 0)"]]);
             }
         }
         function drawBoss(d, t) {
@@ -688,6 +688,7 @@ const AtlasView = (() => {
         resize();
         return {
             cam, look, fit, fitZ, zoomBy, wake,
+            redraw() { if (alive) { draw(performance.now()); wake(); } },
             focus(i) {
                 focusI = islands.findIndex(d => d.i === i && !d.rock);
                 plates.forEach((t, n) => t && t.el.classList.toggle("focus", n === focusI));
