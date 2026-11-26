@@ -5,6 +5,9 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
+- [ ] **Louder top volume.** Master Volume now starts at 80%, which is as loud as 100% was; 100% is twice that
+      (+6 dB). Your saved volume was moved to the same loudness (96% shows as 77%). Try 100% in a boss fight and say
+      if it's too much or not enough.
 - [ ] **The black box behind Deep Space's black hole.** I couldn't find it (2026-11-26): the island, the Atlas and
       the scene behind Home show no box in light or dark. It was probably on the old scrolling map, which is gone.
       If you still see one, say where (which screen, light or dark, which browser).
