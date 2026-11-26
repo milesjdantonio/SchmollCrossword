@@ -16,190 +16,6 @@
     const dark = () => document.documentElement.dataset.theme === "dark";
 
     // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let splashes = [];
-        let sky, layers, windows, rain, puddles, walkers = [], nextWalker = preview ? 999 : 0.5, flash = 0, nextFlash = preview ? 999 : U.rand(8, 16), street, cafe;
-
-        function skyline(R, base, minH, maxH, col, winCol, list, depth) {
-            const c = Worlds.canvas(W + 60, H), g = c.getContext("2d");
-            let x = -10;
-            while (x < W + 60) {
-                const w = 40 + R() * 70, h = minH + R() * (maxH - minH), top = base - h;
-                g.fillStyle = col;
-                g.fillRect(x, top, w, H - top);
-                if (R() < 0.3) { g.fillRect(x + w * 0.3, top - 14, w * 0.4, 14); }                 // a rooftop box
-                if (R() < 0.25) {                                                                   // a water tower
-                    const tx = x + w * (0.2 + R() * 0.5);
-                    g.fillRect(tx, top - 34, 22, 24);
-                    g.beginPath(); g.moveTo(tx - 3, top - 34); g.lineTo(tx + 11, top - 46); g.lineTo(tx + 25, top - 34); g.fill();
-                    g.fillRect(tx + 2, top - 12, 3, 12); g.fillRect(tx + 17, top - 12, 3, 12);
-                }
-                // windows: on this layer they're drawn live (so they can switch on and off at night)
-                if (winCol) for (let wy = top + 10; wy < base - 8; wy += 18) for (let wx = x + 7; wx < x + w - 10; wx += 14) if (R() < 0.85) list.push({ x: wx, y: wy, on: R() < (night ? 0.45 : 0.18), next: R() * 20, depth });
-                x += w + R() * 6;
-            }
-            return c;
-        }
-        function setup() {
-            const R = U.rng(2468);
-            sky = null;
-            windows = [];
-            const cols = night ? ["#1a2238", "#141a2c", "#0e1220"] : ["#a8b4c4", "#8a98aa", "#6a788a"];
-            layers = [
-                skyline(R, H * 0.62, H * 0.15, H * 0.32, cols[0], false, windows, 0),
-                skyline(R, H * 0.72, H * 0.14, H * 0.3, cols[1], true, windows, 1),
-                skyline(R, H * 0.84, H * 0.1, H * 0.22, cols[2], true, windows, 2)
-            ];
-            // the street at the bottom, wet and shiny
-            street = { y: H * 0.86 };
-            cafe = { x: W * 0.72, w: Math.min(W * 0.22, 220), h: H * 0.11 };
-            rain = Array.from({ length: preview ? 60 : 260 }, (_, i) => ({ x: R() * W * 1.2, y: R() * H, sp: 600 + R() * 400, len: 10 + R() * 16, z: [0.45, 0.7, 1][i % 3] }));   // 3 depths, each drawn in one stroke
-            puddles = Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: H * (0.9 + R() * 0.08), w: 30 + R() * 60, rings: [] }));
-        }
-        setup();
-
-        function walker(g, w, t) {
-            const x = w.x, y = street.y + 6 + w.lane * 8, s = w.s, bob = Math.sin(t * 7 + w.ph) * 1.5;
-            g.save(); g.translate(x, y + bob); g.scale(s * w.dir, s);
-            g.strokeStyle = night ? "#2a3040" : "#3a3a48"; g.lineWidth = 4; g.lineCap = "round";
-            const step = Math.sin(t * 7 + w.ph) * 5;
-            g.beginPath(); g.moveTo(0, -18); g.lineTo(step, 0); g.moveTo(0, -18); g.lineTo(-step, 0); g.stroke();
-            g.fillStyle = w.coat; g.beginPath(); g.roundRect(-7, -40, 14, 24, 5); g.fill();
-            g.strokeStyle = "#3a3a3a"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(4, -36); g.lineTo(4, -62); g.stroke();
-            g.fillStyle = w.c;
-            g.beginPath(); g.moveTo(-26, -58); g.quadraticCurveTo(4, -86, 34, -58);
-            for (let i = 0; i < 4; i++) g.quadraticCurveTo(34 - i * 15 - 7.5, -64, 34 - (i + 1) * 15, -58);
-            g.fill();
-            g.fillStyle = "rgba(255,255,255,.25)"; g.beginPath(); g.moveTo(-10, -66); g.quadraticCurveTo(4, -80, 20, -68); g.quadraticCurveTo(4, -74, -10, -66); g.fill();
-            g.restore();
-            if (night) {                                                       // its reflection in the wet street
-                g.globalAlpha = 0.18; g.fillStyle = w.c; g.fillRect(x - 26 * s, y + 8, 60 * s, 20 * s); g.globalAlpha = 1;
-            }
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!sky) {
-                    sky = g.createLinearGradient(0, 0, 0, H * 0.8);
-                    if (night) { sky.addColorStop(0, "#0a0e1e"); sky.addColorStop(1, "#24304a"); }
-                    else { sky.addColorStop(0, "#8a9ab0"); sky.addColorStop(0.6, "#b8c4d2"); sky.addColorStop(1, "#d8e0ea"); }
-                }
-                g.fillStyle = sky; g.fillRect(0, 0, W, H);
-                // faint lightning far away (no thunder)
-                nextFlash -= dt;
-                if (nextFlash <= 0) { flash = 1; nextFlash = U.rand(10, 20); }
-                if (flash > 0) {
-                    flash = Math.max(0, flash - dt * 2.5);
-                    const a = flash * (night ? 0.35 : 0.25) * (Math.sin(flash * 30) > -0.3 ? 1 : 0.3);
-                    g.fillStyle = `rgba(230,240,255,${a.toFixed(3)})`; g.fillRect(0, 0, W, H * 0.7);
-                }
-                // soft clouds rolling low
-                for (let i = 0; i < 6; i++) {
-                    const x = ((i * 0.23 * W + t * (6 + i)) % (W + 400)) - 200 - inp.px * 4, y = H * (0.06 + (i % 3) * 0.06);
-                    g.fillStyle = night ? "rgba(40,50,80,.5)" : "rgba(240,244,250,.45)";
-                    g.beginPath(); g.ellipse(x, y, 180, 40, 0, 0, TAU); g.fill();
-                }
-                const shift = [4, 10, 16];
-                layers.forEach((layer, d) => {
-                    g.drawImage(layer, -30 - inp.px * shift[d], 0);
-                    // this layer's windows
-                    for (const w of windows) {
-                        if (w.depth !== d) continue;
-                        w.next -= dt;
-                        if (w.next <= 0) { if (Math.random() < 0.5) w.on = !w.on; w.next = 6 + Math.random() * 20; }
-                        const x = w.x - 30 - inp.px * shift[d];
-                        g.fillStyle = w.on ? (night ? "rgba(255,210,120,.9)" : "rgba(255,230,170,.75)") : (night ? "rgba(40,50,70,.8)" : "rgba(200,210,224,.5)");
-                        g.fillRect(x, w.y, 7, 9);
-                    }
-                });
-                // the café: a warm window and a striped awning (its sign glows at night)
-                const cx = cafe.x - inp.px * 16, cy = street.y - cafe.h;
-                g.fillStyle = night ? "#2a1a1a" : "#5a3a2e"; g.fillRect(cx - 10, cy - 30, cafe.w + 20, cafe.h + 30);
-                const cw = g.createLinearGradient(0, cy, 0, cy + cafe.h);
-                cw.addColorStop(0, "#ffd890"); cw.addColorStop(1, "#ffb060");
-                g.fillStyle = cw; g.fillRect(cx, cy, cafe.w, cafe.h - 6);
-                g.fillStyle = "rgba(120,60,20,.5)"; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(cx + cafe.w * (0.25 + i * 0.25), cy + cafe.h - 6, 8, Math.PI, TAU); g.fill(); }   // people inside
-                for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? "#ffffff" : "#2e8a5a"; g.beginPath(); g.moveTo(cx - 10 + i * (cafe.w + 20) / 8, cy - 4); g.lineTo(cx - 10 + (i + 1) * (cafe.w + 20) / 8, cy - 4); g.lineTo(cx - 10 + (i + 1) * (cafe.w + 20) / 8, cy - 20); g.lineTo(cx - 10 + i * (cafe.w + 20) / 8, cy - 20); g.fill(); g.beginPath(); g.arc(cx - 10 + (i + 0.5) * (cafe.w + 20) / 8, cy - 4, (cafe.w + 20) / 16, 0, Math.PI); g.fill(); }
-                if (night) {
-                    const pulse = 0.8 + 0.2 * Math.sin(t * 2.5);
-                    g.font = `700 ${Math.round(cafe.h * 0.32)}px "Pacifico", cursive`;
-                    g.textAlign = "center";
-                    g.shadowColor = "#ff6ab4"; g.shadowBlur = 18 * pulse;
-                    g.fillStyle = `rgba(255,170,215,${pulse.toFixed(2)})`;
-                    g.fillText("Café", cx + cafe.w / 2, cy - 36);
-                    g.shadowBlur = 0; g.textAlign = "left";
-                }
-                // the wet street
-                const sg = g.createLinearGradient(0, street.y, 0, H);
-                sg.addColorStop(0, night ? "#1a2030" : "#6a7484"); sg.addColorStop(1, night ? "#0a0e18" : "#4a5260");
-                g.fillStyle = sg; g.fillRect(0, street.y, W, H - street.y);
-                if (night) {                                                       // light reflections in the wet road
-                    const rh = H - street.y;
-                    for (const [x, w, col, len] of [[cx, cafe.w, "255,176,96", 0.9], [cx + cafe.w * 0.3, cafe.w * 0.4, "255,106,180", 0.6]]) {
-                        const rg = g.createLinearGradient(0, street.y, 0, street.y + rh * len);
-                        rg.addColorStop(0, `rgba(${col},.3)`); rg.addColorStop(1, `rgba(${col},0)`);
-                        g.fillStyle = rg;
-                        for (let y = 0; y < rh * len; y += 4) g.fillRect(x + Math.sin(y * 0.3 + t * 3) * 3, street.y + y, w, 3);       // rippling streaks
-                    }
-                }
-                g.fillStyle = night ? "rgba(255,255,255,.05)" : "rgba(255,255,255,.1)"; g.fillRect(0, street.y, W, 3);
-                // puddles with ripples where drops land
-                for (const p of puddles) {
-                    g.fillStyle = night ? "rgba(90,110,160,.35)" : "rgba(180,200,225,.55)";
-                    g.beginPath(); g.ellipse(p.x - inp.px * 18, p.y, p.w, p.w * 0.16, 0, 0, TAU); g.fill();
-                    g.fillStyle = night ? "rgba(255,220,150,.12)" : "rgba(255,255,255,.35)";      // the sky (or the street lights) reflected in it
-                    g.beginPath(); g.ellipse(p.x - inp.px * 18 - p.w * 0.25, p.y - p.w * 0.03, p.w * 0.45, p.w * 0.035, 0, 0, TAU); g.fill();
-                    if (Math.random() < dt * 4) p.rings.push({ x: (Math.random() - 0.5) * p.w * 1.4, age: 0 });
-                    p.rings = p.rings.filter(r => (r.age += dt) < 0.8);
-                    g.lineWidth = 1;
-                    for (const r of p.rings) { const k = r.age / 0.8; g.strokeStyle = `rgba(255,255,255,${(0.6 * (1 - k)).toFixed(2)})`; g.beginPath(); g.ellipse(p.x - inp.px * 18 + r.x, p.y, 3 + k * 16, (3 + k * 16) * 0.25, 0, 0, TAU); g.stroke(); }
-                }
-                // people with umbrellas walking along the street
-                nextWalker -= dt;
-                if (nextWalker <= 0) {
-                    const dir = Math.random() < 0.5 ? 1 : -1;
-                    walkers.push({ x: dir > 0 ? -40 : W + 40, dir, vx: U.rand(30, 50) * dir, s: U.clamp(H / 900, 0.6, 1.1) * U.rand(0.85, 1), lane: Math.floor(Math.random() * 3), c: U.pick(UMBRELLAS), coat: U.pick(["#4a5a7a", "#7a4a3a", "#3a5a4a", "#5a4a6a"]), ph: Math.random() * TAU });
-                    nextWalker = U.rand(3, 7);
-                }
-                walkers = walkers.filter(w => (w.x += w.vx * dt) > -60 && w.x < W + 60);
-                walkers.sort((a, b) => a.lane - b.lane);
-                for (const w of walkers) walker(g, w, t);
-                // the rain, slanting with the wind (and the pointer)
-                g.lineCap = "round";
-                const slant = 0.18 + inp.px * 0.06;
-                for (const z of [0.45, 0.7, 1]) {
-                    g.strokeStyle = night ? `rgba(170,190,230,${(0.25 + z * 0.3).toFixed(2)})` : `rgba(255,255,255,${(0.35 + z * 0.35).toFixed(2)})`;
-                    g.lineWidth = z * 1.4;
-                    g.beginPath();
-                    for (const r of rain) {
-                        if (r.z !== z) continue;
-                        r.y += r.sp * dt * z; r.x += r.sp * dt * z * slant;
-                        if (r.y > H) { r.y = -20; r.x = Math.random() * W * 1.2 - W * 0.1; }
-                        if (r.x > W + 20) r.x -= W * 1.2;
-                        g.moveTo(r.x, r.y); g.lineTo(r.x - r.len * z * slant, r.y - r.len * z);
-                    }
-                    g.stroke();
-                }
-                // drops splashing on the street: a little crown that spreads, with two droplets thrown up
-                if (!preview) for (let i = 0; i < 2 && Math.random() < dt * 40; i++) splashes.push({ x: Math.random() * W, y: street.y + 6 + Math.random() * (H - street.y - 8), age: 0 });
-                splashes = splashes.filter(s => (s.age += dt) < 0.32);
-                g.lineWidth = 1;
-                for (const s of splashes) {
-                    const k = s.age / 0.32, a = (1 - k) * (night ? 0.45 : 0.7), r = 1 + k * 6;
-                    g.strokeStyle = night ? `rgba(190,210,240,${a.toFixed(2)})` : `rgba(255,255,255,${a.toFixed(2)})`;
-                    g.beginPath(); g.ellipse(s.x, s.y, r, r * 0.32, 0, 0, TAU); g.stroke();
-                    g.fillStyle = g.strokeStyle;
-                    for (const side of [-1, 1]) { g.beginPath(); g.arc(s.x + side * (2 + k * 6), s.y - Math.sin(k * Math.PI) * 7, 0.9, 0, TAU); g.fill(); }
-                }
-            }
-        };
-    }
-
-    // ---------------------------------------------------------------------------------------------
     // The board: something rainy in each typed square; a rippling puddle under finished words
     // ---------------------------------------------------------------------------------------------
     const RAINY = [
@@ -259,12 +75,11 @@
         pour();
         await c.wait(600);
         if (c.skipped) return;
-        // 2. a big umbrella pops open over the board
-        const uw = Math.min(W * 0.8, b.width * 1.3);
-        const umb = U.el("div", { class: "rn-umbrella", html: UMBRELLA, style: { left: cx - uw / 2 + "px", top: Math.max(4, b.top - uw * 0.3) + "px", width: uw + "px", height: uw * 0.625 + "px" } });
-        overlay.appendChild(umb);
-        FX.follow(c, boardEl, umb);
-        c.cleanup(() => umb.remove());
+        // 2. a big umbrella pops open over the board (Rive: rive/rain-win.riv opens, drips, then tips away by itself)
+        const uw = Math.min(W * 0.8, b.width * 1.45);
+        const umbArt = Anim.play("rain-win", { follow: boardEl, ms: 2500, fadeMs: 250, rect: r => ({ x: r.left + r.width / 2 - uw / 2, y: Math.max(4, r.top - uw * 0.36), w: uw, h: uw * 0.625 }) });
+        c.cleanup(() => umbArt.stop());
+        const umb = { getBoundingClientRect: () => ({ left: cx - uw / 2, top: Math.max(4, b.top - uw * 0.36), width: uw, height: uw * 0.625 }), animate() {} };
         Sound.play("whoosh");
         c.later(() => Sound.play("pop"), 250);
         pour();
@@ -415,7 +230,7 @@
     Worlds.register({
         id: "rain", name: "Rainy City", icon: "\u{1F327}️", tagline: "City Lights in the Rain.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "downpour",
+        scene: (W, H, opts) => RainScene(W, H, opts), rive: "rain-win", board, celebrate, titleCard, sounds, transition: "downpour",
         mascot: { name: "PUDDLES", draw: drawPuddles },
         lines: {
             hello: ["Ribbit! I'm Puddles. Perfect puzzle weather!", "Welcome in out of the rain! Cozy up with a crossword.", "Rainy days are for crosswords!"],
