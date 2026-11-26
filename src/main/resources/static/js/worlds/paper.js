@@ -42,12 +42,17 @@
         return { strokes, lens, total, x, y, rot, size, prog: 0, dur: U.rand(1.1, 2), fade: 1, dying: false };
     }
     function drawDoodle(g, d, color) {
+        // graphite: a soft wide pass first, then the line itself, a hair to one side
+        traceDoodle(g, d, color, 3.2, 0.22, 0, 0);
+        traceDoodle(g, d, color, 1.4, 1, 0.5, -0.4);
+    }
+    function traceDoodle(g, d, color, width, alpha, ox, oy) {
         g.save();
-        g.translate(d.x, d.y);
+        g.translate(d.x + ox, d.y + oy);
         g.rotate(d.rot);
         g.strokeStyle = color;
-        g.globalAlpha = d.fade;
-        g.lineWidth = 1.6;
+        g.globalAlpha = d.fade * alpha;
+        g.lineWidth = width;
         g.lineCap = "round";
         g.lineJoin = "round";
         let left = d.prog * d.total;
@@ -73,28 +78,13 @@
         g.globalAlpha = 1;
     }
 
-    // a little paper grain, drawn once and tiled
-    function grain(dark) {
-        const c = document.createElement("canvas");
-        c.width = c.height = 180;
-        const x = c.getContext("2d"), img = x.createImageData(180, 180);
-        for (let i = 0; i < img.data.length; i += 4) {
-            const v = Math.random();
-            img.data[i] = img.data[i + 1] = img.data[i + 2] = dark ? 255 : 60;
-            img.data[i + 3] = v < 0.5 ? Math.round(v * (dark ? 14 : 22)) : 0;
-        }
-        x.putImageData(img, 0, 0);
-        return c;
-    }
-
     // ---------------------------------------------------------------------------------------------
     // The background: ruled notebook paper, or a blueprint in dark mode
     // ---------------------------------------------------------------------------------------------
     function scene(W, H, opts) {
         const dark = opts.theme === "dark", preview = !!opts.preview;
-        let pattern = null, doodles = [], next = preview ? 99 : 1.2;
-        const tex = grain(dark);
-        const ink = dark ? "rgba(235,245,255,.6)" : "rgba(70,68,82,.62)";
+        let doodles = [], next = preview ? 99 : 1.2;
+        const ink = dark ? "rgba(235,245,255,.6)" : "rgba(58,56,66,.62)";
 
         // free places for doodles: the margins beside the page, or anywhere on small screens
         function spot() {
@@ -105,7 +95,8 @@
                 if (side > 90) x = Math.random() < 0.5 ? U.rand(size * 0.6, side - size * 0.3) : U.rand(W - side + size * 0.3, W - size * 0.6);
                 else x = U.rand(size, W - size);
                 const y = U.rand(90 + size / 2, H - size / 2);
-                if (doodles.every(d => Math.hypot(d.x - x, d.y - y) > (d.size + size) * 0.62)) return { x, y, size };
+                const k = U.clamp(Math.min(W, H) / 900, 0.6, 1.15), corner = (y > H - 190 * k && (x < 260 * k || x > W - 460 * k)) || (y < 240 * k && x > W - 240 * k);
+                if (!corner && doodles.every(d => Math.hypot(d.x - x, d.y - y) > (d.size + size) * 0.62)) return { x, y, size };   // (clear of the things in the corners)
             }
             return null;
         }
@@ -121,59 +112,13 @@
         if (preview) for (let i = 0; i < 7; i++) spawn(true);
         else for (let i = 0; i < 4; i++) spawn(true);
 
-        // a coffee ring, because every notebook has one
-        const ring = { x: W * 0.08, y: H * 0.86, r: U.clamp(Math.min(W, H) * 0.09, 40, 90) };
+        // the page itself, and the things lying on it (paper-scene.js)
+        const pageScene = PaperScene.page(W, H, opts);
 
         return {
-            resize(w, h) { W = w; H = h; doodles = doodles.filter(d => d.x < W && d.y < H); ring.x = W * 0.08; ring.y = H * 0.86; },
+            resize(w, h) { W = w; H = h; doodles = doodles.filter(d => d.x < W && d.y < H); pageScene.resize(w, h); },
             draw(g, t, dt) {
-                g.fillStyle = dark ? "#163a6b" : "#fbf7ee";
-                g.fillRect(0, 0, W, H);
-                if (!pattern) pattern = g.createPattern(tex, "repeat");
-                g.fillStyle = pattern;
-                g.fillRect(0, 0, W, H);
-                if (dark) {
-                    // blueprint grid
-                    g.lineWidth = 1;
-                    g.strokeStyle = "rgba(255,255,255,.06)";
-                    g.beginPath();
-                    for (let x = 0; x < W; x += 24) { g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, H); }
-                    for (let y = 0; y < H; y += 24) { g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); }
-                    g.stroke();
-                    g.strokeStyle = "rgba(255,255,255,.14)";
-                    g.beginPath();
-                    for (let x = 0; x < W; x += 120) { g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, H); }
-                    for (let y = 0; y < H; y += 120) { g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); }
-                    g.stroke();
-                } else {
-                    // ruled lines, the red margin, and punched holes
-                    g.lineWidth = 1;
-                    g.strokeStyle = "rgba(80,140,210,.26)";
-                    g.beginPath();
-                    for (let y = 96; y < H; y += 34) { g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); }
-                    g.stroke();
-                    const mx = preview ? W * 0.12 : Math.max(56, W * 0.055);
-                    g.strokeStyle = "rgba(226,72,60,.45)";
-                    g.beginPath(); g.moveTo(mx, 0); g.lineTo(mx, H); g.stroke();
-                    if (W > 640 || preview) {
-                        for (const k of [0.2, 0.5, 0.8]) {
-                            const hx = mx * 0.42, hy = H * k, hr = preview ? 6 : 11;
-                            g.fillStyle = "rgba(0,0,0,.08)";
-                            g.beginPath(); g.arc(hx + 1.5, hy + 2, hr, 0, TAU); g.fill();
-                            g.fillStyle = "#e9e1cf";
-                            g.beginPath(); g.arc(hx, hy, hr, 0, TAU); g.fill();
-                        }
-                    }
-                    // coffee ring
-                    if (!preview) {
-                        g.lineWidth = 5;
-                        g.strokeStyle = "rgba(150,95,45,.12)";
-                        g.beginPath(); g.arc(ring.x, ring.y, ring.r, 0.2, TAU - 0.4); g.stroke();
-                        g.lineWidth = 2;
-                        g.strokeStyle = "rgba(150,95,45,.1)";
-                        g.beginPath(); g.arc(ring.x + 3, ring.y - 2, ring.r * 0.93, 0, TAU); g.stroke();
-                    }
-                }
+                pageScene.draw(g, t, dt);
                 // doodles: a new one every few seconds, drawn stroke by stroke
                 next -= dt;
                 if (next <= 0) { spawn(false); next = U.rand(4, 8); }
@@ -273,26 +218,22 @@
     })();
 
     // ---------------------------------------------------------------------------------------------
-    // The win: SOLVED stamp, paper confetti, star stickers, and a paper airplane with a banner
+    // The win: a pencil circles the board and doodles round it, gold-foil stars slap onto the corners (Rive:
+    // rive/paper-win.riv), the SOLVED stamp comes down and the board gives under it (Motion), paper confetti, and a
+    // paper airplane tows a banner across
     // ---------------------------------------------------------------------------------------------
     async function celebrate(c, { boardEl }) {
         if (U.motion() === "still") { board.stampNow(boardEl); return; }
         const b = U.center(boardEl);
-        boardEl.animate([{ transform: "none" }, { transform: "translateY(-10px) rotate(-1deg)" }, { transform: "none" }], { duration: 420, easing: "ease-out" });
-        // gold star stickers pop onto the corners
-        const stickers = [[-0.46, -0.46, -14], [0.46, -0.46, 12], [-0.46, 0.46, 9], [0.46, 0.46, -10]].map(([fx, fy, rot], i) => {
-            const st = U.el("div", { class: "paper-sticker", "aria-hidden": "true", text: "★", style: { left: (b.x + fx * b.w) + "px", top: (b.y + fy * b.h) + "px", "--r": rot + "deg", animationDelay: (0.15 + i * 0.12) + "s" } });
-            document.getElementById("overlay").appendChild(st);
-            return st;
-        });
-        c.cleanup(() => stickers.forEach(s => s.remove()));
-        FX.follow(c, boardEl, ...stickers);
-        [0, 120, 240, 360].forEach(ms => c.later(() => Sound.play("pop"), 150 + ms));
+        const art = Anim.play("paper-win", { follow: boardEl, ms: 5600, rect: r => ({ x: r.left - r.width * 0.38, y: r.top - r.height * 0.38, w: r.width * 1.76, h: r.height * 1.76 }) });
+        c.cleanup(() => art.stop());
+        [0, 140, 280, 420].forEach(ms => c.later(() => Sound.play("pop"), 1600 + ms));     // the stickers landing
         await c.wait(650);
         if (c.skipped) return;
-        // the stamp
+        // the stamp, and the board giving under it
         board.stampNow(boardEl);
         Sound.play("stamp");
+        Anim.motion().then(({ animate }) => { if (!c.skipped) animate(boardEl, { scale: [1, 0.965, 1.01, 1] }, { duration: 0.55, delay: 0.2, ease: "easeOut" }); }).catch(() => null);
         await c.wait(230);
         if (c.skipped) return;
         FX.shake(12, 380);
@@ -432,7 +373,7 @@
     Worlds.register({
         id: "paper", name: "Notebook", icon: "✏️", tagline: "Pencil, Paper and Doodles.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "page",
+        scene, board, celebrate, titleCard, sounds, transition: "page", rive: "paper-win",
         mascot: { name: "PIP", draw: drawPip },
         lines: {
             hello: ["Hi! I'm Pip. Let's fill in some squares!", "Sharpened and ready. Pick a puzzle!", "Fresh page, fresh puzzles."],
