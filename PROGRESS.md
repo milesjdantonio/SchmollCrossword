@@ -448,7 +448,25 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       `.in-boss #world-bg { opacity: 0 }` was still on, so the world never showed while the caption named each one,
       and the angel's arena stayed up; credits.css now hides a fight's arena and shows the world while the roll is on,
       and the ending roll (`Credits.show({ ending: true })`) has the worlds only. Checked by faking a fight's end)
-- [ ] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged)
+- [ ] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged). The user,
+      2026-11-26: "add a refresh to every worlds background and win animation with rive and motion ... make the whole
+      thing more detailed, less plasticy". How it's done:
+      - **Rive** (`vendor/rive/`, @rive-app/canvas 2.49.0) and **Motion** (`vendor/motion/`, 14.9.0), MIT,
+        self-hosted, loaded on first use by `js/anim.js` (`Anim.play(name, { follow, rect, ms })`, `Anim.motion()`,
+        `Anim.warm()` from the idle warm-up; a world's `rive:` names its file). CSP has `'wasm-unsafe-eval'`.
+        The .riv files are made in code: `tools/rive/` (local only; the writer `riv.mjs` + `defs.json` from
+        RhythmArchitect, `helpers.mjs`, one art script per file in `tools/rive/art/`, `node tools/rive/build.mjs
+        [name]` writes `static/rive/<name>.riv`). Clipping works (`ab.add('ClippingShape', { sourceId }, node)`).
+      - **Every scene** gets a finish in worlds.js (`finish`: fine grain in overlay, a soft edge falloff).
+      - A world's scene goes in its own file when rebuilt (`js/worlds/<world>-scene.js`).
+      - Done: **Garden** (garden-scene.js: countryside with fields, hedgerows, farmhouse and smoke, windmill,
+        pond, shaded clouds and their shadows, five wildflowers, butterflies, bees, seeds; night with moon, stars,
+        mist, lit window, fireflies; win: Rive wreath `garden-win`, Motion bloom from the middle, a glowing rainbow).
+        **Notebook** (paper-scene.js: lamplit paper with fibres, steel spiral, mug with steam, pencil, eraser,
+        sticky note, clip; blueprint by night with drafting tools and a title block; graphite doodles; win: Rive
+        `paper-win` pencil circle, doodles and gold-foil stars, the stamp with a Motion press).
+      - To do, in this order: Deep Space, Neon Arcade, Snow Day, Acorn Woods, Coral Reef, Candy Hills, Haunted
+        Library, Volcano Island, Sky Kingdom, Desert Caravan, Robot Factory, Big Top Carnival, Rainy City, Classic.
 
 ### Phase 7: Retention
 - [ ] Daily Archive (practice, no points/streak; works with offline)
