@@ -239,8 +239,106 @@ const Chaos = (() => {
             [() => add(skyCrack()), 4.5],
             [() => add(haloFall()), 2.2],
             [() => { const x = rand(0.1, 0.9) * W; for (let i = 0; i < 5; i++) add(corruptOrb(x + rand(-60, 60), H + rand(10, 120))); }, 2.6]
+        ],
+        // The Great Hollow (the Giant Squirrel): giant acorns raining and bouncing, glowing spores rising, roots lashing
+        // in from the edges, and the squirrel's tail sweeping across the whole arena
+        hollow: [
+            [() => { for (let i = 0; i < 2; i++) add(bouncer({ c: "#b9773e", cap: "#5b3a1a", s: rand(14, 22) })); }, 0.9],
+            [() => { const x = rand(0.05, 0.95) * W; for (let i = 0; i < 14; i++) add(spore(x + rand(-80, 80), H + rand(0, 160), pick(["#7dffd4", "#ffd36b", "#9ff0ff"]))); }, 1.3],
+            [() => vine(pick(["#5a3418", "#6e4428", "#4a2c14"])), 2.2],
+            [() => add(tailSweep()), 7]
+        ],
+        // Atlantis (Poseidon): trident lightning from the surface, water spouts, broken marble falling, bubble torrents
+        atlantis: [
+            [tridentBolt, 1.8],
+            [() => geyser(["#e6fbff", "#5fd0e8", "#1f6f99"]), 2.6],
+            [() => meteor({ colors: ["#eef4f8", "#c8d8e2", "#9bb8c8"], size: [12, 22], speed: [260, 420], angle: [0.02, 0.2], burst: true }), 1.2],
+            [() => { const x = rand(0.05, 0.95) * W; for (let i = 0; i < 22; i++) add(bubble(x + rand(-40, 40), H + rand(0, 240))); }, 1]
+        ],
+        // The Sunken Dunes (the Sandworm): sand blasting across, the worm arcing out of the ground and back in,
+        // sand geysers, and a sandstorm
+        dunes: [
+            [() => { for (let i = 0; i < 36; i++) add(floater({ c: pick(["#f6d48f", "#e0a95f", "#c98a3c"]), s: rand(1.5, 3.5), vx: rand(450, 800), vy: rand(-30, 50), life: 4, fromLeft: true })); }, 0.4],
+            [() => add(wormArc()), 4.5],
+            [() => geyser(["#fff1c8", "#e0a95f", "#8a5424"]), 2.4],
+            [() => tornado(["#f6d48f", "#d9a35c", "#b8803a"], "sand"), 7]
+        ],
+        // The Lava Cave (the Lava Beast): stalactites falling from the roof, lava pouring down in columns, lava geysers,
+        // and storms of embers
+        cave: [
+            [() => add(stalactite()), 1],
+            [() => add(lavaPour()), 3.2],
+            [() => geyser(["#fff1a0", "#ff8a2a", "#c8301a"]), 2.6],
+            [() => { for (let i = 0; i < 18; i++) add(floater({ c: pick(["#ffd03e", "#ff8a2a", "#ff5a1f"]), s: rand(1.5, 3), vx: rand(-40, 40), vy: rand(-160, -60), life: 4 })); }, 0.5]
         ]
     };
+
+    // ---- the four other secret worlds' pieces ----
+    function spore(x, y, c) {
+        const s = rand(2, 5);
+        return { x, y, t: 0, life: 7, step(dt) { this.y -= rand(50, 90) * dt; this.x += Math.sin(this.t * 2 + s) * 0.8; if (this.y < -20) this.dead = true; },
+            draw() { halo(this.x, this.y, s * 6, c, 0.5); circle(this.x, this.y, s, c); } };
+    }
+    function tailSweep() {
+        const dir = Math.random() < 0.5 ? 1 : -1, y = H * rand(0.55, 0.8), r = H * 0.35 * (1 + level * 0.1);
+        return { x: dir > 0 ? -r * 2 : W + r * 2, t: 0, life: 4, step(dt) { this.x += dir * W * 0.6 * dt; },
+            draw() {
+                ctx.save(); ctx.translate(this.x, y); ctx.scale(dir, 1);
+                const g = ctx.createLinearGradient(-r, 0, r, 0); g.addColorStop(0, "rgba(232,140,60,0)"); g.addColorStop(0.4, "rgba(232,140,60,.85)"); g.addColorStop(1, "rgba(242,180,110,.95)");
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.moveTo(-r * 1.6, r * 0.2);
+                ctx.bezierCurveTo(-r, -r * 1.2, r * 0.8, -r * 1.3, r, -r * 0.2);
+                ctx.bezierCurveTo(r * 1.1, r * 0.4, r * 0.2, r * 0.6, -r * 0.2, r * 0.1);
+                ctx.bezierCurveTo(-r * 0.6, -r * 0.2, -r * 1.2, r * 0.6, -r * 1.6, r * 0.2);
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,240,216,.5)"; ctx.lineWidth = 3;
+                for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(-r * 0.6 + i * r * 0.3, -r * 0.4); ctx.quadraticCurveTo(-r * 0.4 + i * r * 0.3, -r * 0.8, -r * 0.1 + i * r * 0.3, -r * 0.6); ctx.stroke(); }
+                ctx.restore();
+            } };
+    }
+    function tridentBolt() {
+        const x = rand(0.1, 0.9) * W, y2 = H * rand(0.6, 0.95), segs = bolt(x, -10, x + rand(-120, 120), y2, 50);
+        flash = 0.3; flashColor = "#9fe8ff"; shake = Math.max(shake, 5);
+        add({ t: 0, life: 0.6, draw() {
+            const k = this.t / this.life;
+            drawBolt(segs, "#7ae0ff", k < 0.2 ? 1 : 1 - k);
+            const trunk = segs.filter(sg => !sg[4]), [ex, ey] = trunk.length ? trunk[trunk.length - 1].slice(2, 4) : [x, y2];   // (where the main bolt lands)
+            ctx.globalAlpha = 1 - k; ctx.strokeStyle = "#ffe27a"; ctx.lineWidth = 5; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex, ey - 70); ctx.moveTo(ex - 18, ey - 64); ctx.lineTo(ex - 18, ey - 90); ctx.moveTo(ex + 18, ey - 64); ctx.lineTo(ex + 18, ey - 90); ctx.moveTo(ex - 18, ey - 64); ctx.lineTo(ex + 18, ey - 64); ctx.stroke();
+            ctx.globalAlpha = 1;
+        } });
+        ring(x, y2, "#7ae0ff", 160, 0.8, 5);
+    }
+    function wormArc() {
+        const x0 = rand(0.1, 0.5) * W, span = W * rand(0.3, 0.5) * (1 + level * 0.1), hgt = H * rand(0.35, 0.55), n = 18;
+        debris(x0, H, 20, ["#f6d48f", "#e0a95f", "#8a5424"], [120, 380], [3, 6], 500, [0.6, 1.2]);
+        return { t: 0, life: 3.2, draw() {
+            const k = this.t / this.life;
+            for (let i = 0; i < n; i++) {
+                const q = U.clamp(k * 1.6 - i / n * 0.6, 0, 1);
+                if (q <= 0 || q >= 1) continue;
+                const x = x0 + q * span, y = H - Math.sin(q * Math.PI) * hgt, s = 26 - i * 0.6;
+                circle(x, y, s, i % 2 ? "#c87a3a" : "#e0a95f");
+                ctx.strokeStyle = "rgba(90,50,20,.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, s, 0, TAU); ctx.stroke();
+            }
+            if (k > 0.55 && !this.spl) { this.spl = true; debris(x0 + span, H, 24, ["#f6d48f", "#e0a95f"], [120, 400], [3, 6], 500, [0.6, 1.2]); shake = Math.max(shake, 6); }
+        } };
+    }
+    function stalactite() {
+        const x = rand(0.05, 0.95) * W, w = rand(14, 30), h = w * rand(2.2, 3.4);
+        return { x, y: -h, vy: 0, t: 0, life: 4, step(dt) { this.vy += 1200 * dt; this.y += this.vy * dt; if (this.y > H) { this.dead = true; debris(this.x, H - 4, 14, ["#3a2a2e", "#5a4448", "#ff8a2a"], [80, 260], [2, 5], 600, [0.4, 0.9]); shake = Math.max(shake, 3); } },
+            draw() { poly([[this.x - w / 2, this.y], [this.x + w / 2, this.y], [this.x, this.y + h]], "#2a1c20", "#ff6a1f", 1.5); } };
+    }
+    function lavaPour() {
+        const x = rand(0.1, 0.9) * W, w = rand(26, 46) * (1 + level * 0.1);
+        return { t: 0, life: 2.6, draw() {
+            const k = this.t / this.life, len = Math.min(1, k * 2.5) * H, a = k < 0.8 ? 1 : 1 - (k - 0.8) / 0.2;
+            const g = ctx.createLinearGradient(0, 0, 0, len); g.addColorStop(0, "#fff1a0"); g.addColorStop(0.4, "#ffb02e"); g.addColorStop(1, "#ff4a10");
+            ctx.globalAlpha = a; glow("#ff6a1f", 30); ctx.fillStyle = g;
+            ctx.fillRect(x - w / 2 + Math.sin(this.t * 9) * 3, 0, w, len); noGlow(); ctx.globalAlpha = 1;
+            if (len >= H && !this.hit) { this.hit = true; debris(x, H, 26, ["#fff1a0", "#ff8a2a", "#ff4a10"], [100, 360], [3, 6], 500, [0.6, 1.2]); }
+        } };
+    }
 
     // ---- the Celestial Rift's pieces ----
     function judgment() {
@@ -674,7 +772,5 @@ const Chaos = (() => {
         if (ctx && cv) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); }
         cv = null;
     }
-    // the newest secret worlds' arenas run their parent world's chaos for now
-    for (const [w, parent] of [["hollow", "squirrel"], ["atlantis", "ocean"], ["dunes", "desert"], ["cave", "volcano"]]) if (WORLDS[parent] && !WORLDS[w]) WORLDS[w] = WORLDS[parent];
     return { start, stop, get level() { return level; }, worlds: Object.keys(WORLDS) };
 })();

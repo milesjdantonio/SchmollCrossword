@@ -42,7 +42,7 @@ const Travel = (() => {
     const seg = (t, a, b, e = smooth) => e(clamp((t - a) / (b - a)));
     const rnd = (a, b) => a + Math.random() * (b - a);
     const f = v => (Math.round(v * 10) / 10).toString();
-    const WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];
+    const WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift", "hollow", "atlantis", "dunes", "cave"];
     // a seeded random for building the scenery (the same scene every time)
     const seeded = seed => { let s = (seed * 2654435761) >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
     function shade(c, k) {
@@ -55,7 +55,8 @@ const Travel = (() => {
         paper: ["#fbf8ef", "#ece4cf"], garden: ["#7cc8ff", "#e6f8ff"], squirrel: ["#ffb36b", "#ffe6bf"], candy: ["#ffb3dc", "#fff0d1"],
         ocean: ["#1f84cf", "#06264d"], snow: ["#1d2b5c", "#7d8fc9"], rain: ["#232a40", "#4b5672"], sky: ["#5cb4ff", "#f1f9ff"],
         desert: ["#ff9a47", "#ffe2a0"], carnival: ["#140c2e", "#5b2463"], arcade: ["#0b0320", "#3b0a5c"], library: ["#120d26", "#2f2148"],
-        robot: ["#232a34", "#4d5664"], volcano: ["#ff8a4a", "#ffd6a0"], space: ["#02030f", "#160f45"], rift: ["#0c0420", "#3a1a6a"]
+        robot: ["#232a34", "#4d5664"], volcano: ["#ff8a4a", "#ffd6a0"], space: ["#02030f", "#160f45"], rift: ["#0c0420", "#3a1a6a"],
+        hollow: ["#ffb36b", "#ffe0b0"], atlantis: ["#0b5a8a", "#021428"], dunes: ["#5cb4ff", "#ffe6b0"], cave: ["#ff7a3a", "#ffc890"]
     };
 
     // ---------------------------------------------------------------------------------------------
@@ -1161,6 +1162,177 @@ const Travel = (() => {
     //             its end swings down), the bars bow out and creak
     //   9.4       the cage bursts, every bar, band, the dome and the base flying
     //   9.5-12.1  the angel rises, its wings unfold and beat, it tears the sky open and flies through
+    // ---- The Great Hollow: up to the oldest oak, in through its knothole, and down onto the hoard ----
+    S.hollow = {
+        T: 8,
+        build: (D, R) => {
+            let b = hills(560, 40, "#d98a4a", 11, 1.3) + [150, 320, 1300, 1480].map((x, i) => tree(x, 600, 0.9 + (i % 2) * 0.2, i % 2 ? "#e8792b" : "#d9542a")).join("");
+            b += hills(700, 26, "#c97a3a", 12, 1.2);
+            // the trunk, its bark, roots and the knothole
+            b += `<path d="M520 900 C540 600 560 300 500 -40 H1100 C1040 300 1060 600 1080 900Z" fill="#6b4422" ${st(7)}/>`;
+            for (let i = 0; i < 9; i++) { const x = 560 + i * 60 + R() * 20; b += `<path d="M${f(x)} 900 C${f(x + 8)} 640 ${f(x - 10)} 380 ${f(x + 6)} -40" stroke="#4e2f16" stroke-width="${f(3 + R() * 3)}" fill="none" opacity=".6"/>`; }
+            b += [[-1, 520], [1, 1080]].map(([k, x]) => `<path d="M${x} 860 Q${x + k * 120} 880 ${x + k * 220} 900 H${x}Z" fill="#6b4422" ${st(6)}/>`).join("");
+            b += glow(D, "holeglow", 800, 430, 220, "#ffb347", 0.5) + `<ellipse cx="800" cy="430" rx="118" ry="150" fill="#1c0e05" ${st(7)}/><ellipse cx="800" cy="430" rx="96" ry="128" fill="#2a1609"/>`;
+            b += hills(840, 18, "#a8632e", 13, 1.2, { tufts: 8 });
+            // inside: the hollow's walls, glowing mushrooms and the hoard
+            let inside = `<g data-k="inside" style="opacity:0"><rect x="-400" y="-400" width="2400" height="1700" fill="${D.lin("hin", [[0, "#1a0d05"], [0.6, "#3a2010"], [1, "#5a3418"]])}"/>`;
+            for (let i = 0; i < 10; i++) inside += `<path d="M${f(80 + i * 160)} -40 Q${f(90 + i * 160 + R() * 40)} 160 ${f(70 + i * 160)} ${f(220 + R() * 160)}" stroke="#1c0e05" stroke-width="${f(5 + R() * 5)}" fill="none" stroke-linecap="round"/>`;
+            [[200, 420, "#7dffd4"], [360, 600, "#ffd36b"], [1240, 380, "#9ff0ff"], [1400, 560, "#7dffd4"], [560, 300, "#ffd36b"], [1060, 280, "#7dffd4"]].forEach(([x, y, c], i) =>
+                inside += `<g data-k="gc${i}" style="opacity:.15">${glow(D, "gcg" + i, x, y, 90, c, 0.6)}<path d="M${x - 26} ${y} a26 18 0 0 1 52 0z" fill="${c}" ${st(3)}/><rect x="${x - 5}" y="${y}" width="10" height="22" fill="#e8dcc8" ${st(3)}/></g>`);
+            for (let i = 0; i < 46; i++) { const x = 800 + (R() - 0.5) * 760 * (1 - i / 80), y = 900 - R() * 90 * (1 - Math.abs(x - 800) / 500); inside += `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(R() * 60 - 30)})"><ellipse cy="4" rx="16" ry="19" fill="#b9773e" ${st(3)}/><path d="M-19 -6 a19 13 0 0 1 38 0z" fill="#6e4429" ${st(3)}/></g>`; }
+            inside += `</g>`;
+            return { back: b, under: inside, front: "" };
+        },
+        frame(t, s) {
+            const walk = seg(t, 0.2, 2.6, x => x), jump = seg(t, 2.6, 3.5);
+            if (t < 2.6) {
+                const x = lerp(140, 800, walk);
+                s.hero(x, 838 - Math.abs(Math.sin(t * 9)) * 10, 1, 0, 1);
+                s.shadow(x, 840, 1, 0.25);
+                s.cam(clamp(x, 600, 1000), 470, 1.05, 0);
+                if (Math.random() < 0.2) s.emit("leaf", 1, [rnd(0, W), -20]);
+            } else if (t < 3.6) {
+                const up = Math.sin(jump * Math.PI * 0.5);
+                s.hero(800, lerp(838, 470, up) - Math.sin(jump * Math.PI) * 80, lerp(1, 0.55, jump), 0, 1, 1 - seg(t, 3.3, 3.6));
+                s.shadow(800, 840, 1 - jump, 0.25 * (1 - jump));
+                s.cam(800, lerp(470, 430, jump), lerp(1.05, 2.6, seg(t, 2.8, 3.8)), 0);
+            }
+            if (t >= 3.6 && t < 4.3) { s.tint("#000", seg(t, 3.6, 4.0)); s.cam(800, 430, lerp(2.6, 4, seg(t, 3.6, 4.0)), 0); }
+            if (t >= 4.0) {
+                s.setStyle("inside", "opacity", 1);
+                s.tint("#000", 1 - seg(t, 4.0, 4.6));
+                for (let i = 0; i < 6; i++) s.setStyle("gc" + i, "opacity", 0.15 + 0.85 * seg(t, 4.3 + i * 0.25, 4.6 + i * 0.25));
+                const fall = seg(t, 4.6, 5.5, x => x * x);
+                const sq = t > 5.5 && t < 5.8 ? 1.2 - (t - 5.5) : 1;
+                s.hero(800, lerp(-120, 822, fall), 1.1, 0, 1, 1, sq > 1 ? 2 - sq : 1);
+                s.shadow(800, 824, 1.1 * fall, 0.3 * fall);
+                s.cam(800, 520, 1.05, 0);
+                if (t > 5.5 && !s.once("land")) { s.emit("gold", 30, [800, 820]); s.emit("dust", 24, [800, 830]); s.shake(8); }
+                if (Math.random() < 0.3) s.emit("gold", 1, [rnd(100, 1500), rnd(200, 800)]);
+            }
+        }
+    };
+
+    // ---- Atlantis: down from the reef inside a giant bubble, through the light, to the drowned city ----
+    S.atlantis = {
+        T: 8,
+        build: (D, R) => {
+            let b = "";
+            for (let i = 0; i < 6; i++) b += `<path d="M${f(120 + i * 280)} -60 L${f(220 + i * 280)} -60 L${f(460 + i * 280)} 960 L${f(300 + i * 280)} 960Z" fill="#bfefff" opacity=".1"/>`;
+            // the statue far off, then the city: temples, domes and towers with lit windows
+            b += `<g opacity=".5"><path d="M1240 900 L1220 520 Q1270 470 1320 520 L1300 900Z" fill="#2a6f99"/><circle cx="1270" cy="470" r="34" fill="#2a6f99"/><rect x="1330" y="300" width="12" height="420" fill="#2a6f99"/><path d="M1312 300 v-50 M1336 290 v-60 M1360 300 v-50 M1312 300 h48" stroke="#2a6f99" stroke-width="12"/></g>`;
+            let x = 40;
+            while (x < 1560) {
+                const w = 110 + R() * 120, h = 180 + R() * 220, kind = R(), top = 900 - h;
+                if (kind < 0.35) b += `<path d="M${f(x - 10)} ${f(top + 36)} L${f(x + w / 2)} ${f(top)} L${f(x + w + 10)} ${f(top + 36)}Z" fill="#e6f2f8" ${st(5)}/><rect x="${f(x)}" y="${f(top + 36)}" width="${f(w)}" height="${f(h)}" fill="#cfe2ec" ${st(5)}/>` + [0, 1, 2, 3].map(c => `<rect x="${f(x + 10 + c * (w - 26) / 3)}" y="${f(top + 48)}" width="8" height="${f(h - 60)}" fill="#e6f2f8" ${st(3)}/>`).join("");
+                else if (kind < 0.65) b += `<rect x="${f(x)}" y="${f(top + w * 0.4)}" width="${f(w)}" height="${f(h)}" fill="#cfe2ec" ${st(5)}/><path d="M${f(x)} ${f(top + w * 0.42)} a${f(w / 2)} ${f(w / 2)} 0 0 1 ${f(w)} 0z" fill="#9fd0e0" ${st(5)}/>`;
+                else b += `<path d="M${f(x)} 900 V${f(top + 20)} L${f(x + w * 0.3)} ${f(top)} L${f(x + w * 0.6)} ${f(top + 18)} L${f(x + w)} ${f(top + 6)} V900Z" fill="#b8d4e2" ${st(5)}/>`;
+                for (let j = 0; j < 5; j++) if (R() < 0.7) b += `<rect x="${f(x + 14 + R() * (w - 34))}" y="${f(top + 60 + R() * (h - 90))}" width="10" height="14" fill="#ffd98a" opacity=".9"/>`;
+                x += w + 30 + R() * 50;
+            }
+            b += hills(860, 16, "#2f7f8f", 21, 1.2) + `<rect x="560" y="820" width="480" height="20" fill="#e6f2f8" ${st(5)}/><rect x="600" y="800" width="400" height="20" fill="#e6f2f8" ${st(5)}/>`;
+            for (let i = 0; i < 14; i++) { const kx = R() * 1600; b += `<path d="M${f(kx)} 900 c-10 -40 10 -70 0 -110 s10 -50 2 -80" stroke="#2f9e6b" stroke-width="8" fill="none" stroke-linecap="round"/>`; }
+            const bubble = `<g data-k="bub"><circle r="150" fill="${D.rad("bubf", [[0, "#ffffff", 0.05], [0.8, "#bfefff", 0.18], [1, "#ffffff", 0.55]])}" stroke="#e6fbff" stroke-width="5"/><path d="M-90 -80 Q-60 -120 -10 -128" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" opacity=".7"/></g>`;
+            return { back: b, under: "", front: bubble };
+        },
+        frame(t, s) {
+            const down = seg(t, 0, 4.6);
+            const x = 800 + Math.sin(t * 1.3) * 60, y = lerp(-160, 650, down);
+            const popped = t > 4.8;
+            s.set("bub", popped ? "scale(0)" : `translate(${f(x)} ${f(y)}) scale(${f(1 + Math.sin(t * 4) * 0.03)} ${f(1 - Math.sin(t * 4) * 0.03)})`);
+            if (!popped) s.hero(x, y + 70, 0.9, Math.sin(t * 1.3) * 6, 1);
+            else {
+                const fall = seg(t, 4.8, 5.4);
+                s.hero(lerp(x, 800, fall), lerp(y + 70, 800, fall), lerp(0.9, 1.05, fall), 0, 1, 1, t > 5.4 && t < 5.7 ? 0.88 : 1);
+                s.shadow(800, 802, fall, 0.25 * fall);
+            }
+            if (t > 4.8 && !s.once("pop")) { s.emit("bubble", 40, [x, y]); s.emit("drop", 20, [x, y]); s.emit("ring", 1, [x, y]); s.shake(5); }
+            if (Math.random() < 0.5) s.emit("bubble", 1, [rnd(0, W), 920]);
+            s.cam(800, lerp(clamp(y, 200, 640), 560, seg(t, 4.2, 5.6)), lerp(1.15, 1.02, seg(t, 4, 5.6)), 0);
+        }
+    };
+
+    // ---- The Sunken Dunes: surfing down a dune, thrown up by the worm's ridge, landing by a buried head ----
+    S.dunes = {
+        T: 7.6,
+        build: (D, R) => {
+            let b = glow(D, "dsun", 1280, 200, 300, "#fff1a8", 0.8) + `<circle cx="1280" cy="200" r="90" fill="#fff6c8"/>`;
+            b += hills(560, 50, "#e8b66d", 31, 1.2);
+            b += `<g><path d="M1060 640 Q1058 440 1170 432 Q1282 440 1280 640Z" fill="#b0753a" ${st(6)}/><rect x="1110" y="520" width="34" height="12" fill="#7a4a1c"/><rect x="1196" y="520" width="34" height="12" fill="#7a4a1c"/><rect x="1160" y="548" width="20" height="44" fill="#7a4a1c"/></g>`;
+            b += `<path d="M260 640 V420 h50 V640Z M340 640 V470 h50 V640Z" fill="#c98a4a" ${st(5)}/>`;
+            b += hills(650, 30, "#d9a35c", 32, 1.3);
+            // the big dune the hero surfs down, then the floor of the desert
+            b += `<path d="M-100 900 L-100 300 Q300 260 700 760 Q760 820 900 860 L900 900Z" fill="#efc27e" ${st(6)}/>`;
+            for (let i = 0; i < 7; i++) b += `<path d="M${f(40 + i * 90)} ${f(330 + i * 70)} q40 -10 80 4" stroke="#d39250" stroke-width="3" fill="none"/>`;
+            b += hills(860, 14, "#e0a95f", 33, 1.2);
+            const ridge = `<g data-k="ridge">${Array.from({ length: 12 }, (_, i) => `<ellipse cx="${i * -42}" cy="0" rx="34" ry="${f(26 - Math.abs(i - 4) * 2)}" fill="#d39250" ${st(4)}/>`).join("")}</g>`;
+            return { back: b, under: ridge, front: "" };
+        },
+        frame(t, s) {
+            const surf = seg(t, 0.2, 3.2, x => x * x * (3 - 2 * x));
+            const sx = lerp(60, 760, surf), sy = sx < 700 ? 300 + (sx + 100) / 800 * 460 - Math.sin(surf * Math.PI) * 30 : 790;
+            const ridgeX = lerp(-200, 1100, seg(t, 2.4, 4.6, x => x));
+            s.set("ridge", `translate(${f(ridgeX)} 858)`);
+            if (t < 3.6) { s.hero(sx, sy - 6, 1, 18 - surf * 18, 1); if (Math.random() < 0.6) s.emit("sandpuff", 2, [sx - 20, sy]); }
+            else {
+                const fly = seg(t, 3.6, 5.0), up = Math.sin(fly * Math.PI);
+                const x = lerp(760, 1020, fly), y = lerp(790, 830, fly) - up * 320;
+                s.hero(x, y, 1.05, fly * 360, 1, 1, t > 5 && t < 5.3 ? 0.86 : 1);
+                s.shadow(x, 832, 1 - up * 0.5, 0.25);
+                if (t > 3.6 && !s.once("launch")) { s.emit("sandpuff", 30, [760, 820]); s.shake(9); }
+                if (t > 5 && !s.once("land")) { s.emit("sandpuff", 26, [1020, 830]); s.shake(6); }
+            }
+            if (Math.random() < 0.4) s.emit("sand", 1, [-20, rnd(500, 880)]);
+            s.cam(clamp(t < 3.6 ? sx : lerp(760, 1020, seg(t, 3.6, 5)), 600, 1000), clamp(t < 3.6 ? sy : 620, 420, 620), 1.1, 0);
+        }
+    };
+
+    // ---- The Lava Cave: a mine cart down into the mountain, and across the lava river ----
+    S.cave = {
+        T: 7.8,
+        build: (D, R) => {
+            // outside: the volcano's flank and the cave's mouth
+            let b = `<path d="M-100 900 L300 260 H1300 L1700 900Z" fill="#4a2f2a" ${st(6)}/><path d="M640 900 V560 Q800 380 960 560 V900Z" fill="#120806" ${st(7)}/>`;
+            b += glow(D, "mouth", 800, 640, 240, "#ff6a1f", 0.45);
+            b += `<path d="M-100 880 L800 640" stroke="#3a2622" stroke-width="18"/><path d="M-100 880 L800 640" stroke="#8a6a5a" stroke-width="5" stroke-dasharray="20 14"/>`;
+            let inside = `<g data-k="inside" style="opacity:0"><rect x="-400" y="-400" width="2400" height="1700" fill="${D.lin("cin", [[0, "#0a0504"], [0.6, "#2a0e06"], [1, "#6a1e08"]])}"/>`;
+            for (let i = 0; i < 16; i++) { const x = i * 104 + R() * 30, l = 80 + R() * 180; inside += `<path d="M${f(x - 30)} -20 L${f(x)} ${f(l)} L${f(x + 30)} -20Z" fill="#1a0e10"/>`; }
+            inside += `<rect x="-400" y="760" width="2400" height="300" fill="${D.lin("lr", [[0, "#ffd04a"], [0.4, "#ff6a1f"], [1, "#8a1a06"]])}"/>` + glow(D, "lrg", 800, 760, 700, "#ff8a2a", 0.5);
+            for (let i = 0; i < 6; i++) inside += `<path d="M${f(R() * 1600)} ${f(790 + R() * 80)} q60 -8 120 2" stroke="#7a1a06" stroke-width="5" fill="none" opacity=".6"/>`;
+            inside += `<rect x="-100" y="700" width="1800" height="22" fill="#3a2622" ${st(5)}/>` + Array.from({ length: 18 }, (_, i) => `<rect x="${i * 100 - 60}" y="690" width="14" height="70" fill="#3a2622" ${st(3)}/>`).join("");
+            [[220, 520], [1380, 480], [480, 380]].forEach(([x, y]) => inside += `<path d="M${x} ${y - 50} L${x + 20} ${y} L${x} ${y + 30} L${x - 20} ${y}Z" fill="#3a2a5a" stroke="#ff8a4a" stroke-width="3"/>`);
+            inside += `</g>`;
+            const cart = `<g data-k="cart"><rect x="-70" y="-60" width="140" height="56" rx="8" fill="#5a4448" ${st(5)}/><path d="M-70 -44 H70" stroke="#8a7a7c" stroke-width="4"/><circle cx="-40" cy="2" r="16" fill="#2a1c20" ${st(4)}/><circle cx="40" cy="2" r="16" fill="#2a1c20" ${st(4)}/></g>`;
+            return { back: b + inside, under: "", front: cart };
+        },
+        frame(t, s) {
+            if (t < 3) {
+                const k = seg(t, 0, 2.8, x => x);
+                const x = lerp(-60, 800, k), y = lerp(870, 640, k), sc = lerp(1.1, 0.55, k);
+                s.set("cart", `translate(${f(x)} ${f(y)}) rotate(-14) scale(${f(sc)})`);
+                s.hero(x, y - 56 * sc, sc, -14, 1);
+                s.cam(clamp(x, 600, 900), lerp(600, 560, k), lerp(1.1, 1.6, seg(t, 1.6, 3)), 0);
+                s.tint("#000", seg(t, 2.5, 3));
+                if (Math.random() < 0.4) s.emit("spark", 1, [x - 40 * sc, y + 10]);
+            } else {
+                s.setStyle("inside", "opacity", 1);
+                s.tint("#000", 1 - seg(t, 3, 3.6));
+                const k = seg(t, 3.1, 6.0, x => 1 - Math.pow(1 - x, 2));
+                const x = lerp(-120, 820, k);
+                s.set("cart", `translate(${f(x)} 690) scale(1)`);
+                if (t < 6.1) s.hero(x, 634, 1, 0, 1);
+                else {
+                    const j = seg(t, 6.1, 6.8), up = Math.sin(j * Math.PI);
+                    s.hero(lerp(820, 980, j), lerp(634, 688, j) - up * 120, 1, 0, 1, 1, t > 6.8 && t < 7.1 ? 0.86 : 1);
+                    s.shadow(lerp(820, 980, j), 690, 0.9, 0.25);
+                }
+                if (Math.random() < 0.5) s.emit("ember", 1, [rnd(0, W), 780]);
+                if (Math.random() < 0.3) s.emit("spark", 1, [x + 40, 700]);
+                s.cam(clamp(x, 600, 1000), 560, 1.05, 0);
+            }
+        }
+    };
+
     //   11.6-     the hero leaps after it, the camera dives through the tear, and it floats down onto a ruin in the rift
     S.rift = {
         T: 16.8,
@@ -1802,7 +1974,7 @@ const Travel = (() => {
         c.cleanup(() => { removeEventListener("resize", sizeCanvas); el.classList.remove("in"); setTimeout(() => el.remove(), 400); });
         requestAnimationFrame(() => el.classList.add("in"));
         // a soft rising chime when the new world appears, in the world's key
-        const pitch = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, library: -6, robot: -4, volcano: -7, space: -8, rift: 9 }[to] || 0;
+        const pitch = { paper: 0, garden: 2, squirrel: -2, candy: 5, ocean: -3, snow: 7, rain: -5, sky: 4, desert: -1, carnival: 3, arcade: 6, library: -6, robot: -4, volcano: -7, space: -8, rift: 9, hollow: -3, atlantis: -4, dunes: -2, cave: -9 }[to] || 0;
         c.later(() => [60, 64, 67, 72].forEach((n, i) => Sound.tone({ t: i * 0.13, f: Sound.midi(n + pitch), type: "sine", d: 0.9, v: 0.05 })), (scene.T - 2.2) * 1000);
         const T = scene.T, t0 = performance.now();
         // the camera, applied to the SVG and (as a matrix) to the particle canvas

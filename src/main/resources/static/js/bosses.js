@@ -640,7 +640,6 @@ const Bosses = (() => {
     // ---------------------------------------------------------------------------------------------
     // scenery along the bottom of the arena, in two layers (far and near), drawn on a 1600 x 400 strip
     function horizon(world, far, near) {
-        world = { hollow: "squirrel", atlantis: "ocean", dunes: "desert", cave: "volcano" }[world] || world;   // (the newest secret worlds: their parent's scenery for now)
         const r = U.rng(world.length * 977 + 5);
         const rnd = (a, b) => a + r() * (b - a);
         const W = 1600, H = 400;
@@ -699,6 +698,38 @@ const Bosses = (() => {
                 front = hills(320, 40, 60, near);
                 for (let i = 0; i < 8; i++) { const x = rnd(0, W); front += `<path d="M${x - 40} ${H}L${x - 10} ${H - rnd(80, 150)}L${x + 30} ${H}Z" fill="${near}"/>`; }
                 front += `<path d="M0 ${H - 10}Q400 ${H - 40} 800 ${H - 12}T1600 ${H - 16}" stroke="#ff7a1f" stroke-width="6" fill="none" opacity=".8"/>`; break;
+            case "hollow":
+                // inside the oldest oak: the curve of its walls, hanging roots, and the hoard heaped on the floor
+                back = `<path d="M-40 ${H}L-40 0Q300 220 280 ${H}Z" fill="${far}"/><path d="M1640 ${H}L1640 0Q1300 220 1320 ${H}Z" fill="${far}"/>`;
+                for (let i = 0; i < 12; i++) { const x = rnd(120, 1480), l = rnd(60, 200); back += `<path d="M${x} 0Q${x + rnd(-20, 20)} ${l * 0.6} ${x + rnd(-30, 30)} ${l}" stroke="${far}" stroke-width="${rnd(4, 9).toFixed(0)}" fill="none" stroke-linecap="round"/>`; }
+                front = `<path d="M0 ${H}L0 340Q400 300 800 330T1600 320L1600 ${H}Z" fill="${near}"/>`;
+                for (let i = 0; i < 26; i++) { const x = rnd(300, 1300), y = H - rnd(40, 110); front += `<ellipse cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" rx="14" ry="17" fill="#8a5426"/><path d="M${(x - 16).toFixed(0)} ${(y - 6).toFixed(0)}a16 11 0 0 1 32 0z" fill="#4a2c14"/>`; }
+                for (let i = 0; i < 8; i++) { const x = rnd(40, 1560), y = H - rnd(20, 60); front += `<path d="M${(x - 12).toFixed(0)} ${y.toFixed(0)}a12 10 0 0 1 24 0z" fill="${["#7dffd4", "#ffd36b"][i % 2]}" opacity=".8"/>`; }
+                break;
+            case "atlantis":
+                // the drowned city: temples, domes and towers, and a sea king's statue far off
+                back = `<path d="M1200 ${H}L1180 140Q1220 110 1260 140L1240 ${H}Z" fill="${far}"/><rect x="1270" y="60" width="10" height="240" fill="${far}"/>`;
+                for (let i = 0; i < 9; i++) { const x = 60 + i * 170 + rnd(-30, 30), h = rnd(120, 220), w = rnd(70, 120); back += i % 3 === 0
+                    ? `<path d="M${x} ${H - h}L${x + w / 2} ${H - h - 34}L${x + w} ${H - h}Z" fill="${far}"/><rect x="${x}" y="${H - h}" width="${w}" height="${h}" fill="${far}"/>`
+                    : i % 3 === 1 ? `<rect x="${x}" y="${H - h + w * 0.4}" width="${w}" height="${h}" fill="${far}"/><path d="M${x} ${H - h + w * 0.42}a${w / 2} ${w / 2} 0 0 1 ${w} 0z" fill="${far}"/>`
+                    : `<rect x="${x}" y="${H - h}" width="${w * 0.7}" height="${h}" fill="${far}"/>`; }
+                front = `<path d="M0 ${H}L0 340Q400 310 800 336T1600 326L1600 ${H}Z" fill="${near}"/>`;
+                for (let i = 0; i < 10; i++) { const x = rnd(20, 1580); front += `<path d="M${x} ${H}c-8 -30 8 -50 0 -80s8 -40 2 -60" stroke="#2f9e6b" stroke-width="6" fill="none" stroke-linecap="round"/>`; }
+                break;
+            case "dunes":
+                // dunes swallowing an old road: a buried stone head, broken pillars and an arch half under the sand
+                back = `<path d="M0 ${H}L0 230Q300 150 600 220T1200 200T1600 230L1600 ${H}Z" fill="${far}"/>`;
+                back += `<path d="M1120 260Q1118 150 1180 146Q1242 150 1240 260Z" fill="${far}"/><path d="M300 ${H}V180h40V${H}M380 ${H}V210h40V${H}" fill="${far}"/>`;
+                front = `<path d="M0 ${H}L0 320Q250 270 520 316T1060 300T1600 320L1600 ${H}Z" fill="${near}"/><path d="M700 ${H}V300a60 60 0 0 1 120 0V${H}h-24V300a36 36 0 0 0 -72 0V${H}Z" fill="${near}"/>`;
+                break;
+            case "cave":
+                // a cavern: stalactites, stalagmites, obsidian crystals and a river of lava
+                for (let i = 0; i < 18; i++) { const x = i * 95 + rnd(-20, 20), l = rnd(60, 170); back += `<path d="M${x - 24} 0L${x} ${l}L${x + 24} 0Z" fill="${far}"/>`; }
+                front = `<path d="M0 ${H}L0 330H1600V${H}Z" fill="${near}"/>`;
+                for (let i = 0; i < 12; i++) { const x = rnd(20, 1580), h = rnd(50, 140); front += `<path d="M${x - 26} 336L${x} ${336 - h}L${x + 26} 336Z" fill="${near}"/>`; }
+                for (let i = 0; i < 8; i++) { const x = rnd(40, 1560), s = rnd(14, 26); front += `<path d="M${x} ${330 - s * 2}L${x + s * 0.5} ${330 - s}L${x} 330L${x - s * 0.5} ${330 - s}Z" fill="#3a2a5a" stroke="#ff8a4a" stroke-width="2"/>`; }
+                front += `<path d="M0 ${H - 12}Q400 ${H - 34} 800 ${H - 14}T1600 ${H - 18}" stroke="#ff6a1f" stroke-width="10" fill="none" opacity=".85"/>`;
+                break;
             case "rift":
                 // the tear across the sky, the old prison's broken pillars floating, and ruined columns standing in the mist
                 back = `<path d="M-40 150 L220 120 L380 170 L560 110 L760 160 L960 100 L1180 150 L1400 110 L1640 150 L1640 186 L1400 150 L1180 190 L960 140 L760 200 L560 150 L380 210 L220 160 L-40 190Z" fill="${far}"/>`;

@@ -28,11 +28,14 @@ const Hero = (() => {
     const FACES = ["Blush", "Nothing", "Freckles", "Mustache", "Bandage", "Star Cheeks", "Whiskers", "Sweat Drop", "Face Paint"];
     const TOPS = ["Nothing", "Tuft", "Beanie", "Cap", "Crown", "Bow", "Wizard Hat", "Headphones", "Sprout", "Spiky", "Top Hat", "Pirate Hat", "Flower", "Horns", "Halo", "Bandana", "Cowboy Hat", "Chef Hat", "Viking Helmet",
         // the bosses' gifts (GIFT below)
-        "Pencil Crown", "Thistle Crown", "Acorn Cap", "Gumdrop Crown", "Octopus Hat", "Fur Hat", "Storm Cloud", "Aviator Cap", "Pharaoh Headdress", "Jester Hat", "Pixel Crown", "Candle Crown", "Antenna", "Flame Crown", "Space Helmet", "Cursed Halo"];
+        "Pencil Crown", "Thistle Crown", "Acorn Cap", "Gumdrop Crown", "Octopus Hat", "Fur Hat", "Storm Cloud", "Aviator Cap", "Pharaoh Headdress", "Jester Hat", "Pixel Crown", "Candle Crown", "Antenna", "Flame Crown", "Space Helmet", "Cursed Halo",
+        "Squirrel Ears", "Coral Crown", "Sand Goggles", "Miner's Helmet"];
     const OUTFITS = ["Nothing", "Scarf", "Cape", "Bow Tie", "Backpack", "Medal", "Belt", "Wings", "Overalls", "Necklace", "Tie", "Apron", "Sash",
-        "Paper Ruff", "Vine Sash", "Leaf Scarf", "Candy Sash", "Life Ring", "Fur Collar", "Raincoat", "Jetpack", "Broad Collar", "Striped Vest", "Pixel Armor", "Ghost Shroud", "Robo Armor", "Scale Armor", "Planet Ring", "Fallen Wings"];
+        "Paper Ruff", "Vine Sash", "Leaf Scarf", "Candy Sash", "Life Ring", "Fur Collar", "Raincoat", "Jetpack", "Broad Collar", "Striped Vest", "Pixel Armor", "Ghost Shroud", "Robo Armor", "Scale Armor", "Planet Ring", "Fallen Wings",
+        "Fluffy Tail", "Pearl Necklace", "Desert Wrap", "Ember Cloak"];
     const ITEMS = ["Nothing", "Pencil", "Book", "Star Wand", "Lantern", "Magnifier", "Sword", "Shield", "Balloon", "Umbrella", "Key", "Flag", "Ice Cream", "Fishing Rod", "Trophy",
-        "Giant Eraser", "Watering Can", "Owl Plush", "Lollipop", "Trident", "Ice Axe", "Lightning Bolt", "Kite", "Ankh Staff", "Popcorn", "Game Controller", "Ghost Friend", "Wrench", "Torch", "Telescope", "Feather Quill"];
+        "Giant Eraser", "Watering Can", "Owl Plush", "Lollipop", "Trident", "Ice Axe", "Lightning Bolt", "Kite", "Ankh Staff", "Popcorn", "Game Controller", "Ghost Friend", "Wrench", "Torch", "Telescope", "Feather Quill",
+        "Giant Acorn", "Conch Shell", "Hourglass", "Pickaxe"];
     const PARTS = { body: BODIES, eyes: EYES, mouth: MOUTHS, face: FACES, top: TOPS, outfit: OUTFITS, item: ITEMS };
 
 
@@ -41,7 +44,7 @@ const Hero = (() => {
     // each boss you beat unlocks a hat, an outfit and something to hold, in its world's style. They're the last 16 of
     // each list (so saved heroes keep their parts), in the map's order; the editor only offers the ones you've won.
     // ---------------------------------------------------------------------------------------------
-    const GIFT_WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];
+    const GIFT_WORLDS = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift", "hollow", "atlantis", "dunes", "cave"];
     const GIFT_TOPS = [
         // The Big Eraser: a crown of pencils
         (t, c) => [-28, 0, 28].map(a => `<g transform="rotate(${a} 120 ${t + 12})"><rect x="113" y="${t - 26}" width="14" height="34" fill="${c}" ${st(3)}/><path d="M113 ${t - 26} L120 ${t - 38} L127 ${t - 26}Z" fill="#f2d2a2" ${st(3)}/><path d="M118 ${t - 34} L120 ${t - 38} L122 ${t - 34}Z" fill="${INK}"/><rect x="112" y="${t + 4}" width="16" height="8" rx="2" fill="#ff8fa8" ${st(3)}/></g>`).join(""),
@@ -95,7 +98,19 @@ const Hero = (() => {
         (t) => `<g class="bz-glow"><ellipse cx="120" cy="${t - 16}" rx="32" ry="8.5" fill="none" stroke="#b48cff" stroke-width="12" opacity=".35"/>
             <path d="M88 ${t - 16} A32 8.5 0 0 1 142 ${t - 23}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="M146 ${t - 20} A32 8.5 0 0 1 96 ${t - 9}" fill="none" stroke="${INK}" stroke-width="10" stroke-linecap="round"/>
             <path d="M88 ${t - 16} A32 8.5 0 0 1 142 ${t - 23}" fill="none" stroke="#ffd06b" stroke-width="5" stroke-linecap="round"/><path d="M146 ${t - 20} A32 8.5 0 0 1 96 ${t - 9}" fill="none" stroke="#ffd06b" stroke-width="5" stroke-linecap="round"/>
-            <path d="M152 ${t - 30} l6 -2 l-2 6Z" fill="#ffd06b" stroke="${INK}" stroke-width="1.5"/><path d="M118 ${t - 26} l3 4 l-4 3" stroke="#7a3cff" stroke-width="2" fill="none"/></g>`
+            <path d="M152 ${t - 30} l6 -2 l-2 6Z" fill="#ffd06b" stroke="${INK}" stroke-width="1.5"/><path d="M118 ${t - 26} l3 4 l-4 3" stroke="#7a3cff" stroke-width="2" fill="none"/></g>`,
+        // The Giant Squirrel: furry ears with tufts
+        (t, c, S) => { const w = Math.min(S.hw, 52); return [-1, 1].map(k => `<path d="M${120 + k * (w - 18)} ${t + 14} L${120 + k * (w - 4)} ${t - 26} L${120 + k * (w + 8)} ${t + 10}Z" fill="#c8681c" ${st(3.5)}/><path d="M${120 + k * (w - 10)} ${t + 8} L${120 + k * (w - 3)} ${t - 14} L${120 + k * (w + 3)} ${t + 6}Z" fill="#ffb0a0"/><path d="M${120 + k * (w - 4)} ${t - 26} q${k * 4} -10 ${k * 10} -12 M${120 + k * (w - 4)} ${t - 26} q${k * -2} -10 ${k * 2} -14" stroke="#a8521a" stroke-width="3" stroke-linecap="round" fill="none"/>`).join(""); },
+        // Poseidon: a crown of coral with a pearl
+        (t, c, S) => { const w = Math.min(S.hw + 2, 54); return `<path d="M${120 - w} ${t + 14} H${120 + w}" ${st(9)}/><path d="M${120 - w} ${t + 14} H${120 + w}" stroke="#d9a93a" stroke-width="5" stroke-linecap="round"/>` +
+            [-0.7, -0.25, 0.25, 0.7].map((k, i) => `<path d="M${f1(120 + k * w)} ${t + 12} V${t - 6 - (i % 3 ? 10 : 0)} M${f1(120 + k * w)} ${t} l${i % 2 ? 8 : -8} -10" stroke="${INK}" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M${f1(120 + k * w)} ${t + 12} V${t - 6 - (i % 3 ? 10 : 0)} M${f1(120 + k * w)} ${t} l${i % 2 ? 8 : -8} -10" stroke="#ff7a8a" stroke-width="4" stroke-linecap="round" fill="none"/>`).join("") +
+            `<circle cx="120" cy="${t + 6}" r="6" fill="#f4fbff" ${st(2.5)}/>`; },
+        // The Sandworm: sand goggles pushed up on the head
+        (t, c, S) => { const w = Math.min(S.hw + 4, 56); return `<path d="M${120 - w} ${t + 18} Q120 ${t + 8} ${120 + w} ${t + 18}" fill="none" ${st(9)}/><path d="M${120 - w} ${t + 18} Q120 ${t + 8} ${120 + w} ${t + 18}" fill="none" stroke="#8a5424" stroke-width="5"/>` +
+            [-1, 1].map(k => `<circle cx="${120 + k * 17}" cy="${t + 12}" r="12" fill="#ffd27a" stroke="${INK}" stroke-width="3.5"/><circle cx="${120 + k * 17}" cy="${t + 12}" r="7" fill="#5fd0d8" opacity=".85"/><circle cx="${117 + k * 17}" cy="${t + 9}" r="2.4" fill="#fff"/>`).join(""); },
+        // The Lava Beast: a miner's helmet with a glowing lamp
+        (t, c, S) => { const w = Math.min(S.hw + 6, 58); return `<path d="M${120 - w} ${t + 22} C${120 - w} ${t - 18} ${120 + w} ${t - 18} ${120 + w} ${t + 22}Z" fill="#3a2a2e" ${st(4)}/><path d="M${120 - w - 6} ${t + 22} H${120 + w + 6}" ${st(8)}/><path d="M${120 - w - 6} ${t + 22} H${120 + w + 6}" stroke="#5a4448" stroke-width="4" stroke-linecap="round"/>` +
+            `<g class="bz-glow"><circle cx="120" cy="${t}" r="10" fill="#ffd03e" ${st(3)}/><circle cx="120" cy="${t}" r="18" fill="#ffb02e" opacity=".25"/></g><path d="M${120 - w + 10} ${t + 6} Q${120 - w + 18} ${t - 6} ${120 - w + 30} ${t - 10}" stroke="#ff6a1f" stroke-width="3" fill="none" opacity=".8"/>`; }
     ];
     // outfits: { back, front } (either may be missing)
     const GIFT_OUTFITS = [
@@ -148,7 +163,15 @@ const Hero = (() => {
         { back: (c, S) => { const y = S.eyeY + 26; return [-1, 1].map(k => { const x = 120 + k * (S.w - 12), dark = k > 0, e = Math.min(48, 120 - S.w - 4);
             return `<path d="M${x} ${y} C${x + k * e * 0.4} ${y - 52} ${x + k * (e + 6)} ${y - 54} ${x + k * (e + 10)} ${y - 22} C${x + k * (e + 2)} ${y - 18} ${x + k * (e + 8)} ${y} ${x + k * (e + 2)} ${y + 6} C${x + k * (e - 4)} ${y + 10} ${x + k * (e - 2)} ${y + 26} ${x + k * (e - 10)} ${y + 28} C${x + k * (e * 0.5)} ${y + 40} ${x + k * 12} ${y + 40} ${x} ${y + 30}Z" fill="${dark ? "#1c1230" : "#ffffff"}" ${st(4)}/>` +
                 `<path d="M${x + k * 10} ${y + 2} Q${x + k * (e * 0.6)} ${y - 22} ${x + k * (e + 4)} ${y - 18} M${x + k * 10} ${y + 16} Q${x + k * (e * 0.55)} ${y + 6} ${x + k * (e - 2)} ${y + 8}" fill="none" stroke="${dark ? "#9b6bff" : INK}" stroke-width="2" opacity="${dark ? 0.8 : 0.3}"/>` +
-                (dark ? `<circle cx="${x + k * (e + 8)}" cy="${y - 20}" r="3" fill="#b48cff" class="bz-glow"/>` : ""); }).join(""); } }
+                (dark ? `<circle cx="${x + k * (e + 8)}" cy="${y - 20}" r="3" fill="#b48cff" class="bz-glow"/>` : ""); }).join(""); } },
+        // The Giant Squirrel: a big fluffy tail curling up behind
+        { back: (c, S) => { const x = 120 + S.w - 10, y = S.mouthY + 30, h = Math.min(70, y - 40); return `<path d="M${x} ${y} C${x + 46} ${y} ${x + 52} ${y - h * 0.7} ${x + 34} ${y - h} C${x + 22} ${y - h - 10} ${x + 4} ${y - h + 6} ${x + 12} ${y - h + 14} C${x + 30} ${y - h + 14} ${x + 30} ${y - 10} ${x} ${y - 4}Z" fill="#e0883a" ${st(3.5)}/><path d="M${x + 26} ${y - h * 0.4} q8 -10 4 -22 M${x + 14} ${y - h * 0.2} q10 -6 10 -18" stroke="#fff0d8" stroke-width="3" fill="none" opacity=".6"/>`; } },
+        // Poseidon: a string of pearls
+        { front: (c, S) => { const y = S.mouthY + 16, w = Math.min(S.w - 6, 44); return Array.from({ length: 9 }, (_, i) => { const a = Math.PI * (0.15 + i * 0.7 / 8), x = 120 - Math.cos(a) * w, yy = y + Math.sin(a) * 16; return `<circle cx="${f1(x)}" cy="${f1(yy)}" r="${i === 4 ? 6 : 4.2}" fill="#f4fbff" stroke="${INK}" stroke-width="2"/><circle cx="${f1(x - 1.3)}" cy="${f1(yy - 1.3)}" r="1.4" fill="#fff"/>`; }).join(""); } },
+        // The Sandworm: a striped desert wrap round the neck and shoulders
+        { front: (c, S) => { const y = S.mouthY + 14, w = Math.min(S.w - 2, 48); return `<path d="M${120 - w} ${y} Q120 ${y + 22} ${120 + w} ${y} L${120 + w - 4} ${y + 16} Q120 ${y + 38} ${120 - w + 4} ${y + 16}Z" fill="#e8b66d" ${st(3.5)}/><path d="M${120 - w + 4} ${y + 7} Q120 ${y + 28} ${120 + w - 4} ${y + 7}" stroke="#b0753a" stroke-width="3" fill="none"/><path d="M${120 + w - 12} ${y + 10} l6 26 l-12 -4z" fill="#e8b66d" ${st(3)}/>`; } },
+        // The Lava Beast: a cloak with a glowing ember hem
+        { back: (c, S) => { const y = S.eyeY + 20, w = S.w + 10; return `<path d="M${120 - w + 14} ${y} Q${120 - w - 14} ${y + 70} ${120 - w - 4} ${Math.min(214, y + 110)} H${120 + w + 4} Q${120 + w + 14} ${y + 70} ${120 + w - 14} ${y}Z" fill="#2a1c20" ${st(3.5)}/><path d="M${120 - w - 4} ${Math.min(214, y + 110)} H${120 + w + 4}" stroke="#ff6a1f" stroke-width="5" class="bz-glow"/>`; } }
     ];
     const GIFT_ITEMS = [
         // a giant eraser
@@ -185,7 +208,15 @@ const Hero = (() => {
         () => `<g transform="translate(206 120) rotate(-32)"><rect x="-6" y="-14" width="12" height="28" rx="3" fill="#7a4a2a" ${st(3)}/><rect x="-8" y="-46" width="16" height="34" rx="3" fill="#e0b020" ${st(3)}/><rect x="-11" y="-74" width="22" height="30" rx="3" fill="#ffd23f" ${st(3)}/><ellipse cx="0" cy="-74" rx="11" ry="4" fill="#bfe6ff" ${st(2)}/></g>`,
         // the angel's feather quill
         () => `<g transform="translate(206 128) rotate(-16)"><path d="M0 4 L-3 -10 L3 -10Z" fill="#e8c66a" ${st(2)}/><path d="M0 -10 C-22 -40 -14 -84 6 -104 C10 -76 16 -40 0 -10Z" fill="#ffffff" ${st(3)}/><path d="M0 -10 Q-2 -60 6 -104" fill="none" stroke="#9b6bff" stroke-width="2"/>` +
-            [0, 1, 2, 3].map(i => `<path d="M${-1 + i * 0.8} ${-26 - i * 18} l-9 -6" stroke="#c49bff" stroke-width="1.6"/>`).join("") + `<circle cx="7" cy="-102" r="3" fill="#ffd06b" class="bz-glow"/></g>`
+            [0, 1, 2, 3].map(i => `<path d="M${-1 + i * 0.8} ${-26 - i * 18} l-9 -6" stroke="#c49bff" stroke-width="1.6"/>`).join("") + `<circle cx="7" cy="-102" r="3" fill="#ffd06b" class="bz-glow"/></g>`,
+        // The Giant Squirrel: an acorn nearly as big as your head
+        () => `<g transform="translate(204 126)"><ellipse cx="0" cy="-20" rx="20" ry="24" fill="#b9773e" ${st(3.5)}/><path d="M-24 -30 a24 16 0 0 1 48 0z" fill="#6e4429" ${st(3.5)}/><path d="M0 -46 v-10" ${st(6)}/><path d="M-10 -18 q3 -9 10 -9" stroke="#f2d2a2" stroke-width="3" fill="none" stroke-linecap="round"/></g>`,
+        // Poseidon: a conch shell
+        () => `<g transform="translate(204 120) rotate(-20)"><path d="M-14 0 C-22 -24 -4 -52 14 -46 C24 -42 22 -26 12 -20 C22 -14 18 0 4 4 Z" fill="#ffd7c4" ${st(3.5)}/><path d="M-6 -6 Q4 -24 12 -38 M2 0 Q10 -14 14 -24" stroke="#e8a08a" stroke-width="2.5" fill="none"/><path d="M14 -46 l6 -8" ${st(4)}/></g>`,
+        // The Sandworm: an hourglass running
+        () => `<g transform="translate(204 124)"><rect x="-18" y="-60" width="36" height="6" rx="2" fill="#8a5424" ${st(3)}/><rect x="-18" y="-4" width="36" height="6" rx="2" fill="#8a5424" ${st(3)}/><path d="M-13 -54 C-13 -36 -2 -32 0 -29 C2 -32 13 -36 13 -54Z M-13 -4 C-13 -22 -2 -26 0 -29 C2 -26 13 -22 13 -4Z" fill="#dff3ff" ${st(2.5)}/><path d="M-8 -50 Q0 -40 8 -50Z M-11 -4 Q0 -16 11 -4Z" fill="#e8b66d"/><path d="M0 -29 V-6" stroke="#e8b66d" stroke-width="1.6"/></g>`,
+        // The Lava Beast: a pickaxe with a glowing head
+        () => `<g transform="translate(204 128) rotate(-18)"><rect x="-4" y="-80" width="8" height="80" rx="3" fill="#8a5a3c" ${st(3)}/><path d="M-30 -74 Q0 -96 30 -74 L26 -68 Q0 -84 -26 -68Z" fill="#5a4448" ${st(3)}/><path d="M-30 -74 l-4 6 M30 -74 l4 6" stroke="#ff8a2a" stroke-width="3" stroke-linecap="round" class="bz-glow"/></g>`
     ];
     const GIFT = {};
     GIFT_WORLDS.forEach((w, i) => { GIFT[w] = { top: 19 + i, outfit: 13 + i, item: 15 + i }; });
@@ -483,9 +514,9 @@ const Hero = (() => {
             };
             // the next part along that isn't locked (bosses not beaten yet keep theirs)
             const step = (key, list, d) => { const lock = lockOf(key); let v = cur[key]; for (let i = 0; i < list.length; i++) { v = (v + d + list.length) % list.length; if (!lock || !lock.has(v)) return v; } return cur[key]; };
-            // (the secret world's 3 gifts aren't counted until the Void is beaten: no spoilers)
-            const secretHidden = beaten && !beaten.includes("rift") && !(typeof Campaign !== "undefined" && Campaign.secretOpen());
-            const left = L.top.size + L.outfit.size + L.item.size - (secretHidden ? 3 : 0);
+            // (a secret world's 3 gifts aren't counted until that world is open: no spoilers)
+            const hiddenSecrets = !beaten ? 0 : ["rift", "hollow", "atlantis", "dunes", "cave"].filter(w => !beaten.includes(w) && !(typeof Campaign !== "undefined" && Campaign.secretOpen(w))).length;
+            const left = L.top.size + L.outfit.size + L.item.size - hiddenSecrets * 3;
             const swatches = (label, key, list) => U.el("div", { class: "hm-row" }, U.el("small", { text: label }),
                 U.el("div", { class: "hm-swatches" }, ...list.map(c => U.el("button", { type: "button", class: "hm-swatch" + (cur[key] === c ? " on" : ""), style: { background: c }, "aria-label": `${label} ${c}`, onclick: () => set(key, c) }))));
             const nameIn = U.el("input", { type: "text", class: "hm-input", maxlength: "12", value: cur.name, "aria-label": "Name", autocomplete: "off", spellcheck: "false" });
