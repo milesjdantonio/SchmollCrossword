@@ -470,9 +470,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         umbrellas, cars; win: Rive umbrella `rain-win`). **Desert Caravan** (desert-scene.js: striped mesas, lit
         pyramids, oasis, sculpted dunes with shaded far sides, caravan, saguaros, tumbleweed, vultures; Milky Way,
         moon, lanterns, campfire by night; win: Rive treasure chest `desert-win`).
-      - To do, weakest first (from a contact sheet of every scene): Big Top Carnival, Robot Factory, Sky Kingdom,
-        Volcano Island, Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space,
-        Classic (its win only).
+        **Big Top Carnival** (carnival-scene.js: shaded big top, carousel, Ferris wheel, coaster, booths, popcorn
+        cart, pennants, balloons; bulbs, searchlights, fireworks by night; win: Rive strength tower `carnival-win`).
+        **Robot Factory** (robot-scene.js: steel hall, bay door, girders, catwalk, steam pipes, lamps, gears,
+        console, conveyor, articulated arms, welding sparks, drone; win: Rive trophy `robot-win`). **Sky Kingdom**
+        (sky-scene.js: islands with roots, crystals and waterfalls, castle, village, rope bridge, airship, cloud sea,
+        balloons; win: a Rive hot-air balloon `sky-win` beside the board).
+      - To do: Volcano Island, Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep
+        Space, Classic (its win only).
 
 ### Phase 7: Retention
 - [ ] Daily Archive (practice, no points/streak; works with offline)
