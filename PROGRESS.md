@@ -346,8 +346,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Island follow-ups: boss fight screen and level screen redesign; the Beta strip's place (asked in REVIEW.md)
 - [ ] Build the picked campaign design: map and level selection (clear completion, optional challenges,
       secret-world branches), level sheets, the boss sheet and fight screen, shop, skills, hero, book
-- [ ] Home: a **refresh**, not a remake or redo (the user, 2026-11-07): same layout, content and flow, a fresher
-      finish using the other repos' resources; shown at `/demo` first
+- [x] Home, Stats and Settings refreshed (2026-11-26; the user: "continue with the refresh of the other pages"; same
+      layout, content and flow): `css/pages.css` (after app.css, so every world's own overrides still win). Cards are
+      solid sheets with a lit top edge and soft depth, and no blur over the moving scene (cheaper); every heading has
+      an icon badge (`.ico .ico-<glyph>` on the h2/legend); the greeting is a small live tag; dailies have a rising
+      difficulty meter, a state pill and a drawn check; stat tiles have icons; heatmap, times, achievements and
+      history rows are softer; Settings' choices are segmented controls; world cards lift calmly with a check badge.
+      Fixed on the way: the Challenge chip showed a blue square instead of its star. Built straight in (no `/demo`).
+      Checked in Garden, Classic and Deep Space dark at 1440x900 and on a phone: no errors.
 - [x] The puzzle screen (the user, 2026-11-16: "make some major advancements to the actual crossword gameplay ... it
       feels like its lacking behind now"; built straight in, no demo). `css/play.css`, game.js:
       **the play stage** (a computer-sized window, not a boss fight: `html[data-view="game"]:not(.boss-stage)`): the
@@ -497,8 +503,9 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       labels lose their emoji), FX's text sprites draw the icon, three canvas spots draw icons, the CSS ::after
       pictures use `var(--g-name)`, index.html's symbols are `<i class="gi gi-...">`. The emoji in the source are only
       names now. A browser sweep of every page, the Everbook, a boss fight and How to Play found none left.
-- [ ] Still to do: the refresh of the non-campaign pages (Home, Daily, Stats, Settings), the user's request; and an
-      idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
+- [x] The refresh of the non-campaign pages (done 2026-11-26; see "Home, Stats and Settings refreshed" above; the
+      Daily page is the play stage, already redone).
+- [ ] Still to do: an idle warm-up of the Campaign and Daily pages for the first-visit GPU cost.
 - [ ] Still borrowed from the parent world: title card, screen transition, sounds, mascot (by design: the companion
       is the parent's mascot). 6 boss moves each, not 10. No secret-world achievements or How to Play chapters yet.
 - [ ] For each: world look (scene light/dark, board, win, transition, fonts), lore + an animation explaining why to

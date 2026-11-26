@@ -4996,7 +4996,7 @@ const Campaign = (() => {
         const done = t.levels >= t.max;
         el.append(
             U.el("div", { class: "hc-bar", style: { "--k": (t.levels / t.max).toFixed(3) } }, U.el("i")),
-            U.el("p", { class: "hc-line", text: `${t.levels} of ${t.max} levels  ·  ${t.stars} ★` }),
+            U.el("p", { class: "hc-line", text: `${t.levels} of ${t.max} Levels  ·  ${t.stars} ★` }),
             U.el("a", { class: "btn primary", href: "#campaign", text: done ? "See the Map" : t.levels ? `Continue: ${w.name}, ${f.level === 5 ? "Boss" : "Level " + f.level}` : "Start the Campaign",
                 onclick: () => { data.section = f.si; data.sel = f.level; data.playing = null; save(); } }));
     }

@@ -1,0 +1,232 @@
+/* Home, Stats and Settings: the finish shared by the pages outside the campaign and the puzzle.
+   Same layout and content as app.css lays out; this gives the cards depth and a lit top edge, an icon badge on
+   every heading, segmented options, and calm motion. Every colour, font and corner still comes from the world
+   (worlds.css), so each world keeps its own look on top. */
+
+:root { --sheen: .55; --lift: 0 1px 2px rgba(0, 0, 0, .06), 0 16px 36px -22px rgba(0, 0, 0, .4); }
+[data-theme="dark"] { --sheen: .07; --lift: 0 1px 2px rgba(0, 0, 0, .3), 0 18px 40px -20px rgba(0, 0, 0, .7); }
+
+/* ---- cards: a solid enough sheet that needs no blur over the moving scene, with light along the top ---- */
+#home-view .card, #stats-view .card, #settings-view .card, .stat-tile {
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, var(--sheen)), rgba(255, 255, 255, 0) 110px) no-repeat,
+        color-mix(in srgb, var(--surface-solid) 45%, var(--surface));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-radius: calc(var(--radius) + 4px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen)), var(--shadow), var(--lift);
+}
+#home-view .card, #stats-view .card, #settings-view .card { padding: 20px 22px 22px; }
+
+/* ---- headings: the card's name after a small badge holding its icon ---- */
+.ico { display: flex; align-items: center; gap: 12px; }
+.ico::before {
+    content: "";
+    flex: none;
+    width: 1.5em;
+    height: 1.5em;
+    max-width: 36px;
+    max-height: 36px;
+    border-radius: 10px;
+    background: var(--ico) center / 64% no-repeat, color-mix(in srgb, var(--accent) 14%, var(--surface-solid));
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 30%, transparent), 0 2px 6px -2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.card-head h2.ico::before { width: 34px; height: 34px; }
+.settings legend.ico::before { width: 32px; height: 32px; }
+.card-head { align-items: center; margin-bottom: 12px; }
+.settings legend.ico { margin-bottom: 12px; }
+.ico-map { --ico: var(--g-map); } .ico-pencil { --ico: var(--g-pencil); } .ico-flame { --ico: var(--g-flame); }
+.ico-trophy { --ico: var(--g-trophy); } .ico-sunrise { --ico: var(--g-sunrise); } .ico-stopwatch { --ico: var(--g-stopwatch); }
+.ico-medal { --ico: var(--g-medal); } .ico-scroll { --ico: var(--g-scroll); } .ico-globe { --ico: var(--g-globe); }
+.ico-moon { --ico: var(--g-moon); } .ico-magnifier { --ico: var(--g-magnifier); } .ico-speaker { --ico: var(--g-speaker); }
+.ico-sparkle { --ico: var(--g-sparkle); } .ico-target { --ico: var(--g-target); } .ico-eraser { --ico: var(--g-eraser); }
+.ico-question { --ico: var(--g-question); } .ico-book { --ico: var(--g-book); }
+
+/* ---- Home: the greeting as a small lit tag over the title ---- */
+.hero { gap: 28px; margin: 22px 0 28px; }
+.hero-logo { box-shadow: var(--shadow), 0 22px 40px -18px rgba(0, 0, 0, .45); }
+.greeting {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding: 4px 12px 4px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface-solid));
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 30%, transparent);
+    font-size: .86rem;
+    letter-spacing: .02em;
+    text-shadow: none;
+}
+.greeting::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); animation: live 2.4s ease-out infinite; }
+@keyframes live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
+.today-date { margin-top: 6px; }
+
+/* the campaign's progress: a thicker bar with a lit edge where it reaches */
+.hc-bar { height: 16px; border: 0; background: color-mix(in srgb, var(--ink) 8%, var(--surface-2)); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .14); }
+.hc-bar i { position: relative; min-width: 16px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45); }
+.hc-bar i::after { content: ""; position: absolute; right: 2px; top: 3px; bottom: 3px; width: 10px; border-radius: 999px; background: rgba(255, 255, 255, .7); filter: blur(2px); }
+.hc-line { font-variant-numeric: tabular-nums; }
+
+/* the dailies: tiles with a difficulty meter, a state pill, and a stamped check once solved */
+.daily-chips { gap: 12px; }
+.daily-chip {
+    gap: 6px;
+    padding: 14px 16px 14px;
+    border-width: 1.5px;
+    border-radius: calc(var(--radius-sm) + 4px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, var(--sheen)), rgba(255, 255, 255, 0) 60%) no-repeat, var(--surface-2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen)), 0 1px 2px rgba(0, 0, 0, .06);
+}
+.daily-chip:hover { border-color: var(--accent); box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen)), 0 10px 22px -10px color-mix(in srgb, var(--accent) 55%, transparent); }
+.daily-chip:focus-visible, .boss-chip:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.pips { align-items: flex-end; gap: 3px; height: 14px; }
+.pips i { width: 6px; height: 6px; border-radius: 2px; }
+.pips i:nth-child(2) { height: 10px; }
+.pips i:nth-child(3) { height: 14px; }
+.daily-chip .chip-state, .boss-chip .chip-state {
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+    font-size: .78rem;
+}
+.daily-chip:hover .chip-state { background: var(--accent); color: var(--accent-ink); }
+.daily-chip.done .chip-state, .boss-chip.done .chip-state { background: color-mix(in srgb, var(--good) 16%, transparent); }
+.daily-chip.done:hover .chip-state { background: color-mix(in srgb, var(--good) 22%, transparent); color: var(--good); }
+.daily-chip.done::after {
+    content: "";
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--g-check) center / 70% no-repeat, color-mix(in srgb, var(--good) 18%, var(--surface-solid));
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--good) 45%, transparent);
+}
+.daily-chip.challenge { box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen)), 0 1px 2px rgba(0, 0, 0, .06); }
+.daily-chip.challenge .pips.star .gi { width: 17px; height: 17px; border-radius: 0; background: var(--g-star) center / contain no-repeat; animation: spin 9s linear infinite; }
+.boss-chip { border-width: 1.5px; border-radius: calc(var(--radius-sm) + 4px); }
+.boss-chip:hover { box-shadow: 0 12px 26px -12px color-mix(in srgb, var(--boss, #e2483c) 70%, transparent); }
+.card-status { font-size: .92rem; }
+.countdown b { display: inline-block; padding: 1px 8px; border-radius: 6px; background: color-mix(in srgb, var(--ink) 7%, transparent); }
+
+/* the week: days as small rings, today's with a slow pulse */
+.wk-day i { border-width: 1.5px; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.wk-day.today i { animation: today 2.6s ease-in-out infinite; }
+@keyframes today { 50% { box-shadow: 0 0 0 3px var(--surface-solid), 0 0 0 6px color-mix(in srgb, var(--accent-2) 55%, transparent); } }
+
+/* the leaderboard's rows: lighter, a little more air, the top three with medals of colour */
+.lb-row { padding: 8px 14px; background: color-mix(in srgb, var(--ink) 4%, var(--surface-2)); transition: transform .2s, background .2s; }
+.lb-row:hover { transform: translateX(2px); background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
+.lb-row:nth-child(-n + 3) .lb-rank::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; }
+.lb-form input { border-width: 1.5px; transition: border-color .2s, box-shadow .2s; }
+.lb-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+
+/* ---- Stats ---- */
+.page-head { margin: 18px 0 22px; }
+.page-head h1::after { content: ""; display: block; width: 56px; height: 4px; margin: 12px auto 0; border-radius: 999px; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+[data-world="paper"] .page-head h1::after { display: none; }
+.stat-tiles { gap: 14px; }
+.stat-tile {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    padding: 16px 16px 14px;
+    overflow: hidden;
+}
+.stat-tile .value { grid-column: 1; grid-row: 1; font-size: 1.9rem; line-height: 1.05; }
+.stat-tile .label { grid-column: 1 / -1; grid-row: 2; margin-top: 4px; }
+.stat-tile::before {
+    content: "";
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: var(--ico) center / 66% no-repeat, color-mix(in srgb, var(--accent) 12%, var(--surface-solid));
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.stat-tile::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--accent), transparent 80%); opacity: .55; }
+.stat-tile:nth-child(1) { --ico: var(--g-coin); } .stat-tile:nth-child(2) { --ico: var(--g-check); }
+.stat-tile:nth-child(3) { --ico: var(--g-flame); } .stat-tile:nth-child(4) { --ico: var(--g-trophy); }
+.stat-tile:nth-child(5) { --ico: var(--g-stopwatch); } .stat-tile:nth-child(6) { --ico: var(--g-hourglass); }
+.stat-tile:nth-child(7) { --ico: var(--g-medal); }
+.stat-tile { transition: transform .25s cubic-bezier(.25, .1, .25, 1), box-shadow .25s; }
+.stat-tile:hover { transform: translateY(-2px); }
+.hm-cell, .hm-key i { border-radius: 5px; border-color: color-mix(in srgb, var(--line) 70%, transparent); }
+.hm-cell:not([data-n]), .hm-cell[data-n="0"] { background: color-mix(in srgb, var(--ink) 5%, var(--surface-2)); }
+.hm-cell[data-n="5"] { box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent); }
+.hm-cell { transition: transform .15s; }
+.hm-cell:hover { transform: scale(1.25); position: relative; z-index: 1; }
+.tc-bars { height: 20px; background: color-mix(in srgb, var(--ink) 6%, var(--surface-2)); box-shadow: inset 0 1px 3px rgba(0, 0, 0, .12); }
+.tc-bars i { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4); }
+.ach-tile { border-radius: calc(var(--radius-sm) + 2px); transition: transform .2s, box-shadow .2s; }
+.ach-tile.got { background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface-2)), var(--surface-2)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--sheen)); }
+.ach-tile.got:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -12px color-mix(in srgb, var(--accent) 60%, transparent); }
+.history { border-collapse: separate; border-spacing: 0 4px; }
+.history th { border-bottom: 0; font-size: .78rem; letter-spacing: 0; text-transform: none; }
+.history td { border-bottom: 0; background: color-mix(in srgb, var(--ink) 4%, var(--surface-2)); }
+.history td:first-child { border-radius: 10px 0 0 10px; }
+.history td:last-child { border-radius: 0 10px 10px 0; font-weight: 800; }
+
+/* ---- Settings ---- */
+.settings { gap: 18px; }
+.settings fieldset { transition: box-shadow .25s; }
+/* the choices as one segmented control: a track with the picked one lifted out of it */
+.options:not(.col) {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 7%, var(--surface-2));
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .12);
+}
+/* (kept at low specificity so the picked option's colour, and each world's version of it, still win) */
+:where(.options:not(.col)) .opt span { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-color: transparent; background: transparent; }
+:where(.options:not(.col)) .opt input:not(:checked) + span:hover { transform: none; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+:where(.options:not(.col)) .opt input:checked + span { box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--accent) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3); }
+.switch .track { background: color-mix(in srgb, var(--ink) 10%, var(--surface-2)); border-color: transparent; box-shadow: inset 0 1px 3px rgba(0, 0, 0, .16); }
+.switch .track::after { background: var(--surface-solid); box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.switch input:checked + .track { box-shadow: inset 0 1px 3px rgba(0, 0, 0, .15), 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.snd-group + .snd-group { border-top-style: dashed; }
+.snd-mute { border-color: transparent; background: color-mix(in srgb, var(--ink) 7%, var(--surface-2)); }
+.hl-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn.danger:hover { background: color-mix(in srgb, var(--wrong) 10%, transparent); }
+
+/* the world cards: a calm lift, the picked one ringed with a check badge */
+.world-cards { gap: 14px; }
+.world-card { border-width: 1.5px; border-radius: calc(var(--radius-sm) + 4px); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.world-card:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -14px rgba(0, 0, 0, .45); }
+.world-card:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
+.world-card .wc-preview { transition: transform .5s cubic-bezier(.25, .1, .25, 1); }
+.world-card:hover .wc-preview { transform: scale(1.04); }
+.world-card .wc-label { position: relative; background: var(--surface-2); }
+.world-card.on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent), 0 14px 28px -14px color-mix(in srgb, var(--accent) 70%, transparent); }
+.world-card.on::after {
+    content: "";
+    z-index: 1;
+    top: 8px;
+    right: 8px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--g-check) center / 66% no-repeat, var(--surface-solid);
+    box-shadow: 0 0 0 2px var(--accent), 0 4px 10px rgba(0, 0, 0, .3);
+}
+.world-classic-bar { border-width: 1.5px; border-radius: calc(var(--radius-sm) + 4px); }
+
+@media (max-width: 480px) {
+    #home-view .card, #stats-view .card, #settings-view .card { padding: 16px 16px 18px; }
+    .options:not(.col) { display: flex; }
+    .options:not(.col) .opt { flex: 1; }
+    .options:not(.col) .opt span { width: 100%; justify-content: center; padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .world-card:hover .wc-preview, .hm-cell:hover { transform: none; }
+}
