@@ -178,7 +178,7 @@ matches, the whole song end to start, or a song that fades out running its last 
   level-atlantis-1.mp3     Eyes of the Ocean                            Tsorthan Grove             eyes-of-the-ocean
   level-atlantis-2.mp3     Nautilus                                     poinl                      nautilus
   level-atlantis-3.mp3     Orien                                        Tozan                      orien
-  level-atlantis-4.mp3     Aquaria                                      cynicmusic                 aquaria
+  level-atlantis-4.mp3     Underwater Theme                             CleytonKauffman            underwater-theme
   level-dunes-1.mp3        Egyptian meditation music                    HaelDB                     egyptian-meditation-music
   level-dunes-2.mp3        Watch The Sand                               SpringySpringo             watch-the-sand
   level-dunes-3.mp3        Hyyoshi Arabian Syle Backgound Music RPG     Tozan                      hyyoshi-arabian-syle-backgound-music-rpg
