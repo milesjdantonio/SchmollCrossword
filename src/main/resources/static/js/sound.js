@@ -87,6 +87,7 @@ const Sound = (() => {
         if (!ctx) return;
         v *= quiet;                                        // small, frequent sounds play softer (see play)
         if (boss) v *= bossGain();
+        if (!(v > 0)) return;                              // silent (Boss Fight Effects at 0): nothing to play, and a ramp to 0 would throw
         if (f > 1800) v *= 0.5;                            // very high notes sound piercing: turn them down
         const start = ctx.currentTime + t;
         const osc = ctx.createOscillator(), gain = ctx.createGain();
@@ -124,6 +125,7 @@ const Sound = (() => {
         if (!ctx) return;
         v *= quiet;
         if (boss) v *= bossGain();
+        if (!(v > 0)) return;                              // silent (Boss Fight Effects at 0): nothing to play, and a ramp to 0 would throw
         // No crash or clap sounds : short bursts of noise (claps, clicks, hi-hats,
         // crackles) and hissy high-pass noise (cymbal crashes) are skipped everywhere. Soft whooshes, wind and
         // low rumbles still play.
@@ -233,6 +235,7 @@ const Sound = (() => {
     function preloadMusic(name) { if (!init() || !name || !musicOn()) return; const path = `audio/music/${name}.mp3`; keepSong(path); load(path); }
     function sample(name, { v = 0.5, rate = 1, t = 0, boss = false } = {}) {
         if (boss) v *= bossGain();
+        if (!(v > 0)) return;                              // silent (Boss Fight Effects at 0): nothing to play, and a ramp to 0 would throw
         if (!Settings.get("sound") || !init() || !ready()) return;
         const path = `audio/sfx/${name}.mp3`, buf = buffers[path];
         if (!buf) { load(path); return; }

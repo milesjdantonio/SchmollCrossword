@@ -536,9 +536,10 @@ const Hero = (() => {
                     cur.outfit ? swatches("Outfit Colour", "outfitColor", ACCENTS) : "",
                     beaten && left ? U.el("p", { class: "hm-locked", text: `🎁 ${left} more parts to win: every boss you beat gives your hero a hat, an outfit and something to hold.` }) : "");
             }
-            const close = value => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); setTimeout(() => modal.remove(), 250); done(value); };
-            const onKey = e => { if (e.key === "Escape" && !first) { e.preventDefault(); close(null); } };
+            const close = value => { removeEventListener("keydown", onKey, true); U.dialog.close(modal); modal.classList.remove("in"); setTimeout(() => modal.remove(), 250); done(value); };
+            const onKey = e => { if (e.key === "Escape" && !first && U.dialog.top(modal)) { e.preventDefault(); close(null); } };
             addEventListener("keydown", onKey, true);
+            U.dialog.open(modal);
             const actions = U.el("div", { class: "hm-actions" },
                 U.el("button", { type: "button", class: "btn", text: "Surprise Me", onclick: () => { cur = fix({ ...random(cur.name, beaten), name: cur.name }); Sound.play("pop"); draw(); } }),
                 first ? "" : U.el("button", { type: "button", class: "btn", text: "Cancel", onclick: () => close(null) }),

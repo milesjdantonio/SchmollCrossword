@@ -61,6 +61,7 @@ const Credits = (() => {
         scroller.appendChild(roll(data));
         stage.append(U.el("div", { class: "cr-veil" }), scroller, U.el("div", { class: "cr-bar" }, label, close));
         document.body.appendChild(stage);
+        U.dialog.open(stage);
         document.documentElement.classList.add("credits-on");
         const wasAway = Mascot.away;
         Mascot.away = true;
@@ -114,7 +115,7 @@ const Credits = (() => {
         scroller.addEventListener("pointerdown", hold);
         scroller.addEventListener("touchmove", hold, { passive: true });
         const onKey = e => {
-            if (e.key === "Escape") { e.preventDefault(); done(); }
+            if (e.key === "Escape") { if (!U.dialog.top(stage)) return; e.preventDefault(); done(); }
             else if (["ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "Home", "End"].includes(e.key)) hold();
         };
         addEventListener("keydown", onKey, true);
@@ -130,6 +131,7 @@ const Credits = (() => {
             Sound.levelSong(null, { fade: 1.2 });
             arenaOff();
             stage.classList.remove("in");
+            U.dialog.close(stage);
             document.documentElement.classList.remove("credits-on");
             Worlds.use(afterStory ? own : Settings.get("design") || own);
             Mascot.away = wasAway;

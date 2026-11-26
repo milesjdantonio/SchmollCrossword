@@ -304,9 +304,10 @@ const Story = (() => {
     function openBook(pages, { onReplay } = {}) {
         const modal = U.el("div", { class: "lx-modal", role: "dialog", "aria-modal": "true", "aria-label": "The Everbook" });
         modal.innerHTML = `<div class="lx-modal-inner">${bookHtml(pages)}<div class="lx-modal-btns">${onReplay ? `<button type="button" class="btn lx-replay">&#9654; Watch the story again</button>` : ""}<button type="button" class="btn primary lx-close">Close the book</button></div></div>`;
-        const close = () => { modal.classList.add("out"); setTimeout(() => modal.remove(), 250); removeEventListener("keydown", onKey); };
-        const onKey = e => { if (e.key === "Escape") close(); };
+        const close = () => { U.dialog.close(modal); modal.classList.add("out"); setTimeout(() => modal.remove(), 250); removeEventListener("keydown", onKey); };
+        const onKey = e => { if (e.key === "Escape" && U.dialog.top(modal)) close(); };
         addEventListener("keydown", onKey);
+        U.dialog.open(modal);
         modal.addEventListener("click", e => { if (e.target === modal) close(); });
         modal.querySelector(".lx-close").addEventListener("click", close);
         if (onReplay) modal.querySelector(".lx-replay").addEventListener("click", () => { close(); setTimeout(onReplay, 280); });

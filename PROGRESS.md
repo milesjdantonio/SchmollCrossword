@@ -551,9 +551,18 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       answer; otherwise a specific definition, an example or a fill-in-the-blank)
 
 ### Phase 11: Leftovers from the review zip
-- [ ] Go through the zip's findings that aren't covered above (JS bugs: keyboard trap, Boss Fight Effects 0,
-      Escape closing the wrong dialog, Report pausing the boss, reload skipping a Daily Boss attempt; licences:
-      "Giant Steps but Smooth", credits for CC BY tracks; ops: CI, model IDs from settings) and tick them off here
+- [x] The zip's JS bugs (2026-11-26, each checked in the code first: the old notes said some were fixed and they
+      weren't): **keyboard trap** (on a button or link, Space/Enter/Tab do their usual job instead of moving on the
+      board; a mouse-clicked button in the puzzle lets go of focus so Space goes back to the board); **Boss Fight
+      Effects at 0** (a silent sound returns before its volume ramp, which threw RangeError); **Escape closing the
+      wrong dialog** (`U.dialog` stack: the window-level Escape handlers of the question, Legal, hero maker,
+      credits, story book, Copy and Report act only when theirs is on top; one Escape on a question over the Privacy
+      Notice closed both before); **Report pausing the boss** (the fight's clock stops only for the end screen, a
+      cinematic or a hidden tab, not the Report form or a question); **reload skipping a Daily Boss attempt** (a
+      fight is marked live when it starts, `daily-<date>-live`; starting another while it's still marked counts the
+      abandoned one as lost). All checked in the test browser.
+- [ ] The zip's other leftovers: licences ("Giant Steps but Smooth", credits for CC BY tracks), ops (CI, model IDs
+      from settings), two tabs overwriting campaign progress, the grid for screen readers
 
 ### Phase 12: Finish
 - [ ] README, NOTICE.md, legal.js (and its date), How to Play match the game

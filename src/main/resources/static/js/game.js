@@ -1011,11 +1011,12 @@ const Game = (() => {
             U.el("div", { class: "res-card ask-card" }, U.el("h2", { id: "copy-title", class: "res-title ask-title", text: "Copy Your Result" }),
                 U.el("p", { class: "ask-text", text: U.touch() ? "Press and hold the text to copy it." : "It's selected: press Ctrl+C (⌘C on a Mac)." }),
                 area, U.el("div", { class: "res-actions" }, close)));
-        const done = () => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
-        const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(); } };
+        const done = () => { removeEventListener("keydown", onKey, true); U.dialog.close(modal); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const onKey = e => { if (e.key === "Escape" && U.dialog.top(modal)) { e.preventDefault(); e.stopPropagation(); done(); } };
         close.addEventListener("click", done);
         modal.addEventListener("pointerdown", e => { if (e.target === modal) done(); });
         addEventListener("keydown", onKey, true);
+        U.dialog.open(modal);
         overlay.appendChild(modal);
         requestAnimationFrame(() => { modal.classList.add("in"); area.focus(); area.select(); });
     }
@@ -1269,11 +1270,17 @@ const Game = (() => {
         else if (key === "ArrowRight") moveArrow(0, 1);
         else if (key === "ArrowUp") moveArrow(-1, 0);
         else if (key === "ArrowDown") moveArrow(1, 0);
+        // (on a button or a link, Space, Enter and Tab do what they always do: press it, or move to the next control)
+        else if ((key === " " || key === "Tab" || key === "Enter") && event.target.closest && event.target.closest("button, a[href], [role='button'], summary")) return;
         else if (key === " ") toggleDirection();
         else if (key === "Tab" || key === "Enter") moveToEntry(event.shiftKey ? -1 : 1);
         else return;
         event.preventDefault();
     });
+
+    // a button clicked with the mouse lets go of the focus, so Space and Enter go back to the board (pressed from the
+    // keyboard, it keeps the focus: detail is 0 then)
+    puzzleEl.addEventListener("click", e => { const btn = e.target.closest("button"); if (btn && e.detail > 0) btn.blur(); });
 
     // the on-screen keyboard (touch screens): "⇄" switches Across/Down, "⌫" is Backspace
     const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "⇄ZXCVBNM⌫"];
@@ -1365,9 +1372,10 @@ const Game = (() => {
             U.el("p", { class: "report-mail" }, "Or write to ", U.el("a", { href: "mailto:schmollcrossword@gmail.com", text: "schmollcrossword@gmail.com" }))));
         const needsText = () => kind.value === "other";
         kind.addEventListener("change", () => { text.placeholder = needsText() ? "What's wrong?" : "Anything else we should know? (optional)"; });
-        const close = () => { removeEventListener("keydown", onKey, true); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
-        const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } };
+        const close = () => { removeEventListener("keydown", onKey, true); U.dialog.close(modal); modal.classList.remove("in"); modal.classList.add("out"); setTimeout(() => modal.remove(), 300); };
+        const onKey = e => { if (e.key === "Escape" && U.dialog.top(modal)) { e.preventDefault(); e.stopPropagation(); close(); } };
         addEventListener("keydown", onKey, true);
+        U.dialog.open(modal);
         text.addEventListener("input", () => { count.textContent = `${text.value.length} / 1000`; });
         cancel.addEventListener("click", close);
         modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });

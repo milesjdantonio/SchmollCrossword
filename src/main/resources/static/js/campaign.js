@@ -1622,12 +1622,14 @@ const Campaign = (() => {
     // per day and each earlier one costs points when you win (see score.js; your best of the day is kept).
     const triesKey = () => "daily-" + ((data.playing && data.playing.date) || dayStr()) + "-tries";
     const dailyTries = () => ((data.specials || {})[triesKey()]) || 0;
+    const liveKey = () => triesKey().replace(/-tries$/, "-live");     // a Daily Boss fight under way (cleared when it ends)
     const triesNow = () => (special() === "daily" ? dailyTries() : 0);
     function countAttempt(won = false) {
         if (!fight || fight.attemptCounted || !special()) return;
         fight.attemptCounted = true;
         data.specials = data.specials || {};
         data.specials[triesKey()] = dailyTries() + 1;
+        delete data.specials[liveKey()];
         saveCarry(won);
         save();
     }
@@ -2277,6 +2279,13 @@ const Campaign = (() => {
             combo: 0, bestCombo: 0, lastWordAt: -1e9, pending: null, windup: 0, windupMax: 1, enraged: false, intro: false, phase: 1, phases: special() ? 1 : 1 + laterPhases(c && map ? map[c.si] : null).length, next: {}, switching: false,
             log: [], myLog: [], hits: 0, blocks: 0, itemsUsed: 0, kinds: new Set(), extraLife: false, lifeUsed: false, thorns: null, snow: null,
             uses: special() ? Object.fromEntries(ABILITIES.filter(a => a.world === data.playing.world).map(a => [a.id, DAILY_USES])) : null };
+        if (special() === "daily") {
+            // a fight left without an ending (the page reloaded in the middle of it) is an attempt lost, like giving up
+            data.specials = data.specials || {};
+            if (data.specials[liveKey()]) data.specials[triesKey()] = dailyTries() + 1;
+            data.specials[liveKey()] = true;
+            save();
+        }
         const kept = special() && fresh !== false ? applyCarry() : 0;
         drawPanel(true);
         try {
@@ -4656,7 +4665,8 @@ const Campaign = (() => {
         const now = performance.now(), dt = Math.min(0.5, (now - lastTick) / 1000);
         lastTick = now;
         if (Sound.musicPlaying && !["win", "lose"].includes(Sound.musicPlaying) && !Sound.musicPlaying.startsWith("story") && !fightOn() && !(fight && fight.switching)) Sound.stopMusic(1.5);
-        if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results") || root.classList.contains("intro-on")) return;
+        // (a question or the Report form over the board doesn't stop the race: only the end screen, a cinematic or a hidden tab)
+        if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results:not(.ask-modal)") || root.classList.contains("intro-on")) return;
         const f = fight, g = Game.state, tickBefore = g.letters.map(r => [...r]);
         botStep(dt);
         if (f.over) return;

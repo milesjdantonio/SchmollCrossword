@@ -103,7 +103,7 @@ const Legal = (() => {
         if (!modal) {
             modal = U.el("div", { class: "lg-modal", role: "dialog", "aria-modal": "true" });
             modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
-            addEventListener("keydown", e => { if (modal && modal.isConnected && e.key === "Escape") { e.preventDefault(); close(); } }, true);
+            addEventListener("keydown", e => { if (modal && modal.isConnected && e.key === "Escape" && U.dialog.top(modal)) { e.preventDefault(); close(); } }, true);
             addEventListener("hashchange", () => { if (modal && modal.isConnected) close(); });
         }
         modal.setAttribute("aria-label", d.title);
@@ -117,13 +117,14 @@ const Legal = (() => {
         // only offer Remove My Name when there's a name to remove
         const f = card.querySelector("#lg-forget");
         if (f && !Leaderboard.hasName()) f.replaceWith(U.el("small", { class: "lg-none", text: "You haven't joined the leaderboard on this device." }));
-        if (!modal.isConnected) { document.body.appendChild(modal); requestAnimationFrame(() => modal.classList.add("in")); }
+        if (!modal.isConnected) { document.body.appendChild(modal); U.dialog.open(modal); requestAnimationFrame(() => modal.classList.add("in")); }
         card.querySelector(".lg-body").scrollTop = 0;
         card.querySelector(".lg-close").focus();
     }
     function close() {
         if (!modal) return;
         modal.classList.remove("in");
+        U.dialog.close(modal);
         const m = modal;
         closing = setTimeout(() => m.remove(), 200);
     }

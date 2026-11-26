@@ -194,16 +194,18 @@ const U = (() => {
                 if (answered) return;
                 answered = true;
                 removeEventListener("keydown", onKey, true);
+                dialog.close(modal);
                 modal.classList.remove("in");
                 modal.classList.add("out");
                 setTimeout(() => modal.remove(), 300);
                 resolve(answer);
             };
-            const onKey = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); done(false); } };
+            const onKey = e => { if (e.key === "Escape" && dialog.top(modal)) { e.preventDefault(); e.stopPropagation(); done(false); } };
             noBtn.addEventListener("click", () => done(false));
             yesBtn.addEventListener("click", () => done(true));
             modal.addEventListener("pointerdown", e => { if (e.target === modal) done(false); });
             addEventListener("keydown", onKey, true);
+            dialog.open(modal);
             (document.getElementById("overlay") || document.body).appendChild(modal);
             requestAnimationFrame(() => modal.classList.add("in"));
             setTimeout(() => noBtn.focus({ preventScroll: true }), 60);
@@ -320,7 +322,17 @@ const U = (() => {
         return card;
     }
 
-    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, saveRaw, saveFailed, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom,
+    // Dialogs can open on top of each other (a question over the Privacy Notice): each one listening for Escape on the
+    // whole window only acts when it's the newest one still open. dialog.open(el) when it opens, dialog.close(el) when
+    // it closes, dialog.top(el) in its key handler.
+    const dialogs = [];
+    const dialog = {
+        open(d) { dialogs.push(d); },
+        close(d) { const i = dialogs.lastIndexOf(d); if (i >= 0) dialogs.splice(i, 1); },
+        top(d) { const live = dialogs.filter(x => x.isConnected); return !live.length || live[live.length - 1] === d; }
+    };
+
+    return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, saveRaw, saveFailed, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom, dialog,
         CONTACT, fetchJson, describe, failCard, icon };
 })();
 
