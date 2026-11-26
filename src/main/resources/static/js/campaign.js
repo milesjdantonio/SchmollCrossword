@@ -1428,7 +1428,7 @@ const Campaign = (() => {
             stars = 1 + (noItems ? 1 : 0) + (met ? 1 : 0);
             earned.push(["Solved It", true], ["No Items Used", noItems], [goal, met]);
             if (lesson) earned.push([`Skill Practised: ${lesson.name}`, true]);
-            if (riftLevel(puzzle)) { corruptPeak = Corruption.win(); earned.push([`Corruption Peak: ${corruptPeak}%`, corruptPeak < 50]); }
+            if (riftLevel(puzzle)) { corruptPeak = Corruption.win(); earned.push([`${Corruption.theme(c.world).label} Peak: ${corruptPeak}%`, corruptPeak < 50]); }
         }
         skipping = false;
         const key = keyOf(c.world, c.level), old = data.levels[key];
@@ -2021,14 +2021,13 @@ const Campaign = (() => {
     function corruptLose() {
         const g = Game.state;
         if (U.view() !== "level" || !g.puzzle || g.solved || !data.playing) return;
-        const { world, level } = data.playing;
-        Game.endLoss({ title: "Corrupted", text: "The rift took over. Try again with a new puzzle." });
+        const { world, level } = data.playing, th = Corruption.theme(world);
+        Game.endLoss({ title: th.loseTitle, text: th.lossText });
         Corruption.stop();
         levelMusic();
         Sound.play("wrong");
-        FX.flash("#7a3cff", 500, 0.35);
-        loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · CORRUPTED`, title: "The Rift Took Over",
-            note: "Finish words to push the corruption back, and fight off the angel's tricks: catch the feather, click away the whisper, break the seal and the chains, and click its eye when it glares.", art: bossSvg(world) });
+        FX.flash(th.flash, 500, 0.35);
+        loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · ${th.loseKicker}`, title: th.loseTitle, note: th.loseNote, art: bossSvg(world) });
     }
     // the "you lost" card with Retry / Shop / Map
     function loseCard({ world, level, kicker, title, note, art }) {
