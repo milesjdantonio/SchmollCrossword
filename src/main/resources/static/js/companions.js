@@ -297,6 +297,63 @@ const Companions = (() => {
             done: ["Every star has its name back. I'm making a map.", "The Void's quiet now. Turns out it just needed a dictionary."]
         },
         // the secret world: Vigil, the little star that kept the Cursed Angel's prison shut
+        // the secret worlds: the parent world's companion comes along
+        hollow: {
+            intro: "Hazel again! We're INSIDE the oldest oak. I never knew it was hollow. I never knew it was THIS hollow.",
+            lore: [
+                "Every squirrel in the woods tells the story of the Giant Squirrel. I thought it was made up to keep kits out of the oak.",
+                "It's been hoarding for a hundred winters. Nuts first. Then pinecones. Then words.",
+                "The glowing mushrooms only grow where buried words go bad. Look how many there are.",
+                "If we dig the hoard back up, the forest gets its words back. Even the ones nobody remembers losing."
+            ],
+            levels: ["Mind the roots. They move.", "Smell that? A thousand winters of acorns.", "The glowcaps are brighter here. We're close.", "I can hear it chewing. Big chewing."],
+            boss: { before: "That's it. That's the Giant Squirrel. It's... a lot of squirrel.", win: "We beat it! And look at this hoard! Okay, I'm taking ONE acorn. Two.",
+                lose: "It sat on us. With its whole tail. We'll try again.", during: ["Dig, dig, dig!", "Don't let it hoard your letters!", "Its tail can't block everything!"] },
+            idle: ["I'm not scared, I'm just holding my own tail for comfort.", "Squirrels don't hibernate. This one should have."],
+            done: ["The forest has words it forgot it had.", "The Giant Squirrel is napping. On a much smaller pile."]
+        },
+        atlantis: {
+            intro: "Otto here! This is Atlantis. My grandmother told me about it with all eight arms waving.",
+            lore: [
+                "Atlantis didn't sink by accident. Poseidon pulled it down so nobody could take it from him.",
+                "The lights are still on. Somebody has been changing the bulbs for a thousand years. Probably eels.",
+                "Lately he's been spearing letters out of the current with that trident. Whole messages, gone.",
+                "Break the trident before it lands. Trust me, it's easier than getting a letter back from a king."
+            ],
+            levels: ["Down the old steps. Watch the jellyfish.", "This was the library. Now it's a fish library.", "The palace gates. Everyone keep your arms in. All eight.", "There's his statue. He made it himself."],
+            boss: { before: "Poseidon! Watch the trident! Snap it before it hits!", win: "The letters are floating back up! Every single one!",
+                lose: "He trident-ed us. Let's regroup in the kelp.", during: ["Snap that trident!", "Keep writing, keep swimming!", "The sea's on our side now!"] },
+            idle: ["I'd wave, but I'd have to pick which arm.", "Down here, bubbles are basically small balloons."],
+            done: ["Atlantis feels lighter. Maybe it'll come back up one day.", "Poseidon let the fish read again."]
+        },
+        dunes: {
+            intro: "Sandy again. Feel that? The sand is moving under us. That's not wind.",
+            lore: [
+                "Before the Sphinx came, the road across the desert had signs every mile. Then the dunes started swallowing them.",
+                "Something long lives under the sand. Caravans call it the Sandworm. Nobody calls it to its face.",
+                "It eats sentences. Whole ones. You can hear them rattling around in there.",
+                "If a ball of sand rolls at you, break it. Those are somebody's words."
+            ],
+            levels: ["Step where I step. The sand here is hungry.", "Ruins! The old road ran through here.", "Shh. The ground just hummed.", "There's a hole in the dune ahead the size of a house."],
+            boss: { before: "The Sandworm! Break its sand balls, and don't stand still!", win: "It spat out the road! Every sign, every word!",
+                lose: "It swallowed us. Then spat us out, because we're not sentences. Again.", during: ["Break the sand ball!", "It's surfacing!", "Keep writing, it hates that!"] },
+            idle: ["I've counted the grains in this dune. Lost count. Started again.", "The quiet out here has a sound. It's sand."],
+            done: ["The road has its signs back. One says 'OASIS, 2 MILES'. It's lying.", "The Sandworm sleeps deeper now."]
+        },
+        cave: {
+            intro: "Ember here. This is the Lava Cave. Even I think it's hot in here.",
+            lore: [
+                "Before the Magma Wyrm, the mountain had a heart. The heart grew a temper. The temper grew legs.",
+                "The Lava Beast melts any word that falls into the fire. The Wyrm only borrows them. Big difference.",
+                "When it pours lava down a column, write through it. Words cool lava. Don't ask me why. It's science. Probably.",
+                "Obsidian is lava that cooled too fast to make up its mind. Like me before breakfast."
+            ],
+            levels: ["Careful, the floor's warm. Warmer. Okay, hot.", "Those crystals hum when you get a word right.", "The river's rising. Write faster!", "I can see its eyes in the dark. Both of them. Glowing."],
+            boss: { before: "The Lava Beast! Cool its columns with your words!", win: "The fire went out of its eyes. And the words came out of the lava!",
+                lose: "Melted. Toasted. Fine. Let's go again.", during: ["Cool it down!", "Write through the lava!", "It's cracking!"] },
+            idle: ["I'm basically a nightlight with opinions.", "Lava's just rock that got excited."],
+            done: ["The cave is cool enough to sit in now. Almost.", "The Beast is a mountain again. A sleepy one."]
+        },
         rift: {
             intro: "Oh. Oh no. You came through the tear. I'm Vigil. I was the light that kept the prison shut, and I... let it go.",
             lore: [

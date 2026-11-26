@@ -1303,6 +1303,14 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .fx-flare-screen { position: fixed; inset: 0; z-index: 9200; pointer-events: none; background: radial-gradient(circle, #fff, #fff6c8 60%, #ffd23f); opacity: 0; transition: opacity .25s; }
 .fx-flare-screen.on { opacity: .97; }
 #board .cell.snowed::after { content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; background: radial-gradient(circle at 40% 30%, #fff, #eaf6ff 70%); box-shadow: inset 0 -4px 0 #cfe6f7; }
+/* the Sandworm's Sand Dive: sand, not snow */
+[data-world="dunes"] #board .cell.snowed::after { background: radial-gradient(circle at 40% 30%, #f6d48f, #d9a35c 75%); box-shadow: inset 0 -4px 0 #b0753a; }
+/* the Lava Beast's Lava Columns: molten rock down the column (no typing there until it cools) */
+#board .cell.lava-col::after { content: ""; position: absolute; inset: -1px; z-index: 3; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(180deg, rgba(255, 210, 90, .85), rgba(255, 90, 20, .85) 55%, rgba(170, 30, 5, .9)); background-size: 100% 200%;
+    box-shadow: inset 0 0 12px rgba(255, 240, 160, .8), 0 0 14px rgba(255, 90, 20, .7); animation: lava-flow 1.6s linear infinite; mix-blend-mode: multiply; }
+@keyframes lava-flow { to { background-position: 0 200%; } }
+@media (prefers-reduced-motion: reduce) { #board .cell.lava-col::after { animation: none; } }
 #board .cell.thorny::after { content: "🌹"; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; font-size: 1.6em; background: rgba(70, 120, 60, .35); border-radius: inherit; }
 #board .cell .ghost-ltr, #board .cell .cheat-ltr { position: absolute; inset: 0; display: grid; place-items: center; font: 800 1.6em var(--font-body); pointer-events: none; }
 #board .cell .ghost-ltr { color: rgba(140, 120, 220, .55); text-shadow: 0 0 8px rgba(160, 140, 255, .8); animation: bz-glow 1.2s ease-in-out infinite alternate; }

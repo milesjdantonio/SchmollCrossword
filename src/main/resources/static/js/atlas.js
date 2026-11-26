@@ -346,7 +346,7 @@ const AtlasView = (() => {
             g.save();
             g.globalAlpha = e;
             g.translate(0, (1 - e) * 60 * cam.z);
-            const RX = d.rock ? 90 : 190, RY = d.rock ? 76 : 160;
+            const RX = d.rock ? 90 : d.small ? 125 : 190, RY = d.rock ? 76 : d.small ? 105 : 160;
             const hill = hex(d.hill), ground = hex(d.ground), shut = !d.open && !d.rock;
             const h2 = shut ? dull(hill) : hill, g2 = shut ? dull(ground) : ground;
             // its glow on the water
@@ -401,7 +401,7 @@ const AtlasView = (() => {
         }
         function drawBoss(d, t) {
             const look = d.open ? (d.won ? "faded" : "") : "shadow";
-            const box = stand("boss-" + d.world, d.boss, d.x, d.y - 40, 170, look, 1 + d.hover * 0.1);
+            const box = stand("boss-" + d.world, d.boss, d.x, d.y - (d.small ? 26 : 40), d.small ? 118 : 170, look, 1 + d.hover * 0.1);
             d.box = box;
             if (!box || d.won) return;
             // the page it holds, and the beam of light rising from it
@@ -453,7 +453,7 @@ const AtlasView = (() => {
             islands.forEach((d, n) => {
                 const t = plates[n];
                 if (!t) return;
-                const p = project(d.x, d.y + (d.rock ? 100 : 190));
+                const p = project(d.x, d.y + (d.rock ? 100 : d.small ? 128 : 190));
                 const off = !p || p.x < -200 || p.x > vw - ins.right - 30 || p.y < -100 || p.y > vh - ins.bottom - 10;
                 const v = off ? "off" : `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, 0) scale(${Math.max(vw < 700 ? 0.45 : 0.6, Math.min(1, p.s * 1.25)).toFixed(3)})`;
                 if (v === t.last) return;
@@ -534,7 +534,7 @@ const AtlasView = (() => {
             const order = islands.slice().sort((a, b) => b.y - a.y);
             for (const d of order) {
                 if (d.box && sx >= d.box.x && sx <= d.box.x + d.box.w && sy >= d.box.y && sy <= d.box.y + d.box.h) return d;
-                const e = ellipseAt(d.x, d.y, d.rock ? 90 : 190, d.rock ? 76 : 160);
+                const e = ellipseAt(d.x, d.y, d.rock ? 90 : d.small ? 125 : 190, d.rock ? 76 : d.small ? 105 : 160);
                 if (e && ((sx - e.x) / e.rx) ** 2 + ((sy - e.y) / e.ry) ** 2 <= 1.1) return d;
             }
             return null;

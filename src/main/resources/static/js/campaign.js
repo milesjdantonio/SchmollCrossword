@@ -49,9 +49,20 @@ const Campaign = (() => {
     // the Void beaten (or Unlock All), ignoring TEST_SECRET_OPEN: what the credits and the start screen's boss parade
     // go by, so they never give the rift or the angel away
     const secretEarned = () => !!(data.betaUnlock || (data.levels && data.levels["space-5"]));
-    const riftFound = () => !!(data.secrets && data.secrets.rift === "found") || !!(data.levels && Object.keys(data.levels).some(k => k.startsWith("rift-")));
-    const secretOpen = () => TEST_SECRET_OPEN || !!data.betaUnlock || (secretEarned() && riftFound());
-    const visibleMap = () => full.filter(s => !s.secret || secretOpen());
+    // Every secret world works the same way (SECRETS): found once its omen's riddle is answered (or any record of it
+    // exists), and open once found and its parent world's boss is beaten (or with Unlock All).
+    // secretOpen() with no world asks about the Celestial Rift.
+    const secretFound = world => {
+        const sec = SECRETS.find(x => x.world === world);
+        return !!(sec && data.secrets && data.secrets[sec.id] === "found") || !!(data.levels && Object.keys(data.levels).some(k => k.startsWith(world + "-")));
+    };
+    const secretOpen = (world = "rift") => {
+        if (TEST_SECRET_OPEN || data.betaUnlock) return true;
+        const sec = SECRETS.find(x => x.world === world);
+        return !!sec && !!(data.levels && data.levels[keyOf(sec.parent, 5)]) && secretFound(world);
+    };
+    const isSecretWorld = world => SECRETS.some(x => x.world === world);
+    const visibleMap = () => full.filter(s => !s.secret || secretOpen(s.world));
     // the map grows (the Void just fell): the strip of worlds gets its new tile the next time it's drawn
     function refreshMap() {
         if (!full) return false;
@@ -119,7 +130,7 @@ const Campaign = (() => {
         if (si === 0 && level === 1) return true;
         if (TEST_SECRET_OPEN && level === 1 && map[si].secret) return true;      // (testing: see TEST_SECRET_OPEN)
         if (level > 1) return cleared(si, prevLevel(si, level) || level - 1);
-        if (map[si].secret) return secretOpen() && cleared(map.findIndex(s => s.world === "space"), 5) || !!data.betaUnlock;
+        if (map[si].secret) return secretOpen(map[si].world);
         return si > 0 && cleared(si - 1, 5);
     }
     const sectionOpen = si => unlocked(si, 1);
@@ -153,7 +164,11 @@ const Campaign = (() => {
         library:  { hill: "#3d2546", ground: "#5a3a28", path: "#e8c37a", node: "#7fe0c4", prop: "books" },
         volcano:  { hill: "#2e1c1c", ground: "#3d2a26", path: "#ff8a2a", node: "#ffcf3f", prop: "cone" },
         space:    { hill: "#151b40", ground: "#0e1230", path: "#b18cff", node: "#ffe066", prop: "planet" },
-        rift:     { hill: "#2a1050", ground: "#170a36", path: "#ffd06b", node: "#e8c66a", prop: "ruin" }
+        rift:     { hill: "#2a1050", ground: "#170a36", path: "#ffd06b", node: "#e8c66a", prop: "ruin" },
+        hollow:   { hill: "#4e2c14", ground: "#7a4a24", path: "#ffd27a", node: "#2f9e7a", prop: "fungus" },
+        atlantis: { hill: "#12466a", ground: "#d9e6ee", path: "#d9a93a", node: "#1f8fb8", prop: "column" },
+        dunes:    { hill: "#b0753a", ground: "#e8b66d", path: "#8a5424", node: "#2f8f9d", prop: "relic" },
+        cave:     { hill: "#1a0e10", ground: "#2a1612", path: "#ff6a1f", node: "#ffb02e", prop: "crystal" }
     };
     const biome = world => BIOMES[world] || BIOMES.paper;
     const INK = "#2b2233";
@@ -217,6 +232,19 @@ const Campaign = (() => {
         ruin: r => r() < 0.6
             ? `<rect x="-9" y="-58" width="18" height="58" fill="#cfc4e6"/><path d="M-9 -58 L-3 -66 L3 -60 L9 -68 L9 -58Z" fill="#cfc4e6"/><path d="M-4 -56V-2M2 -56V-2" stroke="#8a7cae" stroke-width="1.4"/><rect x="-13" y="-4" width="26" height="6" fill="#e8c66a"/>`
             : `<path d="M0 -26 Q9 -12 4 6 L0 10 L-4 6 Q-9 -12 0 -26Z" fill="${pick3(r, ["#ffffff", "#1c1230"])}" stroke="#9b6bff" stroke-width="1.5"/><path d="M0 -22V9" stroke="#9b6bff" stroke-width="1"/>`,
+        // the secret worlds: glowing mushrooms, marble columns, sunken relics, obsidian crystals
+        fungus: r => r() < 0.65
+            ? `<path d="M-2 0v-16h4V0z" fill="#e8dcc8"/><path d="M-16-14a16 13 0 0 1 32 0z" fill="${pick3(r, ["#7dffd4", "#ffd36b", "#9ff0ff"])}"/><circle cx="-6" cy="-20" r="2.5" fill="#fff" opacity=".7"/><circle cx="5" cy="-18" r="2" fill="#fff" opacity=".6"/>`
+            : `<ellipse cy="-9" rx="8" ry="10" fill="#b9773e"/><path d="M-10-14a10 7 0 0 1 20 0z" fill="#6e4429"/>`,
+        column: r => r() < 0.6
+            ? `<rect x="-8" y="-${50 + Math.floor(r() * 16)}" width="16" height="66" fill="#eef4f8" stroke="#9bb8c8" stroke-width="1.5"/><rect x="-12" y="-4" width="24" height="5" fill="#d9a93a"/><path d="M-3-44V-4M3-44V-4" stroke="#b6ccd8" stroke-width="1.4"/>`
+            : `<path d="M0 0c-6-12 6-22 0-34s6-20 2-28" stroke="#2f9e6b" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+        relic: r => r() < 0.55
+            ? `<rect x="-9" y="-40" width="18" height="40" fill="#b0753a"/><rect x="-13" y="-46" width="26" height="7" fill="#9a6530"/><path d="M-13 0h26" stroke="#e8b66d" stroke-width="6"/>`
+            : `<path d="M-30 0L0-30 30 0z" fill="#d9a35a"/><path d="M0-30L30 0H10z" fill="#b9823f"/>`,
+        crystal: r => r() < 0.6
+            ? `<path d="M0-46L10-14 0 0-10-14z" fill="#3a2a5a" stroke="#ff8a4a" stroke-width="1.5"/><path d="M12-30L18-10 12 0 6-10z" fill="#2a1e44" stroke="#ff8a4a" stroke-width="1"/>`
+            : `<path d="M-16 0l4-16 12-6 14 8 2 14z" fill="#2a1d1b"/><ellipse cx="16" cy="2" rx="12" ry="3.5" fill="#ff7a1f" opacity=".85"/>`,
         planet: r => r() < 0.5
             ? `<circle cy="-30" r="16" fill="${pick3(r, ["#ff9f6b", "#6bd0ff", "#b18cff"])}"/><ellipse cy="-30" rx="28" ry="6" fill="none" stroke="#ffe066" stroke-width="2.5" transform="rotate(-15 0 -30)"/>`
             : `<path d="${starPath(0, -20, 9, 3, 4)}" fill="#fff"/>`
@@ -330,11 +358,11 @@ const Campaign = (() => {
         lockedNote.hidden = open;
         if (!open) lockedNote.replaceChildren(icon("lock"), U.el("p", { text: `Beat ${bossOf(map[si - 1].world).name} in ${Worlds.byId[map[si - 1].world].name} to open ${Worlds.byId[s.world].name}.` }));
         for (const [id, k] of [["#cm-prev", -1], ["#cm-next", 1]]) {
-            const b = $(id), there = map[si + k];
+            const b = $(id), to = neighbour(si, k), there = map[to];
             b.hidden = !there;
             if (!there) continue;
             const name = Worlds.byId[there.world].name;
-            b.replaceChildren(miniIsle(si + k), U.el("span", { class: "ws-edge-name" }, icon(k < 0 ? "back" : "next"), U.el("span", { text: name })));
+            b.replaceChildren(miniIsle(to), U.el("span", { class: "ws-edge-name" }, icon(k < 0 ? "back" : "next"), U.el("span", { text: name })));
             b.setAttribute("aria-label", `${k < 0 ? "Previous" : "Next"} world: ${name}`);
         }
         drawHero();
@@ -351,7 +379,7 @@ const Campaign = (() => {
     function drawBar() {
         const si = data.section, s = map[si], w = Worlds.byId[s.world], t = totals();
         $("#cm-name").textContent = w.name;
-        $("#cm-where").textContent = isSecret(si) ? `Secret World · ${bossOf(s.world).name}'s Prison` : `World ${si + 1} of ${MAIN} · ${bossOf(s.world).name}'s World`;
+        $("#cm-where").textContent = isSecret(si) ? `Secret World · ${bossOf(s.world).name}'s ${s.world === "rift" ? "Prison" : "Lair"}` : `World ${si + 1} of ${MAIN} · ${bossOf(s.world).name}'s World`;
         $("#cm-total").replaceChildren(icon("star"), U.el("b", { text: String(t.stars) }), U.el("span", { text: ` / ${t.max * 3}` }));
         $("#cm-coins").replaceChildren(icon("coin"), U.el("b", { text: String(data.coins) }));
     }
@@ -710,13 +738,13 @@ const Campaign = (() => {
     // The others aren't built yet: a found gate shows what's waiting and says its door is still shut.
     // ---------------------------------------------------------------------------------------------
     const SECRETS = [
-        { id: "hollow", parent: "squirrel", name: "The Great Hollow", boss: "The Giant Squirrel", color: "#8a5a2b", omen: "acorn", riddle: "I start as a nut and end as a tree.", answer: "ACORN",
+        { id: "hollow", parent: "squirrel", world: "hollow", name: "The Great Hollow", boss: "The Giant Squirrel", color: "#8a5a2b", omen: "acorn", riddle: "I start as a nut and end as a tree.", answer: "ACORN",
             tease: "Deep inside the oldest oak, something enormous is cracking nuts. Whole ones. With the tree still attached." },
-        { id: "atlantis", parent: "ocean", name: "Atlantis", boss: "Poseidon", color: "#1f8fb8", omen: "bottle", riddle: "The city that sank beneath the waves.", answer: "ATLANTIS",
+        { id: "atlantis", parent: "ocean", world: "atlantis", name: "Atlantis", boss: "Poseidon", color: "#1f8fb8", omen: "bottle", riddle: "The city that sank beneath the waves.", answer: "ATLANTIS",
             tease: "Far below the reef a drowned city still keeps its lights on. Its king has a trident, and he has been collecting letters." },
-        { id: "dunes", parent: "desert", name: "The Sunken Dunes", boss: "The Sandworm", color: "#c98a3c", omen: "mirage", riddle: "Water you can see but never drink, shimmering on hot sand.", answer: "MIRAGE",
+        { id: "dunes", parent: "desert", world: "dunes", name: "The Sunken Dunes", boss: "The Sandworm", color: "#c98a3c", omen: "mirage", riddle: "Water you can see but never drink, shimmering on hot sand.", answer: "MIRAGE",
             tease: "The sand here moves by itself. Something long is swimming through the dunes, and it swallows whole sentences." },
-        { id: "cave", parent: "volcano", name: "The Lava Cave", boss: "The Lava Beast", color: "#d9481f", omen: "crack", riddle: "The black glass that lava leaves behind.", answer: "OBSIDIAN",
+        { id: "cave", parent: "volcano", world: "cave", name: "The Lava Cave", boss: "The Lava Beast", color: "#d9481f", omen: "crack", riddle: "The black glass that lava leaves behind.", answer: "OBSIDIAN",
             tease: "Under the volcano is a cave the Magma Wyrm is afraid of. Whatever lives there is made of the mountain itself." },
         { id: "rift", parent: "space", world: "rift", name: "The Celestial Rift", boss: "The Cursed Angel", color: "#9b6bff", omen: "stars", riddle: "A ring of light that crowns an angel.", answer: "HALO",
             tease: "Where the Void fell, the sky has split. Behind the crack is the prison it was guarding, and something with broken wings is awake." }
@@ -731,6 +759,7 @@ const Campaign = (() => {
     };
     const gateArt = sec => `<svg viewBox="-38 -86 76 90"><path d="M-32 0V-48a32 32 0 0 1 64 0V0z" fill="${sec.color}" stroke="${INK2}" stroke-width="3" stroke-linejoin="round"/><path d="M-21 0V-46a21 21 0 0 1 42 0V0z" fill="#150a22"/><text y="-18" text-anchor="middle" font-size="32" font-weight="900" fill="#ffd66b" font-family="Georgia, serif">?</text></svg>`;
     data.secrets = data.secrets || {};
+    const built = sec => !!(sec.world && Worlds.byId[sec.world] && full && full.some(s => s.world === sec.world));
     const secretOf = si => (map && map[si] ? SECRETS.find(s => s.parent === map[si].world) || null : null);
     // "hidden" (its boss still stands), "omen" (something odd is on the island) or "found"
     const secretState = sec => (data.secrets[sec.id] === "found" ? "found" : data.levels[keyOf(sec.parent, 5)] || data.betaUnlock ? "omen" : "hidden");
@@ -755,8 +784,8 @@ const Campaign = (() => {
         const si = data.section, sec = secretOf(si), state = sec ? secretState(sec) : "hidden";
         if (state === "hidden") return;
         if (state === "found") {
-            const gate = U.el("button", { type: "button", class: "ws-omen ws-gate" + (sec.world ? " built" : ""), "aria-label": sec.world ? `Enter ${sec.name}` : `${sec.name}: a secret world`, html: gateArt(sec),
-                onclick: () => (sec.world ? enterSecret(sec) : showSecret(sec, false)) });
+            const gate = U.el("button", { type: "button", class: "ws-omen ws-gate" + (built(sec) ? " built" : ""), "aria-label": built(sec) ? `Enter ${sec.name}` : `${sec.name}: a secret world`, html: gateArt(sec),
+                onclick: () => (built(sec) ? enterSecret(sec) : showSecret(sec, false)) });
             gate.append(U.el("span", { class: "ws-gate-name", text: sec.name }));
             placeAt(gate, freeSpot(si));
             omenEl.append(gate);
@@ -867,7 +896,7 @@ const Campaign = (() => {
     function foundSecret(sec) {
         data.secrets[sec.id] = "found";
         save();
-        if (sec.world) refreshMap();
+        if (built(sec)) refreshMap();
         Sound.play("sparkle");
         showSecret(sec, true);
     }
@@ -905,9 +934,9 @@ const Campaign = (() => {
                 U.el("small", { text: first ? "You Found a Secret World" : "A Secret World" }),
                 U.el("h2", { text: sec.name }),
                 U.el("p", { class: "sc-tease", text: sec.tease }),
-                sec.world ? U.el("p", { class: "sc-who" }, icon("spark"), U.el("span", { text: `${sec.boss} is waiting. The gate is open.` }))
+                built(sec) ? U.el("p", { class: "sc-who" }, icon("spark"), U.el("span", { text: `${sec.boss} is waiting. The gate is open.` }))
                     : U.el("p", { class: "sc-who" }, icon("lock"), U.el("span", { text: `${sec.boss} is waiting. Its door opens in a coming update.` })),
-                U.el("button", { type: "button", class: "eb-buy", text: sec.world ? "Go Through the Gate" : first ? "Mark It on the Map" : "Close", onclick: () => { close(); if (sec.world) enterSecret(sec); } })));
+                U.el("button", { type: "button", class: "eb-buy", text: built(sec) ? "Go Through the Gate" : first ? "Mark It on the Map" : "Close", onclick: () => { close(); if (built(sec)) enterSecret(sec); } })));
         layer.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") close(); });
         layer.addEventListener("pointerdown", e => { if (e.target === layer) close(); });
         document.getElementById("overlay").append(layer);
@@ -920,6 +949,18 @@ const Campaign = (() => {
     // the boss answering back, and the dive into a level
     // ---------------------------------------------------------------------------------------------
     // a world as a small island with its boss standing on it (a shadow of it while the world is locked)
+    // the world beside this one along the road (k = -1 back, 1 on): the road skips the secret worlds, and a secret
+    // world's only neighbour is the world it branches off (-1 if there's none)
+    function neighbour(si, k) {
+        const s = map[si];
+        if (s && s.secret) {
+            const sec = SECRETS.find(x => x.world === s.world);
+            return k < 0 && sec ? map.findIndex(m => m.world === sec.parent) : -1;
+        }
+        let j = si + k;
+        while (map[j] && map[j].secret) j += k;
+        return map[j] ? j : -1;
+    }
     function miniIsle(si, withHero = false) {
         const s = map[si], b = biome(s.world);
         return U.el("span", { class: "ws-mini" + (sectionOpen(si) ? "" : " shut") + (cleared(si, 5) ? " won" : ""), style: { "--ground": b.ground, "--hill": b.hill, "--path": b.path } },
@@ -995,8 +1036,14 @@ const Campaign = (() => {
         map.forEach((s, i) => {
             if (!s.secret) return;
             const sec = SECRETS.find(x => x.world === s.world), pi = sec ? map.findIndex(m => m.world === sec.parent) : -1;
-            // (a whole island needs more room than a gate's rock: it lies further out, toward the horizon)
-            pts[i] = pi >= 0 ? [pts[pi][0] + 140, pts[pi][1] - 470] : [AT_W / 2, 200];
+            // (the Rift, off the last world, lies further out toward the horizon; the others are smaller islands off
+            // their parent's side, where a gate's rock would be)
+            if (pi < 0) { pts[i] = [AT_W / 2, 200]; return; }
+            if (s.world === "rift") { pts[i] = [pts[pi][0] + 140, pts[pi][1] - 470]; return; }
+            const [px, py] = pts[pi], taken = pts.filter((p, j) => p && j !== i);
+            const cands = [[250, 190], [-250, 190], [250, -190], [-250, -190], [0, 330], [0, -330], [330, 0], [-330, 0]].map(([dx, dy]) => [px + dx, py + dy])
+                .filter(([x, y]) => x > 120 && x < AT_W - 120 && y > 120 && y < AT_H - 120);
+            pts[i] = cands.sort((a, b) => Math.min(...taken.map(p => Math.hypot(p[0] - b[0], p[1] - b[1]))) - Math.min(...taken.map(p => Math.hypot(p[0] - a[0], p[1] - a[1]))))[0] || branchSpot(pts[pi], pi);
         });
         return pts;
     }
@@ -1045,17 +1092,19 @@ const Campaign = (() => {
             if (open) for (let k = 0; k < 5; k++) {
                 const a = (k / 5 + r() * 0.12) * Math.PI * 2, rx = 118 + r() * 26, ry = 96 + r() * 22;
                 if (Math.sin(a) < -0.55 && Math.abs(Math.cos(a)) < 0.6) continue;                    // (not where the boss stands)
-                props.push({ ox: Math.cos(a) * rx, oy: Math.sin(a) * ry, k: 0.8 + r() * 0.5, key: `prop-${i}-${k}`, svg: `<svg viewBox="-40 -84 80 88">${PROPS[b.prop](r)}</svg>` });
+                const sm = s.secret && s.world !== "rift" ? 0.65 : 1;
+                props.push({ ox: Math.cos(a) * rx * sm, oy: Math.sin(a) * ry * sm, k: (0.8 + r() * 0.5) * sm, key: `prop-${i}-${k}`, svg: `<svg viewBox="-40 -84 80 88">${PROPS[b.prop](r)}</svg>` });
             }
             const look = i === here && data.hero ? heroLook() : null;
-            islands.push({ i, x: pts[i][0], y: pts[i][1], world: s.world, ground: b.ground, hill: b.hill, path: b.path, open, won, here: i === here, props, boss: bossSvg(s.world),
+            islands.push({ i, x: pts[i][0], y: pts[i][1], world: s.world, small: !!s.secret && s.world !== "rift", ground: b.ground, hill: b.hill, path: b.path, open, won, here: i === here, props, boss: bossSvg(s.world),
                 hero: look ? Hero.svg(look, "", { still: true }) : null, heroKey: look ? "hero-" + JSON.stringify(look) : "",
                 label: { name: w.name, world: s.world, theme: Worlds.modeFor(w), aria: `${w.name}: ${open ? worldStars(i) + " of " + LV(i).length * 3 + " stars" : "locked"}`,
                     sub: [open ? icon("star") : icon("lock"), open ? `${worldStars(i)} / ${LV(i).length * 3}` : bossOf(s.world).name] } });
             // its secret world: a rock off to one side with a gate on it (or only a glimmer, until it's found)
             const sec = secretOf(i), state = sec ? secretState(sec) : "hidden";
             if (state === "hidden") return;
-            const [sx, sy] = branchSpot(pts[i], i);
+            const wi = sec.world ? map.findIndex(m => m.world === sec.world) : -1;
+            const [sx, sy] = wi >= 0 && pts[wi] ? pts[wi] : branchSpot(pts[i], i);       // (a world on the map: its own spot)
             if (state === "omen") { glimmers.push([sx, sy]); return; }
             const bend = [(pts[i][0] + sx) / 2, sy + 56];
             branches.push(Array.from({ length: 21 }, (_, n) => { const t = n / 20, k = 1 - t; return [k * k * pts[i][0] + 2 * k * t * bend[0] + t * t * sx, k * k * pts[i][1] + 2 * k * t * bend[1] + t * t * sy]; }));
@@ -1390,7 +1439,7 @@ const Campaign = (() => {
         // (the 15 worlds of the Everbook: the secret world has its own achievements)
         const main = map.filter(s => !s.secret), bossesBeaten = main.filter(s => data.levels[keyOf(s.world, 5)]).length;
         const stats = {
-            levels: Object.keys(data.levels).filter(k => !k.startsWith("rift-")).length, bosses: bossesBeaten, allBosses: main.length, stars: Object.values(data.levels).reduce((n, r) => n + r.stars, 0),
+            levels: Object.keys(data.levels).filter(k => !isSecretWorld(k.slice(0, k.lastIndexOf("-")))).length, bosses: bossesBeaten, allBosses: main.length, stars: Object.values(data.levels).reduce((n, r) => n + r.stars, 0),
             perfectWorld: map.some((s, si) => LV(si).every(l => (data.levels[keyOf(s.world, l)] || {}).stars === 3)),
             worldDone: map.some((s, si) => LV(si).every(l => data.levels[keyOf(s.world, l)])), allLevels: main.length * 5, totalCoins: data.coins,
             boss, difficulty: d, world: c.world, corruptPeak, secret: isSecret(c.si),
@@ -1444,7 +1493,7 @@ const Campaign = (() => {
     // Abilities (boss fights): 3 per world, each one different (no repeats, no stronger copies).
     // What they are, how they look and sound is in powers.js; what each one does is in useAbility below.
     // ---------------------------------------------------------------------------------------------
-    const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift"];   // the map order (Campaign.java)
+    const WORLD_ORDER = ["paper", "garden", "squirrel", "candy", "ocean", "snow", "rain", "sky", "desert", "carnival", "arcade", "library", "robot", "volcano", "space", "rift", "hollow", "atlantis", "dunes", "cave"];   // the map order (Campaign.java)
     const ABILITIES = Powers.ABILITIES.map(a => ({ ...a, price: 30 + WORLD_ORDER.indexOf(a.world) * 8 }));
     const abilityById = Object.fromEntries(ABILITIES.map(a => [a.id, a]));
 
@@ -1452,7 +1501,7 @@ const Campaign = (() => {
     // the 3rd when you beat its boss. The Celestial Rift has four, one per level, all before the angel.
     // Each unlock comes with FREE_USES uses; more cost coins in the shop.
     const FREE_USES = 2;
-    const unlockAt = world => (world === "rift" ? [1, 2, 3, 4] : [1, 3, 5]);
+    const unlockAt = world => (isSecretWorld(world) ? [1, 2, 3, 4] : [1, 3, 5]);      // (a secret world: one per level)
     const unlockLevel = a => unlockAt(a.world)[ABILITIES.filter(x => x.world === a.world).indexOf(a)];
     // the ability a level unlocks (or null): abilityPrize(0, 3) = Paper's 2nd ability
     function abilityPrize(si, level) {
@@ -1676,7 +1725,7 @@ const Campaign = (() => {
             const eq = loadout();
             for (const world of WORLD_ORDER) {
                 const w = Worlds.byId[world];
-                if (!w || (world === "rift" && !secretOpen())) continue;        // the secret world stays a secret
+                if (!w || (isSecretWorld(world) && !secretOpen(world))) continue;        // a secret world stays a secret
                 right.append(U.el("h3", { class: "eb-world", "data-world": world, "data-theme": Worlds.modeFor(w) }, U.el("span", { text: w.name }), U.el("small", { text: bossOf(world).name })));
                 right.append(U.el("ul", { class: "eb-list" }, ...ABILITIES.filter(a => a.world === world).map(a => {
                     const on = eq.includes(a.id), open = unlockedAbility(a);
@@ -1944,13 +1993,13 @@ const Campaign = (() => {
         Sound.play("wrong");
         loseCard({ world, level, kicker: `${Worlds.byId[world].name.toUpperCase()} ${level} · GAVE UP`, title: "Maybe Next Time", note: "Items like Letter Reveal and Clear Wrong (in the shop) can help with a tough one." });
     }
-    // The Celestial Rift's levels (corruption.js): the angel watches and the corruption meter runs while you solve
-    const riftLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && !data.playing.special && data.playing.world === "rift" && data.playing.level < 5);
+    // Every secret world's levels (corruption.js): its boss watches and the corruption meter runs while you solve
+    const riftLevel = puzzle => !!(puzzle && puzzle.mode === "campaign" && data.playing && !data.playing.special && isSecretWorld(data.playing.world) && data.playing.level < 5);
     function riftSync(puzzle) {
         if (riftLevel(puzzle) && U.view() === "level" && !Game.state.solved && map) {
             const c = current();
             Corruption.start({ key: keyOf(c.world, c.level), seed: puzzle.seed, level: Math.max(1, LV(c.si).indexOf(c.level) + 1), par: par(puzzle.difficulty, puzzle.size),
-                entries: puzzle.across.length + puzzle.down.length, onLose: corruptLose });
+                entries: puzzle.across.length + puzzle.down.length, onLose: corruptLose, world: c.world });
         } else Corruption.stop();
     }
     Bus.on("puzzle", ({ puzzle }) => riftSync(puzzle));
@@ -2052,7 +2101,7 @@ const Campaign = (() => {
     const MY_BUFFS = { blizzard: "🌨️ Blizzard: keep typing right", sun: "🌱 Words grow letters", tailwind: "🪁 Letters held", lucky: "🌈 Combo locked", fireup: "🔥 Wrong letters burn", hot: "🔥 Words stun", overclock: "⚡ Overclock",
         armor: "🧊 Frost armor", firewall: "🧱 Firewall", silver: "☁️ Silver lining", calm: "🤫 Boss calmed", chorus: "🎶 Angel chorus" };
     // what each boss move does to you, for the status chips
-    const ME_TEXT = { crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
+    const ME_TEXT = { thieves: "🐿️ Squirrels have your letters", lavacols: "🌋 Lava in your columns", crumple: "🗞️ Board crumpled", petals: "🌸 Clues buried", hoot: "🦉 Clues jumbled", sour: "🍋 Letters invisible", sticky: "🍯 Sticky cursor",
         ink: "🦑 Board blurred", whirl: "🌀 Board spinning", freeze: "🥶 Can't type", whiteout: "🌨️ Snowed in", downpour: "🌧️ Letters running", gale: "🌪️ Cursor blown",
         twister: "🌀 Direction flipping", riddle: "🐪 Clues backwards", sandblast: "🏜️ Sandy keys", mirror: "🪞 Mirrored", confetti: "🎉 Confetti", lock: "🔒 Word locked",
         static: "📺 Static", haunting: "👻 Fake letters", lights: "🕯️ Lights out", gravity: "🪐 Heavy keys", flare: "☀️ Blinded",
@@ -2190,14 +2239,14 @@ const Campaign = (() => {
             if (fresh !== false && U.view() === "level" && !Game.state.solved) {
                 fight.intro = true;
                 // each boss has its own song: it starts with the song's own intro, then loops its fight section (audio/CREDITS.txt)
-                Sound.music(fight.world, { v: 0.4, fade: 0.3 });
-                if (fight.phases > 1) setTimeout(() => fight && Sound.preloadMusic(fight.world + "-p2"), 9000);    // phase 2's song, ready in time
+                Sound.music(bossSong(fight.world, 1), { v: 0.4, fade: 0.3 });
+                if (fight.phases > 1) setTimeout(() => fight && Sound.preloadMusic(bossSong(fight.world, 2)), 9000);    // phase 2's song, ready in time
                 await FX.cinematic(cc => Bosses.intro(cc, fight.world, { until: () => Sound.buildDone() }));
                 if (fight) fight.intro = false;
                 speak(bossOf(fight.world).taunt);
                 if (kept && fight && fight.key === key) notice("🔒", kept === 1 ? "1 Word Kept" : `${kept} Words Kept`, "Your right words from last time are filled in and locked.", "good", 4200);
             }
-            else if (fight && fightOn()) Sound.music(fight.phase > 1 ? `${fight.world}-p${fight.phase}` : fight.world, { v: 0.4, fade: 1.2, fromLoop: true });
+            else if (fight && fightOn()) Sound.music(bossSong(fight.world, fight.phase), { v: 0.4, fade: 1.2, fromLoop: true });
             if (fight && fight.key === key && special()) setChaos(1);     // the Daily Boss's arena goes wild too
         } catch (err) {
             waiting(false, "Couldn't load the boss's puzzle: " + err.message);
@@ -2215,7 +2264,7 @@ const Campaign = (() => {
         if (f.phase > 1) Bosses.arena(f.world, f.id).classList.add("phase2");
         if (f.chaos) Bosses.chaos(f.world, f.chaos);
         if (f.enraged) setEnraged(true);
-        if (fightOn() && !f.intro && !f.switching) Sound.music(f.phase > 1 ? `${f.world}-p${f.phase}` : f.world, { v: 0.4, fade: 1.2, fromLoop: true });
+        if (fightOn() && !f.intro && !f.switching) Sound.music(bossSong(f.world, f.phase), { v: 0.4, fade: 1.2, fromLoop: true });
         drawItemBar();
     }
     // how wild the arena is (chaos.js); remembered so a resumed fight gets it back
@@ -2409,7 +2458,13 @@ const Campaign = (() => {
 
     // ---- the level's own song, and a music control by the
     // timer to change it quickly ("add a music slider to the levels"). Songs: audio/music/level-<world>-<1..4>.mp3
-    const songFor = (world, level) => `level-${world}-${level}`;
+    // Music for the four newest secret worlds: songs from the game's own set until they get their own (their levels
+    // play their parent world's level music; each boss phase a song that gets more intense)
+    const LEVEL_KIN = { hollow: "squirrel", atlantis: "ocean", dunes: "desert", cave: "volcano" };
+    const SONGS_OF = { hollow: ["squirrel", "snow-p2"], atlantis: ["ocean", "snow-p2", "robot-p2"], dunes: ["desert", "desert-p2", "volcano-p2"],
+        cave: ["volcano", "volcano-p2", "volcano-p3", "robot-p3", "space-p4"] };
+    const bossSong = (world, phase) => (SONGS_OF[world] ? SONGS_OF[world][Math.min(phase, SONGS_OF[world].length) - 1] : phase > 1 ? `${world}-p${phase}` : world);
+    const songFor = (world, level) => `level-${LEVEL_KIN[world] || world}-${level}`;
     const musicCtl = U.el("div", { class: "music-ctl", hidden: true, title: "Level Music (also in Settings and the sound menu)" },
         U.el("button", { type: "button", class: "mc-mute", "aria-label": "Level music on or off" }),
         U.el("input", { type: "range", min: "0", max: "100", step: "1", "aria-label": "Level music volume" }),
@@ -3099,6 +3154,9 @@ const Campaign = (() => {
     // a tip in Title Case: "click the eraser to snatch it" -> "Click The Eraser To Snatch It"
     const tipCase = s => s.replace(/(^|[\s(·])(\p{Ll})/gu, (m, a, ch) => a + ch.toUpperCase());
     const COUNTER = {
+        acornroll: "finish a word to block it, or click the branch twice", thieves: "click each squirrel 3 times to get its letter back",
+        trident: "click the trident 3 times to snap it", tornado: "click the tornado twice to break it up", sanddive: "click the sand off your squares",
+        sandball: "click the sand ball 3 times: its letters become yours", lavacols: "finish a word through a lava column to cool it",
         rubout: "click the eraser to snatch it", crumple: "finished words don't fold · click a fold to smooth it", inkblot: "click the blot 6× to wipe it",
         nobackspace: "click the marker cap to put it back on", fakecheck: "click a falsely marked square to expose the lie",
         thorns: "click a thorn 4× to cut it", petals: "click the clue list 6× to sweep the petals", minion: "click the aphid to send it back",
@@ -3222,7 +3280,12 @@ const Campaign = (() => {
         ward: { look: "umbrella", hits: 2, back: () => { bossStun(1.5); return "You knocked the umbrella out of its hands"; } },
         judgment: { look: "halo", hits: 2, back: () => { const n = bossLoseRows(1); fight.rays = null; return `The rays turn on the angel: its own board loses a row (${n} letters)`; } },
         lance: { look: "lance", hits: 2, back: () => { const n = bossLoseCol(); fight.lanceCol = null; return `The lance turns on the angel: its own board loses a column (${n} letters)`; } },
-        trumpet: { look: "trumpet", hits: 2, back: () => { bossLoseWord(); bossStun(1.5); return "You muffled the trumpet: the blast blows away the angel's own word"; } }
+        trumpet: { look: "trumpet", hits: 2, back: () => { bossLoseWord(); bossStun(1.5); return "You muffled the trumpet: the blast blows away the angel's own word"; } },
+        // the secret worlds' bosses
+        acornroll: { look: "branch", hits: 2, back: () => { const n = bossLoseRows(1); fight.rays = null; return `The acorn rolls back: the squirrel's own board loses a row (${n} letters)`; } },
+        trident: { look: "lance", hits: 3, back: () => { bossStun(2); return "You snapped the trident: Poseidon is stunned (2s)"; } },
+        tornado: { look: "swirl", hits: 2, back: () => { bossLoseWord(); return "You broke up the tornado: it scatters one of the worm's own words"; } },
+        sandball: { look: "spiral", hits: 3, back: () => { Game.giveLetters(3); return "You broke the sand ball: its letters are yours (3 right letters)"; } }
     };
     let interceptEl = null;
     // the target turns up somewhere random on the screen, drifts about, and jumps somewhere new after every hit
@@ -3390,6 +3453,12 @@ const Campaign = (() => {
         const f = fight, now = performance.now();
         f.taps = f.taps || {};
         if (f.me.wings > 0) { f.wingsBack = (f.wingsBack || 0) + 1; floatText("The wings pull back 🌑"); }
+        if (f.me.lavacols > 0 && f.lava && f.lastMyWord) {                     // Lava Columns: a word through a column cools it
+            const cooled = [...new Set(f.lastMyWord.map(([, c]) => c))].filter(c => f.lava.has(c));
+            cooled.forEach(c => f.lava.delete(c));
+            if (cooled.length) floatText(f.lava.size ? "A column cooled! 🧊" : "The lava cooled! 🧊");
+            if (!f.lava.size) f.me.lavacols = 0;
+        }
         if (f.me.holylight > 0 && (f.holyShrink = (f.holyShrink || 0) + 1) >= 3) { f.me.holylight = 0; floatText("The light went out! 💫"); }
         for (const [k, msg] of [["drain", "Board watered! 🌱"], ["heatwave", "Cooled down! ❄️"], ["numberless", "Numbers back! 💾"], ["tithe", "Tithe broken! 🪙"], ["ascend", "Your letters came back down 🕊️"]]) if (f.me[k] > 0) {
             if ((f.taps["w-" + k] = (f.taps["w-" + k] || 0) + 1) >= 2) { f.me[k] = 0; f.taps["w-" + k] = 0; floatText(msg); }   // two words
@@ -3412,7 +3481,7 @@ const Campaign = (() => {
         f.windup = f.ambush ? 0.4 : f.th.windup * (chained ? 0.7 : 1) * (f.buff.firewall > 0 ? 2 : 1);
         f.ambush = false;
         f.windupMax = f.windup;
-        f.rays = f.pending.kind === "judgment" ? rayRows() : null;       // Judgment Rays: the rows it aims at light up
+        f.rays = f.pending.kind === "judgment" ? rayRows() : f.pending.kind === "acornroll" ? rayRows(3) : null;   // Judgment Rays, Acorn Roll: the rows light up
         f.lanceCol = f.pending.kind === "lance" ? lanceCol() : null;    // Seraph's Lance: so does the column
         const portrait = portraitEl();
         if (portrait) U.restart(portrait, "charge");
@@ -3459,8 +3528,9 @@ const Campaign = (() => {
         await Powers.strike(f.world, mv, { fromEl: portrait || panel, toEl: selfMove ? (portrait || panel) : boardArea() });
         if (fight !== f || f.over || !fightOn()) return;
         const myBefore = Game.state.letters.map(r => [...r]);
+        f.unmarked = false;
         hitMe(mv);
-        Game.markBossChanges(myBefore);                     // what it erased or changed stays marked until you fix it
+        if (!f.unmarked) Game.markBossChanges(myBefore);    // what it erased or changed stays marked until you fix it (not the trident's)
         Spells.play("m-" + mv.kind, { cells: myChanges(myBefore), area: selfMove ? (portrait || panel) : document.getElementById("board"),
             from: U.center(portrait || panel), to: U.center(selfMove ? (portrait || panel) : document.getElementById("board")) });
         if (f.buff.silver > 0 && !selfMove) { Game.giveLetters(1); floatText("+1 right letter ☁️"); }           // Silver Lining
@@ -3662,6 +3732,52 @@ const Campaign = (() => {
                 break;
             }
             case "penance": f.me.penance = dur; f.penStreak = 0; break;          // Penance: see the typing handler
+            // the secret worlds' bosses
+            case "acornroll": {                                                  // Acorn Roll: three whole rows (two with Frost Armor)
+                const rows = (f.rays && f.rays.length ? f.rays : rayRows(3)).slice(0, armor ? 2 : 3);
+                f.raysHit = rows;
+                Game.setLetters(scopeAll().filter(([r, c]) => rows.includes(r) && g.letters[r][c] && !Game.isLocked(r, c)).map(([r, c]) => [r, c, ""]));
+                f.rays = null;
+                break;
+            }
+            case "thieves": f.me.thieves = dur; setTimeout(() => sendBirds(f, SQUIRREL), U.motion() === "still" ? 0 : 900); break;   // Thieving Squirrels
+            case "trident": {                                                    // The Trident: 5 letters (right ones first) to its own board, unmarked
+                const right = shuffle(filled().filter(([r, c]) => g.letters[r][c] === g.puzzle.solution[r][c])), right2 = new Set(right.map(([r, c]) => r + "," + c));
+                const took = [...right, ...shuffle(filled().filter(([r, c]) => !right2.has(r + "," + c)))].slice(0, armor ? 3 : 5);
+                Game.setLetters(took.map(([r, c]) => [r, c, ""]));
+                f.unmarked = true;
+                bossGain(took.length);
+                break;
+            }
+            case "tornado": {                                                    // Sand Tornado: the loose letters along a row (and a column), out of order
+                const safe = safeCells(), n = g.puzzle.size, loose = ([r, c]) => g.letters[r][c] && !Game.isLocked(r, c) && !safe.has(r + "," + c);
+                const lines = [];
+                for (let k = 0; k < n; k++) { lines.push(scopeAll().filter(([r, c]) => r === k && loose([r, c]))); lines.push(scopeAll().filter(([r, c]) => c === k && loose([r, c]))); }
+                const sets = [], used = new Set();
+                for (const cells of lines.sort((a, b) => b.length - a.length).slice(0, armor ? 1 : 2)) {
+                    const mine = cells.filter(([r, c]) => !used.has(r + "," + c)), was = mine.map(([r, c]) => g.letters[r][c]);
+                    if (new Set(was).size < 2) continue;
+                    let mixed = shuffle([...was]);
+                    if (mixed.every((ch, i) => ch === was[i])) mixed = was.slice(1).concat(was[0]);
+                    mine.forEach(([r, c], i) => { used.add(r + "," + c); if (mixed[i] !== was[i]) sets.push([r, c, mixed[i]]); });
+                }
+                Game.setLetters(sets);
+                break;
+            }
+            case "sanddive": {                                                   // Sand Dive: sand over half the board, and the worm takes 4 letters under it
+                f.snow = ids(shuffle(scopeAll()).slice(0, Math.ceil(scopeAll().length / 2)));
+                f.me.whiteout = dur;
+                Game.setLetters(shuffle(filled().filter(([r, c]) => f.snow.has(r + "," + c))).slice(0, armor ? 2 : 4).map(([r, c]) => [r, c, ""]));
+                break;
+            }
+            case "sandball": bossGain(armor ? 3 : 5); break;                      // Sand Ball: it wasn't broken in time
+            case "lavacols": {                                                   // Lava Columns: the two columns you still need most
+                const need = {};
+                scopeAll().forEach(([r, c]) => { if (g.letters[r][c] !== g.puzzle.solution[r][c] && !Game.isLocked(r, c)) need[c] = (need[c] || 0) + 1 + Math.random() * 0.3; });
+                f.lava = new Set(Object.entries(need).sort((a, b) => b[1] - a[1]).slice(0, armor ? 1 : 2).map(([c]) => +c));
+                f.me.lavacols = dur;
+                break;
+            }
             case "unlock": {
                 const freed = Game.unlockLetters();
                 Game.setLetters(shuffle(freed).slice(0, armor ? 1 : 2).map(([r, c]) => [r, c, ""]));
@@ -3697,10 +3813,10 @@ const Campaign = (() => {
         if (["hoot", "riddle", "clueswap", "oneword", "fakeclue"].includes(mv.kind)) rewriteClues();
     }
     // the rows Judgment Rays aims at: the two with the most of your letters in them (that it can take)
-    function rayRows() {
+    function rayRows(k = 2) {
         const g = Game.state, n = g.puzzle ? g.puzzle.size : 0, score = [];
         for (let r = 0; r < n; r++) score.push([r, scopeAll().filter(([r2, c]) => r2 === r && g.letters[r2][c] && !Game.isLocked(r2, c)).length + Math.random() * 0.5]);
-        return score.sort((a, b) => b[1] - a[1]).slice(0, 2).map(([r]) => r);
+        return score.sort((a, b) => b[1] - a[1]).slice(0, k).map(([r]) => r);
     }
     // the column Seraph's Lance aims at: the one with the most of your letters in it (that it can take)
     function lanceCol() {
@@ -3773,6 +3889,10 @@ const Campaign = (() => {
     // between clicks. Its square is sealed with a halo lock: no typing there, and clicking it does nothing. When
     // Ascension ends, the doves still flying take their letters to the angel, and the squares open again, empty.
     let birds = [];
+    // a thieving squirrel (the Giant Squirrel's Thieving Squirrels use the angel birds' code)
+    const SQUIRREL = `<svg viewBox="0 0 64 52" aria-hidden="true"><path d="M44 40 C62 40 64 18 54 10 C46 4 36 10 40 18 C46 18 50 24 48 30 C46 36 44 38 44 40Z" fill="#c8681c" stroke="#2b2233" stroke-width="2.5" stroke-linejoin="round"/>` +
+        `<ellipse cx="28" cy="34" rx="14" ry="12" fill="#e0883a" stroke="#2b2233" stroke-width="2.5"/><circle cx="20" cy="22" r="10" fill="#e0883a" stroke="#2b2233" stroke-width="2.5"/>` +
+        `<path d="M14 14 L12 6 L19 12Z M24 12 L26 5 L28 13Z" fill="#a8521a" stroke="#2b2233" stroke-width="2" stroke-linejoin="round"/><circle cx="17" cy="21" r="2.2" fill="#2b2233"/><circle cx="12" cy="25" r="1.6" fill="#2b2233"/></svg>`;
     const DOVE = `<svg viewBox="0 0 64 52" aria-hidden="true"><ellipse cx="32" cy="9" rx="13" ry="3.6" fill="none" stroke="#ffd06b" stroke-width="3"/>` +
         `<g class="ab-wing l"><path d="M30 27 Q12 4 2 13 Q9 27 30 33Z" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><path d="M26 27 Q15 16 8 16 M24 30 Q14 23 7 23" fill="none" stroke="#e3d8ff" stroke-width="1.5"/></g>` +
         `<g class="ab-wing r"><path d="M34 27 Q52 4 62 13 Q55 27 34 33Z" fill="#fff" stroke="#c9b8ff" stroke-width="2"/><path d="M38 27 Q49 16 56 16 M40 30 Q50 23 57 23" fill="none" stroke="#e3d8ff" stroke-width="1.5"/></g>` +
@@ -3784,7 +3904,7 @@ const Campaign = (() => {
         `<circle cx="20" cy="22.5" r="1.8" fill="#5a3a10"/><path d="M20 23.5 v3.5" stroke="#5a3a10" stroke-width="1.6"/></svg>`;
     const takenBy = (r, c) => birds.find(b => b.r === r && b.c === c && b.held);
     const placeBird = (el, x, y) => { el.style.left = x.toFixed(0) + "px"; el.style.top = y.toFixed(0) + "px"; };
-    function sendBirds(f) {
+    function sendBirds(f, art = DOVE) {
         const g = Game.state;
         if (fight !== f || f.over || !g.puzzle) return;
         const safe = safeCells(), shuffle = list => list.sort(() => Math.random() - 0.5);
@@ -3793,7 +3913,7 @@ const Campaign = (() => {
         const picks = [...shuffle(right), ...shuffle(loose.filter(x => !right.includes(x)))].slice(0, (f.buff.armor > 0) ? 3 : 5);
         picks.forEach(([r, c], i) => {
             const el = U.el("button", { type: "button", class: "angel-bird", "aria-label": "An angel bird carrying one of your letters: click it to bring the letter back",
-                html: DOVE + `<b class="ab-letter"></b><i class="ab-count">×3</i>` });
+                html: art + `<b class="ab-letter"></b><i class="ab-count">×3</i>` });
             const b = { r, c, ch: null, el, held: false, puzzle: g.puzzle, f, hits: 0 };
             document.body.appendChild(el);
             placeBird(el, innerWidth * (0.15 + Math.random() * 0.7), -70);
@@ -3996,6 +4116,7 @@ const Campaign = (() => {
             if (!cell) return;
             cell.classList.toggle("safe", safe.has(id));
             cell.classList.toggle("snowed", (on("whiteout") || on("avalanche")) && !!f.snow && f.snow.has(id));
+            cell.classList.toggle("lava-col", on("lavacols") && !!f.lava && f.lava.has(c));
             cell.classList.toggle("thorny", !!(f && f.thorns && f.thorns.cells.has(id)));
             cell.classList.toggle("folded", on("crumple") && !!f.folds && f.folds.has(id));
             cell.classList.toggle("piled", on("confetti") && !!f.piles && f.piles.has(id));
@@ -4027,7 +4148,7 @@ const Campaign = (() => {
         }
         if (!on("minion")) removeMinion();
         for (const b of [...birds]) if (b.puzzle !== Game.state.puzzle) dropBird(b);
-        if (birds.length && !on("ascend")) for (const b of [...birds]) if (b.held) flyAway(b);
+        if (birds.length && !on("ascend") && !on("thieves")) for (const b of [...birds]) if (b.held) flyAway(b);
     }
     function clearMe(keepShield = false) {
         if (fight && !keepShield) { fight.me = {}; fight.thorns = null; }
@@ -4048,7 +4169,7 @@ const Campaign = (() => {
         if (fight) fight.rays = null;
         if (board) board.classList.remove("fx-smudge", "fx-frozen");
         flareEl.classList.remove("on");
-        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target", "shattered"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
+        document.querySelectorAll("#board .cell").forEach(n => { n.classList.remove("snowed", "lava-col", "thorny", "folded", "piled", "gummed", "bombed", "masked", "ray-target", "shattered"); n.style.removeProperty("--sx"); if (n._vars) delete n._vars["--sx"]; });
         document.querySelectorAll("#board .ghost-ltr, #board .mask-ltr").forEach(n => n.remove());
         if (savedClues) {
             document.querySelectorAll(".clues .clue-text").forEach((n, i) => { if (savedClues[i] != null) n.textContent = savedClues[i]; });
@@ -4063,6 +4184,7 @@ const Campaign = (() => {
         const f = fight, g = Game.state, now = performance.now(), here = g.row + "," + g.col;
         if (f.me.freeze > 0) return "freeze";
         if (f.me.decree > 0 && f.decree === letter) return "decree";
+        if (f.me.lavacols > 0 && f.lava && f.lava.has(g.col)) return "lava";
         if (takenBy(g.row, g.col)) return "taken";
         if (f.thorns && f.thorns.cells.has(here)) return "thorns";
         if (f.gum && f.gum.cells.has(here)) return "gum";
@@ -4084,7 +4206,8 @@ const Campaign = (() => {
         if (why === "thorns") Powers.aura(cell, ["🌹"], "pop", 2, 600);
         if (why === "gum") Powers.aura(cell, ["🩷"], "pop", 2, 600);
         if (why === "slow") Powers.aura(cell, ["🧤"], "pop", 1, 500);
-        if (why === "taken") floatText("An angel bird has this letter: click the bird 3 times to get it back", false);
+        if (why === "taken") floatText(fight.me.thieves > 0 ? "A squirrel has this letter: click it 3 times to get it back" : "An angel bird has this letter: click the bird 3 times to get it back", false);
+        if (why === "lava") { if (cell) Powers.aura(cell, ["🔥"], "pop", 3, 600); floatText("Lava! Finish a word through this column to cool it", false); }
         if (why === "decree") { if (decreeEl) U.restart(decreeEl, "shake"); floatText(`The angel forbids ${fight.decree}`, false); }
     }
     const lockedIn = () => fight && (fight.me.lock > 0 || fight.me.taunt > 0);
@@ -4420,7 +4543,7 @@ const Campaign = (() => {
         clearWarn();
         const portrait = portraitEl();
         // each phase has its own, more intense song (audio/CREDITS.txt); its build-up plays during the power-up
-        Sound.music(f.world + "-p" + k, { v: 0.4, fade: 0.5 });
+        Sound.music(bossSong(f.world, k), { v: 0.4, fade: 0.5 });
         const final = k === f.phases && f.phases > 2;
         await FX.cinematic(cc => Bosses.phase(cc, f.world, `${label(d2, s2)}!`, final ? "The final phase. Everything it has left." : "A bigger puzzle for you. The boss starts over on the board you just solved.",
             { phase: k, phases: f.phases, until: () => Sound.buildDone() }));
@@ -4455,7 +4578,7 @@ const Campaign = (() => {
         f.nextMove = Math.max(6, f.th.first * 0.6);
         Bosses.arena(f.world, f.id).classList.add("phase2");
         setChaos(k - 1);                                // the arena goes wilder with every phase
-        if (k < f.phases) setTimeout(() => fight === f && Sound.preloadMusic(f.world + "-p" + (k + 1)), 9000);
+        if (k < f.phases) setTimeout(() => fight === f && Sound.preloadMusic(bossSong(f.world, k + 1)), 9000);
         drawPanel(true);
         updateHp();
         speak(final ? U.pick(["THIS ENDS NOW!", "You'll never finish this one!", "My final form!"]) : U.pick(["You think that was hard?!", "Now I'm serious!", `Round ${k}!`]), 3000);
@@ -4618,8 +4741,8 @@ const Campaign = (() => {
         document.body.appendChild(strip);
     }
     $("#cm-book").addEventListener("click", () => openBook("contents"));
-    $("#cm-prev").addEventListener("click", () => go(data.section - 1));
-    $("#cm-next").addEventListener("click", () => go(data.section + 1));
+    $("#cm-prev").addEventListener("click", () => go(neighbour(data.section, -1)));
+    $("#cm-next").addEventListener("click", () => go(neighbour(data.section, 1)));
     // The story (story.js): the Everbook's pages, one per world, won back by beating its boss
     function storyPages() {
         return (map || []).filter(s => !s.secret).map(s => ({ world: s.world, name: Worlds.byId[s.world] ? Worlds.byId[s.world].name : s.world, boss: bossOf(s.world).name,
@@ -4638,8 +4761,8 @@ const Campaign = (() => {
     addEventListener("keydown", e => {
         if (atlasOn) { if (!e.ctrlKey && !e.metaKey && !e.altKey) atlasKey(e); return; }
         if (!onStage() || diving || e.ctrlKey || e.metaKey || e.altKey || FX.playing || document.querySelector("#overlay .results, .ask-modal, .hm-modal") || e.target.closest("input, textarea, select")) return;
-        if (e.key === "ArrowLeft") { e.preventDefault(); go(data.section - 1); }
-        else if (e.key === "ArrowRight") { e.preventDefault(); go(data.section + 1); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); go(neighbour(data.section, -1)); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); go(neighbour(data.section, 1)); }
         else if (/^[1-5]$/.test(e.key) && LV(data.section).includes(+e.key)) pickLevel(+e.key);
         else if (e.key === "Enter" && !e.target.closest("button, a") && unlocked(data.section, data.sel)) dive(data.sel);
         else if (e.key === "m" || e.key === "M") openAtlas();

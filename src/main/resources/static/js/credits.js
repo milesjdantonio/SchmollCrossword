@@ -51,7 +51,7 @@ const Credits = (() => {
         const finished = new Promise(r => { closed = r; });
         const data = await fetch("audio/credits.json").then(r => r.json()).catch(() => ({ boss: [], level: [], composed: [] }));
         const own = afterStory && Worlds.current ? Worlds.current.id : Settings.get("design");
-        const worlds = Worlds.list.filter(w => !w.plain && (!w.secret || Campaign.secretEarned())).map(w => w.id);      // (no spoilers: only once it's really unlocked)
+        const worlds = Worlds.list.filter(w => !w.plain && (!w.secret || (w.id === "rift" ? Campaign.secretEarned() : Campaign.secretOpen(w.id)))).map(w => w.id);      // (no spoilers: only once it's really unlocked)
         const still = U.motion() === "still";
         const stage = U.el("div", { class: "cr-stage", role: "dialog", "aria-modal": "true", "aria-label": "Credits" });
         const scroller = U.el("div", { class: "cr-scroll", tabindex: "-1" });

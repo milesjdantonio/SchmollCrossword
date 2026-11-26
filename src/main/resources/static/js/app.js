@@ -44,7 +44,7 @@ const App = (() => {
         container.innerHTML = "";
         for (const w of Worlds.list) {
             if (w.plain) continue;                    // Classic isn't a card: it's the plain bar underneath
-            if (w.secret && !Campaign.secretOpen()) continue;   // the Celestial Rift: only once the Void is beaten
+            if (w.secret && !Campaign.secretOpen(w.id)) continue;   // a secret world: only once it has been found
             const card = U.el("button", { type: "button", class: "world-card" + (w.id === Settings.get("design") ? " on" : "") + (compact ? " compact" : ""), "data-wid": w.id, "aria-label": "Switch to the " + w.name + " world" },
                 U.el("canvas", { class: "wc-preview", "aria-hidden": "true" }),
                 U.el("span", { class: "wc-label" }, U.el("b", {}, U.el("i", { text: w.icon }), " " + w.name), null));
@@ -537,9 +537,10 @@ const App = (() => {
         }
         return out + "</svg>";
     }
-    // the start screen's boss parade: a secret world's boss (the Cursed Angel) only once it's really unlocked
+    // the start screen's boss parade: a secret world's boss only once that world is really open (the Cursed Angel
+    // once the Void is beaten)
     const paradeBosses = () => Bosses.list.filter(w => !(Worlds.byId[w] && Worlds.byId[w].secret)
-        || (typeof Campaign !== "undefined" && Campaign.secretEarned()));
+        || (typeof Campaign !== "undefined" && (w === "rift" ? Campaign.secretEarned() : Campaign.secretOpen(w))));
 
     // the start screen's backdrop, shared by the intro and the update notice: rays, rising tiles, the boss parade and a
     // ticker, around the middle part (`press`)
@@ -711,7 +712,7 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     // a secret world picked while it was open for testing goes back to Classic until it's really unlocked
     { const d = Worlds.byId[Settings.get("design")], plain = Worlds.list.find(w => w.plain);
-      if (d && d.secret && !Campaign.secretOpen() && plain) Settings.set("design", plain.id); }
+      if (d && d.secret && !Campaign.secretOpen(d.id) && plain) Settings.set("design", plain.id); }
     Worlds.use(Settings.get("design"));
     refreshWorldUI();
     drawTools();

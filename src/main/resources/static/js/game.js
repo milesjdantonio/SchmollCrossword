@@ -757,7 +757,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: (info.campaign ? (info.campaign.special ? "BOSS" : `${info.campaign.world === "rift" ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase()) + (info.practice ? " · PRACTICE" : "") }),
+            U.el("small", { class: "res-kicker", text: (info.campaign ? (info.campaign.special ? "BOSS" : `${(Worlds.byId[info.campaign.world] || {}).secret ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase()) + (info.practice ? " · PRACTICE" : "") }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         if (info.best != null) {

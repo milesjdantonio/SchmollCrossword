@@ -2019,3 +2019,77 @@ svg.deco-layer { position: absolute; inset: 0; z-index: 1; width: 100%; height: 
 @keyframes tcr-spin { to { transform: rotate(360deg); } }
 .tc.out .tcr-window { animation: tcr-out .5s ease-in forwards; }
 @keyframes tcr-out { to { opacity: 0; transform: scale(1.35); filter: brightness(2.5) blur(3px); } }
+
+/* ======================= the four secret worlds (js/worlds/secret-worlds.js) ======================= */
+/* The Great Hollow: inside the oldest oak (Acorn Woods' type, warmer and darker) */
+[data-world="hollow"] {
+    --bg: #2a170c; --surface: rgba(255, 244, 226, .92); --surface-solid: #fff4e2; --surface-2: #f3e0c2; --ink: #3a2210; --muted: #7a5636;
+    --line: #dcbf94; --hover: #f1dcb8; --cell: #fff8ec; --cell-ink: #3a2210; --grid: #4e2c14; --num: #8a6040;
+    --block: repeating-linear-gradient(90deg, rgba(0, 0, 0, .2) 0 2px, transparent 2px 6px), linear-gradient(#5a3418, #3a200c);
+    --accent: #c8681c; --accent-2: #2f9e7a; --accent-ink: #ffffff; --word: #fbdcae; --sel: #f0a85c; --solved: #f7e6c6;
+    --good: #4f8f3a; --wrong: #c8321f; --revealed: #8f6bc4; --radius: 18px; --radius-sm: 12px; --cell-radius: 6px;
+    --shadow: 0 8px 22px rgba(40, 20, 5, .3); --board-shadow: 0 0 0 5px #4e2c14, 0 0 0 9px #2f190a, 0 16px 34px rgba(0, 0, 0, .45);
+    --font-head: "Patua One", serif; --font-cell: "Patua One", serif; --head-scale: .85; --cell-weight: 400;
+}
+[data-world="hollow"][data-theme="dark"] {
+    --bg: #120a06; --surface: rgba(34, 20, 12, .9); --surface-solid: #22140c; --surface-2: #301d10; --ink: #f6e6cc; --muted: #c09a72;
+    --line: #4a3020; --hover: #301d10; --cell: #2a190e; --cell-ink: #f6e6cc; --grid: #0e0703; --num: #c09a72;
+    --block: repeating-linear-gradient(90deg, rgba(0, 0, 0, .35) 0 2px, transparent 2px 6px), linear-gradient(#1a0e06, #0a0502);
+    --accent: #f0963c; --accent-2: #7dffd4; --accent-ink: #1a0e06; --word: #4a2a14; --sel: #7a4416; --solved: #36220f;
+    --good: #9ce07a; --wrong: #ff7a5c; --revealed: #c3a0ff; --shadow: 0 8px 22px rgba(0, 0, 0, .5);
+    --board-shadow: 0 0 0 5px #3a2010, 0 0 0 9px #1c0e05, 0 0 40px rgba(125, 255, 212, .12), 0 16px 34px rgba(0, 0, 0, .55); color-scheme: dark;
+}
+/* Atlantis: marble, gold and deep water */
+[data-world="atlantis"] {
+    --bg: #0b5a8a; --surface: rgba(244, 251, 255, .92); --surface-solid: #f4fbff; --surface-2: #dcf0fa; --ink: #0d2c44; --muted: #4f7590;
+    --line: #b6d8ea; --hover: #e2f3fb; --cell: #ffffff; --cell-ink: #0d2c44; --grid: #12466a; --num: #4f7590;
+    --block: linear-gradient(135deg, #1d6f99, #0b3a5e);
+    --accent: #1f8fb8; --accent-2: #d9a93a; --accent-ink: #ffffff; --word: #cdeefa; --sel: #8fd3ef; --solved: #e6f6fd;
+    --good: #2f9e6b; --wrong: #d8432c; --revealed: #8f6bc4; --radius: 16px; --radius-sm: 10px; --cell-radius: 6px;
+    --shadow: 0 8px 22px rgba(5, 40, 70, .25); --board-shadow: 0 0 0 5px #d9a93a, 0 0 0 9px #12466a, 0 16px 34px rgba(0, 20, 40, .45);
+    --font-head: "Baloo 2", sans-serif; --font-cell: "Baloo 2", sans-serif; --head-scale: .9;
+}
+[data-world="atlantis"][data-theme="dark"] {
+    --bg: #021428; --surface: rgba(8, 30, 52, .9); --surface-solid: #081e34; --surface-2: #0d2a46; --ink: #dff3ff; --muted: #86b4d2;
+    --line: #1c4466; --hover: #0d2a46; --cell: #0b2238; --cell-ink: #dff3ff; --grid: #020a14; --num: #86b4d2;
+    --block: linear-gradient(135deg, #041a2e, #010a14);
+    --accent: #4fc6ee; --accent-2: #ffd98a; --accent-ink: #021428; --word: #11406a; --sel: #1a6a9c; --solved: #0c3050;
+    --good: #6fe0a6; --wrong: #ff7a5c; --revealed: #c3a0ff; --shadow: 0 8px 22px rgba(0, 0, 0, .55);
+    --board-shadow: 0 0 0 5px #b8892a, 0 0 0 9px #041a2e, 0 0 44px rgba(79, 198, 238, .18), 0 16px 34px rgba(0, 0, 0, .6); color-scheme: dark;
+}
+/* The Sunken Dunes: sandstone and sky */
+[data-world="dunes"] {
+    --bg: #e8b66d; --surface: rgba(255, 249, 236, .92); --surface-solid: #fff9ec; --surface-2: #f6e6c6; --ink: #3e2410; --muted: #85603a;
+    --line: #e6cc9c; --hover: #f6e8cc; --cell: #fffaf0; --cell-ink: #3e2410; --grid: #8a5a2c; --num: #8a6440;
+    --block: repeating-linear-gradient(0deg, rgba(0, 0, 0, .12) 0 3px, transparent 3px 9px), linear-gradient(#b0753a, #8a5424);
+    --accent: #c4621e; --accent-2: #2f8f9d; --accent-ink: #ffffff; --word: #fbe2b4; --sel: #f2b46a; --solved: #fbeccf;
+    --good: #5f8f3a; --wrong: #c8321f; --revealed: #8f6bc4; --radius: 14px; --radius-sm: 10px; --cell-radius: 4px;
+    --shadow: 0 8px 22px rgba(90, 50, 10, .22); --board-shadow: 0 0 0 5px #8a5a2c, 0 0 0 9px #5e3818, 0 16px 34px rgba(60, 30, 5, .4);
+    --font-head: "Rye", serif; --font-cell: "Rye", serif; --head-scale: .85;
+}
+[data-world="dunes"][data-theme="dark"] {
+    --bg: #1a1020; --surface: rgba(40, 26, 30, .9); --surface-solid: #281a1e; --surface-2: #36232a; --ink: #f6e4cc; --muted: #c4a080;
+    --line: #4e3436; --hover: #36232a; --cell: #2e1f22; --cell-ink: #f6e4cc; --grid: #120a0c; --num: #c4a080;
+    --block: repeating-linear-gradient(0deg, rgba(0, 0, 0, .25) 0 3px, transparent 3px 9px), linear-gradient(#3a2420, #1c100e);
+    --accent: #f08a3c; --accent-2: #5fd0d8; --accent-ink: #1a1020; --word: #4e3020; --sel: #7a4620; --solved: #3a2418;
+    --good: #9cc66a; --wrong: #ff7a5c; --revealed: #c3a0ff; --shadow: 0 8px 22px rgba(0, 0, 0, .5);
+    --board-shadow: 0 0 0 5px #4a2e22, 0 0 0 9px #24140e, 0 16px 34px rgba(0, 0, 0, .55); color-scheme: dark;
+}
+/* The Lava Cave: obsidian and fire (always a little dark, even in light) */
+[data-world="cave"] {
+    --bg: #3a1408; --surface: rgba(255, 240, 226, .92); --surface-solid: #fff0e2; --surface-2: #f6dcc6; --ink: #3a1408; --muted: #84482a;
+    --line: #e6bfa0; --hover: #f8e0cc; --cell: #fff7ef; --cell-ink: #2a0e04; --grid: #2a1410; --num: #8a4a2a;
+    --block: linear-gradient(135deg, #2a1a24, #120a10);
+    --accent: #e2481a; --accent-2: #ffb02e; --accent-ink: #ffffff; --word: #ffd8bc; --sel: #ff9a62; --solved: #ffe8d6;
+    --good: #4f8f3a; --wrong: #b81e10; --revealed: #7a5cc4; --radius: 12px; --radius-sm: 8px; --cell-radius: 3px;
+    --shadow: 0 8px 22px rgba(60, 10, 0, .3); --board-shadow: 0 0 0 5px #2a1410, 0 0 0 9px #ff6a1f, 0 16px 34px rgba(60, 10, 0, .5);
+    --font-head: "Bungee", sans-serif; --font-cell: "Bungee", sans-serif; --head-scale: .8;
+}
+[data-world="cave"][data-theme="dark"] {
+    --bg: #0a0504; --surface: rgba(28, 14, 12, .9); --surface-solid: #1c0e0c; --surface-2: #2a1612; --ink: #ffe6d4; --muted: #c88a68;
+    --line: #4a2418; --hover: #2a1612; --cell: #22100c; --cell-ink: #ffe6d4; --grid: #050202; --num: #c88a68;
+    --block: linear-gradient(135deg, #1a1018, #05030a);
+    --accent: #ff6a1f; --accent-2: #ffd03e; --accent-ink: #1a0804; --word: #4a1a0c; --sel: #8a2c0e; --solved: #3a160a;
+    --good: #9ce07a; --wrong: #ff7a5c; --revealed: #c3a0ff; --shadow: 0 8px 22px rgba(0, 0, 0, .6);
+    --board-shadow: 0 0 0 5px #1a0a08, 0 0 0 9px #c8401a, 0 0 46px rgba(255, 106, 31, .22), 0 16px 34px rgba(0, 0, 0, .6); color-scheme: dark;
+}

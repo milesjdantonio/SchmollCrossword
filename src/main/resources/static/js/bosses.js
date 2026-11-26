@@ -513,6 +513,92 @@ const Bosses = (() => {
                 [214, 196, sparkle("#ffe7a3")], [26, 210, `<path d="M0 -8 Q4 -3 2 6 L0 8 L-2 6 Q-4 -3 0 -8Z" fill="#1c1230" stroke="#9b6bff" stroke-width="1.2"/>`], [158, 20, sparkle("#ffffff")]])}</g>`;
         } };
 
+    // ---------- secret: The Great Hollow: The Giant Squirrel ----------
+    B.hollow = { name: "The Giant Squirrel", color: "#c8681c", taunt: "Every nut is mine. Every word too.", arena: ["#8a4a1c", "#1c0e05"], fx: "leaves",
+        art: u => {
+            const tail = "M150 196 C214 196 236 140 222 92 C210 50 168 30 140 52 C170 52 190 74 186 104 C182 134 160 150 150 196 Z";
+            return `<defs>${lin(u("f"), [[0, "#e0883a"], [1, "#a8521a"]])}${lin(u("t"), [[0, "#f2a24e"], [1, "#b85a1c"]], 0, 0, 1, 1)}${rad(u("e"), [[0, "#fff3b0"], [0.6, "#ffb21e"], [1, "#c86a00"]], 0.5, 0.5, 0.6)}</defs>
+            <g class="bz-float">${shadow(224, 84)}
+            <g class="bz-sway" style="transform-origin:150px 196px"><path d="${tail}" fill="url(#${u("t")})" ${st()}/>
+                <path d="M196 70 q10 18 4 40 M210 96 q8 18 0 40 M176 56 q14 6 18 22" stroke="#fff0d8" stroke-width="3" fill="none" opacity=".55"/></g>
+            <path d="M78 52 L70 16 L96 40 Z" fill="#a8521a" ${st()}/><path d="M76 44 L74 26 L88 40 Z" fill="#ffb0a0"/>
+            <path d="M162 52 L170 16 L144 40 Z" fill="#a8521a" ${st()}/><path d="M164 44 L166 26 L152 40 Z" fill="#ffb0a0"/>
+            <ellipse cx="116" cy="150" rx="60" ry="64" fill="url(#${u("f")})" ${st()}/>
+            <ellipse cx="116" cy="164" rx="36" ry="44" fill="#f6dcb0" ${st(3)}/>
+            <circle cx="120" cy="86" r="48" fill="url(#${u("f")})" ${st()}/>
+            <ellipse cx="88" cy="104" rx="22" ry="18" fill="#f2b06a" ${st(3)}/><ellipse cx="152" cy="104" rx="22" ry="18" fill="#f2b06a" ${st(3)}/>
+            ${eyes({ y: 80, gap: 20, r: 14, iris: `url(#${u("e")})`, brow: "angry" })}
+            <ellipse cx="120" cy="100" rx="9" ry="6" fill="#3e2414" ${st(2.5)}/>
+            <path d="M108 112 q12 8 24 0" fill="none" ${st(3)}/><rect x="112" y="112" width="8" height="12" rx="2" fill="#fff" ${st(2.5)}/><rect x="120" y="112" width="8" height="12" rx="2" fill="#fff" ${st(2.5)}/>
+            <g class="bz-sway" style="transform-origin:80px 150px">
+                <ellipse cx="92" cy="176" rx="30" ry="34" fill="#b9773e" ${st()}/><path d="M60 158 a32 22 0 0 1 64 0z" fill="#6e4429" ${st()}/><path d="M92 136 v-10" ${st(6)}/>
+                <path d="M70 166 q6 18 0 30" stroke="#fff" stroke-width="4" opacity=".25" fill="none"/>
+                <ellipse cx="66" cy="172" rx="12" ry="9" fill="#e0883a" ${st(3)}/><ellipse cx="118" cy="172" rx="12" ry="9" fill="#e0883a" ${st(3)}/></g>
+            <ellipse cx="90" cy="214" rx="18" ry="9" fill="#a8521a" ${st(3)}/><ellipse cx="142" cy="214" rx="18" ry="9" fill="#a8521a" ${st(3)}/>
+            ${bits([[30, 60, `<path d="M0 0 q8 -10 14 -2 q-6 10 -14 2z" fill="#e8792b" ${st(2)}/>`], [208, 30, `<ellipse rx="6" ry="7" fill="#b9773e" ${st(2)}/>`], [26, 150, `<ellipse rx="5" ry="6" fill="#b9773e" ${st(2)}/>`]])}
+            </g>`;
+        } };
+
+    // ---------- secret: Atlantis: Poseidon ----------
+    B.atlantis = { name: "Poseidon", color: "#1f8fb8", taunt: "The sea keeps what it takes. So will I.", arena: ["#0b5a8a", "#01101e"], fx: "bubbles",
+        art: u => `<defs>${lin(u("s"), [[0, "#5ec8c8"], [1, "#2a7f96"]])}${lin(u("g"), [[0, "#ffe27a"], [1, "#c8901a"]])}${lin(u("w"), [[0, "#bfe9ff"], [1, "#2a8fd6"]])}${rad(u("e"), [[0, "#e8ffff"], [0.6, "#4fe0ee"], [1, "#0a8aa6"]], 0.5, 0.5, 0.6)}</defs>
+        <g class="bz-float">
+        <path d="M14 214 q26 -22 52 0 q26 22 52 0 q26 -22 52 0 q26 22 52 0 v20 h-208z" fill="url(#${u("w")})" ${st()}/>
+        <path d="M34 196 q-20 -40 14 -78 q30 -30 72 -30 q42 0 72 30 q34 38 14 78 z" fill="url(#${u("s")})" ${st()}/>
+        <g class="bz-sway" style="transform-origin:190px 150px">
+            <path d="M188 158 L206 30" ${st(10)}/><path d="M188 158 L206 30" stroke="url(#${u("g")})" stroke-width="5" stroke-linecap="round"/>
+            <path d="M184 46 L190 12 M206 40 L208 4 M228 50 L226 14 M186 46 Q206 58 228 50" fill="none" ${st(8)}/><path d="M184 46 L190 12 M206 40 L208 4 M228 50 L226 14 M186 46 Q206 58 228 50" fill="none" stroke="url(#${u("g")})" stroke-width="4" stroke-linecap="round"/>
+            <circle cx="190" cy="156" r="14" fill="url(#${u("s")})" ${st(3)}/></g>
+        <path d="M64 92 q-18 -30 4 -54 q18 -20 52 -18 q34 -2 52 18 q22 24 4 54" fill="#eaf6ff" ${st()}/>
+        <circle cx="120" cy="88" r="40" fill="url(#${u("s")})" ${st()}/>
+        <path d="M80 56 L86 30 L98 50 L108 22 L120 48 L132 22 L142 50 L154 30 L160 56 Z" fill="url(#${u("g")})" ${st(3)}/><circle cx="120" cy="44" r="4" fill="#4fe0ee"/>
+        ${eyes({ y: 84, gap: 18, r: 11, iris: `url(#${u("e")})`, brow: "stern" })}
+        <path d="M80 104 q-8 40 18 74 q10 -12 22 -10 q12 -2 22 10 q26 -34 18 -74 q-14 14 -40 14 q-26 0 -40 -14z" fill="#eaf6ff" ${st()}/>
+        <path d="M96 120 q6 10 0 22 M120 124 q6 12 0 26 M144 120 q-6 10 0 22" stroke="#9fc9e0" stroke-width="2.5" fill="none"/>
+        <path d="M104 106 q16 8 32 0" fill="none" ${st(3)}/>
+        <path d="M40 150 q-10 30 20 46 M44 120 q-16 10 -12 30" stroke="#2f9e6b" stroke-width="5" fill="none" stroke-linecap="round"/>
+        ${bits([[28, 80, `<circle r="5" fill="none" stroke="#bfe9ff" stroke-width="2"/>`], [214, 120, `<circle r="4" fill="none" stroke="#bfe9ff" stroke-width="2"/>`], [40, 40, `<circle r="3" fill="none" stroke="#bfe9ff" stroke-width="2"/>`]])}
+        </g>` };
+
+    // ---------- secret: the Sunken Dunes: The Sandworm ----------
+    B.dunes = { name: "The Sandworm", color: "#c4621e", taunt: "I swallow sentences whole.", arena: ["#c98a3c", "#3a1c0a"], fx: "sand",
+        art: u => {
+            let rings = "";
+            for (let i = 0; i < 6; i++) { const y = 196 - i * 22, x = 120 + Math.sin(i * 0.9) * 26 - 10; rings += `<path d="M${x - 34 + i * 2} ${y} q${34 - i * 2} 10 ${68 - i * 4} 0" fill="none" stroke="#8a4f22" stroke-width="3" opacity=".7"/>`; }
+            let teeth = "";
+            for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, x = 124 + Math.cos(a) * 30, y = 56 + Math.sin(a) * 22, ix = 124 + Math.cos(a) * 20, iy = 56 + Math.sin(a) * 14;
+                teeth += `<path d="M${f1(x - Math.sin(a) * 4)} ${f1(y + Math.cos(a) * 3)} L${f1(ix)} ${f1(iy)} L${f1(x + Math.sin(a) * 4)} ${f1(y - Math.cos(a) * 3)}" fill="#fff6e0" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/>`; }
+            return `<defs>${lin(u("b"), [[0, "#e8b06a"], [1, "#a8642a"]], 0, 0, 1, 0)}${rad(u("m"), [[0, "#3a0a0a"], [0.7, "#7a1a14"], [1, "#c8402a"]], 0.5, 0.5, 0.55)}${rad(u("e"), [[0, "#fff3b0"], [0.6, "#ff9f2e"], [1, "#b84a00"]], 0.5, 0.5, 0.6)}</defs>
+            <g class="bz-float">${shadow(226, 92)}
+            <path d="M10 226 q60 -40 110 -36 q60 2 110 36z" fill="#e0a95f" ${st()}/>
+            <g class="bz-sway" style="transform-origin:120px 210px">
+            <path d="M84 210 C70 170 110 150 96 112 C86 84 96 60 124 48 C152 60 164 84 152 112 C140 150 168 170 156 210 Z" fill="url(#${u("b")})" ${st()}/>
+            ${rings}
+            <ellipse cx="124" cy="56" rx="38" ry="28" fill="#c87a3a" ${st()}/>
+            <ellipse cx="124" cy="56" rx="30" ry="22" fill="url(#${u("m")})" ${st(3)}/>${teeth}
+            <ellipse cx="124" cy="56" rx="10" ry="7" fill="#1a0404"/>
+            ${eyes({ x: 124, y: 96, gap: 30, r: 8, iris: `url(#${u("e")})`, brow: "angry" })}</g>
+            <path d="M26 214 q10 -10 22 -4 M190 212 q12 -8 24 0" stroke="#b8803a" stroke-width="3" fill="none"/>
+            ${bits([[40, 120, `<circle r="3" fill="#e0a95f"/>`], [200, 100, `<circle r="2.5" fill="#e0a95f"/>`], [60, 70, `<circle r="2" fill="#e0a95f"/>`]])}
+            </g>`;
+        } };
+
+    // ---------- secret: the Lava Cave: The Lava Beast ----------
+    B.cave = { name: "The Lava Beast", color: "#ff6a1f", taunt: "I am the mountain. Burn.", arena: ["#8a2a0a", "#120402"], fx: "embers",
+        art: u => `<defs>${lin(u("r"), [[0, "#4a3438"], [1, "#1c1216"]])}${lin(u("l"), [[0, "#fff1a0"], [0.5, "#ffb02e"], [1, "#ff4a10"]])}${rad(u("e"), [[0, "#ffffff"], [0.5, "#ffd03e"], [1, "#ff4a10"]], 0.5, 0.5, 0.6)}</defs>
+        <g class="bz-float">
+        <ellipse cx="120" cy="222" rx="96" ry="14" fill="url(#${u("l")})" ${st(3)}/>
+        <path d="M60 60 L44 18 L80 46 Z" fill="url(#${u("r")})" ${st()}/><path d="M180 60 L196 18 L160 46 Z" fill="url(#${u("r")})" ${st()}/>
+        <path d="M58 200 L46 120 L70 64 L120 48 L170 64 L194 120 L182 200 Z" fill="url(#${u("r")})" ${st()}/>
+        <path d="M80 80 L100 110 L88 140 L104 176 M150 76 L136 104 L156 132 L142 170 M120 120 L118 150 L126 196" fill="none" stroke="url(#${u("l")})" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" class="bz-glow"/>
+        <g class="bz-sway" style="transform-origin:58px 120px"><path d="M58 112 L22 150 L30 192 L62 182 L60 150 Z" fill="url(#${u("r")})" ${st()}/><path d="M34 160 l14 14 M40 182 l12 -6" stroke="url(#${u("l")})" stroke-width="4" stroke-linecap="round"/></g>
+        <g class="bz-sway" style="transform-origin:182px 120px;animation-delay:-1s"><path d="M182 112 L218 150 L210 192 L178 182 L180 150 Z" fill="url(#${u("r")})" ${st()}/><path d="M206 160 l-14 14 M200 182 l-12 -6" stroke="url(#${u("l")})" stroke-width="4" stroke-linecap="round"/></g>
+        ${eyes({ y: 92, gap: 22, r: 12, iris: `url(#${u("e")})`, brow: "angry", white: "#2a1a1e" })}
+        <path d="M92 124 L104 132 L116 124 L128 132 L140 124 L148 130 Q120 150 92 130 Z" fill="url(#${u("l")})" ${st(3)}/>
+        <path d="M110 140 q2 14 -2 22 M132 140 q-2 12 2 18" stroke="#ffb02e" stroke-width="4" stroke-linecap="round" fill="none" class="bz-glow"/>
+        ${bits([[30, 70, `<circle r="3" fill="#ffd03e"/>`], [210, 60, `<circle r="2.5" fill="#ff8a2a"/>`], [200, 200, `<circle r="3" fill="#ffd03e"/>`]])}
+        </g>` };
+
     // =============================================================================================
     // Rendering
     // =============================================================================================
@@ -535,6 +621,10 @@ const Bosses = (() => {
         library: { story: "The Phantom Librarian haunts the stacks and has bound the library's page into a book that reads itself backwards. Anyone who solves a clue out loud gets shushed into silence.", stakes: "Break the Phantom's spell and take the page back from the haunted shelves." },
         volcano: { story: "Magma Wyrm swallowed its page of the Everbook and sleeps on it in the heart of the volcano. Every time it snores, the island shakes and another word melts.", stakes: "Wake the Wyrm and pull the page out of the fire before it melts." },
         rift: { story: "Long before the Void, the Cursed Angel was the Everbook's guardian. Then it tried to keep every word for itself, and the old light locked it away at the edge of the sky. The Void kept that prison shut for a thousand years. When the Void fell, the prison cracked, and the angel came out reaching for the book you just put back together.", stakes: "Keep the Everbook out of the angel's hands and close the rift for good." },
+        hollow: { story: "Deep inside the oldest oak in Acorn Woods lives a squirrel the size of a house. It has been hoarding for a hundred winters: nuts, acorns, and now words. Every word it buries in the Hollow is gone from the forest for good.", stakes: "Dig up the Hollow's hoard before the forest forgets how to talk." },
+        atlantis: { story: "Far below the reef, Atlantis never really sank: its king pulled it down. Poseidon collects whatever the sea washes past, and lately he has been collecting letters, spearing them on his trident one by one.", stakes: "Take back the letters before the drowned city keeps them forever." },
+        dunes: { story: "The Sphinx guards the desert, but something older swims under it. The Sandworm swallows whole sentences and spits out sand, and the dunes are slowly burying the old road and every sign along it.", stakes: "Bring the Sandworm up into the light and get the desert's words back." },
+        cave: { story: "Under Volcano Island is a cave even the Magma Wyrm won't go near. The Lava Beast was the mountain's heart long before the Wyrm, and it melts down every word that falls into the fire.", stakes: "Cool the Beast's heart and pull the words out of the lava." },
         space: { story: "The Void tore the Everbook apart in the first place. It wants every word in the universe to fall into it and disappear. The last page, and all the pieces you've won back, are what stand in its way.", stakes: "This is it. Put the Everbook back together and close the Void forever." }
     };
     for (const k of Object.keys(LORE)) if (B[k]) Object.assign(B[k], LORE[k]);
@@ -550,6 +640,7 @@ const Bosses = (() => {
     // ---------------------------------------------------------------------------------------------
     // scenery along the bottom of the arena, in two layers (far and near), drawn on a 1600 x 400 strip
     function horizon(world, far, near) {
+        world = { hollow: "squirrel", atlantis: "ocean", dunes: "desert", cave: "volcano" }[world] || world;   // (the newest secret worlds: their parent's scenery for now)
         const r = U.rng(world.length * 977 + 5);
         const rnd = (a, b) => a + r() * (b - a);
         const W = 1600, H = 400;

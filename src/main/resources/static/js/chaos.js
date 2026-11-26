@@ -674,5 +674,7 @@ const Chaos = (() => {
         if (ctx && cv) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); }
         cv = null;
     }
+    // the newest secret worlds' arenas run their parent world's chaos for now
+    for (const [w, parent] of [["hollow", "squirrel"], ["atlantis", "ocean"], ["dunes", "desert"], ["cave", "volcano"]]) if (WORLDS[parent] && !WORLDS[w]) WORLDS[w] = WORLDS[parent];
     return { start, stop, get level() { return level; }, worlds: Object.keys(WORLDS) };
 })();

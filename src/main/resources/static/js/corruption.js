@@ -444,7 +444,7 @@ const Corruption = (() => {
         tick++;
     }, 250);
 
-    function start({ key, seed, level, par, entries, onLose }) {
+    function start({ key, seed, level, par, entries, onLose, world = "rift" }) {
         // the same level again (you went to another screen and came back): carry on where it was
         if (s && !s.over && s.key === key && String(s.seed) === String(seed)) { s.onLose = onLose; s.lastSec = g().seconds; bar.hidden = false; root.classList.add("in-rift"); draw(); return; }
         stopQuiet();
@@ -452,8 +452,8 @@ const Corruption = (() => {
         const keep = saved && saved.key === key && String(saved.seed) === String(seed) && !g().solved;
         s = { key, seed, level: U.clamp(level, 1, 4), value: keep ? saved.value : 0, peak: keep ? saved.peak : 0, rate: RATE_SHARE / Math.max(60, par), perWord: WORDS_SHARE / Math.max(4, entries),
             tricks: [], nextCast: 9, nextSpell: 16, seepAcc: 0, pending: null, lastSpell: null, lastSec: g().seconds, onLose, over: false, countered: 0, lastKind: null, warned: false, credited: new Set(), ready: false };
-        const holder = bar.querySelector(".rw-angel");
-        if (!holder.childNodes.length && typeof Bosses !== "undefined") holder.innerHTML = Bosses.inner("rift");
+        const holder = bar.querySelector(".rw-angel");                  // (the secret world's own boss watches)
+        if (holder.dataset.world !== world && typeof Bosses !== "undefined") { holder.innerHTML = Bosses.inner(world); holder.dataset.world = world; }
         bar.hidden = false;
         root.classList.add("in-rift");
         draw();

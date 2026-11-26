@@ -1744,9 +1744,12 @@ const Travel = (() => {
     // ---------------------------------------------------------------------------------------------
     // Playing a scene
     // ---------------------------------------------------------------------------------------------
+    // a secret world without a scene of its own yet goes in by its parent world's (the way into it starts there)
+    const KIN = { hollow: "squirrel", atlantis: "ocean", dunes: "desert", cave: "volcano" };
     async function arrive(c, from, to, look, { index = WORLDS.indexOf(to), total = 15 } = {}) {
-        const scene = S[to] || S.paper, D = Defs("tv-" + to), built = scene.build(D, seeded(WORLDS.indexOf(to) + 3));
-        const [top, bottom] = SKY[to] || SKY.paper, [ftop, fbottom] = SKY[from] || SKY[to] || SKY.paper;
+        const as = S[to] ? to : KIN[to] || "paper";
+        const scene = S[as], D = Defs("tv-" + to), built = scene.build(D, seeded(WORLDS.indexOf(as) + 3));
+        const [top, bottom] = SKY[as] || SKY.paper, [ftop, fbottom] = SKY[from] || SKY[as] || SKY.paper;
         const w = typeof Worlds !== "undefined" && Worlds.byId[to];
         const el = U.el("div", { class: "tv-stage", "aria-hidden": "true" });
         el.innerHTML = `<svg class="tv-svg hero-art" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">
@@ -1757,7 +1760,7 @@ const Travel = (() => {
             <g data-k="cam">${built.back}${built.under || ""}${SHADOW}<g data-k="hero"><g data-k="heroIn">${Hero.inner(look)}</g></g>${built.front || ""}</g>
             <rect data-k="tint" width="${W}" height="${H}" fill="#000" opacity="0"/><rect width="${W}" height="${H}" fill="url(#tv-vig)"/><rect data-k="flash" width="${W}" height="${H}" fill="#fff" opacity="0"/></svg>
             <canvas class="tv-fx"></canvas>
-            <div class="tv-card"><small>${to === "rift" ? "Secret World" : `World ${index + 1} of ${total}`}</small><b>${U.esc(w ? w.name : to)}</b></div>
+            <div class="tv-card"><small>${w && w.secret ? "Secret World" : `World ${index + 1} of ${total}`}</small><b>${U.esc(w ? w.name : to)}</b></div>
             <p class="tv-skip">Click to skip</p>`;
         document.getElementById("overlay").appendChild(el);
         const cv = el.querySelector("canvas"), card = el.querySelector(".tv-card");
