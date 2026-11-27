@@ -517,7 +517,8 @@ const Campaign = (() => {
             data.heroAt = { si: f.si, level: 1 };
             save();
             if (data.section !== f.si) { data.section = f.si; data.sel = 1; save(); showWorld(true); }
-            await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }), { stayOn: "campaign" });
+            await U.need("travel").catch(() => null);
+            if (typeof Travel !== "undefined") await FX.cinematic(c => Travel.arrive(c, from, to, heroLook(), { index: f.si, total: MAIN }), { stayOn: "campaign" });
             if (U.view() !== "campaign") { data.arrived = before; save(); return; }    // left the map: it plays next time
             drawHero();
             return;
@@ -930,7 +931,8 @@ const Campaign = (() => {
             data.arrived = si;
             data.section = si; data.sel = restStop(si); data.heroAt = { si, level: 1 };
             save();
-            await FX.cinematic(c => Travel.arrive(c, sec.parent, sec.world, heroLook(), { index: si, total: MAIN }), { stayOn: "campaign" });
+            await U.need("travel").catch(() => null);
+            if (typeof Travel !== "undefined") await FX.cinematic(c => Travel.arrive(c, sec.parent, sec.world, heroLook(), { index: si, total: MAIN }), { stayOn: "campaign" });
             if (U.view() !== "campaign") { data.arrived = before; save(); return; }      // left the map: it plays next time
             showWorld(true);
             drawHero();
@@ -1278,7 +1280,8 @@ const Campaign = (() => {
             save();
             setTimeout(async () => {
                 if (U.view() !== "campaign") return;
-                await FX.cinematic(c => Story.intro(c, storyPages()), { stayOn: "campaign" });
+                await U.need("story").catch(() => null);
+                if (typeof Story !== "undefined") await FX.cinematic(c => Story.intro(c, storyPages()), { stayOn: "campaign" });
                 if (U.view() === "campaign") heroOnMap();
                 else { data.storySeen = false; save(); }            // left the map during it: it plays next time
             }, 400);
@@ -1744,7 +1747,7 @@ const Campaign = (() => {
             pages.forEach((p, i) => list.append(U.el("li", {}, U.el("button", { type: "button", class: "eb-leaf" + (p.won ? " won" : "") + (i === book.page ? " on" : ""), style: { "--c": p.color },
                 "aria-pressed": i === book.page ? "true" : "false", "aria-label": `Page ${i + 1}, ${p.name}: ${p.won ? "won back" : "held by " + p.boss}`,
                 onclick: () => { book.page = i; Sound.play("flip"); drawBook(); } }, U.el("b", { text: String(i + 1) }), p.won ? null : icon("lock")))));
-            left.append(list, U.el("button", { type: "button", class: "eb-quiet", onclick: () => { closeBook(); setTimeout(() => FX.cinematic(c => Story.intro(c, storyPages())), 200); } }, icon("replay"), U.el("span", { text: "Watch the Story Again" })));
+            left.append(list, U.el("button", { type: "button", class: "eb-quiet", onclick: () => { closeBook(); setTimeout(() => U.need("story").then(() => FX.cinematic(c => Story.intro(c, storyPages()))).catch(() => null), 200); } }, icon("replay"), U.el("span", { text: "Watch the Story Again" })));
             const p = pages[book.page], b = bossOf(p.world), w = Worlds.byId[p.world], si = map.findIndex(s => s.world === p.world);
             right.dataset.world = p.world;
             right.dataset.theme = Worlds.modeFor(w);
@@ -5083,6 +5086,8 @@ const Campaign = (() => {
     async function storyAfterBoss(c, info) {
         const cm = info && info.campaign;
         if (!cm || !cm.boss || !cm.firstClear || !map) return;
+        await U.need("story").catch(() => null);
+        if (typeof Story === "undefined") return;
         if (cm.epilogue) { await Story.epilogue(c, storyPages(), heroLook()); return; }       // the Cursed Angel: the end of the story
         const pages = storyPages();
         await Story.page(c, pages, cm.world);

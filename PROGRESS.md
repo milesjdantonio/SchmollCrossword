@@ -426,7 +426,12 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         its content hash (Spring's resource chain, `spring.web.resources.chain.strategy.content.*`; CSS font links
         too), `LongCache` keeps those names a year (`immutable`, never a 404); the page and plain names stay
         no-cache. The chain's cache is off locally and on in the Dockerfile (`RESOURCE_CACHE`). `StaticFilesTest`.
-      - [ ] Fewer requests (68 scripts, 13 stylesheets) and lazy-loading story/credits/how-to
+      - [x] Lazy (2026-11-27): the arrival scenes (travel.js, 235 KB) and the story (story.js) aren't run at start-up:
+        index.html lists them as `<link rel="prefetch" data-lazy>` (versioned, fetched when idle) and `U.need(name)`
+        runs one on first use (campaign.js's three places). How to Play, Credits and Legal wire their own buttons as
+        they load, so they stay as they are.
+      - [ ] Fewer requests (66 scripts, 13 stylesheets): with the versioned names a repeat visit fetches none of them,
+        so bundling only helps a first visit; left for now
 - [ ] Accessibility and settings: text and cell size, reduced motion, optional timer and mistake counter,
       customisable keys, the grid usable with a screen reader (role grid, live clue announcements), boss assist
 

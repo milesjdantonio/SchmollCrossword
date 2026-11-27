@@ -332,8 +332,26 @@ const U = (() => {
         top(d) { const live = dialogs.filter(x => x.isConnected); return !live.length || live[live.length - 1] === d; }
     };
 
+    // Parts of the game only some moments need (the arrival scenes, the story) aren't run at start-up: index.html
+    // lists them as <link rel="prefetch" data-lazy="name"> (the browser fetches them when it's idle, under their
+    // versioned names) and need("name") runs one the first time it's wanted. Resolves once it has run.
+    const lazy = new Map();
+    function need(name) {
+        if (!lazy.has(name)) {
+            const link = document.querySelector(`link[data-lazy="${name}"]`);
+            lazy.set(name, new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src = link ? link.getAttribute("href") : `js/${name}.js`;
+                s.onload = resolve;
+                s.onerror = () => { lazy.delete(name); s.remove(); reject(new Error(`Couldn't load ${name}`)); };
+                document.head.appendChild(s);
+            }));
+        }
+        return lazy.get(name);
+    }
+
     return { $, $$, el, svg, clamp, lerp, rand, pick, ease, rng, hash, store, saveRaw, saveFailed, motion, wait, restart, fmtTime, esc, touch, view, debounce, center, ask, pin, zoom, dialog,
-        CONTACT, fetchJson, describe, failCard, icon };
+        CONTACT, fetchJson, describe, failCard, icon, need };
 })();
 
 // The event bus. Bus.on("win", fn) listens; Bus.emit("win", info) tells every listener.
