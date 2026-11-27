@@ -506,7 +506,13 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         anglerfish and plankton by night; win: a Rive giant clam `ocean-win` opens its frilled mantle and lifts a
         glowing pearl, Motion bobs the squares). Candy's and the Reef's old DOM props stay as invisible anchors
         (`visibility: hidden`) that place the bursts.
-      - To do: Snow Day, Acorn Woods, Deep Space, Classic
+        **Snow Day** (snow-scene.js: a low sun with a halo and sun dogs, ice clouds; alpine peaks with snowcaps, a
+        broken snowline and lit/shaded faces split along each spine, forests on the lower slopes; a frozen lake
+        with cracks and a skater; a village with cabins and a chapel, chimney smoke; drifts with blue shadows, big
+        pines and birches, a fence, a sled, a winterberry bush with the cardinal perched; Milky Way, aurora, a ringed
+        moon and lit windows by night; win: a Rive snowman `snow-win` builds itself (rolling base, squash, scarf,
+        coal face, carrot, top hat, waving arm) instead of the SVG one).
+      - To do: Acorn Woods, Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention
