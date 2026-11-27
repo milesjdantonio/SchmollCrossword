@@ -41,6 +41,35 @@ const App = (() => {
 
     const previewCache = new Map();                 // world|mode|size -> its preview picture
     // a card for each world, with a little live preview of its scene
+    // The world cards' pictures are kept between visits too (a small WebP each in browser storage), named with the
+    // page's script versions, so they're drawn again only after the scenes change.
+    const PREVIEW_SIG = String(U.hash([...document.scripts].map(x => x.getAttribute("src") || "").join("|")));
+    let previewStore = null;
+    function previews() {
+        if (!previewStore) { const s = U.store.get("previews", null); previewStore = s && s.sig === PREVIEW_SIG ? s : { sig: PREVIEW_SIG, items: {} }; }
+        return previewStore;
+    }
+    const storedPreview = key => previews().items[key] || null;
+    // Reading a canvas back to encode it waits for everything drawn on it, so each card's picture is saved later, one at
+    // a time when the page is idle, and they're written to storage together a moment after the last one.
+    const savePreviews = U.debounce(() => { try { U.store.set("previews", previewStore); } catch (err) { /* storage full or blocked: drawn again next time */ } }, 1500);
+    const toSave = [];
+    const idle = f => (window.requestIdleCallback ? requestIdleCallback(f, { timeout: 4000 }) : setTimeout(f, 200));
+    function saveNext() {
+        const job = toSave.shift();
+        if (!job) return;
+        const [key, cv] = job;
+        if (!cv.toBlob) return;
+        cv.toBlob(blob => {
+            if (blob) { const r = new FileReader(); r.onload = () => { previews().items[key] = r.result; savePreviews(); }; r.readAsDataURL(blob); }
+            if (toSave.length) idle(saveNext);
+        }, "image/webp", 0.82);
+    }
+    function storePreview(key, cv) {
+        toSave.push([key, cv]);
+        if (toSave.length === 1) setTimeout(() => idle(saveNext), 1000);
+    }
+
     function worldCards(container, { compact = false } = {}) {
         container.innerHTML = "";
         for (const w of Worlds.list) {
@@ -67,12 +96,17 @@ const App = (() => {
         const paint = card => {
             const cv = card.querySelector("canvas"), key = `${card.dataset.wid}|${theme}|${cv.clientWidth}x${cv.clientHeight}`;
             let anim = null, raf = 0, last = 0;
-            const kept = previewCache.get(key);
+            const kept = previewCache.get(key), stored = !kept && storedPreview(key);
             if (kept) { cv.width = kept.width; cv.height = kept.height; cv.getContext("2d").drawImage(kept, 0, 0); }
-            else try {
+            else if (stored) {                                  // drawn on an earlier visit: just the picture
+                const img = new Image();
+                img.onload = () => { cv.width = img.width; cv.height = img.height; cv.getContext("2d").drawImage(img, 0, 0); previewCache.set(key, cv); };
+                img.src = stored;
+            } else try {
                 anim = Worlds.preview(cv, card.dataset.wid, theme);
                 const copy = document.createElement("canvas"); copy.width = cv.width; copy.height = cv.height; copy.getContext("2d").drawImage(cv, 0, 0);
                 previewCache.set(key, copy);
+                storePreview(key, copy);
             } catch (err) { console.error(err); }
             const loop = now => { const dt = U.clamp((now - last) / 1000, 0, 0.05); last = now; anim.step(dt); raf = requestAnimationFrame(loop); };
             card.addEventListener("pointerenter", () => {
@@ -82,14 +116,21 @@ const App = (() => {
             });
             card.addEventListener("pointerleave", () => { cancelAnimationFrame(raf); raf = 0; });
         };
-        let i = 0;
+        // only cards on (or near) the screen are painted, one per frame (a detailed scene takes a while to build)
+        const queue = [];
+        let busy = false;
         const next = () => {
+            busy = false;
             if (!container.isConnected || Settings.get("theme") !== theme) return;
-            const t0 = performance.now();
-            while (i < cards.length && performance.now() - t0 < 10) paint(cards[i++]);
-            if (i < cards.length) requestAnimationFrame(next);
+            const card = queue.shift();
+            if (card) paint(card);
+            if (queue.length) { busy = true; requestAnimationFrame(next); }
         };
-        requestAnimationFrame(next);
+        const seen = new IntersectionObserver(entries => {
+            for (const e of entries) if (e.isIntersecting) { seen.unobserve(e.target); queue.push(e.target); }
+            if (queue.length && !busy) { busy = true; requestAnimationFrame(next); }
+        }, { rootMargin: "300px" });
+        cards.forEach(card => seen.observe(card));
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -97,6 +138,9 @@ const App = (() => {
     // ---------------------------------------------------------------------------------------------
     let firstShow = true, warmQueued = false;
     function showView() {
+        // (before anything changes, while the page's layout is still the last frame's: scrolling after the new screen
+        // is shown made the browser lay the whole page out on the spot)
+        scrollTo({ top: 0 });
         const view = U.view();
         const gameView = view === "daily" || view === "level";
         if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
@@ -120,7 +164,6 @@ const App = (() => {
         // a campaign level needs the map first (which world it is, its difficulty); after a reload it isn't loaded yet
         else if (view === "level") Campaign.ready().then(() => { if (U.view() === "level") Game.show(view); }, () => Game.show(view));
         else if (view !== "campaign") Game.show(view);
-        scrollTo({ top: 0 });
         if (!warmQueued && (view === "home" || view === "stats" || view === "settings")) {
             // once the page has settled, draw the campaign's stage and the play stage unseen so their first openings don't stall
             warmQueued = true;
@@ -206,7 +249,17 @@ const App = (() => {
     }
     setInterval(drawCountdown, 1000);
     // the heatmap shows as many weeks as fit, so redraw it when the window changes size
-    addEventListener("resize", U.debounce(() => { if (!screens.stats.hidden) drawHeatmap(Game.scores()); }, 200));
+    // the heatmap shows as many weeks as fit its card: its width is read from a ResizeObserver, after the browser's own
+    // layout, because asking for it while drawing the Stats screen made the browser lay the page out early
+    let heatWidth = 0;
+    if (window.ResizeObserver) new ResizeObserver(([e]) => {
+        const w = Math.round(e.contentRect.width);
+        if (!w || w === heatWidth) return;
+        const before = weeksFor(heatWidth);
+        heatWidth = w;
+        if (weeksFor(w) !== before && !screens.stats.hidden) drawHeatmap(Game.scores());
+    }).observe($("#heatmap"));
+    const weeksFor = w => U.clamp(Math.floor((w || 400) / 24), 10, 26);
     document.querySelectorAll(".daily-chip").forEach(chip => chip.addEventListener("click", () => { Game.difficultyFor.daily = chip.dataset.difficulty; }));
 
     // ---------------------------------------------------------------------------------------------
@@ -267,7 +320,7 @@ const App = (() => {
         for (const k of Object.keys(all)) if (!all[k].surrendered) per[dayOf(k)] = (per[dayOf(k)] || 0) + 1;
         const el = $("#heatmap");
         el.innerHTML = "";
-        const now = new Date(), WEEKS = U.clamp(Math.floor((el.clientWidth || 400) / 24), 10, 26);
+        const now = new Date(), WEEKS = weeksFor(window.ResizeObserver ? heatWidth : el.clientWidth);
         el.style.setProperty("--weeks", WEEKS);
         $("#heatmap-title").textContent = `Last ${WEEKS} Weeks`;
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - (WEEKS - 1) * 7);

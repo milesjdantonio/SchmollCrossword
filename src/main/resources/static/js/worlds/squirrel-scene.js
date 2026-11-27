@@ -18,7 +18,15 @@ function SquirrelScene(W, H, opts, kit) {
     let geese = null, nextGeese = preview ? 1e9 : U.rand(4, 10), digger = null, nextDigger = preview ? 1e9 : U.rand(5, 10), runner = null, nextRunner = preview ? 1e9 : U.rand(3, 8);
     let owlNext = 3, owlBlink = 0, gust = 0, gustLeft = 0, nextGust = 10, sun = null;
     function paint(w, h, fn) { const c = Worlds.canvas(w, h), g = c.getContext("2d"); fn(g); return c; }
-    const mix = (a, b, t) => { const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16)); return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
+    // blends two "#rrggbb" colours; remembered, because the leaves and specks ask for the same few blends thousands of times
+    const mixed = new Map(), rgbOf = new Map();
+    const rgb = c => { let v = rgbOf.get(c); if (!v) rgbOf.set(c, v = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16))); return v; };
+    const mix = (a, b, t) => {
+        const q = Math.round(t * 64), key = a + b + q;
+        let v = mixed.get(key);
+        if (!v) { const pa = rgb(a), pb = rgb(b); mixed.set(key, v = "#" + pa.map((x, i) => Math.round(x + (pb[i] - x) * q / 64).toString(16).padStart(2, "0")).join("")); }
+        return v;
+    };
     const k = () => (preview ? 0.5 : U.clamp(Math.min(W, H) / 900, 0.6, 1.15));
 
     // a canopy built of leaves: a dark mass, then leaf dabs lit on the sun's side (top right) and in shade below
@@ -43,12 +51,27 @@ function SquirrelScene(W, H, opts, kit) {
         g.fillStyle = tg; g.beginPath(); g.moveTo(x - w * 1.4, base); g.quadraticCurveTo(x - w, base - h * 0.1, x - w * 0.8, base - h); g.lineTo(x + w * 0.8, base - h); g.quadraticCurveTo(x + w, base - h * 0.1, x + w * 1.4, base); g.fill();
         g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1; for (let i = 0; i < 4; i++) { const xx = x + (R() - 0.5) * w; g.beginPath(); g.moveTo(xx, base); g.lineTo(xx + (R() - 0.5) * 4, base - h); g.stroke(); }
     }
+    // A few canopies are painted once per depth and size and then stamped (flipped and stretched a little) for every
+    // tree: painting thousands of leaves for each tree made the scene slow to build.
+    const crowns = new Map();
+    function crown(g, cx, cy, rx, ry, R, fade, dabs) {
+        const key = `${fade}|${Math.round(Math.log(rx) / Math.log(1.25))}|${R() < 0.5 ? 0 : 1}`;
+        let c = crowns.get(key);
+        if (!c) {
+            const w = Math.ceil(rx * 2.6), hh = Math.ceil(ry * 2.4);
+            c = Worlds.canvas(w, hh);
+            canopy(c.getContext("2d"), w / 2, hh / 2, rx, ry, R, fade, dabs);
+            crowns.set(key, c);
+        }
+        const flip = R() < 0.5 ? -1 : 1, sx = rx * 2.6 / c.width * (0.9 + R() * 0.2), sy = ry * 2.4 / c.height * (0.9 + R() * 0.2);
+        g.save(); g.translate(cx, cy); g.scale(flip * sx, sy); g.drawImage(c, -c.width / 2, -c.height / 2); g.restore();
+    }
     function tree(g, x, base, h, R, fade, dabs) {
         const w = h * 0.045;
         trunk(g, x, base, h * 0.62, w, R, fade);
         g.strokeStyle = mix(P.trunk[0], night ? "#2a2240" : "#e8c8a8", fade); g.lineCap = "round";
         for (const sd of [-1, 1]) { g.lineWidth = w * 0.45; g.beginPath(); g.moveTo(x, base - h * 0.55); g.quadraticCurveTo(x + sd * h * 0.08, base - h * 0.64, x + sd * h * 0.15, base - h * 0.74); g.stroke(); }
-        canopy(g, x, base - h * 0.78, h * 0.36, h * 0.3, R, fade, dabs);
+        crown(g, x, base - h * 0.78, h * 0.36, h * 0.3, R, fade, dabs);
     }
 
     function setup() {
@@ -156,7 +179,7 @@ function SquirrelScene(W, H, opts, kit) {
             for (let i = 0; i <= 30; i++) { const u = i / 30, x = bx0 + u * W * 0.42, y = by0 - Math.sin(u * Math.PI * 0.8) * H * 0.05 + u * u * H * 0.04; branch.push([x - M, y]); }
             for (let i = 0; i < branch.length - 1; i++) { g.lineWidth = Math.max(3, (1 - i / 30) * ow * 0.5); g.beginPath(); g.moveTo(branch[i][0] + M, branch[i][1]); g.lineTo(branch[i + 1][0] + M, branch[i + 1][1]); g.stroke(); }
             g.strokeStyle = night ? `rgba(${P.rim},.15)` : "rgba(255,220,160,.3)"; g.lineWidth = 2; g.beginPath(); branch.forEach(([x, y], i) => g[i ? "lineTo" : "moveTo"](x + M, y - 4)); g.stroke();
-            for (let i = 0; i < 6; i++) canopy(g, bx0 + W * (0.02 + i * 0.075), by0 - H * 0.1 + (i % 2) * H * 0.04, W * 0.07, H * 0.08, R, 0, 700);
+            for (let i = 0; i < 6; i++) crown(g, bx0 + W * (0.02 + i * 0.075), by0 - H * 0.1 + (i % 2) * H * 0.04, W * 0.07, H * 0.08, R, 0, 700);
             canopy(g, ox, H * 0.02, ow * 3, H * 0.12, R, 0, 900);
             canopy(g, M + W * 1.0, H * 0.02, W * 0.16, H * 0.14, R, 0, 1100);
         });

@@ -63,24 +63,31 @@ const Worlds = (() => {
         // innerWidth squeezed every frame sideways in Chrome on Windows)
         W = document.documentElement.clientWidth || innerWidth;
         H = document.documentElement.clientHeight || innerHeight;
-        cv.width = Math.round(W * dpr);
-        cv.height = Math.round(H * dpr);
+        const cw = Math.round(W * dpr), ch = Math.round(H * dpr);
+        if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }       // (setting them again reallocates it)
         input.W = W;
         input.H = H;
     }
 
+    // Built scenes are kept (the last few worlds and modes at this size), so going back to one, or flipping light and
+    // dark, is instant: building a detailed scene paints all its still layers and takes up to a few hundred ms.
+    const KEEP = 3, kept = new Map();
     function build() {
         size();
+        const theme = document.documentElement.dataset.theme, key = `${current.id}|${theme}|${W}x${H}|${U.motion()}`;
+        const old = kept.get(key);
+        if (old) { kept.delete(key); kept.set(key, old); scene = old.scene; t = old.t; loop(); return; }
         try {
-            scene = current.scene(W, H, { theme: document.documentElement.dataset.theme });
+            scene = current.scene(W, H, { theme });
         } catch (err) {
             console.error("scene", err);
             scene = null;
         }
         t = 0;
         // warm up particle systems so the first frame isn't empty (drawn into a 1x1 scratch canvas: the state moves on,
-        // but nothing is painted, so the GPU isn't handed 30 full-screen frames at once)
-        if (scene) for (let i = 0; i < 30; i++) { t += 0.05; scene.draw(scratch(), t, 0.05, input); }
+        // but nothing is painted, so the GPU isn't handed full-screen frames). At most 30 steps and 12 ms.
+        if (scene) { const t0 = performance.now(); for (let i = 0; i < 30 && performance.now() - t0 < 12; i++) { t += 0.05; scene.draw(scratch(), t, 0.05, input); } }
+        if (scene) { kept.set(key, { scene, t }); while (kept.size > KEEP) kept.delete(kept.keys().next().value); }
         loop();
     }
 
@@ -184,7 +191,8 @@ const Worlds = (() => {
         const inp = { px: 0, py: 0, W: w, H: h };
         let tt = 0;
         c.setTransform(r, 0, 0, r, 0, 0);
-        for (let i = 0; i < 40; i++) { tt += 0.05; sc.draw(scratch(), tt, 0.05, inp); }
+        const t0 = performance.now();                      // (particles warmed up for at most 6 ms: it's a still picture)
+        for (let i = 0; i < 40 && performance.now() - t0 < 6; i++) { tt += 0.05; sc.draw(scratch(), tt, 0.05, inp); }
         c.setTransform(r, 0, 0, r, 0, 0); sc.draw(c, tt, 0.05, inp);
         // returns a function that animates it (used while the preview is hovered)
         return {

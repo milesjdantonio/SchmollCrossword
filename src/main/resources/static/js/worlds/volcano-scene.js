@@ -20,8 +20,31 @@ function VolcanoScene(W, H, opts, link) {
             rock: ["#8a7c72", "#5e5048", "#a89a8c"], ash: "#9a8e86", basalt: "#4a4044", jungle: ["#2a6a2e", "#3f8a38", "#68b04a"], scrub: "#6a8a4a",
             sand: ["#f6e4b8", "#ecd09a", "#d9b87a"], wet: "#cbb084", foam: "rgba(255,255,255,", palm: ["#2f7a30", "#4a9a3a", "#76bc50"], trunk: ["#a07a52", "#6a4a2e"], rim: "rgba(255,240,200," };
     const s0 = () => (preview ? 0.45 : U.clamp(Math.min(W, H) / 900, 0.6, 1.15));
-    const mix = (a, b, t) => { const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16)); return "#" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
+    // blends two "#rrggbb" colours; remembered, because the leaves and specks ask for the same few blends thousands of times
+    const mixed = new Map(), rgbOf = new Map();
+    const rgb = c => { let v = rgbOf.get(c); if (!v) rgbOf.set(c, v = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16))); return v; };
+    const mix = (a, b, t) => {
+        const q = Math.round(t * 64), key = a + b + q;
+        let v = mixed.get(key);
+        if (!v) { const pa = rgb(a), pb = rgb(b); mixed.set(key, v = "#" + pa.map((x, i) => Math.round(x + (pb[i] - x) * q / 64).toString(16).padStart(2, "0")).join("")); }
+        return v;
+    };
     function paint(w, h, fn) { const c = Worlds.canvas(w, h), g = c.getContext("2d"); fn(g); return c; }
+    // Thousands of specks and strokes grouped by colour (and line width) into one path each, then filled or stroked
+    // once per group: setting a colour per speck was most of the time it took to build the scene.
+    function batch() {
+        const fills = new Map(), strokes = new Map();
+        const at = (m, key) => { let p = m.get(key); if (!p) m.set(key, p = new Path2D()); return p; };
+        return {
+            rect(col, x, y, w, h) { at(fills, col).rect(x, y, w, h); },
+            curve(col, lw, x, y, cx, cy, ex, ey) { const p = at(strokes, col + "|" + lw.toFixed(1)); p.moveTo(x, y); p.quadraticCurveTo(cx, cy, ex, ey); },
+            flush(g) {
+                for (const [col, p] of fills) { g.fillStyle = col; g.fill(p); }
+                for (const [key, p] of strokes) { const i = key.lastIndexOf("|"); g.strokeStyle = key.slice(0, i); g.lineWidth = +key.slice(i + 1); g.stroke(p); }
+                fills.clear(); strokes.clear();
+            },
+        };
+    }
 
     let HZ, V, skyImg, islandImg, lavaImg, frontImg, palms = [], clouds = [], puffs = {}, stars = [], foam = [];
     let smoke = [], fountain = [], embers = [], bombs = [], gulls = [], crab = null, dolphin = null, canoe = null, sail = null;
@@ -49,6 +72,15 @@ function VolcanoScene(W, H, opts, link) {
             g.beginPath(); g.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.6 - r * 0.1, r * 0.2, r * 0.1, R() * Math.PI, 0, TAU); g.fill();
             g.globalAlpha = 1;
         }
+    }
+    // The jungle has thousands of crowns: a few are painted once per palette and stamped at each one's size
+    const stamps = new Map(), RR = 32;
+    function crown(g, x, y, r, cols, R, lit) {
+        const key = cols.join() + lit + Math.floor(R() * 6);
+        let c = stamps.get(key);
+        if (!c) c = stamps.set(key, paint(RR * 2.4, RR * 2, sg => canopy(sg, RR * 1.2, RR * 0.8, RR, cols, R, lit))).get(key);
+        const k = r / RR;
+        g.drawImage(c, x - RR * 1.2 * k, y - RR * 0.8 * k, c.width * k, c.height * k);
     }
     function palmCrown(g, x, y, r, R, cols) {                      // a little palm on the far island
         g.strokeStyle = cols[0]; g.lineWidth = Math.max(1, r * 0.12); g.lineCap = "round";
@@ -115,11 +147,13 @@ function VolcanoScene(W, H, opts, link) {
             lg.addColorStop(0, night ? "rgba(255,120,70,.06)" : "rgba(255,236,200,.32)"); lg.addColorStop(0.45, "rgba(0,0,0,0)"); lg.addColorStop(1, night ? "rgba(10,0,20,.45)" : "rgba(30,20,50,.32)");
             g.fillStyle = lg; g.fillRect(vx - hw, top - 10, hw * 2, base - top + 20);
             // scree and ash: specks, thicker near the top
+            const scree = batch();
             for (let i = 0; i < (preview ? 1500 : 7000); i++) {
                 const u = R() * 2 - 1, yb = profile(u), y = yb + Math.pow(R(), 1.6) * (base - yb);
-                g.fillStyle = R() < 0.5 ? `rgba(0,0,0,${(0.08 + R() * 0.12).toFixed(2)})` : (night ? `rgba(255,150,120,${(0.03 + R() * 0.04).toFixed(2)})` : `rgba(255,250,240,${(0.06 + R() * 0.12).toFixed(2)})`);
-                g.fillRect(vx + u * hw, y, 1 + R() * 1.4, 1 + R());
+                const col = R() < 0.5 ? `rgba(0,0,0,${(0.08 + R() * 0.12).toFixed(2)})` : (night ? `rgba(255,150,120,${(0.03 + R() * 0.04).toFixed(2)})` : `rgba(255,250,240,${(0.06 + R() * 0.12).toFixed(2)})`);
+                scree.rect(col, vx + u * hw, y, 1 + R() * 1.4, 1 + R());
             }
+            scree.flush(g);
             // old basalt flows: dark tongues from the rim, ragged, widening, ending in lobes
             for (const u0 of [-0.55, 0.3, 0.7]) {
                 const pts = [], n = 22;
@@ -155,7 +189,7 @@ function VolcanoScene(W, H, opts, link) {
                 if (R() > dens * 1.4) continue;
                 const r = (1.4 + R() * 2.6 + dens * 4) * s;
                 if (dens < 0.55) { g.fillStyle = night ? P.scrub : mix(P.scrub, P.jungle[0], R() * 0.5); g.beginPath(); g.ellipse(vx + u * hw, y, r, r * 0.6, 0, 0, TAU); g.fill(); }
-                else canopy(g, vx + u * hw, y, r * 1.3, P.jungle, R, u < 0.3);
+                else crown(g, vx + u * hw, y, r * 1.3, P.jungle, R, u < 0.3);
             }
             // mist at the foot
             const mg = g.createLinearGradient(0, top + (base - top) * 0.55, 0, base);
@@ -186,12 +220,13 @@ function VolcanoScene(W, H, opts, link) {
             g.translate(0, (V.base + H * 0.035) * 2); g.scale(1, -1); g.drawImage(cone, 0, 0);
             g.restore();
             // waves: short strokes, longer and further apart toward the front; whitecaps and troughs
+            const waves = batch();
             for (let i = 0; i < (preview ? 500 : 2400); i++) {
                 const d = Math.pow(R(), 1.7), y = HZ + 3 + d * (H * 0.82 - HZ), l = (2 + d * 30) * (0.5 + R()), x = R() * LW;
-                g.strokeStyle = R() < 0.55 ? (night ? `rgba(0,0,0,${(0.15 + d * 0.1).toFixed(2)})` : `rgba(10,60,110,${(0.1 + d * 0.08).toFixed(2)})`) : (night ? `rgba(255,150,150,${(0.05 + d * 0.05).toFixed(2)})` : `rgba(255,255,255,${(0.12 + d * 0.2).toFixed(2)})`);
-                g.lineWidth = 0.6 + d * 1.6;
-                g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + l / 2, y - (0.5 + d * 2), x + l, y); g.stroke();
+                const col = R() < 0.55 ? (night ? `rgba(0,0,0,${(0.15 + d * 0.1).toFixed(2)})` : `rgba(10,60,110,${(0.1 + d * 0.08).toFixed(2)})`) : (night ? `rgba(255,150,150,${(0.05 + d * 0.05).toFixed(2)})` : `rgba(255,255,255,${(0.12 + d * 0.2).toFixed(2)})`);
+                waves.curve(col, 0.6 + d * 1.6, x, y, x + l / 2, y - (0.5 + d * 2), x + l, y);
             }
+            waves.flush(g);
             g.drawImage(cone, 0, 0);
             // the foothills: three jungle ridges, hazier further back, a few palms standing up
             const { x: vx, half: hw } = V, fb = HZ + H * 0.045;
@@ -204,7 +239,7 @@ function VolcanoScene(W, H, opts, link) {
                 for (let x = x0; x < x1; x += (5 + R() * 6) * s) {
                     const edge = Math.min(x - x0, x1 - x) / 60; if (edge < 1 && R() > edge) continue;
                     const y = hill(x, row) + R() * (fb - hill(x, row)) * 0.6, r = (5 + R() * 5 + row * 2) * s;
-                    canopy(g, x, y, r, cols, R, x < vx + hw * 0.2);
+                    crown(g, x, y, r, cols, R, x < vx + hw * 0.2);
                 }
                 for (let n = 0; n < 4 + row * 2; n++) { const x = x0 + R() * (x1 - x0); palmCrown(g, x, hill(x, row) - (6 + R() * 8) * s, (5 + row * 1.5) * s, R, cols); }
             }
@@ -260,11 +295,13 @@ function VolcanoScene(W, H, opts, link) {
             g.fillStyle = bg; g.fill(); g.clip();
             g.fillStyle = night ? "rgba(150,110,140,.12)" : "rgba(160,200,220,.25)";       // the sky in the wet sand
             g.beginPath(); for (let x = 0; x <= LW; x += 8) g.lineTo(x, sy(x)); for (let x = LW; x >= 0; x -= 8) g.lineTo(x, sy(x) + H * 0.018 + Math.sin(x * 0.02) * 2); g.fill();
+            const grain = batch();
             for (let i = 0; i < (preview ? 4000 : 26000); i++) {                         // grain
                 const x = R() * LW, y = H * 0.74 + R() * H * 0.26, v = R();
-                g.fillStyle = v < 0.5 ? `rgba(120,80,40,${(0.06 + R() * 0.1).toFixed(2)})` : v < 0.9 ? `rgba(255,255,240,${(night ? 0.03 : 0.12 + R() * 0.15).toFixed(2)})` : `rgba(60,40,30,${(0.15 + R() * 0.15).toFixed(2)})`;
-                g.fillRect(x, y, 1 + R() * 0.8, 1);
+                const col = v < 0.5 ? `rgba(120,80,40,${(0.06 + R() * 0.1).toFixed(2)})` : v < 0.9 ? `rgba(255,255,240,${(night ? 0.03 : 0.12 + R() * 0.15).toFixed(2)})` : `rgba(60,40,30,${(0.15 + R() * 0.15).toFixed(2)})`;
+                grain.rect(col, x, y, 1 + R() * 0.8, 1);
             }
+            grain.flush(g);
             g.lineWidth = 1.2;                                                             // wind ripples
             for (let i = 0; i < (preview ? 40 : 200); i++) {
                 const x = R() * LW, y = sy(x) + H * 0.05 + R() * H * 0.2, l = (14 + R() * 30) * s;

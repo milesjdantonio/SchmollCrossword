@@ -590,6 +590,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       the first visit to each page in a browser session costs ~1.3 s of GPU raster (shader/glyph warm-up), then
       ~0.2 s. Not fixed yet: an idle-time warm-up of the Campaign and Daily pages (they build on demand and the
       campaign switches worlds, so it needs care).
+- [x] Faster page and world switches (2026-11-27, the user: "improve performance significantly when switching pages and
+      backgrounds"; measured at 200%): the last 3 scenes are kept (worlds.js `kept`), so going back to a world takes
+      7-30 ms instead of 100-300 ms; first builds are cheaper (Acorn Woods 257 -> 176 ms: canopies painted once and
+      stamped; Volcano 228 -> 154 ms: specks and waves batched by colour, jungle crowns stamped; colour blends cached);
+      world cards are painted only near the screen and saved between visits as small WebPs (encoded when idle), so
+      Settings opens in ~40 ms after the first visit; Stats no longer forces two layouts (scroll first, the heatmap's
+      width from a ResizeObserver): 166 -> 48 ms of script. Still slow: the very first Settings visit in a browser
+      (~2 s of GPU raster painting every card in the headless test).
 - [x] The Atlas is a real map (2026-11-26, the user: "make the campaign atlas like an actual map, design the map, and
       dont put the locations in a grid"): `js/atlas-map.js` paints one illustrated continent once (coast, shallows,
       rivers, each world's country in its colours with its own pictures, Volcano Island, the sky at the top edge
