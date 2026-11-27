@@ -637,16 +637,21 @@ const Game = (() => {
     }
 
     // Under the active clue: the answer so far, one slot a letter (the square you're on is ringed), and the clue
-    // that crosses the square you're on. Not in a boss fight: its moves hide letters and clues, and these would give
-    // them away.
+    // that crosses the square you're on. In a boss fight each slot shows what's on its square (snow, ink, a fake
+    // letter, a boss's mark...) and the crossing clue follows the clue tricks: Campaign.syncSlots keeps them in step.
     function drawSpotlight(current) {
-        if (Campaign.isBossLevel(game.puzzle)) return;
-        const cells = cellsOf(current);
+        const boss = Campaign.isBossLevel(game.puzzle), cells = cellsOf(current);
         clueBarEl.append(U.el("span", { class: "cb-slots", "aria-hidden": "true" },
-            ...cells.map(([r, c]) => U.el("i", { class: "cb-slot" + (r === game.row && c === game.col ? " cur" : "") + (game.pencil[r][c] ? " pen" : "") + (isLocked(r, c) ? " lock" : ""), text: game.letters[r][c] })),
+            ...cells.map(([r, c]) => {
+                const hit = boss && hits.get(r + "," + c);
+                return U.el("i", { class: "cb-slot" + (r === game.row && c === game.col ? " cur" : "") + (game.pencil[r][c] ? " pen" : "") + (isLocked(r, c) ? " lock" : "") + (hit ? " hit-" + hit.kind : ""), "data-rc": r + "," + c },
+                    U.el("span", { class: "ltr", text: game.letters[r][c] }));
+            }),
             U.el("small", { text: `${cells.length} Letters` })));
         const other = (current.direction === "across" ? game.downAt : game.acrossAt)[game.row][game.col];
+        clueBarEl._cross = other || null;
         if (other) clueBarEl.append(U.el("span", { class: "cb-cross" }, U.el("b", { text: `${other.number} ${other.direction === "across" ? "Across" : "Down"}` }), U.el("span", { text: other.clue })));
+        if (boss) Campaign.syncSlots();
     }
     // a finished word sends a wave out across the rest of the board
     function ripple(from) {

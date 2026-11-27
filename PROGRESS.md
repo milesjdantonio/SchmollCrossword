@@ -423,6 +423,11 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       `abDock` in campaign.js; on phones they sit under the board), items on one line, the clues and the boss panel
       down the side scrolling inside (981-1240 px: clues over a compact boss panel). Checked at 1440x900, 1280x720,
       1100x800 and 390x844 (Queen Thistle 5x5, the Magma Wyrm 9x9).
+      The clue bar's answer slots and crossing clue show in fights too (the user: "does the clue and empty spaces show
+      up at the top ... include if there is anything on those spaces, like ink"): each slot shows its square's effect
+      (the same CSS: `:is(#board .cell, #clue-bar .cb-slot).snowed`...), fake letters, the boss's marks, and the
+      board-wide covers where they cover (`coverAt`, `syncSlots` in campaign.js); the crossing clue follows the clue
+      tricks and hides while the clues are stolen or inked.
       Still open: the board doesn't lean in 3D like a level's (effects aim at the squares), the attack warning covers
       the top of the clue list while it shows.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the

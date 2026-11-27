@@ -4379,6 +4379,52 @@ const Campaign = (() => {
     const AREA_FX = ["wings", "holylight", "ascend", "decree", "penance", "crumple", "whirl", "mirror", "static", "lights", "confetti", "downpour", "gravity", "sticky", "sandblast", "lock", "taunt",
         "inkblot", "nobackspace", "jitter", "tidal", "shrink", "shatter", "halffog", "upside", "flicker", "darkcreep", "numberless", "slowmo", "fumble", "backwards", "echo", "mask", "vowels"];
     const FLOOD_HOLD = 5;                                   // seconds Flash Flood stays at its full height
+    // The clue bar's slots in a boss fight show what's on their squares: the square effects by the same class (and the
+    // same CSS, campaign.css), fake letters as the board shows them, and the board-wide covers where they cover
+    const SLOT_FX = ["snowed", "prickly", "barnacled", "sunk", "cinder", "thorny", "folded", "piled", "gummed", "bombed", "clouded", "molten", "bird-taken", "lava-col", "pillared"];
+    function coverAt(r, c) {
+        const f = fight, m = f.me, on = k => m[k] > 0, g = Game.state, n = g.puzzle.size, x = (c + 0.5) / n, y = (r + 0.5) / n, area = boardArea();
+        const v = k => parseFloat(area ? area.style.getPropertyValue(k) : "") || 0;
+        if (on("ink")) return "blind";
+        if (on("darkcreep") && 1 - m.darkcreep / Math.max(1, f.darkMax || m.darkcreep) >= 0.6) return "dark";
+        if (on("halffog") && (1 - y) * 100 < (v("--flood") || 52)) return "flood";
+        if (on("wings")) { const w = v("--wing"); if (x * 100 < w || x * 100 > 100 - w) return "wings"; }
+        if (on("inkblot") && Math.abs(x - 0.5) < 0.28 && Math.abs(y - 0.5) < 0.26) return "ink";
+        if (on("holylight") && f.holy && Math.hypot(x - f.holy.x, y - f.holy.y) < (v("--hr") || 30) / 100) return "light";
+        if (on("lights")) {
+            const board = document.getElementById("board"), px = board ? board.getBoundingClientRect().width / n : 60;
+            if (Math.hypot(r - g.row, c - g.col) * px > (v("--lr") || 46)) return "dark";
+        }
+        if (on("static")) return "static";
+        return "";
+    }
+    function syncSlots() {
+        const bar = document.getElementById("clue-bar"), row = bar && bar.querySelector(".cb-slots");
+        if (!row) return;
+        const live = fightOn(), m = live ? fight.me : {}, g = Game.state;
+        row.classList.toggle("fx-mirror", m.mirror > 0);
+        row.classList.toggle("fx-upside", m.upside > 0);
+        row.classList.toggle("fx-wilt", m.drain > 0);
+        row.querySelectorAll(".cb-slot[data-rc]").forEach(slot => {
+            const [r, c] = slot.dataset.rc.split(",").map(Number), cell = Game.cellEl(r, c);
+            for (const k of SLOT_FX) slot.classList.toggle(k, live && !!cell && cell.classList.contains(k));
+            const mask = cell && cell.querySelector(".mask-ltr"), ghost = cell && cell.querySelector(".ghost-ltr"), real = (g.letters[r] && g.letters[r][c]) || "";
+            const shown = live && mask ? mask.textContent : live && !real && ghost ? ghost.textContent : real;
+            const ltr = slot.querySelector(".ltr");
+            if (ltr && ltr.textContent !== shown) ltr.textContent = shown;
+            const cv = live ? coverAt(r, c) : "";
+            if ((slot.dataset.cv || "") !== cv) slot.dataset.cv = cv;
+        });
+        // the crossing clue: as the clue list shows it now (jumbled, mirrored...), and gone while the clues are stolen or inked
+        const cross = bar.querySelector(".cb-cross"), e = bar._cross;
+        if (cross && e) {
+            const li = g.clueItems.get(e), text = li && li.querySelector(".clue-text");
+            const gone = live && (!!(li && li.closest(".stolen")) || m.ink > 0 || m.scripture > 0 && fight.stolenDir === e.direction);
+            cross.hidden = gone;
+            const t = live && text ? text.textContent : e.clue;
+            if (!gone && cross.lastChild.textContent !== t) cross.lastChild.textContent = t;
+        }
+    }
     function applyMe() {
         const f = fight, m = f ? f.me : {}, on = k => m[k] > 0;
         const area = boardArea(), clues = document.querySelector(".clues"), board = document.getElementById("board");
@@ -4475,6 +4521,7 @@ const Campaign = (() => {
                 setVar(area, "--ly", Math.round((a.top + a.height / 2 - w.top) / z) + "px");
             }
         }
+        syncSlots();
         if (!on("minion")) removeMinion();
         for (const b of [...birds]) if (b.puzzle !== Game.state.puzzle) dropBird(b);
         if (birds.length && !on("ascend") && !on("thieves")) for (const b of [...birds]) if (b.held) flyAway(b);
@@ -5188,7 +5235,7 @@ const Campaign = (() => {
 
     return {
         onView, showMap, warmStage, play, playSpecial, heroLook, hero: () => (data.hero ? heroLook() : null), biome, prop: (world, r) => PROPS[biome(world).prop](r), editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
-        isBossLevel, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
+        isBossLevel, syncSlots, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();
