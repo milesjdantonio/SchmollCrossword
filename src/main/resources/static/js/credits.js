@@ -32,7 +32,7 @@ const Credits = (() => {
             section("Level Music", songs(data.level)),
             section("Composed for the Game", ...data.composed.map(t => U.el("p", { class: "cr-line" }, U.el("b", { text: t }))),
                 U.el("p", { class: "cr-note" }, "Composed by Claude and played with the ", link("GeneralUser GS", "https://schristiancollins.com/generaluser.php"), " SoundFont by S. Christian Collins.")),
-            section("Sound Effects", line("", "Kenney"), note("Impact, Interface, Sci-fi, RPG Audio and Music Jingles packs."),
+            section("Sound Effects", line("", "Kenney"), note("Impact, Interface, UI Audio, Casino Audio, Sci-fi, RPG Audio and Music Jingles packs."),
                 note("Most other sounds are made live in code.")),
             section("Animation Libraries", line("Rive web runtime", "Rive (MIT)"), line("Motion", "Motion B.V. (MIT)"),
                 note("The animations they play are made for this game.")),

@@ -191,6 +191,42 @@ const Sound = (() => {
     const SOFT = { select: 0.35, nav: 0.45, move: 0.35, type: 0.55, erase: 0.5, flip: 0.4, tile: 0.6, toggle: 0.5, blip: 0.4 };
     // two groups the player can turn off on their own (the sound menu): typing on the board, and clicks in the menus
     const TYPING = { type: 1, erase: 1, move: 1 }, CLICKS = { select: 1, nav: 1, toggle: 1, blip: 1 };
+    // The everyday sounds are recordings (Kenney's CC0 packs, audio/sfx/rec/): each has several takes, played in turn
+    // with a touch of pitch drift so a run of them never sounds machine-made. [group, takes, volume, pitch, pitch drift]
+    const REC = {
+        type: ["tap", 5, 0.28, 1, 0.08], erase: ["tap", 5, 0.2, 0.82, 0.05], select: ["click", 4, 0.3, 1, 0.05],
+        nav: ["slide", 4, 0.32, 1, 0.06], toggle: ["switch", 4, 0.42, 1, 0.04], blip: ["roll", 3, 0.28, 1, 0.05],
+        flip: ["place", 2, 0.35, 1.1, 0.08], word: ["stack", 6, 0.55, 1, 0.06], right: ["clack", 5, 0.5, 1.05, 0.05],
+        wrong: ["thud", 3, 0.4, 0.9, 0.04], reveal: ["fan", 1, 0.45, 1, 0.05], coin: ["coins", 1, 0.5, 1, 0.06],
+        pop: ["clack", 5, 0.4, 1.25, 0.08], thud: ["thud", 3, 0.6, 0.8, 0.04], worldSwap: ["cloth", 1, 0.4, 1, 0.03],
+        title: ["fan", 1, 0.45, 0.95, 0.03]
+    };
+    // a world's own material for typing and finishing a word (the rest stay shared)
+    const MATERIAL = {
+        paper: { type: "wood" }, garden: { type: "wood" }, squirrel: { type: "wood" }, library: { type: "wood" }, desert: { type: "wood" },
+        snow: { type: "snow", erase: "snow" }, robot: { type: "metal", erase: "metal", word: "metal" }, space: { type: "metal", erase: "metal" },
+        candy: { type: "clack", erase: "clack" }, carnival: { type: "clack", erase: "clack" }, ocean: { type: "soft", erase: "soft" }
+    };
+    const TAKES = { tap: 5, wood: 5, snow: 5, metal: 5, clack: 5, soft: 5, click: 4, switch: 4, roll: 3, slide: 4, place: 2, stack: 6, thud: 3, fan: 1, coins: 1, cloth: 1, glass: 5, bell: 2, handle: 2 };
+    const turn = {};
+    function rec(group, { v = 0.4, rate = 1, drift = 0.05, t = 0 } = {}) {
+        const n = TAKES[group] || 1, i = turn[group] = ((turn[group] || 0) + 1 + (n > 2 && Math.random() < 0.3 ? 1 : 0)) % n;
+        sample(`rec/${group}${i + 1}`, { v, rate: rate * (1 + (Math.random() * 2 - 1) * drift), t });
+    }
+    // the moments that are more than one recording
+    const REC_MULTI = {
+        sparkle: () => [1.3, 1.6, 2].forEach((r, i) => rec("glass", { v: 0.22, rate: r, t: i * 0.06, drift: 0.03 })),
+        achievement: () => { rec("bell", { v: 0.32, rate: 1.4, drift: 0.01 }); rec("stack", { v: 0.4, t: 0.05 }); },
+        streak: () => { rec("bell", { v: 0.26, rate: 1.6, drift: 0.01 }); rec("handle", { v: 0.4, t: 0.04 }); },
+        win: () => { rec("handle", { v: 0.5 }); rec("bell", { v: 0.3, rate: 1.25, drift: 0.01, t: 0.12 }); },
+        tile: i => rec("slide", { v: 0.18, rate: 1 + ((i || 0) % 8) * 0.04, drift: 0.03 })
+    };
+    let recWarm = false;
+    function warmRec() {                                           // fetched once, the first time a sound plays
+        if (recWarm || !init()) return;
+        recWarm = true;
+        for (const [g, n] of Object.entries(TAKES)) for (let i = 1; i <= n; i++) load(`audio/sfx/rec/${g}${i}.mp3`);
+    }
     let quiet = 1;
     function play(name, ...args) {
         if (!Settings.get("sound") || !init() || !ready()) return;
@@ -200,6 +236,13 @@ const Sound = (() => {
         if (now - (gates[name] || 0) < gap) return;
         gates[name] = now;
         const world = typeof Worlds !== "undefined" && Worlds.current;
+        warmRec();
+        // recorded unless the world keeps its own on purpose (the Neon Arcade's chiptune)
+        if (!(world && world.keepSynth)) {
+            const r = REC[name], mat = world && MATERIAL[world.id] && MATERIAL[world.id][name];
+            if (r) { rec(mat || r[0], { v: r[2], rate: r[3], drift: r[4] }); return; }
+            if (REC_MULTI[name]) { REC_MULTI[name](...args); return; }
+        }
         const fn = (world && world.sounds && world.sounds[name]) || LIB[name];
         quiet = SOFT[name] || 1;
         try { if (fn) fn(...args); } catch (err) { console.error("Sound", name, err); } finally { quiet = 1; }

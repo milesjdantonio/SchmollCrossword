@@ -222,7 +222,7 @@
     Worlds.register({
         id: "arcade", name: "Neon Arcade", icon: "\u{1F579}️", tagline: "Synthwave Nights. Pixel Fireworks.",
         modes: ["light", "dark"],
-        scene: (W, H, opts) => ArcadeScene(W, H, opts), rive: "arcade-win", board, celebrate, titleCard, sounds, transition: "pixels",
+        scene: (W, H, opts) => ArcadeScene(W, H, opts), rive: "arcade-win", keepSynth: true, board, celebrate, titleCard, sounds, transition: "pixels",
         mascot: { name: "BIT", draw: drawBit },
         lines: {
             hello: ["INSERT COIN... just kidding, it's free! Pick a stage!", "Player 1, ready?", "New high score incoming. I can feel it."],
