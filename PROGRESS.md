@@ -482,7 +482,12 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         dolphin; night: crescent moon, crusted lava rivers, red-lit smoke, lava bombs, glow on the water; win: the
         eruption pours the rivers by day too, two Rive tikis `volcano-win` either side of the board (the right one
         mirrored: `Anim.play(..., { flip: true })`), Motion jolts the letters).
-      - To do: Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
+        **Neon Arcade** (arcade-scene.js: nebula sky, ringed planet, a striped sun shimmering in the heat with its
+        reflection on the floor, low-poly mountains with neon ridges and wireframe, a skyline with lit windows and
+        beacons, a highway with dashes, palm rows sweeping past in perspective, neon-rimmed corner palms, shooting
+        stars, motes, the UFO; day = pastel vaporwave with shaded pixel clouds; win: a Rive neon marquee
+        `arcade-win` draws itself round STAGE CLEAR with a joystick, buttons and coins, Motion powers up the squares).
+      - To do: Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention
