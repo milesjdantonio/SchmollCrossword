@@ -1283,13 +1283,14 @@ const Game = (() => {
     // keyboard, it keeps the focus: detail is 0 then)
     puzzleEl.addEventListener("click", e => { const btn = e.target.closest("button"); if (btn && e.detail > 0) btn.blur(); });
 
-    // the on-screen keyboard (touch screens): "⇄" switches Across/Down, "⌫" is Backspace
-    const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "⇄ZXCVBNM⌫"];
+    // the on-screen keyboard (touch screens): "⇄" switches Across/Down, "⌫" is Backspace, the pencil key is Pencil
+    const KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL✎", "⇄ZXCVBNM⌫"];
     document.querySelectorAll("#keyboard .key-row").forEach((rowEl, i) => {
         for (const key of [...KEY_ROWS[i]]) {
-            const b = U.el("button", { type: "button", class: "key", text: key, "data-key": key });
+            const b = U.el("button", { type: "button", class: "key", text: key === "✎" ? "" : key, "data-key": key });
             if (key === "⇄") { b.classList.add("wide"); b.setAttribute("aria-label", "Switch Across/Down"); }
             if (key === "⌫") { b.classList.add("wide"); b.setAttribute("aria-label", "Backspace"); }
+            if (key === "✎") { b.classList.add("pen-key"); b.setAttribute("aria-label", "Pencil"); b.setAttribute("aria-pressed", "false"); b.append(U.icon("pencil")); }
             rowEl.appendChild(b);
         }
     });
@@ -1299,18 +1300,19 @@ const Game = (() => {
         const key = b.dataset.key;
         if (key === "⌫") backspace();
         else if (key === "⇄") toggleDirection();
+        else if (key === "✎") setPencil(!game.pencilMode);
         else typeLetter(key);
     });
     clueBarEl.addEventListener("click", () => { if (game.puzzle && !game.solved && !blocked()) toggleDirection(); });
     // Pencil: letters typed while it's on (or with Shift held) are guesses, shown lighter
     const pencilBtn = $("#pencil-btn");
     pencilBtn.prepend(U.icon("pencil"));
-    pencilBtn.addEventListener("click", () => {
-        game.pencilMode = !game.pencilMode;
-        pencilBtn.setAttribute("aria-pressed", game.pencilMode ? "true" : "false");
+    function setPencil(on) {                                       // the button above the board and the keyboard's key
+        game.pencilMode = on;
+        for (const b of [pencilBtn, ...document.querySelectorAll("#keyboard .pen-key")]) b.setAttribute("aria-pressed", on ? "true" : "false");
         Sound.play("toggle");
-        pencilBtn.blur();
-    });
+    }
+    pencilBtn.addEventListener("click", () => { setPencil(!game.pencilMode); pencilBtn.blur(); });
     // leaving the puzzle: a campaign level goes back to its world, anything else goes Home
     const exitBtn = $("#game-exit");
     exitBtn.append(U.icon("back"));

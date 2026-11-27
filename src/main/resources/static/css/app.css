@@ -1305,6 +1305,9 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     }
     .key:active { background: var(--sel); transform: translateY(2px); box-shadow: none; }
     .key.wide { flex-grow: 1.5; max-width: 66px; background: var(--hover); }
+    .key.pen-key { display: grid; place-items: center; background: var(--hover); }
+    .key.pen-key svg { width: 20px; height: 20px; }
+    .key.pen-key[aria-pressed="true"] { background: var(--accent); color: var(--on-accent, #fff); box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 60%, #000); }
     .board .cell, .clues li, .difficulty button, .helper-row button { touch-action: manipulation; }
 }
 
