@@ -512,7 +512,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         pines and birches, a fence, a sled, a winterberry bush with the cardinal perched; Milky Way, aurora, a ringed
         moon and lit windows by night; win: a Rive snowman `snow-win` builds itself (rolling base, squash, scarf,
         coal face, carrot, top hat, waving arm) instead of the SVG one).
-      - To do: Acorn Woods, Deep Space, Classic
+        **Acorn Woods** (squirrel-scene.js: a golden sky with clouds lit from below, hills stippled with autumn
+        woods, mist, trees at two depths with canopies built of thousands of leaves lit gold on the sun's side, a
+        path winding off between them, pre-painted light shafts with dust, leaf litter, a mossy log with shelf
+        fungi, toadstools, chanterelles, bronze ferns, a stump with acorns, the great oak with ridged bark, its
+        hollow and its branch; a harvest moon, fog, fireflies and the owl by night; win: a Rive squirrel
+        `squirrel-win` with strand-drawn fur throws a golden acorn that cracks open in light, backflips and dashes
+        off; Motion sways the squares in the leaf tornado).
+      - To do: Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention

@@ -13,7 +13,6 @@
     const { tone, noise, midi } = Sound;
     const LEAVES = ["#d9531e", "#f2a03d", "#b8321a", "#e8c547", "#c7702a", "#9c3d1c"];
 
-    const canvas = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
 
     // A maple leaf (pointy = true) or a plain oval leaf, centred on 0,0 with radius s
     function leafPath(g, s, pointy) {
@@ -84,314 +83,7 @@
         g.restore();
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let groundY, hills, trees, floor, oak, sky = null, branch = [];
-        let leaves, stars, rays;
-        let gust = 0, gustLeft = 0, nextGust = preview ? 999 : U.rand(14, 24);
-        let runner = null, nextRunner = preview ? 999 : U.rand(4, 9), digger = null, nextDigger = preview ? 999 : U.rand(10, 18), dirt = [];
-        let geese = null, nextGeese = preview ? 999 : U.rand(8, 16), owlBlink = 0, owlNext = 3;
-
-        const C = night
-            ? { top: "#090b20", mid: "#241a3c", low: "#5b3647", hill1: "#2c2032", hill2: "#22192a", trunk: "#24160f", ground1: "#3a2416", ground2: "#1c120b", leafDim: 0.45 }
-            : { top: "#86b9de", mid: "#f3d6a4", low: "#f6b56a", hill1: "#b9876a", hill2: "#9a6a4f", trunk: "#5a3920", ground1: "#b9733a", ground2: "#7e4a24", leafDim: 1 };
-        const shade = (hex, k) => {             // darken a colour for night
-            const n = parseInt(hex.slice(1), 16), r = (n >> 16) & 255, gg = (n >> 8) & 255, b = n & 255;
-            return `rgb(${Math.round(r * k)},${Math.round(gg * k)},${Math.round(b * k)})`;
-        };
-        const canopyCol = c => (night ? shade(c, 0.42) : c);
-
-        // a round, leafy canopy made of overlapping clusters, lit from the upper left
-        function canopy(g, x, y, r, R) {
-            const cols = LEAVES.map(canopyCol);
-            for (let i = 0; i < 16; i++) {
-                const a = R() * TAU, d = Math.sqrt(R()) * r * 0.75, cr = r * (0.32 + R() * 0.25);
-                g.fillStyle = cols[Math.floor(R() * cols.length)];
-                g.beginPath(); g.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.8, cr, 0, TAU); g.fill();
-            }
-            const lg = g.createRadialGradient(x - r * 0.4, y - r * 0.5, r * 0.1, x, y, r * 1.2);
-            lg.addColorStop(0, night ? "rgba(255,220,160,.08)" : "rgba(255,240,190,.35)");
-            lg.addColorStop(1, "rgba(60,20,0,.2)");
-            g.fillStyle = lg;
-            g.beginPath(); g.arc(x, y, r * 1.05, 0, TAU); g.fill();
-        }
-
-        function setup() {
-            groundY = Math.round(H * (preview ? 0.78 : 0.76));
-            sky = null;
-            const R = U.rng(404);
-            // rolling hills with tiny trees along their tops
-            hills = canvas(W + 60, H);
-            {
-                const g = hills.getContext("2d"), w = hills.width;
-                [[0.52, C.hill1, 0.06], [0.6, C.hill2, 0.05]].forEach(([base, col, amp], layer) => {
-                    const y0 = H * base, pts = [];
-                    for (let x = 0; x <= w; x += 20) pts.push([x, y0 - Math.sin(x * 0.006 + layer * 2) * H * amp - Math.sin(x * 0.017 + layer) * H * 0.012]);
-                    g.fillStyle = col;
-                    g.beginPath(); g.moveTo(0, H); pts.forEach(([x, y]) => g.lineTo(x, y)); g.lineTo(w, H); g.fill();
-                    const step = preview ? 9 : 12 + layer * 4;
-                    for (let x = 0; x < w; x += step * (0.6 + R() * 0.8)) {
-                        const y = y0 - Math.sin(x * 0.006 + layer * 2) * H * amp - Math.sin(x * 0.017 + layer) * H * 0.012;
-                        g.fillStyle = canopyCol(LEAVES[Math.floor(R() * LEAVES.length)]);
-                        g.globalAlpha = layer ? 0.9 : 0.65;
-                        g.beginPath(); g.arc(x, y + 2, H * (0.012 + R() * 0.012) * (layer ? 1.3 : 1), 0, TAU); g.fill();
-                    }
-                    g.globalAlpha = 1;
-                });
-            }
-            // a row of autumn trees in the middle distance
-            trees = canvas(W + 120, H);
-            {
-                const g = trees.getContext("2d"), n = Math.max(4, Math.round(trees.width / (preview ? 60 : 150)));
-                for (let i = 0; i < n; i++) {
-                    const x = (i + 0.2 + R() * 0.6) / n * trees.width, h = H * (0.15 + R() * 0.11), base = groundY + H * 0.01;
-                    g.fillStyle = C.trunk;
-                    g.beginPath(); g.moveTo(x - h * 0.03, base); g.lineTo(x - h * 0.015, base - h * 0.7); g.lineTo(x + h * 0.015, base - h * 0.7); g.lineTo(x + h * 0.03, base); g.fill();
-                    canopy(g, x, base - h * 0.78, h * 0.32, R);
-                }
-            }
-            // the forest floor: leaf litter, mushrooms and a pumpkin
-            floor = canvas(W + 40, H - groundY + H * 0.05);
-            {
-                const g = floor.getContext("2d"), w = floor.width, fh = floor.height, top = H * 0.03;
-                const gr = g.createLinearGradient(0, top, 0, fh);
-                gr.addColorStop(0, C.ground1);
-                gr.addColorStop(1, C.ground2);
-                g.fillStyle = gr;
-                g.beginPath(); g.moveTo(0, fh); g.lineTo(0, top);
-                for (let x = 0; x <= w; x += 30) g.lineTo(x, top - Math.sin(x * 0.01) * H * 0.012 - R() * 3);
-                g.lineTo(w, fh); g.fill();
-                const count = preview ? 120 : Math.round(w * fh / 260);
-                for (let i = 0; i < count; i++) {
-                    g.save();
-                    g.translate(R() * w, top + R() * (fh - top));
-                    g.rotate(R() * TAU);
-                    g.fillStyle = canopyCol(LEAVES[Math.floor(R() * LEAVES.length)]);
-                    g.globalAlpha = 0.55 + R() * 0.45;
-                    leafPath(g, 3 + R() * 5, R() < 0.4);
-                    g.fill();
-                    g.restore();
-                }
-                g.globalAlpha = 1;
-                if (!preview) {
-                    for (let i = 0; i < 4; i++) {                    // mushrooms
-                        const mx = (0.15 + R() * 0.7) * w, my = top + fh * (0.25 + R() * 0.4), ms = H * (0.012 + R() * 0.012);
-                        g.fillStyle = night ? "#8d8070" : "#f3ead8";
-                        g.fillRect(mx - ms * 0.3, my - ms * 1.4, ms * 0.6, ms * 1.4);
-                        g.fillStyle = night ? "#6e2a20" : "#d8432e";
-                        g.beginPath(); g.ellipse(mx, my - ms * 1.4, ms * 1.1, ms * 0.75, 0, Math.PI, TAU); g.fill();
-                        g.fillStyle = night ? "#a89a88" : "#ffffff";
-                        for (const [dx, dy] of [[-0.5, -0.3], [0.2, -0.55], [0.55, -0.2]]) { g.beginPath(); g.arc(mx + dx * ms, my - ms * 1.4 + dy * ms, ms * 0.14, 0, TAU); g.fill(); }
-                    }
-                    const px = w * 0.8, py = top + fh * 0.35, ps = H * 0.035;  // a pumpkin
-                    g.fillStyle = night ? "#6a3410" : "#e3781f";
-                    for (const dx of [-0.55, 0.55, 0]) { g.beginPath(); g.ellipse(px + dx * ps, py, ps * 0.62, ps * 0.55, 0, 0, TAU); g.fill(); }
-                    g.fillStyle = night ? "#2c3a18" : "#4d6a24";
-                    g.fillRect(px - ps * 0.08, py - ps * 0.75, ps * 0.16, ps * 0.25);
-                }
-            }
-            // the big oak on the left, with a long branch reaching over the top
-            oak = canvas(W + 80, H);
-            branch = [];
-            {
-                const g = oak.getContext("2d"), tw = U.clamp(W * 0.05, 22, 70), x0 = 40 + W * 0.04, by = H * 0.14;
-                const bark = night ? "#1d120b" : "#5b3820";
-                g.fillStyle = bark;
-                g.beginPath();
-                g.moveTo(x0 - tw, H);
-                g.bezierCurveTo(x0 - tw * 0.6, H * 0.6, x0 - tw * 0.5, H * 0.35, x0 - tw * 0.4, by - tw * 0.2);
-                g.lineTo(x0 + tw * 0.5, by - tw * 0.3);
-                g.bezierCurveTo(x0 + tw * 0.5, H * 0.4, x0 + tw * 0.6, H * 0.7, x0 + tw * 1.1, H);
-                g.fill();
-                // the branch, drawn as a tapering curve; remember points along its top for the running squirrel
-                const bx1 = x0 + W * 0.3, bend = by - H * 0.04;
-                const pt = u => {
-                    const mx = U.lerp(x0, bx1, u), my = (1 - u) ** 2 * by + 2 * (1 - u) * u * bend + u * u * (by + H * 0.02);
-                    return [mx, my];
-                };
-                for (let i = 0; i <= 30; i++) { const u = i / 30, [mx, my] = pt(u), th = tw * 0.42 * (1 - u * 0.8); branch.push([mx - 40, my - th * 0.55]); g.fillStyle = bark; g.beginPath(); g.arc(mx, my, th * 0.55, 0, TAU); g.fill(); }
-                g.strokeStyle = night ? "rgba(255,255,255,.04)" : "rgba(255,220,180,.12)";
-                g.lineWidth = 2;
-                for (let i = 0; i < 6; i++) { const xx = x0 - tw * 0.3 + i * tw * 0.14; g.beginPath(); g.moveTo(xx, H); g.quadraticCurveTo(xx + 4, H * 0.6, xx - 2, by + 20); g.stroke(); }
-                // the hollow
-                g.fillStyle = night ? "#070302" : "#2c180b";
-                g.beginPath(); g.ellipse(x0 + tw * 0.05, H * 0.5, tw * 0.25, tw * 0.36, 0, 0, TAU); g.fill();
-                // leaves on the branch and the top of the trunk
-                for (let i = 0; i < 5; i++) { const [mx, my] = pt(0.25 + i * 0.17); canopy(g, mx, my - tw * 0.45, tw * (0.55 + R() * 0.3), R); }
-                canopy(g, x0, by - tw * 0.6, tw * 1.15, R);
-            }
-            const Rl = U.rng(77);
-            leaves = Array.from({ length: preview ? 10 : 44 }, () => ({ x: Rl() * W, y: Rl() * H, s: 4 + Rl() * 7, depth: 0.4 + Rl() * 0.9, rot: Rl() * TAU, spin: (Rl() - 0.5) * 3, flip: Rl() * TAU, sway: Rl() * TAU, c: LEAVES[Math.floor(Rl() * LEAVES.length)], pointy: Rl() < 0.45 }));
-            stars = Array.from({ length: preview ? 25 : 110 }, () => ({ x: Rl() * W, y: Rl() * H * 0.45, r: Rl() * 1.2 + 0.3, tw: Rl() * TAU }));
-            rays = Array.from({ length: 6 }, (_, i) => ({ a: 2.1 + i * 0.13 + Rl() * 0.05, w: 0.025 + Rl() * 0.03, ph: Rl() * TAU }));
-        }
-        setup();
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!sky) {
-                    sky = g.createLinearGradient(0, 0, 0, groundY);
-                    sky.addColorStop(0, C.top);
-                    sky.addColorStop(0.55, C.mid);
-                    sky.addColorStop(1, C.low);
-                }
-                g.fillStyle = sky;
-                g.fillRect(0, 0, W, H);
-                nextGust -= dt;
-                if (nextGust <= 0 && gustLeft <= 0) { gustLeft = 3; nextGust = U.rand(16, 28); }
-                if (gustLeft > 0) { gustLeft -= dt; gust = Math.sin(Math.PI * (1 - gustLeft / 3)) * 160; } else gust = 0;
-                const wind = 18 + Math.sin(t * 0.21) * 16 + gust;
-
-                const sx = W * 0.8 - inp.px * 6, sy = H * (night ? 0.3 : 0.27), sr = Math.min(W, H) * (night ? 0.075 : 0.06);
-                if (night) {
-                    for (const s of stars) {
-                        const tw = Math.abs(Math.sin(t * 1.2 + s.tw)), x = s.x - inp.px * 2;
-                        g.fillStyle = `rgba(255,240,220,${(0.25 + 0.6 * tw).toFixed(2)})`;
-                        g.fillRect(x, s.y, s.r * 1.3, s.r * 1.3);
-                        if (s.r > 1) Worlds.twinkle(g, x + s.r * 0.65, s.y + s.r * 0.65, s.r, tw, "#fff0dc");
-                    }
-                    // a big harvest moon
-                    const mg = g.createRadialGradient(sx, sy, sr * 0.7, sx, sy, sr * 3.5);
-                    mg.addColorStop(0, "rgba(255,180,100,.35)");
-                    mg.addColorStop(1, "rgba(255,150,80,0)");
-                    g.fillStyle = mg;
-                    g.fillRect(sx - sr * 3.5, sy - sr * 3.5, sr * 7, sr * 7);
-                    const mf = g.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, sr * 0.1, sx, sy, sr);
-                    mf.addColorStop(0, "#ffe2b0");
-                    mf.addColorStop(1, "#f2a45a");
-                    g.fillStyle = mf;
-                    g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
-                    g.fillStyle = "rgba(170,90,40,.25)";
-                    for (const [cx, cy, cr] of [[-0.35, -0.1, 0.2], [0.2, 0.3, 0.15], [0.3, -0.35, 0.1]]) { g.beginPath(); g.arc(sx + cx * sr, sy + cy * sr, cr * sr, 0, TAU); g.fill(); }
-                } else {
-                    const sg = g.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 6);
-                    sg.addColorStop(0, "rgba(255,236,170,.9)");
-                    sg.addColorStop(0.25, "rgba(255,210,130,.35)");
-                    sg.addColorStop(1, "rgba(255,190,110,0)");
-                    g.fillStyle = sg;
-                    g.fillRect(sx - sr * 6, sy - sr * 6, sr * 12, sr * 12);
-                    g.fillStyle = "#fff3cf";
-                    g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
-                    // geese flying south in a V
-                    nextGeese -= dt;
-                    if (!geese && nextGeese <= 0) geese = { x: W + 40, y: H * U.rand(0.08, 0.22), vx: -U.rand(45, 70), n: 5 + Math.floor(Math.random() * 4) };
-                    if (geese) {
-                        geese.x += geese.vx * dt;
-                        g.strokeStyle = "rgba(70,50,40,.75)";
-                        g.lineWidth = 1.6;
-                        g.lineCap = "round";
-                        for (let i = 0; i < geese.n; i++) {
-                            const k = Math.ceil(i / 2) * (i % 2 ? 1 : -1), gx = geese.x + Math.abs(k) * 16, gy = geese.y + k * 9, f = Math.sin(t * 8 + i) * 4;
-                            g.beginPath(); g.moveTo(gx - 6, gy - f); g.lineTo(gx, gy); g.lineTo(gx + 6, gy - f); g.stroke();
-                        }
-                        if (geese.x < -160) { geese = null; nextGeese = U.rand(20, 34); }
-                    }
-                }
-                g.drawImage(hills, -30 - inp.px * 4, 0);
-                // sunbeams slanting through the trees
-                if (!night) {
-                    g.globalCompositeOperation = "lighter";
-                    for (const r of rays) {
-                        const a = r.a + Math.sin(t * 0.15 + r.ph) * 0.02, len = Math.hypot(W, H), al = 0.05 + 0.03 * Math.sin(t * 0.4 + r.ph);
-                        g.fillStyle = `rgba(255,220,150,${al.toFixed(3)})`;
-                        g.beginPath();
-                        g.moveTo(sx, sy);
-                        g.lineTo(sx + Math.cos(a - r.w) * len, sy + Math.sin(a - r.w) * len);
-                        g.lineTo(sx + Math.cos(a + r.w) * len, sy + Math.sin(a + r.w) * len);
-                        g.fill();
-                    }
-                    g.globalCompositeOperation = "source-over";
-                }
-                g.drawImage(trees, -60 - inp.px * 9, 0);
-                g.drawImage(floor, -20 - inp.px * 6, groundY - H * 0.03);
-                if (night) {
-                    const fog = g.createLinearGradient(0, groundY - H * 0.1, 0, H);
-                    fog.addColorStop(0, "rgba(140,120,170,0)");
-                    fog.addColorStop(0.5, `rgba(140,120,170,${(0.16 + Math.sin(t * 0.3) * 0.04).toFixed(3)})`);
-                    fog.addColorStop(1, "rgba(140,120,170,0)");
-                    g.fillStyle = fog;
-                    g.fillRect(0, groundY - H * 0.1, W, H);
-                }
-
-                // a squirrel that digs a hole, buries an acorn and dashes off
-                nextDigger -= dt;
-                if (!digger && nextDigger <= 0) { const dir = Math.random() < 0.5 ? 1 : -1; digger = { dir, x: dir > 0 ? -40 : W + 40, y: groundY + (H - groundY) * U.rand(0.35, 0.6), stopAt: W * U.rand(0.25, 0.75), state: "in", t: 0, s: U.clamp(H / 700, 0.7, 1.5) }; }
-                if (digger) {
-                    const d = digger;
-                    d.t += dt;
-                    if (d.state === "in") { d.x += d.dir * 140 * dt; if ((d.dir > 0 && d.x >= d.stopAt) || (d.dir < 0 && d.x <= d.stopAt)) { d.state = "dig"; d.t = 0; } }
-                    else if (d.state === "dig") {
-                        if (Math.random() < dt * 30) dirt.push({ x: d.x + d.dir * 6 * d.s, y: d.y, vx: -d.dir * U.rand(20, 80), vy: -U.rand(60, 140), life: 0.6 });
-                        if (d.t > 1.6) { d.state = "out"; d.dir = -d.dir; }
-                    } else { d.x += d.dir * 180 * dt; if (d.x < -60 || d.x > W + 60) { digger = null; nextDigger = U.rand(18, 32); } }
-                    if (digger) drawSquirrel(g, d.x - inp.px * 6, d.y, d.s, d.dir, d.state === "dig" ? (d.t * 4) % 1 * 0.3 : (t * 3.2) % 1, Math.sin(t * 6), d.state === "in");
-                }
-                dirt = dirt.filter(p => {
-                    p.life -= dt; p.vy += 400 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
-                    g.fillStyle = `rgba(90,55,30,${Math.max(0, p.life).toFixed(2)})`;
-                    g.fillRect(p.x - inp.px * 6, p.y, 3, 3);
-                    return p.life > 0;
-                });
-
-                g.drawImage(oak, -40 - inp.px * 14, 0);
-                // the owl in the hollow at night
-                if (night) {
-                    owlNext -= dt;
-                    if (owlNext <= 0) { owlBlink = 0.18; owlNext = U.rand(2, 5); }
-                    owlBlink -= dt;
-                    const ow = U.clamp(W * 0.05, 22, 70), ox = W * 0.04 + ow * 0.05 - inp.px * 14, oy = H * 0.5, os = ow * 0.1;
-                    g.fillStyle = "#ffcf3f";
-                    for (const side of [-1, 1]) {
-                        if (owlBlink > 0) g.fillRect(ox + side * os * 1.1 - os * 0.7, oy - 1, os * 1.4, 2);
-                        else { g.beginPath(); g.arc(ox + side * os * 1.1, oy, os * 0.7, 0, TAU); g.fill(); }
-                    }
-                }
-                // a squirrel running along the oak's branch, pausing at the end to flick its tail
-                nextRunner -= dt;
-                if (!runner && nextRunner <= 0 && branch.length) runner = { u: 0, dir: 1, state: "run", t: 0 };
-                if (runner) {
-                    const r = runner;
-                    r.t += dt;
-                    if (r.state === "run") {
-                        r.u += r.dir * dt * 0.28;
-                        if (r.u >= 0.85) { r.u = 0.85; r.state = "sit"; r.t = 0; }
-                        if (r.u <= 0 && r.dir < 0) { runner = null; nextRunner = U.rand(12, 22); }
-                    } else if (r.t > 2.2) { r.state = "run"; r.dir = -1; }
-                    if (runner) {
-                        const i = Math.min(branch.length - 1, Math.floor(r.u * (branch.length - 1))), [bx, by] = branch[i];
-                        drawSquirrel(g, bx - inp.px * 14, by + 2, U.clamp(H / 900, 0.55, 1.1), r.dir, r.state === "run" ? (t * 3.5) % 1 : 0, r.state === "sit" ? Math.sin(t * 14) : Math.sin(t * 5), false);
-                    }
-                }
-
-                // tumbling leaves, pushed along by the breeze
-                for (const l of leaves) {
-                    l.y += (24 + l.s * 3) * l.depth * dt;
-                    l.x += (wind * l.depth + Math.sin(t * 1.4 + l.sway) * 26) * dt;
-                    l.rot += l.spin * dt;
-                    l.flip += dt * 3;
-                    if (l.y > H + 12) { l.y = -12; l.x = Math.random() * W; }
-                    if (l.x > W + 14) l.x -= W + 28; else if (l.x < -14) l.x += W + 28;
-                    g.save();
-                    g.translate(l.x - inp.px * 10 * l.depth, l.y);
-                    g.rotate(l.rot);
-                    g.scale(1, Math.abs(Math.cos(l.flip)) * 0.85 + 0.15);
-                    g.fillStyle = canopyCol(l.c);
-                    leafPath(g, l.s * l.depth, l.pointy);
-                    g.fill();
-                    if (l.s * l.depth > 3.5) {                              // a vein and a stem on the bigger, nearer ones
-                        const s = l.s * l.depth;
-                        g.strokeStyle = "rgba(70, 30, 8, .4)"; g.lineWidth = Math.max(0.6, s * 0.09);
-                        g.beginPath(); g.moveTo(-s * 1.3, 0); g.lineTo(s * 0.8, 0); g.stroke();
-                    }
-                    g.restore();
-                }
-            }
-        };
-    }
+    // The background is SquirrelScene (squirrel-scene.js), drawn with the leaves and squirrels above
 
     // ---------------------------------------------------------------------------------------------
     // The board: acorns, nuts and leaves; squirrels run across finished words; an acorn stash counter
@@ -551,9 +243,12 @@
         await c.wait(700);
         if (c.skipped) return;
 
-        // 2. the squirrel bounds onto the board holding a golden acorn
-        const hero = U.el("div", { class: "sq-hero", html: HERO, style: { left: cx - 60 + "px", top: b.top - 110 + 20 + "px" } });
-        const acorn = U.el("div", { class: "sq-gold", html: GOLD_ACORN, style: { left: cx - 22 + "px", top: b.top - 120 + "px" } });
+        // 2. the squirrel bounds onto the board holding a golden acorn (Rive: rive/squirrel-win.riv plays the squirrel
+        //    and the acorn, timed to the steps below; these two elements, kept hidden, move the same way and place the bursts)
+        const art = Anim.play("squirrel-win", { follow: boardEl, ms: 5200, fadeMs: 250, rect: r => { const w = 420, sc = w / 600; return { x: r.left + r.width / 2 - 300 * sc, y: r.top + 20 - 560 * sc, w, h: 700 * sc }; } });
+        c.cleanup(() => art.stop());
+        const hero = U.el("div", { class: "sq-hero", html: HERO, style: { left: cx - 60 + "px", top: b.top - 110 + 20 + "px", visibility: "hidden" } });
+        const acorn = U.el("div", { class: "sq-gold", html: GOLD_ACORN, style: { left: cx - 22 + "px", top: b.top - 120 + "px", visibility: "hidden" } });
         overlay.append(hero, acorn);
         c.cleanup(() => { hero.remove(); acorn.remove(); });
         const from = cx < W / 2 ? W + 80 : -200;
@@ -569,7 +264,7 @@
 
         // 3. it throws the acorn up... and it cracks open
         Sound.play("whoosh");
-        const up = acorn.animate([{ transform: "none" }, { transform: `translateY(${-Math.min(220, b.top + 40)}px) rotate(540deg) scale(1.4)` }], { duration: 650, easing: "cubic-bezier(.2,.8,.4,1)", fill: "forwards" });
+        const up = acorn.animate([{ transform: "none" }, { transform: "translateY(-216px) rotate(540deg) scale(1.4)" }], { duration: 650, easing: "cubic-bezier(.2,.8,.4,1)", fill: "forwards" });
         c.cleanup(() => up.cancel());
         await c.wait(650);
         if (c.skipped) return;
@@ -614,6 +309,12 @@
         c.cleanup(() => { alive = false; });
         // the squirrel does a backflip on top of the board, then dashes away
         hero.animate([{ transform: "none" }, { transform: "translateY(-90px) rotate(-180deg)", offset: 0.5 }, { transform: "rotate(-360deg)" }], { duration: 750, delay: 600, easing: "ease-in-out" });
+        Anim.motion().then(({ animate, stagger }) => {                         // the squares sway in the leaf tornado
+            if (c.skipped) return;
+            const cells = Game.openCells();
+            const run = animate(cells, { rotate: [0, -8, 6, -3, 0], scale: [1, 0.94, 1.04, 1] }, { duration: 1.1, delay: stagger(0.03, { from: "center" }), ease: "easeInOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; }); });
+        }).catch(() => null);
         c.later(() => Sound.play("chitter"), 700);
         await c.wait(1900);
         if (c.skipped) return;
@@ -781,7 +482,7 @@
     Worlds.register({
         id: "squirrel", name: "Acorn Woods", icon: "🐿️", tagline: "Autumn Leaves and Busy Squirrels.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "autumn",
+        scene: (W, H, opts) => SquirrelScene(W, H, opts, { leafPath, drawSquirrel }), rive: "squirrel-win", board, celebrate, titleCard, sounds, transition: "autumn",
         mascot: { name: "HAZEL", draw: drawHazel },
         lines: {
             hello: ["Hi, I'm Hazel! Ready to stash some words?", "The leaves are falling and the puzzles are fresh!", "Squirrel here! Let's go nuts on some puzzles."],
