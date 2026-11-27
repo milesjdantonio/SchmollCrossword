@@ -487,7 +487,13 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         beacons, a highway with dashes, palm rows sweeping past in perspective, neon-rimmed corner palms, shooting
         stars, motes, the UFO; day = pastel vaporwave with shaded pixel clouds; win: a Rive neon marquee
         `arcade-win` draws itself round STAGE CLEAR with a joystick, buttons and coins, Motion powers up the squares).
-      - To do: Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
+        **Haunted Library** (library-scene.js: a two-storey hall in true perspective, bookcases full of spines with
+        gilt and labels, a gallery with balusters, a rolling ladder, a ribbed ceiling, a chandelier, a gothic
+        stained-glass window with lancets and a rose, coloured shafts and a pool of light, a grandfather clock
+        showing the real time with its pendulum swinging, a runner with medallions, cobwebs, a book stack with a
+        candle, a globe; moonlight, floating candles, lit sconces, wisps and a ghost by night; win: a Rive grimoire
+        `library-win` bursts its clasp and riffles out runes, Motion turns the squares like pages).
+      - To do: Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention

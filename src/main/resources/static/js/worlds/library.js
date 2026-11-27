@@ -14,229 +14,7 @@
     const GLASS = ["rgba(200,60,70,.45)", "rgba(60,110,200,.45)", "rgba(240,190,60,.5)", "rgba(70,160,90,.45)", "rgba(150,80,190,.45)"];
     const dark = () => document.documentElement.dataset.theme === "dark";
 
-    // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let back, shelves, glow, wisp, motes, candles, wisps, win, event = null, nextEvent = preview ? 999 : U.rand(5, 10);
-
-        function setup() {
-            const R = U.rng(5150);
-            // the window: arched, with stained glass (day) or moonlit sky (night)
-            const ww = Math.min(W * 0.26, 320), wh = Math.min(H * 0.5, ww * 1.7);
-            win = { x: W / 2 - ww / 2, y: H * 0.08, w: ww, h: wh };
-            back = Worlds.canvas(W + 40, H);
-            {
-                const g = back.getContext("2d");
-                const wall = g.createLinearGradient(0, 0, 0, H);
-                if (night) { wall.addColorStop(0, "#151026"); wall.addColorStop(0.7, "#221838"); wall.addColorStop(1, "#120c1e"); }
-                else { wall.addColorStop(0, "#e9dcc0"); wall.addColorStop(0.7, "#ddc9a3"); wall.addColorStop(1, "#c9ad80"); }
-                g.fillStyle = wall;
-                g.fillRect(0, 0, W + 40, H);
-                // wallpaper stripes
-                g.fillStyle = night ? "rgba(255,255,255,.025)" : "rgba(120,80,30,.06)";
-                for (let x = 0; x < W + 40; x += 36) g.fillRect(x, 0, 14, H * 0.86);
-                // wainscoting along the bottom
-                g.fillStyle = night ? "#1c1228" : "#9a6a3c";
-                g.fillRect(0, H * 0.72, W + 40, H * 0.16);
-                g.strokeStyle = night ? "rgba(255,255,255,.06)" : "rgba(60,30,10,.25)";
-                g.lineWidth = 2;
-                for (let x = 10; x < W + 40; x += 90) g.strokeRect(x, H * 0.74, 70, H * 0.12);
-                // the floor
-                const fl = g.createLinearGradient(0, H * 0.86, 0, H);
-                fl.addColorStop(0, night ? "#2a1a14" : "#7a4a24"); fl.addColorStop(1, night ? "#140c08" : "#4a2a12");
-                g.fillStyle = fl;
-                g.fillRect(0, H * 0.86, W + 40, H * 0.14);
-                g.strokeStyle = "rgba(0,0,0,.2)"; g.lineWidth = 1;
-                for (let x = 0; x < W + 40; x += 48) { g.beginPath(); g.moveTo(x, H * 0.86); g.lineTo(x - 30, H); g.stroke(); }
-                // a round rug
-                g.fillStyle = night ? "rgba(90,30,60,.6)" : "rgba(150,40,50,.65)";
-                g.beginPath(); g.ellipse(W / 2 + 20, H * 0.94, W * 0.22, H * 0.035, 0, 0, TAU); g.fill();
-                g.strokeStyle = night ? "rgba(220,180,90,.35)" : "rgba(240,200,110,.7)"; g.lineWidth = 2;
-                g.beginPath(); g.ellipse(W / 2 + 20, H * 0.94, W * 0.19, H * 0.026, 0, 0, TAU); g.stroke();
-                // the window
-                const { x, y, w, h } = win, X = x + 20, arch = w / 2;
-                const shape = () => { g.beginPath(); g.moveTo(X, y + arch); g.arc(X + arch, y + arch, arch, Math.PI, TAU); g.lineTo(X + w, y + h); g.lineTo(X, y + h); g.closePath(); };
-                g.save();
-                shape(); g.clip();
-                if (night) {
-                    const sky = g.createLinearGradient(0, y, 0, y + h);
-                    sky.addColorStop(0, "#0a1030"); sky.addColorStop(1, "#1f2a5a");
-                    g.fillStyle = sky; g.fillRect(X, y, w, h);
-                    for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(255,255,255,${(0.3 + R() * 0.6).toFixed(2)})`; g.fillRect(X + R() * w, y + R() * h, 1.4, 1.4); }
-                    const mx = X + w * 0.62, my = y + h * 0.3, mr = w * 0.14;
-                    const mg = g.createRadialGradient(mx, my, mr * 0.6, mx, my, mr * 3);
-                    mg.addColorStop(0, "rgba(220,230,255,.45)"); mg.addColorStop(1, "rgba(220,230,255,0)");
-                    g.fillStyle = mg; g.fillRect(X, y, w, h);
-                    g.fillStyle = "#f2f0e2"; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
-                    g.fillStyle = "rgba(180,180,170,.35)"; g.beginPath(); g.arc(mx - mr * 0.3, my - mr * 0.2, mr * 0.22, 0, TAU); g.arc(mx + mr * 0.3, my + mr * 0.3, mr * 0.15, 0, TAU); g.fill();
-                } else {
-                    g.fillStyle = "#bfe0ff"; g.fillRect(X, y, w, h);
-                    // stained glass: coloured panes in a diamond pattern
-                    const s = w / 6;
-                    for (let gy = y - s; gy < y + h + s; gy += s) for (let gx = X - s; gx < X + w + s; gx += s) {
-                        g.fillStyle = GLASS[Math.floor(R() * GLASS.length)];
-                        g.beginPath(); g.moveTo(gx + s / 2, gy); g.lineTo(gx + s, gy + s / 2); g.lineTo(gx + s / 2, gy + s); g.lineTo(gx, gy + s / 2); g.fill();
-                    }
-                    const rose = g.createRadialGradient(X + arch, y + arch, 2, X + arch, y + arch, arch * 0.8);
-                    rose.addColorStop(0, "rgba(255,250,210,.95)"); rose.addColorStop(1, "rgba(255,250,210,0)");
-                    g.fillStyle = rose; g.fillRect(X, y, w, h);
-                }
-                g.restore();
-                // lead lines and the stone frame
-                g.strokeStyle = night ? "#3a2e4a" : "#5a4630"; g.lineWidth = 3;
-                g.beginPath(); g.moveTo(X + w / 2, y); g.lineTo(X + w / 2, y + h); g.moveTo(X, y + h * 0.55); g.lineTo(X + w, y + h * 0.55); g.stroke();
-                g.lineWidth = Math.max(8, w * 0.05); g.strokeStyle = night ? "#2c2238" : "#8a7458";
-                shape(); g.stroke();
-                g.fillStyle = night ? "#2c2238" : "#8a7458"; g.fillRect(X - 14, y + h, w + 28, 12);
-            }
-            // two tall bookcases full of books
-            shelves = Worlds.canvas(W + 80, H);
-            {
-                const g = shelves.getContext("2d"), caseW = Math.max(80, W * 0.11), gap = Math.max(54, H * 0.13);
-                for (const left of [true, false]) {
-                    const x0 = left ? 0 : W + 80 - caseW, top = H * 0.06;
-                    const wood = g.createLinearGradient(x0, 0, x0 + caseW, 0);
-                    wood.addColorStop(0, night ? "#24140e" : "#5a3418"); wood.addColorStop(0.5, night ? "#341e14" : "#7a4a24"); wood.addColorStop(1, night ? "#24140e" : "#5a3418");
-                    g.fillStyle = wood;
-                    g.fillRect(x0, top, caseW, H * 0.86 - top);
-                    g.fillStyle = night ? "#120a08" : "#2e1a0c";
-                    for (let y = top + 14; y + gap < H * 0.86; y += gap) {
-                        g.fillRect(x0 + 10, y, caseW - 20, gap - 10);              // the shadowy back of the shelf
-                        // books standing on the shelf
-                        let bx = x0 + 12;
-                        while (bx < x0 + caseW - 22) {
-                            const bw = 7 + R() * 11, bh = (gap - 14) * (0.62 + R() * 0.34), lean = R() < 0.08;
-                            if (R() < 0.06) { bx += bw; continue; }                // a gap where a book is missing
-                            const col = SPINES[Math.floor(R() * SPINES.length)];
-                            g.save();
-                            g.translate(bx, y + gap - 10);
-                            if (lean) g.rotate(0.18);
-                            g.fillStyle = col;
-                            g.fillRect(0, -bh, bw, bh);
-                            g.fillStyle = night ? "rgba(0,0,0,.45)" : "rgba(0,0,0,.15)"; g.fillRect(bw - 2, -bh, 2, bh);
-                            g.fillStyle = night ? "rgba(220,180,90,.35)" : "rgba(240,200,110,.85)";      // gold bands
-                            g.fillRect(1, -bh + 5, bw - 2, 1.5); g.fillRect(1, -10, bw - 2, 1.5);
-                            if (bw > 12) g.fillRect(bw / 2 - 2, -bh / 2 - 6, 4, 12);
-                            g.restore();
-                            bx += bw + (lean ? 5 : 0.5);
-                        }
-                        g.fillStyle = night ? "#3a2418" : "#8a5a2e";
-                        g.fillRect(x0 + 6, y + gap - 10, caseW - 12, 7);             // the shelf board
-                    }
-                    g.fillStyle = night ? "#3a2418" : "#8a5a2e";
-                    g.fillRect(x0 - 4, top - 10, caseW + 8, 14);                     // the crown on top
-                }
-            }
-            // soft glow sprites, built once
-            glow = Worlds.canvas(64, 64);
-            {
-                const g = glow.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-                gr.addColorStop(0, night ? "rgba(255,200,110,.9)" : "rgba(255,250,220,.9)"); gr.addColorStop(0.4, night ? "rgba(255,160,60,.28)" : "rgba(255,240,200,.3)"); gr.addColorStop(1, "rgba(255,160,60,0)");
-                g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
-            }
-            // a ghostly wisp, drawn once and stretched into an oval when used
-            wisp = Worlds.canvas(64, 64);
-            { const g = wisp.getContext("2d"), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(170,230,210,.10)"); gr.addColorStop(1, "rgba(170,230,210,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); }
-            motes = Array.from({ length: preview ? 20 : 70 }, () => ({ x: R() * W, y: R() * H, s: 0.6 + R() * 1.6, sp: 3 + R() * 8, ph: R() * TAU }));
-            candles = night ? Array.from({ length: preview ? 5 : 11 }, (_, i) => ({ x: W * (0.12 + (i + R() * 0.6) / (preview ? 5 : 11) * 0.76), y: H * (0.12 + R() * 0.42), h: 16 + R() * 18, ph: R() * TAU, z: 0.6 + R() * 0.6 })) : [];
-            wisps = night ? Array.from({ length: preview ? 3 : 6 }, () => ({ x: R() * W, y: H * (0.3 + R() * 0.5), sp: 6 + R() * 10, ph: R() * TAU, r: 30 + R() * 50 })) : [];
-        }
-        setup();
-
-        // a book flapping its covers like wings
-        function flyingBook(g, x, y, s, t, col) {
-            const flap = Math.sin(t * 9) * 0.9;
-            g.save(); g.translate(x, y); g.scale(s, s);
-            for (const side of [-1, 1]) {
-                g.fillStyle = col;
-                g.beginPath(); g.moveTo(0, -12); g.lineTo(side * 26, -12 - flap * 14); g.lineTo(side * 26, 12 - flap * 14); g.lineTo(0, 12); g.fill();
-                g.fillStyle = "#f4ead0";
-                g.beginPath(); g.moveTo(0, -10); g.lineTo(side * 22, -10 - flap * 11); g.lineTo(side * 22, 10 - flap * 11); g.lineTo(0, 10); g.fill();
-            }
-            g.restore();
-        }
-        // a friendly ghost
-        function ghost(g, x, y, s, t, a) {
-            g.save(); g.translate(x, y); g.scale(s, s); g.globalAlpha = a;
-            g.fillStyle = "#eef2ff";
-            g.beginPath(); g.arc(0, -10, 24, Math.PI, TAU); g.lineTo(24, 22);
-            for (let i = 0; i <= 4; i++) g.lineTo(24 - i * 12, 22 + (i % 2 ? -6 : 6) + Math.sin(t * 6 + i) * 3);
-            g.closePath(); g.fill();
-            g.fillStyle = "#2a2440";
-            g.beginPath(); g.ellipse(-8, -12, 3.5, 5, 0, 0, TAU); g.ellipse(8, -12, 3.5, 5, 0, 0, TAU); g.fill();
-            g.beginPath(); g.ellipse(0, 2, 4, 3 + Math.sin(t * 3), 0, 0, TAU); g.fill();
-            g.restore(); g.globalAlpha = 1;
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                g.drawImage(back, -20 - inp.px * 4, 0);
-                const wx = win.x - inp.px * 4 + win.w / 2;
-                if (!night) {
-                    // coloured beams of light slanting down from the window
-                    for (let i = 0; i < 4; i++) {
-                        const a = (0.07 + 0.03 * Math.sin(t * 0.6 + i)) * (preview ? 1.2 : 1);
-                        const x0 = wx - win.w * 0.4 + i * win.w * 0.27, y0 = win.y + win.h * 0.4;
-                        const bg = g.createLinearGradient(x0, y0, x0 - W * 0.25, H);
-                        bg.addColorStop(0, `rgba(255,${[230, 240, 220, 245][i]},${[200, 170, 230, 190][i]},${a.toFixed(3)})`); bg.addColorStop(1, "rgba(255,240,200,0)");
-                        g.fillStyle = bg;
-                        g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + win.w * 0.2, y0); g.lineTo(x0 + win.w * 0.2 - W * 0.22, H); g.lineTo(x0 - W * 0.3, H); g.fill();
-                    }
-                } else {
-                    const mg = g.createLinearGradient(wx, win.y, wx - W * 0.2, H);   // moonlight on the floor
-                    mg.addColorStop(0, "rgba(160,180,255,.10)"); mg.addColorStop(1, "rgba(160,180,255,0)");
-                    g.fillStyle = mg;
-                    g.beginPath(); g.moveTo(wx - win.w / 2, win.y + win.h); g.lineTo(wx + win.w / 2, win.y + win.h); g.lineTo(wx + win.w * 0.1 - W * 0.12, H); g.lineTo(wx - win.w - W * 0.18, H); g.fill();
-                }
-                g.drawImage(shelves, -40 - inp.px * 10, 0);
-                // ghostly wisps drifting (night)
-                for (const w of wisps) {
-                    w.x += w.sp * dt; if (w.x > W + w.r * 2) w.x = -w.r * 2;
-                    const y = w.y + Math.sin(t * 0.7 + w.ph) * 20;
-                    g.drawImage(wisp, w.x - inp.px * 14 - w.r * 1.6, y - w.r * 0.6, w.r * 3.2, w.r * 1.2);
-                }
-                // floating candles, bobbing and flickering (night)
-                for (const c of candles) {
-                    const x = c.x - inp.px * 18 * c.z, y = c.y + Math.sin(t * 1.1 + c.ph) * 8, s = c.z;
-                    const fl = 0.85 + 0.15 * Math.sin(t * 13 + c.ph) * Math.sin(t * 7.3 + c.ph * 2);
-                    g.globalCompositeOperation = "lighter";
-                    g.globalAlpha = 0.8 * fl;
-                    g.drawImage(glow, x - 40 * s, y - 40 * s - c.h * s, 80 * s, 80 * s);
-                    g.globalAlpha = 1;
-                    g.globalCompositeOperation = "source-over";
-                    g.fillStyle = "#efe6cf"; g.fillRect(x - 3.5 * s, y - c.h * s, 7 * s, c.h * s);
-                    g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(x + 1.5 * s, y - c.h * s, 2 * s, c.h * s);
-                    g.fillStyle = "#ffd36b";
-                    g.beginPath(); g.ellipse(x + Math.sin(t * 9 + c.ph) * 0.8, y - c.h * s - 5 * s * fl, 2.6 * s, 5.5 * s * fl, 0, 0, TAU); g.fill();
-                    g.fillStyle = "#fff6d8"; g.beginPath(); g.ellipse(x, y - c.h * s - 3.5 * s, 1.1 * s, 2.4 * s, 0, 0, TAU); g.fill();
-                }
-                // dust motes drifting in the light (or glowing faintly at night)
-                for (const m of motes) {
-                    m.y -= m.sp * dt * 0.4; m.x += Math.sin(t * 0.5 + m.ph) * dt * 4;
-                    if (m.y < -4) { m.y = H + 4; m.x = Math.random() * W; }
-                    const a = night ? 0.25 + 0.25 * Math.sin(t * 2 + m.ph) : 0.35 + 0.3 * Math.sin(t * 1.5 + m.ph);
-                    g.fillStyle = night ? `rgba(180,255,220,${a.toFixed(2)})` : `rgba(255,248,220,${a.toFixed(2)})`;
-                    g.beginPath(); g.arc(m.x - inp.px * 22, m.y, m.s, 0, TAU); g.fill();
-                    // by day the specks catch the light and glint; at night they glow like little spirits
-                    if (night) Worlds.glow(g, m.x - inp.px * 22, m.y, m.s * 6, "#b4ffdc", a * 0.6);
-                    else if (a > 0.58) Worlds.glint(g, m.x - inp.px * 22, m.y, m.s * 4, (a - 0.58) * 5, "#fff8dc");
-                }
-                // now and then: a book flaps across the room (day) or a ghost floats by (night)
-                nextEvent -= dt;
-                if (!event && nextEvent <= 0) event = { x: -60, y: H * U.rand(0.18, 0.5), vx: U.rand(50, 90), s: U.clamp(H / 900, 0.6, 1.2), col: U.pick(SPINES) };
-                if (event) {
-                    event.x += event.vx * dt;
-                    const y = event.y + Math.sin(t * 2) * 18;
-                    if (night) ghost(g, event.x - inp.px * 16, y, event.s, t, 0.55);
-                    else flyingBook(g, event.x - inp.px * 16, y, event.s, t, event.col);
-                    if (event.x > W + 80) { event = null; nextEvent = U.rand(14, 26); }
-                }
-            }
-        };
-    }
+    // The background is LibraryScene (library-scene.js)
 
     // ---------------------------------------------------------------------------------------------
     // The board: a keepsake in each typed square; finished words underlined in wavy ink
@@ -284,6 +62,13 @@
         if (U.motion() === "still") return;
         const W = innerWidth, H = innerHeight, b = boardEl.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
         const overlay = document.getElementById("overlay");
+        // a grimoire rises in front of the board, bursts its clasp as the books burst, riffles and lets out runes
+        // (Rive: rive/library-win.riv, timed to the steps below)
+        const side = Math.min(W * 0.95, b.width * 1.85);
+        c.later(() => {
+            const art = Anim.play("library-win", { follow: boardEl, ms: 5500, fadeMs: 300, rect: r => ({ x: r.left + r.width / 2 - side / 2, y: r.top + r.height / 2 - side * 0.55, w: side, h: side * 560 / 600 }) });
+            c.cleanup(() => art.stop());
+        }, 300);
         // 1. a rumble
         Sound.play("rumble");
         FX.shake(7, 700);
@@ -312,6 +97,12 @@
         await c.wait(330);
         if (c.skipped) return;
         Sound.play("burst");
+        Anim.motion().then(({ animate, stagger }) => {                         // the squares turn over like pages
+            if (c.skipped) return;
+            const cells = [...boardEl.querySelectorAll(".cell:not(.block)")];
+            const run = animate(cells, { rotateY: [0, 360] }, { duration: 0.7, delay: stagger(0.025), ease: "easeInOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; }); });
+        }).catch(() => null);
         FX.flash(dark() ? "#d8c8ff" : "#fff6dc", 450, 0.55);
         FX.ring({ x: cx, y: cy, color: dark() ? "#b6ffe0" : "#c99a2e", r1: Math.max(W, H) * 0.6, dur: 1.1, width: 14, glow: dark() });
         FX.burst({ x: cx, y: cy, n: 90, colors: ["#f6ecd2", "#efe2c2", "#fffaf0"], shape: "rect", speed: [200, 650], gravity: 160, drag: 1.1, life: [1.8, 2.8], size: [9, 14] });
@@ -426,7 +217,7 @@
     Worlds.register({
         id: "library", name: "Haunted Library", icon: "\u{1F4DA}", tagline: "Quiet Shelves. Restless Ghosts.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "pages",
+        scene: (W, H, opts) => LibraryScene(W, H, opts), rive: "library-win", board, celebrate, titleCard, sounds, transition: "pages",
         mascot: { name: "BOO", draw: drawBoo },
         lines: {
             hello: ["Oh! You can see me? Welcome to the library!", "Shhh... a new puzzle just appeared on the shelf.", "Boo! Sorry, force of habit. Let's solve!"],
