@@ -493,7 +493,13 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         showing the real time with its pendulum swinging, a runner with medallions, cobwebs, a book stack with a
         candle, a globe; moonlight, floating candles, lit sconces, wisps and a ghost by night; win: a Rive grimoire
         `library-win` bursts its clasp and riffles out runes, Motion turns the squares like pages).
-      - To do: Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
+        **Candy Hills** (candy-scene.js: a lemon-drop sun, a sugared sour-belt rainbow, spun-sugar clouds, frosted
+        mountains with icing drips, a candy castle with wafer walls, swirled cone towers and gumdrop domes (lit
+        windows by night), a layer cake with a chocolate waterfall into a winding glossy river, a wafer bridge,
+        sugar-dusted gumdrop hills, cotton-candy and ice-cream trees, lollipops, a frosted meadow with sprinkles,
+        peppermint stones, candy corn, a donut, striped candy canes; win: a Rive star piñata `candy-win` with tissue
+        fringe swings in, cracks at each whack and bursts into sweets; Motion jiggles the squares).
+      - To do: Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention
