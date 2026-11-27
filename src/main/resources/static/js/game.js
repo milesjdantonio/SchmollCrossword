@@ -274,6 +274,20 @@ const Game = (() => {
         fitPhone();
     }
 
+    // A screen reader hears the clue when the word changes, how long it is and what's in it so far, and "Solved" at the
+    // end (a hidden polite live region, so it waits for whatever is being read)
+    let liveEl = null;
+    function speak(text) {
+        if (!liveEl) { liveEl = U.el("p", { class: "sr", "aria-live": "polite", role: "status" }); document.body.appendChild(liveEl); }
+        liveEl.textContent = "";
+        requestAnimationFrame(() => { liveEl.textContent = text; });
+    }
+    function announce(entry) {
+        const cells = cellsOf(entry), letters = cells.map(([r, c]) => game.letters[r][c] || "blank").join(", ");
+        speak(`${entry.number} ${entry.direction === "across" ? "Across" : "Down"}: ${entry.clue}. ${cells.length} letters: ${letters}.`);
+    }
+    Bus.on("win", () => speak("Solved."));
+
     // On a phone the on-screen keyboard sits over the bottom of the page: bring the timer row to the top of the
     // screen so the clue, the whole board and the keyboard are all in view (the title and the tabs are a scroll up)
     const phoneQuery = matchMedia("(pointer: coarse) and (max-width: 780px)");
@@ -332,8 +346,9 @@ const Game = (() => {
                 const last = puzzle.size - 1;
                 const corner = row === 0 && col === 0 ? " c-tl" : row === 0 && col === last ? " c-tr" : row === last && col === 0 ? " c-bl" : row === last && col === last ? " c-br" : "";
                 const cell = U.el("div", { class: "cell" + corner, style: { "--i": row * puzzle.size + col } });
-                if (isBlock(row, col)) cell.classList.add("block");
+                if (isBlock(row, col)) { cell.classList.add("block"); cell.setAttribute("aria-hidden", "true"); }
                 else {
+                    cell.setAttribute("role", "img");
                     const number = puzzle.numbers[row][col];
                     if (number > 0) cell.appendChild(U.el("span", { class: "num", text: number }));
                     cell.appendChild(U.el("span", { class: "ltr" }));
@@ -539,6 +554,10 @@ const Game = (() => {
                 cell.classList.toggle("wrong", game.wrong[row][col]);
                 cell.classList.toggle("revealed", game.revealed[row][col]);
                 cell.classList.toggle("locked", game.locked[row][col] && !game.revealed[row][col]);
+                // what a screen reader says for the square (written only when it changes)
+                const num = game.puzzle.numbers[row][col];
+                const say = `Row ${row + 1}, column ${col + 1}${num ? `, number ${num}` : ""}: ${letter || "blank"}${game.pencil[row][col] ? ", pencilled" : ""}${isLocked(row, col) ? ", locked" : ""}`;
+                if (cell._say !== say) { cell._say = say; cell.setAttribute("aria-label", say); }
                 // the boss's marks: gone as soon as the square's letter changes again (you typed, or a letter came back)
                 const hk = row + "," + col, hit = hits.get(hk);
                 if (hit && letter !== hit.ch) hits.delete(hk);
@@ -579,6 +598,7 @@ const Game = (() => {
             if (item && !U.touch()) scrollClueIntoList(item);
             U.restart(clueBarEl, "slide");
         }
+        if (current && current !== lastClue) announce(current);
         lastClue = current;
         if (current) {
             clueBarEl.innerHTML = "";

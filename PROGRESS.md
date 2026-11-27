@@ -661,6 +661,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [x] Two tabs overwriting campaign progress (2026-11-27): a tab takes in another tab's save (`storage` event,
       `mergeCampaign`): best result per level, further along, secrets and attempts kept, coins/items from the newest
       save, its own fight and place kept; it saves the mix only if it adds something (no ping-pong). Checked in the page.
+- [x] The grid for screen readers (2026-11-27): each square has a spoken label (row, column, number, letter or
+      blank, pencilled, locked), black squares are hidden from readers, and a polite live region reads the clue, its
+      length and its letters when the word changes, and "Solved" at the end. (No ARIA rows: the board's DOM stays flat
+      for the worlds' decorations.)
 - [ ] The zip's other leftovers: licences ("Giant Steps but Smooth", credits for CC BY tracks), ops (CI, model IDs
       from settings), two tabs overwriting campaign progress, the grid for screen readers
 
