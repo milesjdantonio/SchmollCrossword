@@ -519,7 +519,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         hollow and its branch; a harvest moon, fog, fireflies and the owl by night; win: a Rive squirrel
         `squirrel-win` with strand-drawn fur throws a golden acorn that cracks open in light, backflips and dashes
         off; Motion sways the squares in the leaf tornado).
-      - To do: Deep Space, Classic
+        **Deep Space** (space.js, upgraded in place: a finer nebula with soft wisps, star-forming knots and ragged
+        dust lanes, a distant spiral galaxy, bright stars with diffraction spikes, a gas giant with turbulent bands,
+        a ring gap and the rings' shadow, cratered asteroids tumbling past; by day a sun with granulation, faculae,
+        sunspots with penumbras and limb darkening, a smooth corona, each planet with its own surface and night
+        side, rocky belt, a comet with ion and dust tails, a ringed giant rising in the lower left; win: a Rive
+        retro rocket `space-win` flies out of the warp and off the screen (artboard `clip: false`, full-screen
+        rect), Motion flashes the squares).
+      - To do: Classic
         (its win only).
 
 ### Phase 7: Retention

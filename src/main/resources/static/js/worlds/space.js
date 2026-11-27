@@ -120,29 +120,73 @@
     // ---------------------------------------------------------------------------------------------
     function makeNebula(W, H, seed) {
         const c = document.createElement("canvas");
-        c.width = Math.max(160, Math.round(W / 3));
-        c.height = Math.max(110, Math.round(H / 3));
-        const x = c.getContext("2d"), R = U.rng(seed);
+        c.width = Math.max(200, Math.round(W / 2));
+        c.height = Math.max(140, Math.round(H / 2));
+        const x = c.getContext("2d"), R = U.rng(seed), S = Math.max(c.width, c.height);
         const cols = ["110,60,210", "40,110,230", "210,60,160", "40,190,210", "90,40,170", "230,90,120"];
         x.globalCompositeOperation = "lighter";
-        for (let i = 0; i < 11; i++) {
-            const cx = R() * c.width, cy = R() * c.height, rr = (0.18 + R() * 0.42) * Math.max(c.width, c.height);
+        for (let i = 0; i < 16; i++) {                                    // the big soft clouds
+            const cx = R() * c.width, cy = R() * c.height, rr = (0.14 + R() * 0.38) * S;
             const gr = x.createRadialGradient(cx, cy, 0, cx, cy, rr), col = cols[i % cols.length];
-            gr.addColorStop(0, `rgba(${col},${(0.14 + R() * 0.14).toFixed(2)})`);
-            gr.addColorStop(0.45, `rgba(${col},${(0.05 + R() * 0.05).toFixed(2)})`);
+            gr.addColorStop(0, `rgba(${col},${(0.12 + R() * 0.12).toFixed(2)})`);
+            gr.addColorStop(0.45, `rgba(${col},${(0.04 + R() * 0.05).toFixed(2)})`);
             gr.addColorStop(1, `rgba(${col},0)`);
-            x.fillStyle = gr;
-            x.fillRect(0, 0, c.width, c.height);
+            x.fillStyle = gr; x.fillRect(0, 0, c.width, c.height);
         }
-        x.globalCompositeOperation = "destination-out";                 // dark dust lanes
-        for (let i = 0; i < 6; i++) {
-            const cx = R() * c.width, cy = R() * c.height, rr = (0.08 + R() * 0.16) * c.width;
-            const gr = x.createRadialGradient(cx, cy, 0, cx, cy, rr);
-            gr.addColorStop(0, "rgba(0,0,0,.55)");
-            gr.addColorStop(1, "rgba(0,0,0,0)");
-            x.fillStyle = gr;
-            x.fillRect(0, 0, c.width, c.height);
+        x.lineCap = "round";                                              // wispy filaments along curling paths
+        for (let i = 0; i < 26; i++) {
+            let px = R() * c.width, py = R() * c.height, a = R() * TAU;
+            const col = cols[Math.floor(R() * cols.length)], len = 20 + R() * 40;
+            x.strokeStyle = `rgba(${col},${(0.02 + R() * 0.03).toFixed(3)})`; x.lineWidth = 10 + R() * 22;
+            x.beginPath(); x.moveTo(px, py);
+            for (let k = 0; k < len; k++) { a += (R() - 0.5) * 0.35; px += Math.cos(a) * 3; py += Math.sin(a) * 3; x.lineTo(px, py); }
+            x.stroke();
         }
+        for (let i = 0; i < 14; i++) {                                    // bright knots where stars are forming
+            const cx = R() * c.width, cy = R() * c.height, rr = 4 + R() * 14;
+            const gr = x.createRadialGradient(cx, cy, 0, cx, cy, rr); gr.addColorStop(0, "rgba(255,235,255,.5)"); gr.addColorStop(0.4, `rgba(${cols[i % 6]},.25)`); gr.addColorStop(1, `rgba(${cols[i % 6]},0)`);
+            x.fillStyle = gr; x.fillRect(cx - rr, cy - rr, rr * 2, rr * 2);
+        }
+        x.globalCompositeOperation = "destination-out";                 // ragged dark dust lanes
+        for (let i = 0; i < 9; i++) {
+            let px = R() * c.width, py = R() * c.height, a = R() * TAU;
+            for (let k = 0; k < 18; k++) {
+                const rr = (0.02 + R() * 0.05) * S, gr = x.createRadialGradient(px, py, 0, px, py, rr);
+                gr.addColorStop(0, "rgba(0,0,0,.35)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+                x.fillStyle = gr; x.fillRect(px - rr, py - rr, rr * 2, rr * 2);
+                a += (R() - 0.5) * 0.6; px += Math.cos(a) * rr * 0.7; py += Math.sin(a) * rr * 0.7;
+            }
+        }
+        return c;
+    }
+
+    // A far-off spiral galaxy: a glowing core, arms of dust and young blue stars
+    function makeGalaxy(r, seed) {
+        const c = document.createElement("canvas"); c.width = c.height = Math.ceil(r * 2.4);
+        const x = c.getContext("2d"), R = U.rng(seed), m = c.width / 2;
+        x.translate(m, m); x.scale(1, 0.42); x.rotate(0.5);
+        x.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 1400; i++) {
+            const arm = i % 2, t = Math.pow(R(), 0.7), a = arm * Math.PI + t * 7 + (R() - 0.5) * 0.6, d = t * r * (0.95 + (R() - 0.5) * 0.2);
+            x.fillStyle = R() < 0.35 ? `rgba(160,200,255,${(0.2 + R() * 0.5).toFixed(2)})` : `rgba(255,230,210,${(0.1 + R() * 0.3).toFixed(2)})`;
+            x.fillRect(Math.cos(a) * d, Math.sin(a) * d, 1.2, 1.2);
+        }
+        const core = x.createRadialGradient(0, 0, 0, 0, 0, r * 0.35); core.addColorStop(0, "rgba(255,245,225,.95)"); core.addColorStop(0.3, "rgba(255,220,180,.4)"); core.addColorStop(1, "rgba(255,200,160,0)");
+        x.fillStyle = core; x.beginPath(); x.arc(0, 0, r * 0.35, 0, TAU); x.fill();
+        return c;
+    }
+    // A tumbling asteroid: a lumpy rock lit from one side, pitted with craters
+    function makeAsteroid(r, seed) {
+        const c = document.createElement("canvas"); c.width = c.height = Math.ceil(r * 2.4);
+        const x = c.getContext("2d"), R = U.rng(seed), m = c.width / 2;
+        const pts = Array.from({ length: 22 }, (_, i) => { const a = (i / 22) * TAU, rr = r * (0.75 + R() * 0.3); return [m + Math.cos(a) * rr, m + Math.sin(a) * rr * 0.82]; });
+        x.beginPath(); pts.forEach(([px, py], i) => x[i ? "lineTo" : "moveTo"](px, py)); x.closePath();
+        const gr = x.createRadialGradient(m - r * 0.4, m - r * 0.4, r * 0.1, m, m, r * 1.1); gr.addColorStop(0, "#8a8090"); gr.addColorStop(0.6, "#4a4250"); gr.addColorStop(1, "#16121c");
+        x.fillStyle = gr; x.fill(); x.save(); x.clip();
+        for (let i = 0; i < 14; i++) { const cx = m + (R() - 0.5) * r * 1.5, cy = m + (R() - 0.5) * r * 1.2, cr = r * (0.06 + R() * 0.16); x.fillStyle = "rgba(10,8,16,.45)"; x.beginPath(); x.arc(cx, cy, cr, 0, TAU); x.fill(); x.strokeStyle = "rgba(200,190,210,.25)"; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, cr, Math.PI * 0.9, Math.PI * 1.7); x.stroke(); }
+        for (let i = 0; i < 160; i++) { x.fillStyle = R() < 0.5 ? "rgba(0,0,0,.18)" : "rgba(220,210,230,.08)"; x.fillRect(m + (R() - 0.5) * r * 2, m + (R() - 0.5) * r * 1.8, 1.5, 1.5); }
+        x.restore();
+        x.strokeStyle = "rgba(180,200,255,.35)"; x.lineWidth = 1.5; x.beginPath(); pts.slice(2, 9).forEach(([px, py], i) => x[i ? "lineTo" : "moveTo"](px, py)); x.stroke();
         return c;
     }
 
@@ -155,7 +199,7 @@
             x.translate(cx, cy);
             x.rotate(-0.36);
             x.scale(1, 0.27);
-            for (const [rr, w, a] of [[1.32, 0.08, 0.35], [1.45, 0.12, 0.6], [1.6, 0.05, 0.25], [1.72, 0.1, 0.5], [1.86, 0.04, 0.25]]) {
+            for (const [rr, w, a] of [[1.3, 0.06, 0.3], [1.42, 0.12, 0.62], [1.53, 0.05, 0.45], [1.66, 0.03, 0.06], [1.76, 0.1, 0.5], [1.88, 0.04, 0.28], [1.95, 0.02, 0.18]]) {
                 x.strokeStyle = `rgba(232,206,165,${a})`;
                 x.lineWidth = pr * w / 0.27 * 0.27;
                 x.beginPath();
@@ -170,11 +214,13 @@
         x.arc(cx, cy, pr, 0, TAU);
         x.clip();
         const bands = ["#c98b5b", "#e6b98a", "#b8744a", "#f0d2a8", "#a5653f", "#d9a274", "#8f5636", "#e8c49a", "#c47e52"];
-        for (let y = -pr; y < pr; y += 2) {
-            const k = (y + pr) / (2 * pr);
-            const i = Math.abs(Math.floor(k * 9 + Math.sin(k * 23) * 0.6 + Math.sin(k * 61) * 0.25)) % bands.length;
-            x.fillStyle = bands[i];
-            x.fillRect(cx - pr, cy + y, pr * 2, 2.6);
+        for (let y = -pr; y < pr; y += 1.5) {
+            for (let xx = -pr, st = Math.max(1.5, pr / 70); xx < pr; xx += st) {
+                const k = (y + pr) / (2 * pr) + Math.sin(xx * 0.06 + y * 0.2) * 0.012 + Math.sin(xx * 0.017 - y * 0.05) * 0.008;
+                const i = Math.abs(Math.floor(k * 9 + Math.sin(k * 23) * 0.6 + Math.sin(k * 61) * 0.25)) % bands.length;
+                x.fillStyle = bands[i];
+                x.fillRect(cx + xx, cy + y, st + 0.6, 2.1);
+            }
         }
         x.fillStyle = "rgba(170,70,50,.85)";                           // a storm
         x.beginPath();
@@ -191,6 +237,9 @@
         sh.addColorStop(1, "rgba(0,0,12,.9)");
         x.fillStyle = sh;
         x.fillRect(cx - pr, cy - pr, pr * 2, pr * 2);
+        x.save(); x.translate(cx, cy); x.rotate(-0.36); x.scale(1, 0.27);            // the rings' shadow across the globe
+        x.strokeStyle = "rgba(20,10,20,.35)"; x.lineWidth = pr * 0.5; x.beginPath(); x.arc(0, pr * 0.9, pr * 1.55, Math.PI * 1.15, Math.PI * 1.85); x.stroke();
+        x.restore();
         x.restore();
         x.strokeStyle = "rgba(255,210,170,.25)";                      // a thin atmosphere
         x.lineWidth = pr * 0.05;
@@ -211,7 +260,7 @@
     // ---------------------------------------------------------------------------------------------
     function sunScene(W, H, opts) {
         const preview = !!opts.preview;
-        let sx, sy, sr, surface, glow, bgGrad, stars, belt, planets, ringed;
+        let sx, sy, sr, surface, glow, bgGrad, stars, belt, planets, ringed, giant, dustImg;
         let flares = [], nextFlare = 0.5, comet = null, nextComet = preview ? 999 : U.rand(4, 9);
 
         function setup() {
@@ -232,17 +281,25 @@
             x.beginPath(); x.arc(c, c, sr, 0, TAU); x.fill();
             x.save();
             x.beginPath(); x.arc(c, c, sr, 0, TAU); x.clip();
-            for (let i = 0; i < (preview ? 160 : 700); i++) {
-                const a = R() * TAU, d = Math.sqrt(R()) * sr, gr = sr * (0.02 + R() * 0.035);
-                x.fillStyle = R() < 0.5 ? "rgba(255,255,230,.35)" : "rgba(230,120,20,.18)";
-                x.beginPath(); x.arc(c + Math.cos(a) * d, c + Math.sin(a) * d, gr, 0, TAU); x.fill();
+            for (let i = 0; i < (preview ? 600 : 3200); i++) {                         // granulation: a fine mesh of hot cells
+                const a = R() * TAU, d = Math.sqrt(R()) * sr, gr = sr * (0.012 + R() * 0.018), px = c + Math.cos(a) * d, py = c + Math.sin(a) * d;
+                x.fillStyle = `rgba(255,250,210,${(0.12 + R() * 0.12).toFixed(2)})`; x.beginPath(); x.ellipse(px, py, gr, gr * (0.8 + R() * 0.4), R() * 3, 0, TAU); x.fill();
+                x.strokeStyle = "rgba(200,90,10,.12)"; x.lineWidth = 0.8; x.stroke();
             }
-            for (const [dx, dy, s] of [[-0.3, 0.2, 0.07], [-0.22, 0.26, 0.04], [0.35, -0.3, 0.05]]) {
-                x.fillStyle = "rgba(120,50,10,.55)";
-                x.beginPath(); x.arc(c + dx * sr, c + dy * sr, s * sr, 0, TAU); x.fill();
-                x.fillStyle = "rgba(180,80,20,.35)";
-                x.beginPath(); x.arc(c + dx * sr, c + dy * sr, s * sr * 1.8, 0, TAU); x.fill();
+            for (let i = 0; i < 26; i++) {                                              // faculae: bright patches near the edge
+                const a = R() * TAU, d = sr * (0.72 + R() * 0.24);
+                x.fillStyle = "rgba(255,255,235,.22)"; x.beginPath(); x.ellipse(c + Math.cos(a) * d, c + Math.sin(a) * d, sr * 0.06, sr * 0.02, a + Math.PI / 2, 0, TAU); x.fill();
             }
+            for (const [dx, dy, s] of [[-0.3, 0.2, 0.07], [-0.22, 0.26, 0.04], [0.35, -0.3, 0.05], [-0.36, 0.14, 0.025]]) {   // sunspots
+                const px = c + dx * sr, py = c + dy * sr;
+                x.fillStyle = "rgba(190,90,20,.45)"; x.beginPath(); x.arc(px, py, s * sr * 1.9, 0, TAU); x.fill();
+                x.strokeStyle = "rgba(140,60,10,.35)"; x.lineWidth = 1;
+                for (let k = 0; k < 18; k++) { const a = (k / 18) * TAU; x.beginPath(); x.moveTo(px + Math.cos(a) * s * sr, py + Math.sin(a) * s * sr); x.lineTo(px + Math.cos(a) * s * sr * 1.85, py + Math.sin(a) * s * sr * 1.85); x.stroke(); }
+                x.fillStyle = "rgba(80,30,5,.8)"; x.beginPath(); x.arc(px, py, s * sr, 0, TAU); x.fill();
+            }
+            const limb = x.createRadialGradient(c, c, sr * 0.55, c, c, sr);                 // limb darkening
+            limb.addColorStop(0, "rgba(160,60,0,0)"); limb.addColorStop(1, "rgba(170,60,0,.45)");
+            x.fillStyle = limb; x.fillRect(0, 0, sr * 2, sr * 2);
             x.restore();
             glow = null;
             bgGrad = null;
@@ -257,22 +314,41 @@
                 { o: 5.3, s: 0.18, sp: 0.07, c: ["#c7f1f5", "#4aa3b8"], a: R() * TAU }
             ];
             ringed = makePlanet(Math.max(6, sr * 0.27));
+            giant = preview ? null : makePlanet(U.clamp(m * 0.22, 60, 240));
+            dustImg = document.createElement("canvas"); dustImg.width = Math.max(1, Math.round(W / 2)); dustImg.height = Math.max(1, Math.round(H / 2));
+            {
+                const x = dustImg.getContext("2d");                                     // faint zodiacal dust and pastel haze
+                for (let i = 0; i < 12; i++) { const cx = R() * dustImg.width, cy = R() * dustImg.height, rr = (0.15 + R() * 0.3) * dustImg.width, col = ["255,200,220", "200,190,255", "255,230,200"][i % 3]; const gr = x.createRadialGradient(cx, cy, 0, cx, cy, rr); gr.addColorStop(0, `rgba(${col},.22)`); gr.addColorStop(1, `rgba(${col},0)`); x.fillStyle = gr; x.fillRect(0, 0, dustImg.width, dustImg.height); }
+                for (let i = 0; i < 500; i++) { x.fillStyle = `rgba(120,100,170,${(0.1 + R() * 0.25).toFixed(2)})`; x.fillRect(R() * dustImg.width, R() * dustImg.height, 1, 1); }
+            }
+            for (const [i, p] of planets.entries()) if (!p.rings) p.img = surfaceFor(i, Math.max(3, sr * p.s), R);
         }
         setup();
 
         const orbitY = 0.32;                                  // the orbits are seen from above at a slant
         function orbitPoint(o, a) { return [sx + Math.cos(a) * sr * o, sy + Math.sin(a) * sr * o * orbitY]; }
 
+        // each planet's own surface: grey and cratered, creamy cloud, blue with land and cloud, rust with an ice cap, pale bands
+        function surfaceFor(i, r, R) {
+            const c = document.createElement("canvas"); c.width = c.height = Math.ceil(r * 2);
+            const x = c.getContext("2d"); x.beginPath(); x.arc(r, r, r, 0, TAU); x.clip();
+            const base = [["#cfc6bc", "#8f8478"], ["#fff0d0", "#e0b888"], ["#5aa8f0", "#1a5ab0"], ["#e8a070", "#b0603a"], ["#c7f1f5", "#6ab8c8"]][i];
+            const bg = x.createLinearGradient(0, 0, r * 2, r * 2); bg.addColorStop(0, base[0]); bg.addColorStop(1, base[1]); x.fillStyle = bg; x.fillRect(0, 0, r * 2, r * 2);
+            if (i === 0) for (let k = 0; k < 18; k++) { x.fillStyle = "rgba(60,50,40,.3)"; x.beginPath(); x.arc(R() * r * 2, R() * r * 2, r * (0.05 + R() * 0.15), 0, TAU); x.fill(); }
+            if (i === 1 || i === 4) for (let k = 0; k < 10; k++) { x.fillStyle = i === 1 ? "rgba(255,255,240,.35)" : "rgba(255,255,255,.25)"; x.fillRect(0, R() * r * 2, r * 2, r * (0.06 + R() * 0.12)); }
+            if (i === 2) { x.fillStyle = "#4a9a4a"; for (let k = 0; k < 5; k++) { x.beginPath(); x.ellipse(R() * r * 2, R() * r * 2, r * (0.2 + R() * 0.35), r * (0.12 + R() * 0.25), R() * 3, 0, TAU); x.fill(); } x.fillStyle = "rgba(255,255,255,.7)"; for (let k = 0; k < 8; k++) { x.beginPath(); x.ellipse(R() * r * 2, R() * r * 2, r * (0.2 + R() * 0.3), r * 0.06, R() - 0.5, 0, TAU); x.fill(); } }
+            if (i === 3) { x.fillStyle = "#ffffff"; x.beginPath(); x.ellipse(r, r * 0.12, r * 0.45, r * 0.18, 0, 0, TAU); x.fill(); x.fillStyle = "rgba(120,50,20,.35)"; for (let k = 0; k < 6; k++) { x.beginPath(); x.ellipse(R() * r * 2, R() * r * 2, r * 0.3, r * 0.12, R() * 3, 0, TAU); x.fill(); } }
+            return c;
+        }
         function drawPlanet(g, p, x, y) {
             const r = sr * p.s;
             if (p.rings) { g.drawImage(ringed, x - ringed.width / 2, y - ringed.height / 2); return; }
-            // lit on the side facing the sun
-            const ang = Math.atan2(sy - y, sx - x);
-            const gr = g.createRadialGradient(x + Math.cos(ang) * r * 0.45, y + Math.sin(ang) * r * 0.45, r * 0.1, x, y, r * 1.1);
-            gr.addColorStop(0, p.c[0]);
-            gr.addColorStop(1, p.c[1]);
-            g.fillStyle = gr;
-            g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+            g.drawImage(p.img, x - r, y - r, r * 2, r * 2);
+            const ang = Math.atan2(sy - y, sx - x);                     // the night side turned away from the sun
+            const sh = g.createLinearGradient(x + Math.cos(ang) * r, y + Math.sin(ang) * r, x - Math.cos(ang) * r, y - Math.sin(ang) * r);
+            sh.addColorStop(0, "rgba(255,255,240,.25)"); sh.addColorStop(0.45, "rgba(0,0,30,0)"); sh.addColorStop(0.75, "rgba(10,10,40,.55)"); sh.addColorStop(1, "rgba(10,10,40,.8)");
+            g.fillStyle = sh; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+            if (p.o > 2.5 && p.o < 3) { g.strokeStyle = "rgba(140,200,255,.45)"; g.lineWidth = Math.max(1, r * 0.12); g.beginPath(); g.arc(x, y, r * 1.04, ang - 1.2, ang + 1.2); g.stroke(); }
         }
 
         return {
@@ -288,6 +364,7 @@
                 }
                 g.fillStyle = bgGrad;
                 g.fillRect(0, 0, W, H);
+                g.drawImage(dustImg, -inp.px * 4, -inp.py * 3, W, H);
                 for (const s of stars) {                      // faint stars, washed out by the sunlight
                     g.fillStyle = `rgba(110,100,170,${(0.15 + 0.2 * Math.abs(Math.sin(t * 0.9 + s.tw))).toFixed(2)})`;
                     g.fillRect(s.x - inp.px * 4, s.y - inp.py * 3, s.r, s.r);
@@ -300,11 +377,11 @@
                 const placed = planets.map(p => { p.a += p.sp * dt * 0.4; const [x, y] = orbitPoint(p.o, p.a); return { p, x: x - inp.px * 10, y: y - inp.py * 8 }; });
                 for (const q of placed) if (Math.sin(q.p.a) < 0) drawPlanet(g, q.p, q.x, q.y);
                 // the asteroid belt
-                g.fillStyle = "rgba(120,95,80,.55)";
                 for (const b of belt) {
                     b.a += b.sp * dt;
-                    const [x, y] = orbitPoint(b.d, b.a);
-                    g.fillRect(x - inp.px * 10, y - inp.py * 8, b.s, b.s);
+                    const [x, y] = orbitPoint(b.d, b.a), rx = x - inp.px * 10, ry = y - inp.py * 8;
+                    g.fillStyle = "rgba(110,88,74,.7)"; g.beginPath(); g.ellipse(rx, ry, b.s, b.s * 0.75, b.a, 0, TAU); g.fill();
+                    g.fillStyle = "rgba(230,210,190,.5)"; g.fillRect(rx - b.s * 0.4, ry - b.s * 0.4, b.s * 0.5, b.s * 0.4);
                 }
                 // the corona: a big soft glow and slowly turning streamers
                 if (!glow) {
@@ -319,18 +396,22 @@
                 g.fillRect(sx - sr * 4, sy - sr * 4, sr * 8, sr * 8);
                 g.restore();
                 g.globalCompositeOperation = "lighter";
-                for (let i = 0; i < 14; i++) {
-                    const a = i / 14 * TAU + t * 0.03 * (i % 2 ? 1 : -1), len = sr * (1.9 + 0.5 * Math.sin(t * 0.7 + i * 1.7)), w = 0.07 + 0.03 * Math.sin(t + i);
-                    const gr = g.createLinearGradient(px, py, px + Math.cos(a) * len, py + Math.sin(a) * len);
-                    gr.addColorStop(0.45, "rgba(255,220,140,.32)");
-                    gr.addColorStop(1, "rgba(255,220,140,0)");
+                const cg2 = g.createRadialGradient(px, py, sr * 0.95, px, py, sr * 2.2);
+                cg2.addColorStop(0, "rgba(255,236,180,.45)"); cg2.addColorStop(0.4, "rgba(255,226,160,.14)"); cg2.addColorStop(1, "rgba(255,220,150,0)");
+                g.fillStyle = cg2; g.beginPath(); g.arc(px, py, sr * 2.2, 0, TAU); g.fill();
+                g.globalAlpha = 0.45;
+                for (let i = 0; i < 9; i++) {                                         // soft coronal streamers, bending as they go
+                    const a = i / 9 * TAU + t * 0.02 * (i % 2 ? 1 : -1), len = sr * (2.1 + 0.4 * Math.sin(t * 0.5 + i * 1.7)), w = 0.18 + 0.05 * Math.sin(t * 0.7 + i), bend = 0.25 * Math.sin(i * 2.3);
+                    const gr = g.createRadialGradient(px, py, sr * 0.9, px, py, len);
+                    gr.addColorStop(0, "rgba(255,226,150,.28)"); gr.addColorStop(1, "rgba(255,226,150,0)");
                     g.fillStyle = gr;
                     g.beginPath();
                     g.moveTo(px + Math.cos(a - w) * sr * 0.9, py + Math.sin(a - w) * sr * 0.9);
-                    g.lineTo(px + Math.cos(a) * len, py + Math.sin(a) * len);
-                    g.lineTo(px + Math.cos(a + w) * sr * 0.9, py + Math.sin(a + w) * sr * 0.9);
+                    g.quadraticCurveTo(px + Math.cos(a - w * 0.4 + bend) * len * 0.6, py + Math.sin(a - w * 0.4 + bend) * len * 0.6, px + Math.cos(a + bend) * len, py + Math.sin(a + bend) * len);
+                    g.quadraticCurveTo(px + Math.cos(a + w * 0.4 + bend) * len * 0.6, py + Math.sin(a + w * 0.4 + bend) * len * 0.6, px + Math.cos(a + w) * sr * 0.9, py + Math.sin(a + w) * sr * 0.9);
                     g.fill();
                 }
+                g.globalAlpha = 1;
                 g.globalCompositeOperation = "source-over";
                 // the sun itself, its surface slowly turning and breathing
                 g.save();
@@ -370,17 +451,26 @@
                 if (!comet && nextComet <= 0) comet = { x: -40, y: U.rand(0.35, 0.8) * H, vx: U.rand(90, 140), vy: -U.rand(10, 40) };
                 if (comet) {
                     comet.x += comet.vx * dt; comet.y += comet.vy * dt;
-                    const away = Math.atan2(comet.y - sy, comet.x - sx), len = 140;
-                    const tg = g.createLinearGradient(comet.x, comet.y, comet.x + Math.cos(away) * len, comet.y + Math.sin(away) * len);
-                    tg.addColorStop(0, "rgba(120,170,255,.7)");
-                    tg.addColorStop(1, "rgba(120,170,255,0)");
-                    g.strokeStyle = tg;
-                    g.lineWidth = 5;
-                    g.lineCap = "round";
-                    g.beginPath(); g.moveTo(comet.x, comet.y); g.lineTo(comet.x + Math.cos(away) * len, comet.y + Math.sin(away) * len); g.stroke();
-                    g.fillStyle = "#ffffff";
-                    g.beginPath(); g.arc(comet.x, comet.y, 3.2, 0, TAU); g.fill();
+                    const away = Math.atan2(comet.y - sy, comet.x - sx), len = 170;
+                    const dg = g.createLinearGradient(comet.x, comet.y, comet.x + Math.cos(away + 0.25) * len, comet.y + Math.sin(away + 0.25) * len);
+                    dg.addColorStop(0, "rgba(255,220,160,.55)"); dg.addColorStop(1, "rgba(255,220,160,0)");
+                    g.fillStyle = dg; g.beginPath(); g.moveTo(comet.x, comet.y - 3);
+                    g.quadraticCurveTo(comet.x + Math.cos(away) * len * 0.6, comet.y + Math.sin(away) * len * 0.6, comet.x + Math.cos(away + 0.3) * len, comet.y + Math.sin(away + 0.3) * len);
+                    g.lineTo(comet.x + Math.cos(away + 0.15) * len, comet.y + Math.sin(away + 0.15) * len); g.quadraticCurveTo(comet.x + Math.cos(away) * len * 0.4, comet.y + Math.sin(away) * len * 0.4, comet.x, comet.y + 3); g.fill();
+                    const tg = g.createLinearGradient(comet.x, comet.y, comet.x + Math.cos(away) * len * 1.3, comet.y + Math.sin(away) * len * 1.3);
+                    tg.addColorStop(0, "rgba(120,170,255,.7)"); tg.addColorStop(1, "rgba(120,170,255,0)");
+                    g.strokeStyle = tg; g.lineWidth = 3; g.lineCap = "round";
+                    g.beginPath(); g.moveTo(comet.x, comet.y); g.lineTo(comet.x + Math.cos(away) * len * 1.3, comet.y + Math.sin(away) * len * 1.3); g.stroke();
+                    Worlds.glow(g, comet.x, comet.y, 16, "#cfe4ff", 0.9);
+                    g.fillStyle = "#ffffff"; g.beginPath(); g.arc(comet.x, comet.y, 3, 0, TAU); g.fill();
                     if (comet.x > W + 60 || comet.y < -60) { comet = null; nextComet = U.rand(10, 20); }
+                }
+                if (giant) {                                  // a ringed giant close by, rising out of the bottom left
+                    const gx = W * 0.08 - inp.px * 26, gy = H * 0.98 - inp.py * 20 + Math.sin(t * 0.2) * 3;
+                    g.drawImage(giant, gx - giant.width / 2, gy - giant.height / 2);
+                    const ma = t * 0.12, mr = giant.width * 0.035, mx = gx + Math.cos(ma) * giant.width * 0.48, my = gy - giant.width * 0.2 + Math.sin(ma) * giant.width * 0.08;
+                    const mg = g.createRadialGradient(mx + mr * 0.4, my - mr * 0.4, mr * 0.1, mx, my, mr); mg.addColorStop(0, "#f6f2ea"); mg.addColorStop(1, "#8a8494");
+                    g.fillStyle = mg; g.beginPath(); g.arc(mx, my, mr, 0, TAU); g.fill();
                 }
                 // a lens flare: soft rings on the line from the sun through the middle of the screen
                 if (!preview) {
@@ -404,7 +494,7 @@
     function scene(W, H, opts) {
         if (opts.theme === "light") return sunScene(W, H, opts);
         const preview = !!opts.preview;
-        let stars, neb, planet, pr, pp, bh, dust, bgGrad, moonR;
+        let stars, neb, planet, pr, pp, bh, dust, bgGrad, moonR, galaxy, spikes = [], rocks = [];
         let shooters = [], nextShoot = 2, sat = null, nextSat = preview ? 999 : U.rand(6, 14);
 
         function setup() {
@@ -429,6 +519,9 @@
             planet = makePlanet(pr);
             moonR = pr * 0.17;
             bgGrad = null;
+            galaxy = makeGalaxy(Math.min(W, H) * (preview ? 0.1 : 0.09), 31);
+            spikes = Array.from({ length: preview ? 3 : 9 }, () => ({ x: R() * W, y: R() * H, r: 1.6 + R() * 2, c: R() < 0.5 ? "190,215,255" : "255,225,190", ph: R() * TAU }));
+            rocks = preview ? [] : Array.from({ length: 4 }, (_, i) => { const r = U.clamp(m * (0.02 + R() * 0.035), 10, 46); return { img: makeAsteroid(r, 90 + i), x: R() * W, y: H * (i % 2 ? 0.85 + R() * 0.12 : 0.04 + R() * 0.1), vx: (R() < 0.5 ? -1 : 1) * (4 + R() * 6), rot: R() * TAU, vr: (R() - 0.5) * 0.2, z: 1.2 + R() }; });
         }
         setup();
 
@@ -480,7 +573,15 @@
                 // nebulae, drifting slowly
                 g.globalAlpha = 0.95;
                 g.drawImage(neb, -W * 0.06 - inp.px * 14 + Math.sin(t * 0.05) * 22, -H * 0.06 - inp.py * 10 + Math.cos(t * 0.04) * 14, W * 1.12, H * 1.12);
+                g.globalAlpha = 0.85;
+                g.drawImage(galaxy, W * 0.42 - galaxy.width / 2 - inp.px * 4, H * 0.16 - galaxy.height / 2 - inp.py * 3);
                 g.globalAlpha = 1;
+                for (const sp of spikes) {                                  // bright stars with diffraction spikes
+                    const x = sp.x - inp.px * 20, y = sp.y - inp.py * 16, k = 0.75 + 0.25 * Math.sin(t * 1.3 + sp.ph);
+                    Worlds.glow(g, x, y, sp.r * 7, `rgb(${sp.c})`, 0.6 * k);
+                    Worlds.glint(g, x, y, sp.r * 7 * k, 0.9, `rgb(${sp.c})`);
+                    g.fillStyle = "#ffffff"; g.beginPath(); g.arc(x, y, sp.r * 0.7, 0, TAU); g.fill();
+                }
                 // stars, with parallax, twinkling, and lensing around the black hole
                 const par = [5, 12, 26], E = bh.r * 2.3;
                 const bx = bh.x - inp.px * 8, by = bh.y - inp.py * 8;
@@ -572,6 +673,11 @@
                 // the black hole
                 stepDust(dust, dt);
                 drawBlackHole(g, bx, by, bh.r, t, { dust });
+                for (const rk of rocks) {                                   // asteroids tumbling past close by
+                    rk.x += rk.vx * dt; rk.rot += rk.vr * dt;
+                    const w = rk.img.width; if (rk.x < -w) rk.x = W + w; else if (rk.x > W + w) rk.x = -w;
+                    g.save(); g.translate(rk.x - inp.px * 30 * rk.z, rk.y - inp.py * 24 * rk.z); g.rotate(rk.rot); g.drawImage(rk.img, -w / 2, -w / 2); g.restore();
+                }
             }
         };
     }
@@ -730,12 +836,20 @@
             }
         });
         swallow.cancel();
+        const rocket = Anim.play("space-win", { ms: 2400, fadeMs: 250, rect: { x: 0, y: 0, w: W, h: H } });           // the whole screen: it flies off the edge
+        c.cleanup(() => rocket.stop());
+        Anim.motion().then(({ animate, stagger }) => {
+            if (c.skipped) return;
+            const cells = Game.openCells();
+            const run = animate(cells, { filter: ["brightness(1)", "brightness(2) hue-rotate(40deg)", "brightness(1)"], scale: [1, 1.08, 1] }, { duration: 0.6, delay: stagger(0.025, { from: "center" }), ease: "easeOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; el.style.filter = ""; }); });
+        }).catch(() => null);
         boardEl.animate([
             { transform: "scale(.15) rotate(-140deg)", opacity: 0, filter: "brightness(3)" },
             { transform: "scale(1.07) rotate(4deg)", opacity: 1, filter: "brightness(1.6)", offset: 0.65 },
             { transform: "none", opacity: 1, filter: "none" }
         ], { duration: 1000, easing: "cubic-bezier(.2,.8,.3,1)" });
-        await c.wait(1500);
+        await c.wait(2300);                                       // until the rocket has flown off the screen
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -874,7 +988,7 @@
     Worlds.register({
         id: "space", name: "Deep Space", icon: "\u{1FA90}", tagline: "A Blazing Sun. A Black Hole.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "warp",
+        scene, rive: "space-win", board, celebrate, titleCard, sounds, transition: "warp",
         mascot: { name: "NOVA", draw: drawNova },
         lines: {
             hello: ["Systems online. Ready to solve, Commander?", "Welcome aboard! Today's puzzles are in orbit.", "Scanning the grid... all systems go."],
