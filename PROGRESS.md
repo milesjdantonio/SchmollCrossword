@@ -475,9 +475,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         **Robot Factory** (robot-scene.js: steel hall, bay door, girders, catwalk, steam pipes, lamps, gears,
         console, conveyor, articulated arms, welding sparks, drone; win: Rive trophy `robot-win`). **Sky Kingdom**
         (sky-scene.js: islands with roots, crystals and waterfalls, castle, village, rope bridge, airship, cloud sea,
-        balloons; win: a Rive hot-air balloon `sky-win` beside the board).
-      - To do: Volcano Island, Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep
-        Space, Classic (its win only).
+        balloons; win: a Rive hot-air balloon `sky-win` beside the board). **Volcano Island** (volcano-scene.js: a
+        stratovolcano with gullies, scree, basalt flows, scrub and jungle, crater rim, reflection in the lagoon,
+        jungle foothills, islets, a sail; shallows over coral, a beach with grain, ripples, footprints, driftwood,
+        tide-pool rock, shells, a crab, tiki torches, swaying palms, monstera, ferns, hibiscus; gulls, a canoe, a
+        dolphin; night: crescent moon, crusted lava rivers, red-lit smoke, lava bombs, glow on the water; win: the
+        eruption pours the rivers by day too, two Rive tikis `volcano-win` either side of the board (the right one
+        mirrored: `Anim.play(..., { flip: true })`), Motion jolts the letters).
+      - To do: Neon Arcade, Haunted Library, Candy Hills, Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
+        (its win only).
 
 ### Phase 7: Retention
 - [ ] Daily Archive (practice, no points/streak; works with offline)

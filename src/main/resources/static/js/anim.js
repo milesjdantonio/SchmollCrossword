@@ -43,13 +43,13 @@ const Anim = (() => {
         for (const n of names) bytes(n).catch(() => null);
     }
 
-    function play(name, { rect = null, artboard = "Main", machine = "Main", ms = 3000, follow = null, inputs = {}, z = 950, fadeMs = 400 } = {}) {
+    function play(name, { rect = null, artboard = "Main", machine = "Main", ms = 3000, follow = null, inputs = {}, z = 950, fadeMs = 400, flip = false } = {}) {
         const none = { done: Promise.resolve(false), fire() {}, set() {}, stop() {} };
         if (U.motion() === "still") return none;
         const cv = document.createElement("canvas");
         cv.className = "anim-riv";
         cv.setAttribute("aria-hidden", "true");
-        Object.assign(cv.style, { position: "fixed", pointerEvents: "none", zIndex: String(z), opacity: "0", transition: `opacity ${fadeMs}ms ease` });
+        Object.assign(cv.style, { position: "fixed", pointerEvents: "none", zIndex: String(z), opacity: "0", transition: `opacity ${fadeMs}ms ease`, transform: flip ? "scaleX(-1)" : "" });
         const place = () => {
             const r = follow ? follow.getBoundingClientRect() : null;
             const box = rect ? (typeof rect === "function" ? rect(r) : rect) : r ? { x: r.left, y: r.top, w: r.width, h: r.height } : { x: 0, y: 0, w: innerWidth, h: innerHeight };
