@@ -34,6 +34,45 @@ const Campaign = (() => {
     // ---------------------------------------------------------------------------------------------
     let data = { levels: {}, section: 0, sel: 1, playing: null, ...U.store.get("campaign", {}) };
     const save = () => U.store.set("campaign", data);
+
+    // Another tab of the game saved the campaign: take its copy in, so this tab never writes an older copy back over
+    // it, keeping what only this tab has (a better result on a level, further along, a secret found) and this tab's
+    // own place (the fight it's in, the world it's looking at). If the mix holds anything theirs didn't, it's saved,
+    // and the other tab takes that in the same way. (Coins, items and uses follow the newest save: they go down as
+    // well as up, so a mix could hand some back.)
+    const OWN = ["playing", "section", "sel"];
+    function mergeCampaign(mine, theirs) {
+        const out = { ...mine, ...theirs };
+        out.levels = { ...(theirs.levels || {}) };
+        for (const [k, r] of Object.entries(mine.levels || {})) {
+            const o = out.levels[k];
+            if (!o) { out.levels[k] = r; continue; }
+            const secs = Math.min(o.seconds || Infinity, r.seconds || Infinity);
+            out.levels[k] = { ...o, ...r, stars: Math.max(o.stars || 0, r.stars || 0) };
+            if (isFinite(secs)) out.levels[k].seconds = secs; else delete out.levels[k].seconds;
+        }
+        if (mine.arrived != null || theirs.arrived != null) out.arrived = Math.max(mine.arrived ?? -1, theirs.arrived ?? -1);
+        if (mine.storySeen || theirs.storySeen) out.storySeen = true;
+        if (mine.secrets || theirs.secrets) out.secrets = { ...(mine.secrets || {}), ...(theirs.secrets || {}) };
+        if (mine.specials || theirs.specials) {                                       // attempts only ever go up
+            out.specials = { ...(mine.specials || {}), ...(theirs.specials || {}) };
+            for (const [k, v] of Object.entries(mine.specials || {})) if (typeof v === "number" && typeof out.specials[k] === "number") out.specials[k] = Math.max(v, out.specials[k]);
+        }
+        for (const k of OWN) { if (k in mine) out[k] = mine[k]; else delete out[k]; }
+        return out;
+    }
+    const canon = v => (Array.isArray(v) ? `[${v.map(canon).join(",")}]` : v && typeof v === "object" ? `{${Object.keys(v).sort().map(k => JSON.stringify(k) + ":" + canon(v[k])).join(",")}}` : JSON.stringify(v));
+    const shared = d => { const c = { ...d }; for (const k of OWN) delete c[k]; return canon(c); };
+    addEventListener("storage", e => {
+        if (e.key !== "schmoll.campaign" || e.newValue == null) return;
+        let theirs;
+        try { theirs = JSON.parse(e.newValue); } catch (err) { return; }
+        if (!theirs || typeof theirs !== "object") return;
+        const merged = mergeCampaign(data, theirs);
+        for (const k of Object.keys(data)) if (!(k in merged)) delete data[k];
+        Object.assign(data, merged);
+        if (shared(merged) !== shared(theirs)) save();
+    });
     const keyOf = (world, level) => world + "-" + level;
     data.coins = data.coins || 0;
     data.owned = data.owned || {};

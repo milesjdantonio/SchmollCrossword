@@ -418,11 +418,12 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       page is a sheet. Checked at 1440x900 and 390x844: no errors.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
-- [ ] Phone layout review (all screens)
+- [x] Phone layout review (all screens)
       - [x] The puzzle on a phone (2026-11-27): opening a puzzle scrolls the timer row to the top (`fitPhone` in game.js),
         so the clue, the whole board, Check/Reveal and the keyboard are all in view (the keyboard covered the last two
         rows); the difficulty buttons are one row (swiped sideways if they must); the keyboard has a Pencil key.
-      - [ ] The other screens at phone size
+      - [x] The other screens at 390x844 (2026-11-27): Home, Stats, Settings, the hero maker, the Everbook: nothing
+        wider than the screen, buttons in reach (the Atlas was checked on 2026-11-16).
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
       time, pause when hidden (ideas from RhythmArchitect)
 - [ ] Loading: fewer requests, versioned files with long caching, lazy-load story/credits/how-to
@@ -657,6 +658,9 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       cinematic or a hidden tab, not the Report form or a question); **reload skipping a Daily Boss attempt** (a
       fight is marked live when it starts, `daily-<date>-live`; starting another while it's still marked counts the
       abandoned one as lost). All checked in the test browser.
+- [x] Two tabs overwriting campaign progress (2026-11-27): a tab takes in another tab's save (`storage` event,
+      `mergeCampaign`): best result per level, further along, secrets and attempts kept, coins/items from the newest
+      save, its own fight and place kept; it saves the mix only if it adds something (no ping-pong). Checked in the page.
 - [ ] The zip's other leftovers: licences ("Giant Steps but Smooth", credits for CC BY tracks), ops (CI, model IDs
       from settings), two tabs overwriting campaign progress, the grid for screen readers
 
