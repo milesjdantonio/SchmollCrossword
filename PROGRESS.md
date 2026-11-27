@@ -598,6 +598,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Settings opens in ~40 ms after the first visit; Stats no longer forces two layouts (scroll first, the heatmap's
       width from a ResizeObserver): 166 -> 48 ms of script. Still slow: the very first Settings visit in a browser
       (~2 s of GPU raster painting every card in the headless test).
+- [x] Ominous music when a secret world is found (2026-11-27, the user: "when stuff like this is said there needs
+      to be ominous music"): `audio/music/secret-<id>.mp3`, composed for the game (scratchpad `omen/compose_omens.py`,
+      copied to `boss-music/drafts/composed-2026-11-26/`), played by `showSecret` in campaign.js and stopped when
+      the card goes; the fight clock no longer stops `secret-` songs. Credits updated.
 - [x] The Atlas is a real map (2026-11-26, the user: "make the campaign atlas like an actual map, design the map, and
       dont put the locations in a grid"): `js/atlas-map.js` paints one illustrated continent once (coast, shallows,
       rivers, each world's country in its colours with its own pictures, Volcano Island, the sky at the top edge

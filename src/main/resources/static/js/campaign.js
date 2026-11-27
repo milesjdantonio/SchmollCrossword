@@ -982,6 +982,9 @@ const Campaign = (() => {
     // what's behind the gate: shown when it's found (with a little ceremony) and whenever the gate is picked
     function showSecret(sec, first) {
         if (document.querySelector(".sc-layer")) return;
+        // its own dark music under the card (composed for the game: secret-<id>.mp3, a hit, then a slow loop)
+        const song = "secret-" + sec.id;
+        Sound.music(song, { v: 0.26, fade: 0.4 });
         const close = () => {
             layer.remove();
             if (!onStage()) return;
@@ -1000,7 +1003,11 @@ const Campaign = (() => {
                 U.el("button", { type: "button", class: "eb-buy", text: built(sec) ? "Go Through the Gate" : first ? "Mark It on the Map" : "Close", onclick: () => { close(); if (built(sec)) enterSecret(sec); } })));
         layer.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape") close(); });
         layer.addEventListener("pointerdown", e => { if (e.target === layer) close(); });
-        document.getElementById("overlay").append(layer);
+        const overlay = document.getElementById("overlay");
+        overlay.append(layer);
+        // the music ends with the card, however it goes (closed, or swept away by a change of page)
+        const gone = new MutationObserver(() => { if (layer.isConnected) return; gone.disconnect(); if (Sound.musicPlaying === song) Sound.stopMusic(1.8); });
+        gone.observe(overlay, { childList: true });
         Mascot.hush();
         layer.querySelector("button").focus();
     }
@@ -4706,7 +4713,7 @@ const Campaign = (() => {
     setInterval(() => {
         const now = performance.now(), dt = Math.min(0.5, (now - lastTick) / 1000);
         lastTick = now;
-        if (Sound.musicPlaying && !["win", "lose"].includes(Sound.musicPlaying) && !Sound.musicPlaying.startsWith("story") && !fightOn() && !(fight && fight.switching)) Sound.stopMusic(1.5);
+        if (Sound.musicPlaying && !["win", "lose"].includes(Sound.musicPlaying) && !Sound.musicPlaying.startsWith("story") && !Sound.musicPlaying.startsWith("secret-") && !fightOn() && !(fight && fight.switching)) Sound.stopMusic(1.5);
         // (a question or the Report form over the board doesn't stop the race: only the end screen, a cinematic or a hidden tab)
         if (!fightOn() || document.hidden || FX.playing || $("#puzzle").hidden || document.querySelector("#overlay .results:not(.ask-modal)") || root.classList.contains("intro-on")) return;
         const f = fight, g = Game.state, tickBefore = g.letters.map(r => [...r]);

@@ -102,6 +102,12 @@ FluidSynth):
   cave-p3.mp3     Fire Within the Mountain: its third phase, 160 bpm, brass stabs, choir, a harmonised lead
   cave-p4.mp3     Eruption: its fourth phase, 170 bpm, tremolo riffs, blast beats, organ, racing strings
   cave-p5.mp3     Heart of the Volcano: its last phase, 180 bpm in F# minor, a half-time breakdown into blast beats
+  secret-<world>.mp3  Played when a secret world is found: a low hit and a swell, then a slow dark loop
+                  (contrabass drone, strings, choir, a tolling bell, timpani heartbeats). secret-cave: The Mountain
+                  Wakes (C Phrygian, taiko, low brass, bassoon); secret-atlantis: Under the Sea Floor (D minor, harp,
+                  flute); secret-hollow: Something in the Roots (A minor, pizzicato, clarinet, wood knocks);
+                  secret-dunes: Beneath the Sand (E Phrygian dominant, frame drum, sitar drone, shanai); secret-rift:
+                  The Tear in the Sky (B minor, organ, choir, celesta)
 
 Level music (audio/music/level-<world>-<1..4>.mp3, added 2026-10-10): a calm song for every campaign level, each one
 different, picked to fit its world. All CC0 from https://opengameart.org/content/<page> (each page checked). For the

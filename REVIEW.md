@@ -107,6 +107,13 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Music when a secret world is found.** Each of the five secret worlds now has its own short dark piece
+      that plays under the "You Found a Secret World" card: a low hit, then a slow loop that keeps going until
+      you close the card. Lava Cave (taiko and low brass), Atlantis (harp and flute), the Great Hollow (pizzicato
+      and clarinet), the Sunken Dunes (frame drum and shanai), the Celestial Rift (organ, choir and celesta).
+      I composed them but can't hear them: tell me if one is too loud, too long, or not creepy enough. To hear
+      them without finding the worlds: `src/main/resources/static/audio/music/secret-<world>.mp3`.
+
 ## Coming up
 
 These aren't ready yet. Each one moves up when it is.

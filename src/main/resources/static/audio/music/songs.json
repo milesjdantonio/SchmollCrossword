@@ -460,5 +460,50 @@
   "title": "Heart of the Volcano",
   "author": "Composed for the game",
   "page": "composed"
+ },
+ "secret-cave": {
+  "file": "secret-cave.mp3",
+  "hit": 6.6667,
+  "loopStart": 6.6667,
+  "loopEnd": 42.2222,
+  "title": "The Mountain Wakes",
+  "author": "Composed for the game",
+  "page": "composed"
+ },
+ "secret-atlantis": {
+  "file": "secret-atlantis.mp3",
+  "hit": 6.9231,
+  "loopStart": 6.9231,
+  "loopEnd": 43.8462,
+  "title": "Under the Sea Floor",
+  "author": "Composed for the game",
+  "page": "composed"
+ },
+ "secret-hollow": {
+  "file": "secret-hollow.mp3",
+  "hit": 6.4286,
+  "loopStart": 6.4286,
+  "loopEnd": 40.7143,
+  "title": "Something in the Roots",
+  "author": "Composed for the game",
+  "page": "composed"
+ },
+ "secret-dunes": {
+  "file": "secret-dunes.mp3",
+  "hit": 6.6667,
+  "loopStart": 6.6667,
+  "loopEnd": 42.2222,
+  "title": "Beneath the Sand",
+  "author": "Composed for the game",
+  "page": "composed"
+ },
+ "secret-rift": {
+  "file": "secret-rift.mp3",
+  "hit": 7.2,
+  "loopStart": 7.2,
+  "loopEnd": 45.6,
+  "title": "The Tear in the Sky",
+  "author": "Composed for the game",
+  "page": "composed"
  }
 }
