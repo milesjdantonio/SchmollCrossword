@@ -107,6 +107,12 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **The Carnival, redrawn.** Pick Big Top Carnival in Settings and look at it by day and by night: hills
+      with a little town, a wooden coaster with a train running on it, a drop tower that rises and falls, a
+      detailed Ferris wheel, a big top with a curved roof and a lit marquee door, a carousel with horses going
+      round, three game booths, people strolling, a popcorn cart, lamp posts and a balloon seller. At night it's
+      all bulbs, searchlights and fireworks. Tell me what still looks flat.
+
 - [ ] **Music when a secret world is found.** Each of the five secret worlds now has its own short dark piece
       that plays under the "You Found a Secret World" card: a low hit, then a slow loop that keeps going until
       you close the card. Lava Cave (taiko and low brass), Atlantis (harp and flute), the Great Hollow (pizzicato
