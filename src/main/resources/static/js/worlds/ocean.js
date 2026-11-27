@@ -12,286 +12,7 @@
     const { tone, noise, midi } = Sound;
     const FISH = ["#ffb03b", "#ff6f61", "#3ec9d6", "#ffe066", "#8f7bff", "#5be38a"];
 
-    const canvas = (w, h) => { const c = document.createElement("canvas"); c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h)); return c; };
-
-    // a small fish facing right, length about 2*s
-    function fish(g, x, y, s, col, flip, wag, glow) {
-        g.save();
-        g.translate(x, y);
-        g.scale(flip, 1);
-        g.fillStyle = col;
-        g.beginPath();
-        g.moveTo(s, 0);
-        g.quadraticCurveTo(s * 0.2, -s * 0.62, -s * 0.6, 0);
-        g.quadraticCurveTo(s * 0.2, s * 0.62, s, 0);
-        g.fill();
-        g.beginPath();                                    // the tail, wagging
-        g.moveTo(-s * 0.5, 0);
-        g.lineTo(-s * 1.1, -s * 0.45 + wag * s * 0.2);
-        g.lineTo(-s * 1.1, s * 0.45 + wag * s * 0.2);
-        g.fill();
-        g.fillStyle = glow ? "#ffffff" : "rgba(255,255,255,.85)";
-        g.beginPath(); g.arc(s * 0.5, -s * 0.08, s * 0.14, 0, TAU); g.fill();
-        g.fillStyle = "#14213d";
-        g.beginPath(); g.arc(s * 0.54, -s * 0.08, s * 0.07, 0, TAU); g.fill();
-        g.restore();
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // The background
-    // ---------------------------------------------------------------------------------------------
-    function scene(W, H, opts) {
-        const night = opts.theme === "dark", preview = !!opts.preview;
-        let sandY, reef, sand, bg = null, kelp, schools, bubbles, snow, jellies, plankton, beams;
-        let turtle = null, nextTurtle = preview ? 999 : U.rand(8, 16), whale = null, nextWhale = preview ? 999 : U.rand(14, 26);
-        let angler = null, nextAngler = preview ? 999 : U.rand(6, 12);
-
-        const C = night
-            ? { top: "#06142e", mid: "#030b1f", low: "#010510", sand1: "#1a2236", sand2: "#0c111f", coralDim: 0.35 }
-            : { top: "#6fd8ea", mid: "#1f8fc4", low: "#0b4f80", sand1: "#f4dfa8", sand2: "#d9b877", coralDim: 1 };
-        const dim = hex => { if (!night) return hex; const n = parseInt(hex.slice(1), 16); return `rgb(${Math.round((n >> 16 & 255) * 0.3)},${Math.round((n >> 8 & 255) * 0.32)},${Math.round((n & 255) * 0.42)})`; };
-
-        function setup() {
-            sandY = Math.round(H * (preview ? 0.8 : 0.82));
-            bg = null;
-            const R = U.rng(808);
-            // the sea floor with ripples
-            sand = canvas(W + 40, H - sandY + 30);
-            {
-                const g = sand.getContext("2d"), w = sand.width, h = sand.height;
-                const gr = g.createLinearGradient(0, 0, 0, h);
-                gr.addColorStop(0, C.sand1);
-                gr.addColorStop(1, C.sand2);
-                g.fillStyle = gr;
-                g.beginPath(); g.moveTo(0, h);
-                for (let x = 0; x <= w; x += 24) g.lineTo(x, 22 - Math.sin(x * 0.008) * 10 - Math.sin(x * 0.027) * 4);
-                g.lineTo(w, h); g.fill();
-                g.strokeStyle = night ? "rgba(255,255,255,.05)" : "rgba(160,120,60,.25)";
-                g.lineWidth = 1.5;
-                for (let i = 0; i < 26; i++) { const y = 30 + R() * (h - 30), x = R() * w; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 30, y - 5, x + 60, y); g.stroke(); }
-            }
-            // the reef: branching coral, brain coral, sea fans and anemones on both sides
-            reef = canvas(W + 80, H);
-            {
-                const g = reef.getContext("2d");
-                const branch = (x, y, len, ang, w, col, depth) => {
-                    if (depth === 0 || len < 4) return;
-                    const x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len;
-                    g.strokeStyle = col; g.lineWidth = w; g.lineCap = "round";
-                    g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
-                    branch(x2, y2, len * 0.72, ang - 0.45 - R() * 0.25, w * 0.72, col, depth - 1);
-                    branch(x2, y2, len * 0.72, ang + 0.45 + R() * 0.25, w * 0.72, col, depth - 1);
-                };
-                const brain = (x, y, r, col) => {
-                    g.fillStyle = col; g.beginPath(); g.ellipse(x, y, r, r * 0.7, 0, Math.PI, TAU); g.fill();
-                    g.strokeStyle = "rgba(0,0,0,.18)"; g.lineWidth = 1.5;
-                    for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(x, y, r * (0.3 + i * 0.14), r * 0.7 * (0.3 + i * 0.14), 0, Math.PI * 1.05, Math.PI * 1.95); g.stroke(); }
-                };
-                const fan = (x, y, r, col) => {
-                    g.strokeStyle = col; g.lineWidth = 1.2;
-                    for (let i = 0; i < 22; i++) { const a = -Math.PI * (0.15 + 0.7 * i / 21); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.7, x + Math.cos(a) * r, y + Math.sin(a) * r); g.stroke(); }
-                    g.globalAlpha = 0.25; g.fillStyle = col; g.beginPath(); g.arc(x, y, r, Math.PI * 1.1, Math.PI * 1.9); g.lineTo(x, y); g.fill(); g.globalAlpha = 1;
-                };
-                const s = preview ? 0.55 : U.clamp(H / 900, 0.6, 1.3);
-                const spots = [[0.02, "branch", "#ff7b9c"], [0.07, "fan", "#b56cff"], [0.11, "brain", "#ffb86b"], [0.05, "branch", "#ff9f43"],
-                               [0.9, "branch", "#ff7b9c"], [0.95, "fan", "#ff5f7e"], [0.86, "brain", "#9be15d"], [0.99, "branch", "#ffd166"], [0.5, "brain", "#ff9f80"], [0.33, "fan", "#ff6fae"], [0.68, "branch", "#ffb347"]];
-                for (const [fx, kind, col] of spots) {
-                    const x = 40 + fx * W, y = sandY + 18 + R() * 10, c = dim(col);
-                    if (kind === "branch") branch(x, y, 52 * s, -Math.PI / 2 + (R() - 0.5) * 0.3, 9 * s, c, 5);
-                    else if (kind === "fan") fan(x, y, 70 * s, c);
-                    else brain(x, y, 30 * s, c);
-                }
-                for (let i = 0; i < (preview ? 4 : 10); i++) {              // anemones
-                    const x = 40 + R() * W, y = sandY + 20 + R() * 12, col = dim(U.pick(["#ff6fae", "#7ae7ff", "#ffd166"]));
-                    g.strokeStyle = col; g.lineWidth = 2.4 * s; g.lineCap = "round";
-                    for (let j = 0; j < 9; j++) { const a = -Math.PI * (0.2 + 0.6 * j / 8); g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * 10 * s, y + Math.sin(a) * 14 * s, x + Math.cos(a) * 16 * s, y + Math.sin(a) * 18 * s); g.stroke(); }
-                }
-            }
-            kelp = Array.from({ length: preview ? 4 : 9 }, (_, i) => ({ x: (i < 5 ? R() * 0.16 : 0.84 + R() * 0.16) * W, h: H * (0.3 + R() * 0.3), ph: R() * TAU, w: 7 + R() * 5 }));
-            schools = Array.from({ length: preview ? 1 : 3 }, (_, i) => ({ x: R() * W, y: H * (0.25 + i * 0.18), vx: (R() < 0.5 ? -1 : 1) * (25 + R() * 30), col: FISH[i % FISH.length], n: 7 + Math.floor(R() * 7), ph: R() * TAU,
-                fish: Array.from({ length: 14 }, () => ({ dx: (R() - 0.5) * 110, dy: (R() - 0.5) * 50, s: 5 + R() * 4, ph: R() * TAU })) }));
-            bubbles = Array.from({ length: preview ? 10 : 40 }, () => ({ x: R() * W, y: R() * H, r: 1.5 + R() * 4, sp: 20 + R() * 40, ph: R() * TAU }));
-            snow = Array.from({ length: preview ? 20 : 80 }, () => ({ x: R() * W, y: R() * H, r: 0.6 + R() * 1.2, sp: 4 + R() * 8, ph: R() * TAU }));
-            jellies = night ? Array.from({ length: preview ? 2 : 5 }, (_, i) => ({ x: R() * W, y: H * (0.2 + R() * 0.5), s: 14 + R() * 18, ph: R() * TAU, col: ["120,220,255", "200,140,255", "255,140,210"][i % 3], vy: 0 })) : [];
-            plankton = night ? Array.from({ length: preview ? 30 : 140 }, () => ({ x: R() * W, y: R() * H, r: 0.6 + R() * 1.4, tw: R() * TAU, c: R() < 0.6 ? "120,255,220" : "140,200,255" })) : [];
-            beams = Array.from({ length: 7 }, () => ({ x: R(), w: 0.03 + R() * 0.05, ph: R() * TAU }));
-        }
-        setup();
-
-        function drawTurtle(g, tt, t) {
-            g.save();
-            g.translate(tt.x, tt.y + Math.sin(t * 0.8) * 8);
-            g.scale(tt.dir * tt.s, tt.s);
-            const fl = Math.sin(t * 2.4);
-            g.fillStyle = night ? "#1d3a3a" : "#6fbf73";
-            for (const [fx, fy, a] of [[18, -12, -0.6 - fl * 0.5], [18, 12, 0.6 + fl * 0.5], [-20, -10, -2.4 + fl * 0.3], [-20, 10, 2.4 - fl * 0.3]]) {
-                g.save(); g.translate(fx, fy); g.rotate(a); g.beginPath(); g.ellipse(9, 0, 12, 4.5, 0, 0, TAU); g.fill(); g.restore();
-            }
-            g.beginPath(); g.ellipse(34, 0, 9, 7, 0, 0, TAU); g.fill();
-            g.fillStyle = night ? "#2a2416" : "#8a6a3a";
-            g.beginPath(); g.ellipse(0, 0, 28, 20, 0, 0, TAU); g.fill();
-            g.strokeStyle = night ? "#3d3420" : "#b88c4a"; g.lineWidth = 2;
-            for (const [cx, cy] of [[0, 0], [-13, -7], [-13, 7], [13, -7], [13, 7]]) { g.beginPath(); g.ellipse(cx, cy, 7, 5, 0, 0, TAU); g.stroke(); }
-            g.fillStyle = "#14213d"; g.beginPath(); g.arc(38, -2.5, 1.6, 0, TAU); g.fill();
-            g.restore();
-        }
-        function drawWhale(g, w) {
-            g.save();
-            g.translate(w.x, w.y);
-            g.scale(w.dir * w.s, w.s);
-            g.fillStyle = night ? "rgba(40,70,120,.35)" : "rgba(20,70,130,.35)";
-            g.beginPath();
-            g.moveTo(120, 0);
-            g.bezierCurveTo(110, -38, 20, -42, -60, -14);
-            g.quadraticCurveTo(-100, -4, -130, -26);
-            g.quadraticCurveTo(-120, 0, -132, 22);
-            g.quadraticCurveTo(-100, 6, -60, 12);
-            g.bezierCurveTo(20, 34, 100, 30, 120, 0);
-            g.fill();
-            g.beginPath(); g.ellipse(30, 26, 26, 6, 0.35, 0, TAU); g.fill();
-            g.restore();
-        }
-        function drawAngler(g, a, t) {
-            g.save();
-            g.translate(a.x, a.y + Math.sin(t * 1.3) * 6);
-            g.scale(a.dir * a.s, a.s);
-            const lx = 34 + Math.sin(t * 2) * 3, ly = -36 + Math.cos(t * 2) * 3;
-            const lg = g.createRadialGradient(lx, ly, 0, lx, ly, 34);
-            lg.addColorStop(0, "rgba(180,255,230,.75)");
-            lg.addColorStop(1, "rgba(120,255,220,0)");
-            g.fillStyle = lg; g.beginPath(); g.arc(lx, ly, 34, 0, TAU); g.fill();
-            g.strokeStyle = "#2a3550"; g.lineWidth = 2;
-            g.beginPath(); g.moveTo(10, -16); g.quadraticCurveTo(26, -44, lx, ly); g.stroke();
-            g.fillStyle = "#e9fff8"; g.beginPath(); g.arc(lx, ly, 4, 0, TAU); g.fill();
-            g.fillStyle = "#1a2236";
-            g.beginPath(); g.ellipse(0, 0, 30, 22, 0, 0, TAU); g.fill();
-            g.beginPath(); g.moveTo(-26, 0); g.lineTo(-48, -16); g.lineTo(-48, 16); g.fill();
-            g.fillStyle = "#dfe8ff";
-            for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(14 + i * 3, 6); g.lineTo(15.5 + i * 3, 12); g.lineTo(17 + i * 3, 6); g.fill(); }
-            g.fillStyle = "#cfe6ff"; g.beginPath(); g.arc(14, -8, 4, 0, TAU); g.fill();
-            g.fillStyle = "#000"; g.beginPath(); g.arc(15, -8, 2, 0, TAU); g.fill();
-            g.restore();
-        }
-
-        return {
-            resize(w, h) { W = w; H = h; setup(); },
-            draw(g, t, dt, inp) {
-                if (!bg) {
-                    bg = g.createLinearGradient(0, 0, 0, H);
-                    bg.addColorStop(0, C.top);
-                    bg.addColorStop(0.5, C.mid);
-                    bg.addColorStop(1, C.low);
-                }
-                g.fillStyle = bg;
-                g.fillRect(0, 0, W, H);
-                // the wavy surface far above, and light shimmering down through it
-                g.globalCompositeOperation = "lighter";
-                for (const b of beams) {
-                    const x = (b.x + Math.sin(t * 0.13 + b.ph) * 0.04) * W - inp.px * 10, w = b.w * W, a = (night ? 0.03 : 0.1) + 0.05 * Math.sin(t * 0.5 + b.ph);
-                    const gr = g.createLinearGradient(0, 0, 0, H * 0.9);
-                    gr.addColorStop(0, `rgba(${night ? "150,190,255" : "255,255,230"},${Math.max(0, a).toFixed(3)})`);
-                    gr.addColorStop(1, "rgba(255,255,255,0)");
-                    g.fillStyle = gr;
-                    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + w, 0); g.lineTo(x + w * 2.6 + W * 0.08, H * 0.9); g.lineTo(x + W * 0.08, H * 0.9); g.fill();
-                }
-                if (!night) {                                         // caustics: rippling light near the top
-                    g.strokeStyle = "rgba(255,255,255,.18)";
-                    g.lineWidth = 2;
-                    for (let row = 0; row < 3; row++) {
-                        g.beginPath();
-                        for (let x = 0; x <= W; x += 16) { const y = 8 + row * 16 + Math.sin(x * 0.03 + t * 1.6 + row * 2) * 6 + Math.sin(x * 0.011 - t) * 4; x ? g.lineTo(x, y) : g.moveTo(x, y); }
-                        g.stroke();
-                    }
-                }
-                g.globalCompositeOperation = "source-over";
-                // plankton twinkling in the dark
-                for (const p of plankton) {
-                    p.y -= dt * 3; if (p.y < -4) p.y = H + 4;
-                    const k = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.4 + p.tw));
-                    g.fillStyle = `rgba(${p.c},${(k * 0.8).toFixed(2)})`;
-                    g.fillRect(p.x - inp.px * 6, p.y, p.r, p.r);
-                    if (k > 0.8) Worlds.glow(g, p.x - inp.px * 6 + p.r / 2, p.y + p.r / 2, p.r * 6, `rgb(${p.c})`, (k - 0.8) * 3);      // the brightest pulse with light
-                }
-                // a whale singing far away in the blue
-                nextWhale -= dt;
-                if (!whale && nextWhale <= 0) { const dir = Math.random() < 0.5 ? 1 : -1; whale = { dir, x: dir > 0 ? -260 : W + 260, y: H * U.rand(0.18, 0.4), vx: dir * U.rand(22, 34), s: U.clamp(W / 1000, 0.6, 1.6) }; }
-                if (whale) { whale.x += whale.vx * dt; drawWhale(g, { ...whale, x: whale.x - inp.px * 4 }); if (whale.x < -320 || whale.x > W + 320) { whale = null; nextWhale = U.rand(30, 50); } }
-                // marine snow drifting down
-                g.fillStyle = night ? "rgba(200,220,255,.35)" : "rgba(255,255,255,.45)";
-                for (const s of snow) { s.y += s.sp * dt; if (s.y > H) s.y = -4; g.fillRect(s.x + Math.sin(t * 0.6 + s.ph) * 8 - inp.px * 5, s.y, s.r, s.r); }
-                // schools of fish turning together
-                for (const sc of schools) {
-                    sc.x += sc.vx * dt;
-                    if (sc.x > W + 160) sc.vx = -Math.abs(sc.vx); else if (sc.x < -160) sc.vx = Math.abs(sc.vx);
-                    const flip = sc.vx > 0 ? 1 : -1, sy = sc.y + Math.sin(t * 0.5 + sc.ph) * 30;
-                    for (let i = 0; i < sc.n; i++) {
-                        const f = sc.fish[i];
-                        const x = sc.x + f.dx + Math.sin(t * 1.3 + f.ph) * 8 - inp.px * 12, y = sy + f.dy + Math.cos(t * 1.1 + f.ph) * 5;
-                        fish(g, x, y, f.s, night ? dim(sc.col) : sc.col, flip, Math.sin(t * 12 + f.ph), false);
-                    }
-                }
-                // a sea turtle gliding past
-                nextTurtle -= dt;
-                if (!turtle && nextTurtle <= 0) { const dir = Math.random() < 0.5 ? 1 : -1; turtle = { dir, x: dir > 0 ? -80 : W + 80, y: H * U.rand(0.3, 0.6), vx: dir * U.rand(30, 45), s: U.clamp(H / 900, 0.6, 1.3) }; }
-                if (turtle) { turtle.x += turtle.vx * dt; drawTurtle(g, { ...turtle, x: turtle.x - inp.px * 14 }, t); if (turtle.x < -120 || turtle.x > W + 120) { turtle = null; nextTurtle = U.rand(16, 28); } }
-                // an anglerfish with its glowing lure (night)
-                if (night) {
-                    nextAngler -= dt;
-                    if (!angler && nextAngler <= 0) { const dir = Math.random() < 0.5 ? 1 : -1; angler = { dir, x: dir > 0 ? -70 : W + 70, y: H * U.rand(0.45, 0.7), vx: dir * U.rand(18, 28), s: U.clamp(H / 900, 0.7, 1.3) }; }
-                    if (angler) { angler.x += angler.vx * dt; drawAngler(g, { ...angler, x: angler.x - inp.px * 14 }, t); if (angler.x < -110 || angler.x > W + 110) { angler = null; nextAngler = U.rand(14, 24); } }
-                }
-                // jellyfish pulsing with light (night)
-                g.globalCompositeOperation = "lighter";
-                for (const j of jellies) {
-                    const pulse = Math.sin(t * 2.2 + j.ph);
-                    j.y -= (pulse > 0 ? 14 : 3) * dt;
-                    if (j.y < -60) { j.y = H + 60; j.x = Math.random() * W; }
-                    const x = j.x - inp.px * 10, y = j.y, s = j.s * (1 + pulse * 0.08);
-                    const jg = g.createRadialGradient(x, y, 0, x, y, s * 2.4);
-                    jg.addColorStop(0, `rgba(${j.col},.35)`);
-                    jg.addColorStop(1, `rgba(${j.col},0)`);
-                    g.fillStyle = jg; g.beginPath(); g.arc(x, y, s * 2.4, 0, TAU); g.fill();
-                    g.fillStyle = `rgba(${j.col},.55)`;
-                    g.beginPath(); g.ellipse(x, y, s, s * (0.75 - pulse * 0.08), 0, Math.PI, TAU); g.fill();
-                    g.strokeStyle = `rgba(${j.col},.5)`; g.lineWidth = 1.4;
-                    for (let k = -2; k <= 2; k++) {
-                        g.beginPath(); g.moveTo(x + k * s * 0.3, y);
-                        for (let q = 1; q <= 6; q++) g.lineTo(x + k * s * 0.3 + Math.sin(t * 2 + q * 0.8 + k) * 4, y + q * s * 0.35);
-                        g.stroke();
-                    }
-                }
-                g.globalCompositeOperation = "source-over";
-                // kelp swaying in the current
-                for (const k of kelp) {
-                    const x0 = k.x - inp.px * 16, y0 = sandY + 26;
-                    g.strokeStyle = night ? "#123326" : "#2f9a55";
-                    g.lineWidth = k.w;
-                    g.lineCap = "round";
-                    g.beginPath(); g.moveTo(x0, y0);
-                    const pts = [];
-                    for (let i = 1; i <= 12; i++) { const yy = y0 - k.h * i / 12, xx = x0 + Math.sin(t * 0.9 + k.ph + i * 0.35) * i * 2.2; pts.push([xx, yy]); g.lineTo(xx, yy); }
-                    g.stroke();
-                    g.fillStyle = night ? "#164030" : "#3fb865";
-                    pts.forEach(([xx, yy], i) => { if (i % 2) return; g.beginPath(); g.ellipse(xx + (i % 4 ? 6 : -6), yy, 8, 3, (i % 4 ? 0.6 : -0.6), 0, TAU); g.fill(); });
-                }
-                g.drawImage(sand, -20 - inp.px * 6, sandY - 10);
-                g.drawImage(reef, -40 - inp.px * 10, 0);
-                // bubbles rising
-                g.strokeStyle = night ? "rgba(160,220,255,.5)" : "rgba(255,255,255,.75)";
-                g.lineWidth = 1.2;
-                for (const b of bubbles) {
-                    b.y -= b.sp * dt; if (b.y < -10) { b.y = H + 10; b.x = Math.random() * W; }
-                    const x = b.x + Math.sin(t * 2 + b.ph) * 4 - inp.px * 8, wob = 1 + Math.sin(t * 7 + b.ph * 3) * 0.07;
-                    g.beginPath(); g.ellipse(x, b.y, b.r * wob, b.r / wob, 0, 0, TAU); g.stroke();
-                    if (b.r > 2.5) {                                        // a bubble's shine, and a faint film
-                        g.fillStyle = night ? "rgba(160,220,255,.08)" : "rgba(255,255,255,.12)"; g.fill();
-                        g.fillStyle = night ? "rgba(200,240,255,.7)" : "rgba(255,255,255,.9)";
-                        g.beginPath(); g.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.24, 0, TAU); g.fill();
-                    }
-                }
-            }
-        };
-    }
+    // The background is OceanScene (ocean-scene.js)
 
     // ---------------------------------------------------------------------------------------------
     // The board: a shell, starfish or pearl in each typed square; a fish swims along every finished word
@@ -406,11 +127,14 @@
         }
         await c.wait(900);
         if (c.skipped) return;
-        // 2. a treasure chest rises in front of the board and bursts open
-        const chest = U.el("div", { class: "oc-chest", html: CHEST, style: { left: cx - 90 + "px", top: Math.min(H - 160, b.bottom - 120) + "px" } });
+        // 2. a giant clam rises in front of the board and opens on a glowing pearl (Rive: rive/ocean-win.riv,
+        //    timed to the steps below; the chest element, kept invisible, moves the same way and places the bursts)
+        const chest = U.el("div", { class: "oc-chest", html: CHEST, style: { left: cx - 90 + "px", top: Math.min(H - 160, b.bottom - 120) + "px", visibility: "hidden" } });
         overlay.appendChild(chest);
         FX.follow(c, boardEl, chest);
         c.cleanup(() => chest.remove());
+        const clam = Anim.play("ocean-win", { follow: boardEl, ms: 4600, fadeMs: 300, rect: r => { const w = Math.min(W * 0.9, 460), top = Math.min(H - 160, r.bottom - 120); return { x: r.left + r.width / 2 - w / 2, y: top + 73 - 410 * w / 600, w, h: 560 * w / 600 }; } });
+        c.cleanup(() => clam.stop());
         chest.animate([{ transform: "translateY(260px) scale(.6)", opacity: 0 }, { transform: "translateY(-14px) scale(1.05)", opacity: 1, offset: 0.7 }, { transform: "none", opacity: 1 }], { duration: 700, easing: "cubic-bezier(.2,.9,.3,1)", fill: "backwards" });
         await c.wait(800);
         if (c.skipped) return;
@@ -420,6 +144,12 @@
         if (c.skipped) return;
         chest.classList.add("open");
         Sound.play("treasure");
+        Anim.motion().then(({ animate, stagger }) => {                         // the squares bob like they're afloat
+            if (c.skipped) return;
+            const cells = [...boardEl.querySelectorAll(".cell:not(.block)")];
+            const run = animate(cells, { y: [0, -10, 4, -2, 0], rotate: [0, -3, 2, 0] }, { duration: 1.2, delay: stagger(0.04, { from: "last" }), ease: "easeInOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; }); });
+        }).catch(() => null);
         const cp = U.center(chest);
         FX.flash("#fff3c4", 450, 0.5);
         FX.ring({ x: cp.x, y: cp.y - 20, color: "#ffd166", r1: Math.max(W, H) * 0.5, dur: 1, width: 16 });
@@ -555,7 +285,7 @@
     Worlds.register({
         id: "ocean", name: "Coral Reef", icon: "\u{1F420}", tagline: "A Sunlit Reef That Glows at Night.",
         modes: ["light", "dark"],
-        scene, board, celebrate, titleCard, sounds, transition: "tide",
+        scene: (W, H, opts) => OceanScene(W, H, opts), rive: "ocean-win", board, celebrate, titleCard, sounds, transition: "tide",
         mascot: { name: "OTTO", draw: drawOtto },
         lines: {
             hello: ["Ahoy! I'm Otto. Eight arms, zero clues... let's find some!", "Welcome to the reef! The puzzles are swimming in.", "Dive in, the water's lovely today!"],

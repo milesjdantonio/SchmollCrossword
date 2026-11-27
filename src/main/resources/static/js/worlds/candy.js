@@ -135,7 +135,7 @@
         //    (Rive: rive/candy-win.riv draws and animates it, timed to the steps below; the element here, kept
         //    invisible, swings the same way and tells the bursts where the piñata is)
         const pinTop = Math.max(10, b.top - 60);
-        const pin = U.el("div", { class: "cd-pinata", html: PINATA, style: { left: cx - 70 + "px", top: pinTop + "px", opacity: "0" } });
+        const pin = U.el("div", { class: "cd-pinata", html: PINATA, style: { left: cx - 70 + "px", top: pinTop + "px", visibility: "hidden" } });
         overlay.appendChild(pin);
         FX.follow(c, boardEl, pin);
         c.cleanup(() => pin.remove());

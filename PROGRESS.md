@@ -499,7 +499,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         sugar-dusted gumdrop hills, cotton-candy and ice-cream trees, lollipops, a frosted meadow with sprinkles,
         peppermint stones, candy corn, a donut, striped candy canes; win: a Rive star piñata `candy-win` with tissue
         fringe swings in, cracks at each whack and bursts into sweets; Motion jiggles the squares).
-      - To do: Coral Reef, Snow Day, Acorn Woods, Deep Space, Classic
+        **Coral Reef** (ocean-scene.js: a seamless caustic net at the surface and sliding over the sand, swaying
+        shafts, reef ridges fading blue, a sunken ship, lumpy bommies covered in brain, staghorn, table and tube
+        corals, sea fans and sponges, anemones with clownfish, kelp with bladders, sea grass, shells, a starfish and
+        an urchin; schools, tangs, butterflyfish, angelfish, a detailed turtle, a manta, a whale; jellyfish, an
+        anglerfish and plankton by night; win: a Rive giant clam `ocean-win` opens its frilled mantle and lifts a
+        glowing pearl, Motion bobs the squares). Candy's and the Reef's old DOM props stay as invisible anchors
+        (`visibility: hidden`) that place the bursts.
+      - To do: Snow Day, Acorn Woods, Deep Space, Classic
         (its win only).
 
 ### Phase 7: Retention
