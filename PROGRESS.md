@@ -422,6 +422,11 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
       time, pause when hidden (ideas from RhythmArchitect)
 - [ ] Loading: fewer requests, versioned files with long caching, lazy-load story/credits/how-to
+      - [x] Versioned files (2026-11-27): `IndexPage` serves index.html with every script and stylesheet named by
+        its content hash (Spring's resource chain, `spring.web.resources.chain.strategy.content.*`; CSS font links
+        too), `LongCache` keeps those names a year (`immutable`, never a 404); the page and plain names stay
+        no-cache. The chain's cache is off locally and on in the Dockerfile (`RESOURCE_CACHE`). `StaticFilesTest`.
+      - [ ] Fewer requests (68 scripts, 13 stylesheets) and lazy-loading story/credits/how-to
 - [ ] Accessibility and settings: text and cell size, reduced motion, optional timer and mistake counter,
       customisable keys, the grid usable with a screen reader (role grid, live clue announcements), boss assist
 

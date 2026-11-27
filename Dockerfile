@@ -34,6 +34,8 @@ ENV TZ=America/New_York
 ENV PUZZLE_DIR=/data
 # The design options at /demo are only for a local server
 ENV SHOW_DEMO=false
+# Remember each static file's content hash (IndexPage, LongCache)
+ENV RESOURCE_CACHE=true
 
 # The Claude API key is NOT in here. Set it as a secret environment variable in the host's dashboard.
 

@@ -245,7 +245,7 @@ class LeaderboardControllerTest {
         MockHttpServletResponse page = new MockHttpServletResponse();
         filter.doFilter(new MockHttpServletRequest("GET", "/"), page, new MockFilterChain());
         assertTrue(page.getHeader("Content-Security-Policy").contains("script-src 'self'"));
-        assertFalse(page.getHeader("Content-Security-Policy").contains("unsafe-eval"));
+        assertFalse(page.getHeader("Content-Security-Policy").contains("'unsafe-eval'"));      // (only WebAssembly may compile: 'wasm-unsafe-eval')
         assertEquals("nosniff", page.getHeader("X-Content-Type-Options"));
         assertEquals("DENY", page.getHeader("X-Frame-Options"));
 
