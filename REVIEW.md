@@ -107,6 +107,11 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Boss fights, redone.** Start any boss fight on a computer: the site's menu bar is gone, the race bar sits
+      next to the title, your board is much bigger, and your three abilities are a column right beside it (keys
+      1-3 still work). The clues and the boss are down the right side. Tell me what still feels off: sizes, what's
+      where, anything you look for and can't find.
+
 - [ ] **The Carnival, redrawn.** Pick Big Top Carnival in Settings and look at it by day and by night: hills
       with a little town, a wooden coaster with a train running on it, a drop tower that rises and falls, a
       detailed Ferris wheel, a big top with a curved roof and a lit marquee door, a carousel with horses going

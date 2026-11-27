@@ -1011,6 +1011,8 @@ html.cm-atlas-on .mascot, html.cm-atlas-on .cm-beta { opacity: 0; pointer-events
 .bp-race i { background: var(--boss); opacity: .7; }
 .bp-abilities { margin-top: 10px; }
 .bp-abilities small { display: block; font-weight: 900; letter-spacing: .12em; font-size: .68rem; color: var(--muted); margin-bottom: 4px; }
+/* (the abilities sit under your board, over the arena: the label needs a halo to read) */
+.bp-abilities > small { text-align: center; color: var(--ink); text-shadow: 0 0 6px var(--surface-solid), 0 0 2px var(--surface-solid); }
 .bp-ab-row { display: grid; grid-template-columns: repeat(3, minmax(0, 132px)); justify-content: center; gap: 8px; }   /* the 3 abilities, centred */
 .bp-ab, .bp-super { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 12px; border: 2px solid var(--accent); background: var(--surface-solid); color: var(--ink); font-family: var(--font-body); cursor: pointer; transition: transform .12s; overflow: hidden; }
 .bp-ab:hover:not(:disabled), .bp-super:hover:not(:disabled) { transform: translateY(-2px); background: color-mix(in srgb, var(--accent) 12%, var(--surface-solid)); }

@@ -2226,6 +2226,9 @@ const Campaign = (() => {
     let fight = null, lastKeyAt = 0;
     const panel = U.el("aside", { class: "boss-panel", hidden: true, "aria-label": "The boss" });
     document.getElementById("puzzle").appendChild(panel);
+    // your abilities sit right under your board (keys 1-3), not in the boss's panel
+    const abDock = U.el("div", { class: "bp-abilities", hidden: true, role: "group", "aria-label": "Your abilities" }, U.el("small", { text: "Your Moves" }), U.el("div", { class: "bp-ab-row" }));
+    document.querySelector(".board-wrap").after(abDock);
     // The race bar: at the top, the level's friend on the left and the boss on the right. The
     // middle is pushed right when you're ahead and left when the boss is (how far = how much more of the board).
     const raceEl = U.el("div", { class: "race-bar", hidden: true, role: "img", "aria-label": "Who's ahead in the race",
@@ -2417,6 +2420,7 @@ const Campaign = (() => {
         panel.hidden = false;
         root.classList.toggle("special-boss", !!special());                 // the Daily Boss keeps Check and Reveal
         raceEl.hidden = false;
+        abDock.hidden = false;
         raceShown = -1;
         raceFaceFor = "";
         document.getElementById("puzzle").classList.add("boss-mode");
@@ -2428,6 +2432,7 @@ const Campaign = (() => {
         panel.hidden = true;
         panel.classList.remove("ko");
         raceEl.hidden = true;
+        abDock.hidden = true;
         if (!waitEl.hidden) waiting(false);
         meStatus.innerHTML = "";
         document.querySelectorAll(".bh-combo").forEach(el => el.remove());
@@ -2450,7 +2455,6 @@ const Campaign = (() => {
                 <div class="bp-who"><small>BOSS · ${U.esc(Worlds.byId[fight.world].name.toUpperCase())} · ${"💀".repeat(fight.th.stars)}</small><b></b><div class="bp-status"></div></div>
                 <div class="bp-bar bp-race" title="The boss's progress on its own board"><i></i><span></span></div>
                 <div class="bp-volume" title="Boss Music (also in Settings)"><button type="button" class="bp-vol-mute" aria-label="Boss music on or off"></button><input type="range" min="0" max="100" step="1" aria-label="Boss music volume"><output></output></div>
-                <div class="bp-abilities"><small>YOUR MOVES</small><div class="bp-ab-row"></div></div>
                 <div class="bp-board-wrap"><div class="bp-board"></div><div class="bp-fog" aria-hidden="true"></div><p class="bp-loading">The boss is getting ready…</p></div>`;
             // (the boss's clues aren't shown, or even written, so its board costs nothing)
             panel.querySelector(".bp-who b").textContent = b.name;
@@ -2500,8 +2504,8 @@ const Campaign = (() => {
             if (m.firstChild.textContent !== t1) m.firstChild.textContent = t1;
             if (m.lastChild.textContent !== t2) m.lastChild.textContent = t2;
         };
-        panel.querySelectorAll(".bp-ab").forEach(btn => mark(btn, null));
-        const box = panel.querySelector(".bp-abilities"), row = panel.querySelector(".bp-ab-row");
+        abDock.querySelectorAll(".bp-ab").forEach(btn => mark(btn, null));
+        const box = abDock, row = abDock.querySelector(".bp-ab-row");
         if (box && row) {
             let banner = box.querySelector(".ab-ward-banner");
             if (ward && !banner) { banner = U.el("div", { class: "ab-ward-banner", html: "<b>UMBRELLA UP</b><span>your next ability bounces off it</span>" }); row.before(banner); }
@@ -2520,7 +2524,7 @@ const Campaign = (() => {
         if (c.lastChild.textContent !== text) c.lastChild.textContent = text;
     }
     function drawAbilityBar() {
-        const row = panel.querySelector(".bp-ab-row");
+        const row = abDock.querySelector(".bp-ab-row");
         if (!row || !fight) return;
         row.innerHTML = "";
         const ids = loadout(fight.world);

@@ -416,10 +416,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Whole Map, arrows step along the journey. Picking an island opens its page of the atlas (stops with their
       lessons and stars, the secret, Travel Here); picking it again, Travel or Enter flies down into it. Phone: the
       page is a sheet. Checked at 1440x900 and 390x844: no errors.
-- [ ] Boss fight boards need a UX pass (the user, 2026-11-27: "boss boards need work for better UX, it missed out on
-      previous updates and doesnt feel good"): the fight screen never got the play stage's redesign. Bring it onto
-      the play stage (board, clue bar, timer row), make the race bar, the boss panel, abilities and attack warnings
-      read at a glance, and check it at 1440x900, 1280x720 and on a phone.
+- [x] Boss fight boards need a UX pass (the user, 2026-11-27: "boss boards need work for better UX, it missed out on
+      previous updates and doesnt feel good"). Done 2026-11-27: the boss stage (play.css, `html[data-view=game]:is(.in-boss,
+      .boss-stage)`, computer-sized windows): no site bar, a back button, the title and the race bar on one line, your
+      board as big as the window allows with your abilities in a column beside it (moved out of the boss panel:
+      `abDock` in campaign.js; on phones they sit under the board), items on one line, the clues and the boss panel
+      down the side scrolling inside (981-1240 px: clues over a compact boss panel). Checked at 1440x900, 1280x720,
+      1100x800 and 390x844 (Queen Thistle 5x5, the Magma Wyrm 9x9).
+      Still open: the board doesn't lean in 3D like a level's (effects aim at the squares), the attack warning covers
+      the top of the clue list while it shows.
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [x] Phone layout review (all screens)
