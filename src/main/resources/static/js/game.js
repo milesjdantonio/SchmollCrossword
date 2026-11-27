@@ -271,6 +271,20 @@ const Game = (() => {
         lastInput = performance.now();
         idleSaid = false;
         Bus.emit("puzzle", { fresh, puzzle });
+        fitPhone();
+    }
+
+    // On a phone the on-screen keyboard sits over the bottom of the page: bring the timer row to the top of the
+    // screen so the clue, the whole board and the keyboard are all in view (the title and the tabs are a scroll up)
+    const phoneQuery = matchMedia("(pointer: coarse) and (max-width: 780px)");
+    function fitPhone() {
+        if (!phoneQuery.matches) return;
+        requestAnimationFrame(() => {
+            const hud = document.querySelector("#puzzle .hud-row");
+            if (!hud || !hud.offsetParent) return;
+            const top = Math.max(0, hud.getBoundingClientRect().top + scrollY - 16);
+            if (Math.abs(scrollY - top) > 4) scrollTo({ top, behavior: U.motion() === "full" ? "smooth" : "auto" });
+        });
     }
 
     function cardInfo(puzzle) {
@@ -1445,6 +1459,7 @@ const Game = (() => {
             puzzleEl.hidden = false;
             playTitleCard();
             Bus.emit("resume", { puzzle: game.puzzle });      // the same puzzle again: a boss fight puts its panel, arena and music back
+            fitPhone();
             return;
         }
         if (lastPuzzle[slot]) {

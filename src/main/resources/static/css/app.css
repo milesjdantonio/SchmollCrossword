@@ -1345,7 +1345,9 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     .modes, .bar-group .modes { gap: 0; padding: 3px; max-width: 100%; }
     .modes a { padding: 6px 7px; font-size: .8rem; letter-spacing: -.01em; }   /* all six fit on a phone */
     .daily-chips { grid-template-columns: 1fr; }
-    .difficulty button { padding: 6px 11px; }
+    .difficulty { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }          /* one row, swiped sideways if it must */
+    .difficulty::-webkit-scrollbar { display: none; }
+    .difficulty button { flex: 0 0 auto; padding: 6px 11px; }
     .m-face, .m-face canvas { width: 84px !important; height: 84px !important; }
     .m-bubble { max-width: 220px; margin-bottom: 50px; font-size: .86rem; }
     .history th, .history td { padding: 8px 5px; }

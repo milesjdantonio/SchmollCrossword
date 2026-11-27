@@ -419,6 +419,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
 - [ ] Puzzle screen follow-ups: boss fights on the play stage; How to Play chapters for Pencil and the spotlight; the
       phone layout (the on-screen keyboard has no Pencil key yet: the button above the board does it)
 - [ ] Phone layout review (all screens)
+      - [x] The puzzle on a phone (2026-11-27): opening a puzzle scrolls the timer row to the top (`fitPhone` in game.js),
+        so the clue, the whole board, Check/Reveal and the keyboard are all in view (the keyboard covered the last two
+        rows); the difficulty buttons are one row (swiped sideways if they must); the keyboard has a Pencil key.
+      - [ ] The other screens at phone size
 - [ ] Renderer: world backgrounds in a worker (OffscreenCanvas) where supported, quality tiers from measured frame
       time, pause when hidden (ideas from RhythmArchitect)
 - [ ] Loading: fewer requests, versioned files with long caching, lazy-load story/credits/how-to
