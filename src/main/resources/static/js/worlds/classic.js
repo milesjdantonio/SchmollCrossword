@@ -41,12 +41,21 @@
         const b = boardEl.getBoundingClientRect();
         FX.burst({ x: b.left + b.width / 2, y: b.top + b.height * 0.3, n: 60, colors: ["#2a62c9", "#e8a320", "#3a9a52", "#d64545", "#7a5cc8"], shape: "rect", angle: -Math.PI / 2, spread: 1, speed: [250, 600], gravity: 600, drag: 0.6, life: [1.4, 2.2], size: [6, 9] });
         Sound.play("win");
-        await c.wait(1600);
+        // a seal stamps itself over the board (Rive: rive/classic-win.riv) while a wave runs across the squares (Motion)
+        const seal = Anim.play("classic-win", { follow: boardEl, ms: 1800, fadeMs: 200, rect: r => { const w = Math.min(r.width * 0.62, 280); return { x: r.left + r.width / 2 - w / 2, y: r.top + r.height / 2 - w / 2, w, h: w }; } });
+        c.cleanup(() => seal.stop());
+        Anim.motion().then(({ animate, stagger }) => {
+            if (c.skipped) return;
+            const cells = Game.openCells();
+            const run = animate(cells, { y: [0, -6, 0], scale: [1, 1.05, 1] }, { duration: 0.42, delay: stagger(0.028), ease: "easeOut" });
+            c.cleanup(() => { try { run.complete(); } catch (err) { /* done */ } cells.forEach(el => { el.style.transform = ""; }); });
+        }).catch(() => null);
+        await c.wait(1800);
     }
 
     Worlds.register({
         id: "classic", name: "Classic", icon: "▦", tagline: "Just the Puzzle.",
         modes: ["light", "dark"],
-        scene, titleCard, celebrate, sounds: {}, transition: "fade", plain: true
+        scene, rive: "classic-win", titleCard, celebrate, sounds: {}, transition: "fade", plain: true
     });
 })();

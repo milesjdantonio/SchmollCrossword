@@ -5,17 +5,37 @@ Everything in the major update that needs your eyes, ears or a decision. When so
 
 ## Ready for you
 
+- [ ] **Every world, redrawn** (2026-11-27). All 16 worlds have new backgrounds and win animations, built with
+      Rive and Motion to the Celestial Rift's level of detail. Look at each one in light and dark, and win a puzzle
+      in each, then say which ones still feel off:
+      - Garden: countryside, windmill, a Rive wreath.
+      - Notebook: a lamplit desk, or a blueprint at night; Rive doodles and stars.
+      - Rainy City: a café street; a Rive umbrella.
+      - Desert: dunes and an oasis; a Rive treasure chest.
+      - Carnival: a big top and a Ferris wheel; a Rive strength tower.
+      - Robot Factory: a hall with arms and a conveyor; a Rive trophy.
+      - Sky Kingdom: floating islands and a castle; a Rive balloon.
+      - Volcano Island: a stratovolcano across a lagoon; two Rive tikis.
+      - Neon Arcade: a synthwave drive with palm rows; a Rive neon marquee.
+      - Haunted Library: a two-storey hall with a clock that tells the real time; a Rive grimoire.
+      - Candy Hills: a candy castle and a chocolate waterfall; a Rive piñata.
+      - Coral Reef: caustics, a shipwreck, a clam; a Rive giant clam and pearl.
+      - Snow Day: alpine peaks, a frozen lake with a skater; a Rive snowman.
+      - Acorn Woods: painterly autumn woods; a Rive squirrel and golden acorn.
+      - Deep Space: a galaxy and asteroids by night, a sunlit solar system by day; a Rive rocket.
+      - Classic: a Rive seal.
+
 - [ ] **Louder top volume.** Master Volume now starts at 80%, which is as loud as 100% was; 100% is twice that
       (+6 dB). Your saved volume was moved to the same loudness (96% shows as 77%). Try 100% in a boss fight and say
       if it's too much or not enough.
 - [ ] **The stretched background in Chrome.** Found one cause: in Chrome the background was drawn for the window
       including its scrollbar and then squeezed into the page beside it (Vivaldi's scrollbars float, so it looked
       right there). Fixed; open a page with a scrollbar (Home, Stats) in Chrome and say if it still looks stretched.
-- [ ] **The black box behind Deep Space's black hole.** I couldn't find it (2026-11-26): the island, the Atlas and
-      the scene behind Home show no box in light or dark. It was probably on the old scrolling map, which is gone.
-      If you still see one, say where (which screen, light or dark, which browser).
+- [ ] **The black box in Deep Space's win.** You found it in the win animation: the black hole's dark backdrop was
+      a rectangle that moved with the board. It's now a soft fade over the whole screen. Win a puzzle in Deep Space
+      (light and dark) and say if any edge still shows.
 - [ ] **Home, Stats and Settings** (2026-11-26) were redone so they don't read as AI-made: the greeting is the
-      title with what's left today, each daily is a row with a small grid of its size, the week is a row of
+      title with what's left today, each daily is a row (the small boards are gone, as you asked), the week is a row of
       crossword squares, and every panel is flat in the world's own colours. Open Home, Stats and Settings in a few
       worlds and say if anything feels off.
 

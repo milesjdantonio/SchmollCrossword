@@ -448,7 +448,7 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       `.in-boss #world-bg { opacity: 0 }` was still on, so the world never showed while the caption named each one,
       and the angel's arena stayed up; credits.css now hides a fight's arena and shows the world while the roll is on,
       and the ending roll (`Credits.show({ ending: true })`) has the worlds only. Checked by faking a fight's end)
-- [ ] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged). The user,
+- [x] World scenes and win animations brought up to the Celestial Rift's detail (15 worlds, staged). The user,
       2026-11-26: "add a refresh to every worlds background and win animation with rive and motion ... make the whole
       thing more detailed, less plasticy". How it's done:
       - **Rive** (`vendor/rive/`, @rive-app/canvas 2.49.0) and **Motion** (`vendor/motion/`, 14.9.0), MIT,
@@ -526,8 +526,9 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
         side, rocky belt, a comet with ion and dust tails, a ringed giant rising in the lower left; win: a Rive
         retro rocket `space-win` flies out of the warp and off the screen (artboard `clip: false`, full-screen
         rect), Motion flashes the squares).
-      - To do: Classic
-        (its win only).
+        **Classic** (its win only: a Rive seal `classic-win` draws its ring, pops a blue disc, strokes a check and
+        flicks out ticks with a shine; Motion runs a wave across the squares in reading order).
+      - All 16 worlds done (2026-11-27).
 
 ### Phase 7: Retention
 - [ ] Daily Archive (practice, no points/streak; works with offline)
