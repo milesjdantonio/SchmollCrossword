@@ -8,6 +8,7 @@ Inspired by daily mini crosswords such as the NYT Mini. Not affiliated with The 
 
 **Daily.** Five puzzles a day, the same for everyone, new at each player's midnight: Easy, Medium and Hard 5×5 grids,
 a bigger Challenge grid (6×6 up to 9×9), and the Daily Boss. Scores count toward a streak and a world leaderboard.
+Every earlier day's dailies stay in the **Daily Archive**, a calendar of past puzzles to replay for practice.
 
 **Campaign.** Fifteen worlds, each a floating island with five levels, from the Notebook to Deep Space, plus a secret
 sixteenth world that opens once the final boss falls. The Atlas shows every island at once on a twilight sea, and the

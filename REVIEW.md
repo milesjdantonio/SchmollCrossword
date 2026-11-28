@@ -107,6 +107,12 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **The Daily Archive.** On Home, under the Daily card, open the Daily Archive: a calendar of every earlier
+      day, drawn like a crossword grid. The coloured marks on each day are its Easy, Medium, Hard and Challenge, filled
+      in once you've solved them. Pick a day, play one: it's practice, so no points or streak. Surprise Me picks one
+      you haven't done. A day joins the Archive once it's over everywhere in the world, so yesterday's shows up around
+      7 a.m. New York time. Tell me if the calendar idea works for you.
+
 - [ ] **Boss fights, redone.** Start any boss fight on a computer: the site's menu bar is gone, the race bar sits
       next to the title, your board is much bigger, and your three abilities are a column right beside it (keys
       1-3 still work). The clues and the boss are down the right side. Tell me what still feels off: sizes, what's

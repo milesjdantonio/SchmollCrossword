@@ -8,7 +8,7 @@
 const App = (() => {
     const $ = U.$;
     const root = document.documentElement;
-    const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view") };
+    const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view"), archive: $("#archive-view") };
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
     // ---------------------------------------------------------------------------------------------
@@ -142,10 +142,10 @@ const App = (() => {
         // is shown made the browser lay the whole page out on the spot)
         scrollTo({ top: 0 });
         const view = U.view();
-        const gameView = view === "daily" || view === "level";
+        const gameView = view === "daily" || view === "level" || view === "past";
         if (!Campaign.onView(view)) return;          // campaign screens wear the campaign's worlds (and #level needs a level)
-        // a level lights up Campaign, but the Daily Boss belongs to Daily
-        const tab = view === "level" ? (Campaign.playing && Campaign.playing.special) || "campaign" : view;
+        // a level lights up Campaign, but the Daily Boss belongs to Daily, and so does the Archive
+        const tab = view === "level" ? (Campaign.playing && Campaign.playing.special) || "campaign" : view === "archive" || view === "past" ? "daily" : view;
         document.querySelectorAll(".modes a").forEach(a => a.classList.toggle("active", a.dataset.view === tab));
         for (const [name, el] of Object.entries(screens)) {
             const on = name === view || (name === "game" && gameView);
@@ -161,9 +161,10 @@ const App = (() => {
         if (view === "home") drawHome();
         else if (view === "stats") drawStats();
         else if (view === "settings") drawSettings();
+        else if (view === "archive") Archive.show();
         // a campaign level needs the map first (which world it is, its difficulty); after a reload it isn't loaded yet
         else if (view === "level") Campaign.ready().then(() => { if (U.view() === "level") Game.show(view); }, () => Game.show(view));
-        else if (view !== "campaign") Game.show(view);
+        else if (view !== "campaign" && view !== "archive") Game.show(view);
         if (!warmQueued && (view === "home" || view === "stats" || view === "settings")) {
             // once the page has settled, draw the campaign's stage and the play stage unseen so their first openings don't stall
             warmQueued = true;
@@ -174,7 +175,7 @@ const App = (() => {
     // on a phone-sized game screen the mascot and its speech bubble would cover the board
     function mascotInTheWay() {
         const v = U.view();
-        return (v === "daily" || v === "level") && innerWidth < 900 && (U.touch() || innerWidth < 780);
+        return (v === "daily" || v === "level" || v === "past") && innerWidth < 900 && (U.touch() || innerWidth < 780);
     }
     addEventListener("resize", U.debounce(() => { if (!root.classList.contains("intro-on")) Mascot.away = mascotInTheWay(); }, 200));
 
@@ -209,6 +210,7 @@ const App = (() => {
         const WORDS = ["None", "One", "Two", "Three", "Four", "Five"], left = total - solved;
         $("#hello-fact").textContent = left <= 0 ? ". All Done for Today" : !solved ? `. ${WORDS[total] || total} Puzzles Today` : `. ${WORDS[left] || left} Left Today`;
         drawCountdown();
+        Archive.homeLine($("#home-archive-sub"));
         const streaks = calculateStreaks(all);
         $("#home-streak").replaceChildren(
             U.el("b", { class: "sf-num", text: String(streaks.current) }),

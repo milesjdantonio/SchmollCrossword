@@ -105,6 +105,7 @@
                             <button type="button" class="boss-chip" id="home-daily-boss" aria-label="Today's boss"><span class="bchip-art" aria-hidden="true"></span><span class="bchip-text"><span class="chip-name">Today's Boss</span><span class="chip-sub"></span></span><span class="chip-state">Fight</span></button>
                         </div>
                         <p class="card-status" id="daily-status" hidden></p>
+                        <a class="archive-link" href="#archive"><span><b>Daily Archive</b><small id="home-archive-sub">Every Earlier Day, for Practice</small></span><span class="chip-state">Open</span></a>
                     </article>
                     <article class="card streak-card">
                         <header class="card-head"><h2>Your Streak</h2><a class="kicker link" href="#stats">All Stats</a></header>
@@ -115,6 +116,37 @@
                     <article class="card leader-card">
                         <header class="card-head"><h2>Leaderboard</h2><span class="kicker" id="home-lb-count"></span></header>
                         <div id="home-leaderboard"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ======================== DAILY ARCHIVE ======================== -->
+            <section id="archive-view" class="screen" hidden>
+                <header class="home-title arc-title">
+                    <a class="arc-back" href="#" aria-label="Back to Home"></a>
+                    <div>
+                        <h1 class="hero-title">Daily Archive</h1>
+                        <p class="today-date" id="arc-summary">Practice: No Points or Streak</p>
+                    </div>
+                </header>
+                <p class="status" id="arc-status" hidden></p>
+                <div class="arc-grid" id="arc-grid" hidden>
+                    <article class="card arc-cal-card">
+                        <header class="arc-month">
+                            <button type="button" class="arc-step" id="arc-prev" aria-label="Earlier month"></button>
+                            <h2 id="arc-month" aria-live="polite"></h2>
+                            <button type="button" class="arc-step" id="arc-next" aria-label="Later month"></button>
+                        </header>
+                        <div class="arc-dow" aria-hidden="true"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+                        <div class="arc-cal" id="arc-cal" role="grid" aria-label="Days"></div>
+                        <div class="arc-key" aria-hidden="true"><span><i class="k-easy"></i>Easy</span><span><i class="k-medium"></i>Medium</span><span><i class="k-hard"></i>Hard</span><span><i class="k-challenge"></i>Challenge</span></div>
+                    </article>
+                    <article class="card arc-day-card" id="arc-day" aria-live="polite">
+                        <header class="card-head"><h2 id="arc-day-title"></h2><span class="kicker" id="arc-day-count"></span></header>
+                        <div class="daily-chips" id="arc-chips"></div>
+                        <div class="arc-actions">
+                            <button type="button" class="btn" id="arc-random">Surprise Me</button>
+                        </div>
                     </article>
                 </div>
             </section>
@@ -421,6 +453,7 @@
     <script src="js/howto.js"></script>
     <script src="js/credits.js"></script>
     <script src="js/legal.js"></script>
+    <script src="js/archive.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

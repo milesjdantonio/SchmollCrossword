@@ -560,7 +560,16 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       - All 16 worlds done (2026-11-27).
 
 ### Phase 7: Retention
-- [ ] Daily Archive (practice, no points/streak; works with offline)
+- [x] Daily Archive (2026-11-27): `#archive` (js/archive.js) is a month calendar drawn as a crossword grid (each day a
+      square with its date as the clue number, black squares for days without puzzles, four pips for Easy / Medium /
+      Hard / Challenge, filled once solved on the day or in practice), the picked day's puzzles beside it (Play,
+      Continue, On the Day · time, Solved · time, Revealed), Surprise Me (a random unsolved one), arrow keys on the
+      calendar. A puzzle plays on `#past` (game.js `playPast`; mode "archive", slots `archive-<date>-<kind>`, the 12
+      latest games saved, practice solves in `schmoll.archive`, the day's own scores untouched; Time Traveler and
+      Archivist count them). Server: `ArchiveController` (`/api/archive/days`, `/api/archive?date=&difficulty=`)
+      serves only saved or shipped dailies (never makes one), a day only once it's over everywhere (noon UTC the
+      next day), and leaves out switched-off dailies and any with a family-filter answer (Nov 23's Hard). Home's
+      Daily card links to it. Tests: `ArchiveControllerTest`; 170 JUnit pass. Offline: with the service worker (later).
 - [ ] Detailed Stats page (completion, average times by difficulty, streaks, records, hardest puzzles, hints,
       mistakes); says these are this browser's stats
 - [ ] Better results screen (time, hints, mistakes, personal bests, compared with your own history)

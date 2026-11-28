@@ -48,8 +48,11 @@ const Game = (() => {
 
     // Each daily difficulty is its own puzzle, so its own "slot"
     // Campaign levels (#level) each have their own slot too: "campaign-garden-3"
-    const slotFor = (mode, difficulty) => (mode === "level" ? Campaign.slotName() : "daily-" + difficulty);
-    const slotOf = puzzle => (puzzle.special ? `special-${puzzle.special}` : puzzle.mode === "campaign" ? `campaign-${puzzle.world}-${puzzle.level}` : slotFor(puzzle.mode, puzzle.difficulty));
+    // The Daily Archive (#past): an earlier day's daily, practice only, each one its own slot: "archive-2026-11-02-hard"
+    let pastDate = "";
+    const slotFor = (mode, difficulty) => (mode === "level" ? Campaign.slotName() : mode === "past" ? `archive-${pastDate}-${difficulty}` : "daily-" + difficulty);
+    const slotOf = puzzle => (puzzle.special ? `special-${puzzle.special}` : puzzle.mode === "campaign" ? `campaign-${puzzle.world}-${puzzle.level}`
+        : puzzle.mode === "archive" ? `archive-${puzzle.date}-${puzzle.difficulty}` : slotFor(puzzle.mode, puzzle.difficulty));
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
     // ---------------------------------------------------------------------------------------------
@@ -68,6 +71,20 @@ const Game = (() => {
             checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}),
             ...(game.ticket && difficulty !== "boss" ? { ticket: game.ticket } : {}) };
         U.saveRaw(SCORES_KEY, JSON.stringify(all));      // (says so if it couldn't)
+        return true;
+    }
+
+    // Daily Archive solves (practice): { "20261102-hard": { seconds, surrendered, checked, revealed, at } }, the
+    // first solve of each kept (a practice run never touches the day's own score, which lives in the daily scores)
+    const ARCHIVE_KEY = "schmoll.archive";
+    function archiveRecords() {
+        try { return JSON.parse(localStorage.getItem(ARCHIVE_KEY)) || {}; } catch (err) { return {}; }
+    }
+    function saveArchiveRecord(puzzle, surrendered) {
+        const all = archiveRecords(), key = puzzle.date.replace(/-/g, "") + "-" + puzzle.difficulty;
+        if (all[key] && !all[key].surrendered) return false;
+        all[key] = { seconds: game.seconds, surrendered, checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, at: Date.now() };
+        U.saveRaw(ARCHIVE_KEY, JSON.stringify(all));
         return true;
     }
 
@@ -91,7 +108,11 @@ const Game = (() => {
         if (!game.puzzle || savingOff) return;
         const all = loadProgress();
         const mine = slotOf(game.puzzle);
-        all[mine] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty };
+        all[mine] = { puzzle: game.puzzle, state: snapshot(), difficulty: game.puzzle.difficulty, at: Date.now() };
+        // the archive keeps its 12 most recently played games (finished ones go first)
+        const past = Object.keys(all).filter(k => k.startsWith("archive-") && k !== mine)
+            .sort((a, b) => (all[a].state && all[a].state.solved ? 0 : 1) - (all[b].state && all[b].state.solved ? 0 : 1) || (all[a].at || 0) - (all[b].at || 0));
+        while (past.length > 11) delete all[past.shift()];
         try {
             localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
         } catch (err) {
@@ -121,9 +142,9 @@ const Game = (() => {
             // regenerated on the server replaces the old copy
             savedGames[slot] = saved.state;
         }
-        // campaign levels are fixed puzzles: keep them (and their games), except boss fights, which always start over
+        // campaign levels and archive dailies are fixed puzzles: keep them (and their games), except boss fights, which always start over
         for (const [slot, saved] of Object.entries(all)) {
-            if (!slot.startsWith("campaign-") || !sane(saved)) continue;
+            if (!(slot.startsWith("campaign-") || slot.startsWith("archive-")) || !sane(saved)) continue;
             lastPuzzle[slot] = saved.puzzle;
             if (!slot.endsWith("-5")) savedGames[slot] = saved.state;
         }
@@ -209,13 +230,15 @@ const Game = (() => {
         statusEl.hidden = false;
         puzzleEl.hidden = true;
         try {
-            let url = mode === "level" ? Campaign.apiUrl() : "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
+            const date = pastDate;
+            let url = mode === "level" ? Campaign.apiUrl() : mode === "past" ? `/api/archive?date=${date}&difficulty=${encodeURIComponent(difficulty)}` : "/api/" + mode + "?difficulty=" + encodeURIComponent(difficulty);
             if (mode === "daily") { const d = dayKey(new Date()); url += `&date=${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`; }   // the player's own date (time zones)
             const puzzle = await U.fetchJson(url);
             if (myLoad !== loadCounter) return;
             if (mode === "level") Object.assign(puzzle, { world: Campaign.playing.world, level: Campaign.playing.level, special: Campaign.playing.special || undefined });   // which level it is
+            if (mode === "past") Object.assign(puzzle, { mode: "archive", date, kinds: pastKinds || undefined });
             lastPuzzle[slotOf(puzzle)] = puzzle;
-            if (U.view() !== mode || (mode === "daily" && difficultyFor.daily !== difficulty) || (mode === "level" && slotOf(puzzle) !== Campaign.slotName())) return;   // they moved on
+            if (U.view() !== mode || (mode !== "level" && difficultyFor[mode] !== difficulty) || (mode === "past" && date !== pastDate) || (mode === "level" && slotOf(puzzle) !== Campaign.slotName())) return;   // they moved on
             startGame(puzzle);
             statusEl.hidden = true;
             puzzleEl.hidden = false;
@@ -303,10 +326,10 @@ const Game = (() => {
 
     function cardInfo(puzzle) {
         if (puzzle.mode === "campaign") return Campaign.cardInfo(puzzle) || {};
-        const d = new Date();
+        const past = puzzle.mode === "archive", d = past ? new Date(puzzle.date + "T12:00") : new Date();
         return {
             mode: puzzle.mode, difficulty: puzzle.difficulty,
-            kicker: "TODAY'S DAILY",
+            kicker: past ? "FROM THE ARCHIVE" : "TODAY'S DAILY",
             title: "Daily · " + cap(puzzle.difficulty),
             sub: d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }),
             stardate: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`
@@ -736,6 +759,7 @@ const Game = (() => {
         const record = p && p.mode === "daily" ? all[scoreKey(p)] : null;
         const streaks = calculateStreaks(all), parts = [];
         if (p && p.mode === "campaign") { pointsTodayEl.textContent = Campaign.bestLine(p); return; }
+        if (p && p.mode === "archive") { pointsTodayEl.textContent = "Practice"; return; }
         if (record) parts.push(record.surrendered ? `Today's ${cap(p.difficulty)}: Revealed` : `Today's ${cap(p.difficulty)}: ${record.points} pts`);
         if (streaks.current > 0) parts.push(`\u{1F525} ${streaks.current}-Day Streak`);
         pointsTodayEl.textContent = parts.join(" · ");
@@ -743,9 +767,11 @@ const Game = (() => {
 
     // Daily difficulty buttons get a ✓ (or ×) for today's finished dailies
     function drawDifficultyMarks() {
-        const all = scores(), today = dayKey(new Date()), isDaily = U.view() === "daily";
+        const all = scores(), today = dayKey(new Date()), isDaily = U.view() === "daily", isPast = U.view() === "past" && !!pastDate;
+        const practice = isPast ? archiveRecords() : null, pastDay = isPast ? pastDate.replace(/-/g, "") : "";
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => {
-            const record = isDaily ? all[today + "-" + b.dataset.difficulty] : null;
+            const k = b.dataset.difficulty, own = isPast ? all[pastDay + "-" + k] : null;
+            const record = isDaily ? all[today + "-" + k] : isPast ? (own && !own.surrendered ? own : practice[pastDay + "-" + k] || own) : null;
             b.classList.toggle("done", !!record && !record.surrendered);
             b.classList.toggle("given-up", !!record && !!record.surrendered);
         });
@@ -783,6 +809,12 @@ const Game = (() => {
         });
     }
 
+    // the archive day's other dailies not solved yet (on the day or in practice)
+    function archiveLeft(p) {
+        const all = scores(), rec = archiveRecords(), day = p.date.replace(/-/g, "");
+        const done = k => (all[day + "-" + k] && !all[day + "-" + k].surrendered) || (rec[day + "-" + k] && !rec[day + "-" + k].surrendered);
+        return (p.kinds || ["easy", "medium", "hard", "challenge"]).filter(k => k !== p.difficulty && !done(k));
+    }
     function checkForWin() {
         if (game.solved || !isSolved()) return false;
         if (game.puzzle.mode === "campaign" && Campaign.nextPhase(game)) return false;     // a boss's phase 2 starts instead
@@ -790,7 +822,11 @@ const Game = (() => {
         drawTimer();
         const p = game.puzzle;
         const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks };
-        if (p.mode === "daily" && dailyStanding(seedDay(p.seed)) === "past") {
+        if (p.mode === "archive") {
+            // the Daily Archive: practice. The first solve is remembered for the calendar
+            saveArchiveRecord(p, false);
+            Object.assign(info, { practice: true, counted: false, archive: true, date: p.date, left: archiveLeft(p) });
+        } else if (p.mode === "daily" && dailyStanding(seedDay(p.seed)) === "past") {
             // an earlier day's daily finished after the 15 minutes past midnight: practice
             Object.assign(info, { practice: true, counted: false, left: [], note: "This was an earlier day's daily, so it was practice: no points or streak." });
         } else if (p.mode === "daily") {
@@ -865,7 +901,7 @@ const Game = (() => {
         // (they wait behind the board's Results button for when they come back)
         if (game.puzzle !== puzzle) return;
         game.celebrating = false;
-        if (!["daily", "level"].includes(U.view())) { render(); return; }
+        if (!["daily", "level", "past"].includes(U.view())) { render(); return; }
         render();
         if (info.firstToday && info.streak > 0) Sound.play("streak");
         showResults(info);                 // new achievements are shown on the results card
@@ -892,7 +928,7 @@ const Game = (() => {
         modal.appendChild(card);
         card.append(
             U.el("div", { class: "res-rays", "aria-hidden": "true" }),
-            U.el("small", { class: "res-kicker", text: (info.campaign ? (info.campaign.special ? "BOSS" : `${(Worlds.byId[info.campaign.world] || {}).secret ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase()) + (info.practice ? " · PRACTICE" : "") }),
+            U.el("small", { class: "res-kicker", text: info.archive ? `ARCHIVE · ${new Date(p.date + "T12:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }).toUpperCase()} · ${p.difficulty.toUpperCase()}` : (info.campaign ? (info.campaign.special ? "BOSS" : `${(Worlds.byId[info.campaign.world] || {}).secret ? "SECRET WORLD" : "WORLD " + (info.campaign.si + 1)} · ${info.campaign.boss ? "BOSS FIGHT" : "LEVEL " + info.campaign.level}`) : "DAILY · " + p.difficulty.toUpperCase()) + (info.practice ? " · PRACTICE" : "") }),
             U.el("h2", { id: "res-title", class: "res-title", text: info.campaign ? (info.campaign.boss ? "Boss Defeated" : "Level Cleared") : U.pick(["Solved", "Brilliant", "Nailed It", "Well Done"]) }),
             U.el("div", { class: "res-time" }, U.el("span", { text: "TIME" }), U.el("b", { text: U.fmtTime(info.seconds) })));
         if (info.best != null) {
@@ -950,6 +986,10 @@ const Game = (() => {
             const n = info.campaign.next;
             if (n) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: n.level === 1 ? `On to ${Worlds.byId[n.world].name}` : n.level === 5 ? "Boss" : `Level ${n.level}`, onclick: () => { closeResults(); Campaign.next(n); } }));
             actions.appendChild(U.el("button", { type: "button", class: "btn", text: "Map", onclick: () => { closeResults(); location.hash = "#campaign"; } }));
+        } else if (info.archive) {
+            const next = info.left && info.left[0];
+            if (next) actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: `Play ${cap(next)}`, onclick: () => { closeResults(); switchDifficulty("past", next); } }));
+            actions.appendChild(U.el("button", { type: "button", class: next ? "btn" : "btn primary", text: "Archive", onclick: () => { closeResults(); location.hash = "#archive"; } }));
         } else if (p.mode === "daily" && info.left && info.left.length) {
             const next = info.left[0];
             if (next === "boss") actions.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Fight Today's Boss", onclick: () => { closeResults(); Campaign.playSpecial("daily"); } }));
@@ -1010,7 +1050,7 @@ const Game = (() => {
         const p = game.puzzle;
         const key = info.daily ? (Campaign.playing.date || "").replace(/-/g, "") : seedDay(p.seed);
         const date = /^\d{8}$/.test(key) ? new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6)).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
-        const score = info.practice ? " · Practice" : info.counted || info.daily ? ` · ${info.points} pts` : "";
+        const score = info.archive ? " · From the Archive" : info.practice ? " · Practice" : info.counted || info.daily ? ` · ${info.points} pts` : "";
         const lines = [`Schmoll Crossword${date ? " · " + date : ""}`];
         if (info.daily) {
             const stars = info.campaign && info.campaign.stars || 0;
@@ -1140,7 +1180,10 @@ const Game = (() => {
         game.surrendered = true;
         drawTimer();
         let text = game.puzzle.mode === "campaign" ? "Level not cleared. Play it again from the map." : "Better luck next time.";
-        if (game.puzzle.mode === "daily" && dailyStanding(seedDay(game.puzzle.seed)) === "past") {
+        if (game.puzzle.mode === "archive") {
+            saveArchiveRecord(game.puzzle, true);
+            text = "Practice, so nothing is lost. Try another day from the Archive.";
+        } else if (game.puzzle.mode === "daily" && dailyStanding(seedDay(game.puzzle.seed)) === "past") {
             text = "This was an earlier day's daily, so nothing was saved.";
         } else if (game.puzzle.mode === "daily") {
             const counted = saveDailyScore(game.puzzle, 0, true);
@@ -1355,7 +1398,7 @@ const Game = (() => {
     // leaving the puzzle: a campaign level goes back to its world, anything else goes Home
     const exitBtn = $("#game-exit");
     exitBtn.append(U.icon("back"));
-    exitBtn.addEventListener("click", () => { location.hash = U.view() === "level" && Campaign.playing && !Campaign.playing.special ? "#campaign" : "#"; });
+    exitBtn.addEventListener("click", () => { location.hash = U.view() === "level" && Campaign.playing && !Campaign.playing.special ? "#campaign" : U.view() === "past" ? "#archive" : "#"; });
     // the board leans a little toward the pointer (the full-screen layout, with a mouse)
     const tilt = { x: 0, y: 0, tx: 0, ty: 0, raf: 0 };
     function tiltStep() {
@@ -1462,13 +1505,24 @@ const Game = (() => {
     // ---------------------------------------------------------------------------------------------
     function show(view, opts) {
         const level = view === "level" ? Campaign.titles() : null;
-        $("#game-title").textContent = level ? level.title : "Daily Puzzle";
+        if (view === "past" && !pastDate) { location.hash = "#archive"; return; }      // (a reload on #past: pick a day first)
+        $("#game-title").textContent = level ? level.title : view === "past" ? "Daily Archive" : "Daily Puzzle";
         $("#game-subtitle").textContent = level ? level.sub
-            : new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+            : (view === "past" ? new Date(pastDate + "T12:00") : new Date()).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" }) + (view === "past" ? " · Practice" : "");
         $("#boss-mode").hidden = view !== "daily";
+        document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => { b.hidden = view === "past" && !!pastKinds && !pastKinds.includes(b.dataset.difficulty); });
         document.querySelectorAll(".difficulty button[data-difficulty]").forEach(b => b.classList.toggle("active", b.dataset.difficulty === difficultyFor[view]));
         drawDifficultyMarks();
         showPuzzleFor(view, opts);
+    }
+    // The Daily Archive: play an earlier day's daily (kinds: which of the day's dailies the archive has)
+    let pastKinds = null;
+    function playPast(date, difficulty, kinds) {
+        pastDate = date;
+        pastKinds = kinds || null;
+        difficultyFor.past = difficulty;
+        if (U.view() === "past") show("past");
+        else location.hash = "#past";
     }
     // fresh: today's daily even if an earlier day's is still in its 15 minutes (the midnight question's Go to Today's)
     function showPuzzleFor(view, { fresh = false } = {}) {
@@ -1691,7 +1745,7 @@ const Game = (() => {
     return {
         restartSlot, forgetSlot, endLoss, stopSaving, checkWin: checkForWin, markBossChanges, restoreAllHits, hitCount, giveLetters, eraseLetters, setLetters, fillCells, wrongCells, markWrong, isLocked, unlockLetters, markCells, startPhase, revealFree, clearWrong, lockRight, stopClock, holdClock, clockStopped, progress,
         openReport,
-        state: game, difficultyFor, scores, show, showPuzzleFor, loadPuzzle, warmStage, drawDifficultyMarks, streakBadge, render,
+        state: game, difficultyFor, scores, archiveRecords, playPast, savedSlot: slot => savedGames[slot] || null, show, showPuzzleFor, loadPuzzle, warmStage, drawDifficultyMarks, streakBadge, render,
         cellsOf, cellEl: (r, c) => (game.cells[r] ? game.cells[r][c] : null),
         openCells: () => game.cells.flat().filter(c => !c.classList.contains("block")),
         closeResults, playTitleCard

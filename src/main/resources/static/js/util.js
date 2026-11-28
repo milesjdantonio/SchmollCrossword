@@ -142,7 +142,7 @@ const U = (() => {
     const touch = () => matchMedia("(pointer: coarse)").matches;
 
     // The screen from the part of the URL after "#": "", "daily", "campaign" (the map), "level" (a campaign level), "stats", "settings"
-    const VIEWS = ["daily", "campaign", "level", "stats", "settings"];
+    const VIEWS = ["daily", "campaign", "level", "stats", "settings", "archive", "past"];
     function view() {
         const v = location.hash.replace("#", "");
         return VIEWS.includes(v) ? v : "home";

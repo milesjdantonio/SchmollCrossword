@@ -13,7 +13,7 @@
 }
 
 /* ---- panels: one flat sheet each, a quiet edge, no shadow and no blur over the moving scene ---- */
-#home-view .card, #stats-view .card, #settings-view .card {
+#home-view .card, #stats-view .card, #settings-view .card, #archive-view .card {
     padding: 20px;
     background: var(--panel);
     border: 1px solid var(--rule);
@@ -217,7 +217,7 @@ html[data-world] .modes a.active { background: color-mix(in srgb, var(--ink) 10%
     .home-campaign .btn.primary { justify-self: start; }
 }
 @media (max-width: 480px) {
-    #home-view .card, #stats-view .card, #settings-view .card { padding: 16px; }
+    #home-view .card, #stats-view .card, #settings-view .card, #archive-view .card { padding: 16px; }
     .hero-title, .page-head h1 { font-size: calc(1.6rem * var(--head-scale)); }
     .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stat-tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
@@ -237,3 +237,67 @@ html[data-world] .modes a.active { background: color-mix(in srgb, var(--ink) 10%
 /* a locked achievement is a dashed outline with its name: no padlock repeated down the wall */
 .ach-tile:not(.got) .ach-icon { display: none; }
 .ach-tile:not(.got) { grid-template-columns: 1fr; }
+
+/* ---- the Daily Archive (#archive, archive.js) ----
+   A month is drawn as a crossword grid: each day a square with its date in the corner like a clue number, days
+   without puzzles as black squares, and four pips along the bottom for its Easy, Medium, Hard and Challenge
+   (filled once solved). The picked day's puzzles sit beside it, in the same rows as Home's dailies. */
+.archive-link { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; margin-top: 10px; padding: 10px 14px;
+    border: 1px dashed var(--rule-strong); border-radius: var(--radius-sm); color: var(--ink); text-decoration: none; transition: border-color .15s, background .15s; }
+.archive-link:hover { border-style: solid; border-color: var(--ink); background: var(--raised); }
+.archive-link:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.archive-link > span:first-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.archive-link b { font: 700 1rem var(--font-body); }
+.archive-link small { color: var(--muted); font-size: .84rem; font-weight: 600; }
+.archive-link .chip-state { padding: 6px 14px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--panel); font-size: .88rem; font-weight: 700; }
+
+#archive-view { --k-easy: #2f9e63; --k-medium: #d9941a; --k-hard: #d2413f; --k-challenge: #6a55d6; }
+.arc-title { display: flex; align-items: center; gap: 16px; }
+.arc-back { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--panel); border: 1px solid var(--rule); color: var(--ink); font-size: 1.1rem; }
+.arc-back:hover { border-color: var(--ink); }
+.arc-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--pg-gap); align-items: start; }
+.arc-grid[hidden] { display: none; }
+.arc-cal-card { grid-column: span 7; }
+.arc-day-card { grid-column: span 5; position: sticky; top: 16px; }
+.arc-month { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 10px; margin-bottom: 14px; }
+.arc-month h2 { margin: 0; text-align: center; font: 700 calc(1.3rem * var(--head-scale)) var(--font-head); }
+.arc-step { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--rule-strong); border-radius: 50%; background: var(--panel); color: var(--ink); font-size: 1rem; cursor: pointer; }
+.arc-step:hover:not(:disabled) { border-color: var(--ink); }
+.arc-step:disabled { opacity: .3; cursor: default; }
+#arc-next svg { transform: scaleX(-1); }
+.arc-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; margin: 0 6px 6px; color: var(--muted); font-size: .78rem; font-weight: 700; text-align: center; }
+/* the grid: the board's own colours, the gaps as its lines */
+.arc-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; padding: 3px; border-radius: 12px; background: var(--grid); }
+.arc-blank { aspect-ratio: 1; border-radius: 5px; background: color-mix(in srgb, var(--grid) 70%, #000); opacity: .55; }
+.arc-day { position: relative; display: block; aspect-ratio: 1; min-width: 0; padding: 0; border: 0; border-radius: 5px; background: var(--cell); color: var(--cell-ink); font: inherit; text-align: left; cursor: pointer;
+    transition: transform .12s, box-shadow .12s; }
+.arc-day b { position: absolute; top: 6%; left: 9%; font: 800 clamp(.72rem, 1.3vw, .95rem) var(--font-body); line-height: 1; }
+.arc-day.off { background: color-mix(in srgb, var(--grid) 70%, #000); color: color-mix(in srgb, var(--cell-ink) 35%, transparent); cursor: default; }
+.arc-day.off b { opacity: .5; }
+.arc-day:not(.off):hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 0, 0, .18); }
+.arc-day:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 1px; z-index: 1; }
+.arc-day.on { box-shadow: inset 0 0 0 3px var(--accent), 0 0 0 2px var(--accent); z-index: 1; }
+.arc-day.full { background: color-mix(in srgb, var(--k-easy) 14%, var(--cell)); }
+.arc-day.full::after { content: "✓"; position: absolute; top: 6%; right: 10%; color: var(--k-easy); font: 900 clamp(.7rem, 1.2vw, .9rem) var(--font-body); }
+.arc-pips { position: absolute; left: 9%; right: 9%; bottom: 10%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.arc-pips i { height: clamp(4px, .6vw, 7px); border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--c); }
+.arc-pips i.done { background: var(--c); }
+.arc-pips i.none { visibility: hidden; }
+.k-easy { --c: var(--k-easy); } .k-medium { --c: var(--k-medium); } .k-hard { --c: var(--k-hard); } .k-challenge { --c: var(--k-challenge); }
+.arc-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 12px; color: var(--muted); font-size: .82rem; font-weight: 700; }
+.arc-key span { display: inline-flex; align-items: center; gap: 6px; }
+.arc-key i { width: 14px; height: 6px; border-radius: 3px; background: var(--c); }
+.arc-day-card .card-head { display: flex; justify-content: space-between; gap: 12px; }
+.arc-actions { display: flex; gap: 10px; margin-top: 14px; }
+.arc-chip { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+.arc-chip .chip-name::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 3px; background: var(--c); vertical-align: 1px; }
+.arc-chip:nth-child(1) { --c: var(--k-easy); } .arc-chip:nth-child(2) { --c: var(--k-medium); }
+.arc-chip:nth-child(3) { --c: var(--k-hard); } .arc-chip:nth-child(4) { --c: var(--k-challenge); }
+@media (max-width: 980px) {
+    .arc-cal-card, .arc-day-card { grid-column: 1 / -1; }
+    .arc-day-card { position: static; }
+}
+@media (max-width: 480px) {
+    .arc-cal { gap: 2px; padding: 2px; }
+    .arc-pips { gap: 2px; }
+}
