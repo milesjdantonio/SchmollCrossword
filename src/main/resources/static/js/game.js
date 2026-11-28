@@ -1098,7 +1098,21 @@ const Game = (() => {
     // The result as text to paste anywhere. It never gives away an answer: the grid only shows how each square was
     // done (🟩 typed, 🟨 checked, 🟦 revealed, ⬛ a black square).
     const SITE = "schmollcrossword.com";
-    function shareText(info) {
+    // A link to this result (ShareController.java): pasted into a chat it shows a picture of the result (never the
+    // answers) and opens the same puzzle. Dailies, the Daily Archive and the Daily Boss; null for the campaign.
+    function shareLink(info) {
+        const p = game.puzzle;
+        if (!p) return null;
+        const iso = d => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+        if (info.daily && Campaign.playing && Campaign.playing.special === "daily") {
+            const date = Campaign.playing.date || iso(dayKey(new Date()));
+            return `${location.origin}/r/${date}/boss?t=${info.seconds}&s=${(info.campaign && info.campaign.stars) || 0}`;
+        }
+        if (p.mode !== "daily" && p.mode !== "archive") return null;
+        const date = p.mode === "archive" ? p.date : iso(seedDay(p.seed));
+        return `${location.origin}/r/${date}/${p.difficulty}?t=${info.seconds}&c=${info.checked || 0}&r=${info.revealed || 0}${info.practice ? "&p=1" : ""}`;
+    }
+    function shareText(info, link) {
         const p = game.puzzle;
         const key = info.daily ? (Campaign.playing.date || "").replace(/-/g, "") : seedDay(p.seed);
         const date = /^\d{8}$/.test(key) ? new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6)).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
@@ -1117,10 +1131,12 @@ const Game = (() => {
             if (!info.checked && !info.revealed) lines.push("\u{1F9E0} No Hints");
         }
         if (info.streak > 1 && !info.practice) lines.push(`\u{1F525} ${info.streak}-Day Streak`);
-        lines.push(SITE);
+        lines.push(link || SITE);
         return lines.join("\n");
     }
     async function share(info, button) {
+        const link = shareLink(info);
+        if (link) { shareSheet(info, link); return; }
         const text = shareText(info);
         const said = t => { button.textContent = t; setTimeout(() => { if (button.isConnected) button.textContent = "Share"; }, 1600); };
         // phones and tablets: the system's share sheet (messages, apps); a cancelled share does nothing
@@ -1133,6 +1149,32 @@ const Game = (() => {
         } catch (err) {
             copyBox(text);                                   // no clipboard (an old browser, or permission refused)
         }
+    }
+    // The share sheet: the picture the link shows in a chat, and the ways to send it
+    function shareSheet(info, link) {
+        const text = shareText(info, link), card = link.replace("?", "/card.png?");
+        const copy = async (what, btn, label) => {
+            try { await navigator.clipboard.writeText(what); btn.textContent = "Copied"; setTimeout(() => { if (btn.isConnected) btn.textContent = label; }, 1600); }
+            catch (err) { close(); copyBox(what); }
+        };
+        const buttons = U.el("div", { class: "res-actions" });
+        if (navigator.share) buttons.appendChild(U.el("button", { type: "button", class: "btn primary", text: "Share", onclick: async () => {
+            try { await navigator.share({ title: "Schmoll Crossword", text: text.slice(0, text.lastIndexOf("\n")), url: link }); } catch (err) { /* cancelled */ }
+        } }));
+        const linkBtn = U.el("button", { type: "button", class: navigator.share ? "btn" : "btn primary", text: "Copy Link" });
+        linkBtn.addEventListener("click", () => copy(link, linkBtn, "Copy Link"));
+        const textBtn = U.el("button", { type: "button", class: "btn", text: "Copy Result" });
+        textBtn.addEventListener("click", () => copy(text, textBtn, "Copy Result"));
+        buttons.append(linkBtn, textBtn, U.el("button", { type: "button", class: "btn ghost", text: "Close", onclick: () => close() }));
+        const modal = U.el("div", { class: "results ask-modal share-modal in", role: "dialog", "aria-modal": "true", "aria-labelledby": "share-title" },
+            U.el("div", { class: "res-card ask-card" }, U.el("h2", { id: "share-title", class: "res-title ask-title", text: "Share Your Result" }),
+                U.el("img", { class: "share-card", src: card, alt: "Your result card: the puzzle's shape, the day, your time and hints. No answers.", width: "600", height: "315" }),
+                U.el("p", { class: "share-note", text: "The link shows this picture and opens the same puzzle. It never shows the answers." }), buttons));
+        const close = () => modal.remove();
+        modal.addEventListener("pointerdown", e => { if (e.target === modal) close(); });
+        modal.addEventListener("keydown", e => { if (e.key === "Escape") { e.stopPropagation(); close(); } });
+        overlay.appendChild(modal);
+        setTimeout(() => { const b = buttons.querySelector("button"); if (b) b.focus({ preventScroll: true }); }, 50);
     }
     // The text in a box, selected, to copy by hand
     function copyBox(text) {

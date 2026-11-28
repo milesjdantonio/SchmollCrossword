@@ -606,7 +606,12 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Notice says what's kept.
 
 ### Phase 8: Social
-- [ ] Share result cards (answer-free; copy fallback)
+- [x] Share result cards (2026-11-27): `ShareController` serves /r/<date>/<kind>?t=&c=&r=&s=&p= (a page with
+      og/twitter title, description and picture for link previews, then on to the puzzle: /?play=... opens today's
+      daily or that day in the Archive) and /r/.../card.png (1200x630, drawn on the server from the link's numbers
+      and the puzzle's shape only: never an answer, a name or typed text; only saved or shipped dailies are read).
+      The results card's Share opens a sheet with the picture, Share (phones), Copy Link and Copy Result (the
+      emoji grid + the link). Campaign levels keep the plain text. Tests: `ShareControllerTest`.
 - [ ] Leaderboard: weekly rankings
 - [ ] Friend challenges (a link to the same puzzle and rules; compare after both finish)
 - [ ] Custom puzzle maker (editor, validation on the server, share link, storage and retention, name/content filter,

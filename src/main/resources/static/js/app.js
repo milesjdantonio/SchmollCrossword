@@ -35,6 +35,21 @@ const App = (() => {
     }
     setTimeout(syncOnline, 4000);
 
+    // A shared link (/r/... -> /?play=daily&d=medium&date=2026-11-02): today's daily, or that day in the Archive
+    (() => {
+        const q = new URLSearchParams(location.search), play = q.get("play"), d = q.get("d"), date = q.get("date");
+        if (!play) return;
+        history.replaceState(null, "", location.pathname + location.hash);
+        const today = dayKey(new Date()), iso = `${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6)}`;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return;
+        setTimeout(() => {
+            if (play === "boss") { location.hash = "#daily"; return; }
+            if (!["easy", "medium", "hard", "challenge"].includes(d)) return;
+            if (date === iso) { Game.difficultyFor.daily = d; if (U.view() === "daily") Game.show("daily"); else location.hash = "#daily"; }
+            else Game.playPast(date, d);
+        }, 300);
+    })();
+
     $("#open-collection").addEventListener("click", () => { Sound.play("select"); Collection.open("colour"); });
     const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view"), archive: $("#archive-view") };
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
