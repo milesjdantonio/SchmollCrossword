@@ -2,6 +2,8 @@
 //   Board colours: 100 of them, for any world's board (its squares, the lines between them, the black squares and
 //   the letters), in families, each common, uncommon, rare, epic or legendary. Legendary ones only come from boxes.
 //   Letter styles: the lettering on the board, in the game's own fonts.
+//   Win effects: a burst over the board when you solve. Typing trails: a puff from each letter you type.
+//   Highlights: the colours of the square and the word you're on.
 //   The hero parts the Weekly Quests give (hero.js QUEST_PARTS) are owned here too.
 // Collection.open() is the menu (from Home's Quests card and Settings): every colour and style, a preview of each,
 // Use / Buy / where to win it. The beta's Unlock All (campaign.js) opens everything.
@@ -91,14 +93,74 @@ const Collection = (() => {
     const LETTERS = LETTER_ROWS.map(([name, font, weight, scale, r]) => ({ id: "letters-" + slug(name), kind: "letters", name, font, weight, scale, rarity: UNCOMMON.has(name) ? "uncommon" : RARITY[r] }))
         .map((x, i) => ({ ...x, i })).sort((a, b) => rank(a) - rank(b) || a.i - b.i);
 
+    // win effects: name, rarity, the burst (FX.burst options; several for the grand ones)
+    const RAINBOW = ["#ff4a5a", "#ffcf3a", "#3aa0ff", "#3ac47a", "#b06aff", "#ff8a2a"];
+    const EFFECT_ROWS = [
+        ["Confetti", "c", [{ shape: "rect", colors: RAINBOW, n: 90, speed: [260, 620], gravity: 520, size: [6, 10] }]],
+        ["Stars", "c", [{ shape: "star", colors: ["#ffe27a", "#ffffff", "#ffd23f"], n: 50, speed: [200, 520], gravity: 220, size: [6, 11] }]],
+        ["Bubbles", "u", [{ shape: "bubble", colors: ["#bfe8ff", "#e0f7ff", "#ffffff"], n: 40, speed: [120, 320], gravity: -140, drag: 1.6, size: [8, 16], life: [1.4, 2.2] }]],
+        ["Petals", "u", [{ shape: "petal", colors: ["#ffb3c8", "#ff8fb0", "#fff0f4"], n: 60, speed: [160, 420], gravity: 140, drag: 1.8, size: [8, 12], life: [1.6, 2.4], wobble: 2 }]],
+        ["Autumn Leaves", "u", [{ shape: "leaf", colors: ["#e0702a", "#c8401a", "#f0b030"], n: 50, speed: [160, 420], gravity: 160, drag: 1.8, size: [9, 13], life: [1.6, 2.4], wobble: 2 }]],
+        ["Snowfall", "r", [{ shape: "flake", colors: ["#ffffff", "#d8f0ff"], n: 60, speed: [100, 300], gravity: 60, drag: 1.6, size: [7, 12], life: [2, 3] }]],
+        ["Pixels", "r", [{ shape: "pixel", colors: ["#39ff88", "#ff3ca0", "#3ae0ff", "#ffd000"], n: 70, speed: [220, 560], gravity: 500, size: [6, 9] }]],
+        ["Sparks", "r", [{ shape: "spark", colors: ["#ffb020", "#ff6a1a", "#ffe08a"], n: 60, speed: [300, 700], gravity: 400, glow: true, size: [3, 5] }]],
+        ["Hearts", "r", [{ shape: "text", text: "♥", colors: ["#ff4a7a", "#ff8fb0", "#e0203a"], n: 34, speed: [180, 460], gravity: 260, size: [14, 22] }]],
+        ["Music", "e", [{ shape: "text", text: ["♪", "♫", "♬"], colors: ["#8a5ad8", "#3aa0ff", "#ff6aa8"], n: 34, speed: [160, 420], gravity: -40, drag: 1.4, size: [16, 24], life: [1.6, 2.2], wobble: 2 }]],
+        ["Gold Rush", "e", [{ shape: "circle", colors: ["#ffd23f", "#f0a800", "#fff0a0"], n: 70, speed: [260, 640], gravity: 700, glow: true, size: [5, 8] }, { shape: "star", colors: ["#ffffff"], n: 16, speed: [100, 300], gravity: 0, size: [5, 8] }]],
+        ["Fireworks", "l", [{ shape: "spark", colors: ["#ff4a5a", "#ffd23f"], n: 50, speed: [340, 620], gravity: 220, glow: true, size: [3, 5], at: [-0.3, -0.25] },
+            { shape: "spark", colors: ["#3aa0ff", "#ffffff"], n: 50, speed: [340, 620], gravity: 220, glow: true, size: [3, 5], at: [0.3, -0.3], delay: 0.35 },
+            { shape: "spark", colors: ["#3ac47a", "#ffe27a"], n: 60, speed: [380, 700], gravity: 220, glow: true, size: [3, 5], at: [0, -0.05], delay: 0.7 }]],
+        ["Galaxy", "l", [{ shape: "star", colors: ["#c8b8ff", "#8a7aff", "#ffffff"], n: 70, speed: [120, 520], gravity: 0, drag: 1.2, size: [5, 10], life: [1.6, 2.4], glow: true },
+            { shape: "spark", colors: ["#6a4aff", "#3ae0ff"], n: 40, speed: [300, 600], gravity: 0, glow: true, size: [2, 4] }]]
+    ];
+    const EFFECTS = EFFECT_ROWS.map(([name, r, bursts]) => ({ id: "effect-" + slug(name), kind: "effect", name, rarity: RARITY[r], bursts }));
+    // typing trails: a small puff from the square (the same particles, smaller)
+    const TRAIL_ROWS = [
+        ["Sparkle", "c", { shape: "star", colors: ["#ffe27a", "#ffffff"], n: 6, speed: [60, 150], gravity: 80, size: [3, 5], life: [0.4, 0.6] }],
+        ["Dust", "c", { shape: "circle", colors: ["#d8d0c2", "#ffffff"], n: 8, speed: [40, 120], gravity: 40, size: [2, 4], life: [0.4, 0.6] }],
+        ["Confetti", "u", { shape: "rect", colors: RAINBOW, n: 7, speed: [80, 180], gravity: 380, size: [3, 5], life: [0.4, 0.65] }],
+        ["Bubbles", "u", { shape: "bubble", colors: ["#bfe8ff", "#ffffff"], n: 4, speed: [30, 90], gravity: -120, size: [4, 7], life: [0.6, 0.9] }],
+        ["Petals", "r", { shape: "petal", colors: ["#ffb3c8", "#ff8fb0"], n: 5, speed: [50, 130], gravity: 90, size: [5, 7], life: [0.6, 0.9] }],
+        ["Snow", "r", { shape: "flake", colors: ["#ffffff", "#d8f0ff"], n: 5, speed: [40, 110], gravity: 50, size: [4, 7], life: [0.6, 0.9] }],
+        ["Pixels", "r", { shape: "pixel", colors: ["#39ff88", "#ff3ca0", "#3ae0ff"], n: 7, speed: [70, 170], gravity: 300, size: [3, 5], life: [0.4, 0.6] }],
+        ["Hearts", "e", { shape: "text", text: "♥", colors: ["#ff4a7a", "#ff8fb0"], n: 4, speed: [50, 120], gravity: -60, size: [9, 13], life: [0.6, 0.9] }],
+        ["Embers", "e", { shape: "spark", colors: ["#ffb020", "#ff6a1a"], n: 7, speed: [80, 200], gravity: -80, glow: true, size: [2, 3], life: [0.4, 0.7] }],
+        ["Rainbow", "l", { shape: "star", colors: RAINBOW, n: 10, speed: [70, 190], gravity: 60, glow: true, size: [3, 6], life: [0.5, 0.8] }]
+    ];
+    const TRAILS = TRAIL_ROWS.map(([name, r, burst]) => ({ id: "trail-" + slug(name), kind: "trail", name, rarity: RARITY[r], burst }));
+    // highlights: the square you're on, the word you're on
+    const HIGHLIGHT_ROWS = [
+        ["Lemon", "c", "#ffd54a", "#fff2a8"], ["Mint", "c", "#7ee0b0", "#d6f7e8"], ["Sky", "c", "#7fc4ff", "#d8ecff"], ["Peach", "c", "#ffb08a", "#ffe3d6"],
+        ["Lilac", "u", "#c8a8ff", "#ece2ff"], ["Rose", "u", "#ff8fb0", "#ffe0ea"], ["Lime", "u", "#c8f05a", "#f0fbd0"],
+        ["Aqua", "r", "#5ae0e0", "#d6f8f8"], ["Coral", "r", "#ff7a6a", "#ffe0db"], ["Gold", "r", "#f0c020", "#fff1c0"],
+        ["Neon", "e", "#39ff88", "#d8ffe8"], ["Electric", "e", "#5a7aff", "#dfe5ff"], ["Sunset", "e", "#ff9a3a", "#ffe1c4"],
+        ["Aurora", "l", "#3ae0b0", "#e6dcff"], ["Royal", "l", "#b080ff", "#ffe7a0"]
+    ];
+    const HIGHLIGHTS = HIGHLIGHT_ROWS.map(([name, r, sel, word]) => ({ id: "highlight-" + slug(name), kind: "highlight", name, rarity: RARITY[r], sel, word }));
+    const byRank = list => list.map((x, i) => ({ ...x, i })).sort((a, b) => rank(a) - rank(b) || a.i - b.i);
+    EFFECTS.splice(0, EFFECTS.length, ...byRank(EFFECTS));
+    TRAILS.splice(0, TRAILS.length, ...byRank(TRAILS));
+    HIGHLIGHTS.splice(0, HIGHLIGHTS.length, ...byRank(HIGHLIGHTS));
+
     const HERO = (typeof Hero !== "undefined" ? Hero.QUEST_PARTS : []).map(p => ({ id: p.id, kind: "hero", name: p.name, key: p.key, index: p.index, rarity: "epic" }));
-    const ITEMS = Object.fromEntries([...COLOURS, ...LETTERS, ...HERO].map(x => [x.id, x]));
+    const EVERYTHING = () => [...COLOURS, ...LETTERS, ...EFFECTS, ...TRAILS, ...HIGHLIGHTS, ...HERO];
+    const ITEMS = Object.fromEntries(EVERYTHING().map(x => [x.id, x]));
+    // what each kind is called, and which saved field says the one in use
+    const KIND = {
+        colour: { tab: "Board Colours", field: "finish", list: COLOURS, suffix: "Board" },
+        letters: { tab: "Letter Styles", field: "letters", list: LETTERS, suffix: "Letters" },
+        effect: { tab: "Win Effects", field: "effect", list: EFFECTS, suffix: "Win Effect" },
+        trail: { tab: "Typing Trails", field: "trail", list: TRAILS, suffix: "Typing Trail" },
+        highlight: { tab: "Highlights", field: "highlight", list: HIGHLIGHTS, suffix: "Highlight" }
+    };
+    const nameOf = x => (KIND[x.kind] ? `${x.name} ${KIND[x.kind].suffix}` : x.name);
 
     // ---- what you own ----
     function store() {
         const r = U.store.get("rewards", null) || {};
+        const str = k => (typeof r[k] === "string" ? r[k] : "");
         return { owned: Array.isArray(r.owned) ? r.owned : [], badges: Array.isArray(r.badges) ? r.badges : [], boxes: Array.isArray(r.boxes) ? r.boxes : [],
-            finish: typeof r.finish === "string" ? r.finish : "", letters: typeof r.letters === "string" ? r.letters : "" };
+            finish: str("finish"), letters: str("letters"), effect: str("effect"), trail: str("trail"), highlight: str("highlight") };
     }
     const save = r => U.store.set("rewards", r);
     const beta = () => typeof Campaign !== "undefined" && !!Campaign.betaUnlocked;
@@ -108,7 +170,7 @@ const Collection = (() => {
         if (!r.owned.includes(id)) { r.owned.push(id); save(r); }
     }
     // what a box can still give: everything you don't own yet (a box never gives a repeat)
-    const unowned = () => { const have = store().owned; return [...COLOURS, ...LETTERS, ...HERO].filter(x => !have.includes(x.id)); };
+    const unowned = () => { const have = store().owned; return EVERYTHING().filter(x => !have.includes(x.id)); };
 
     // ---- putting them on ----
     let styleEl = null;
@@ -125,16 +187,36 @@ const Collection = (() => {
         } else delete root.dataset.finish;
         if (l) { css += `html[data-letters] #board{--font-cell:${l.font};--cell-weight:${l.weight};--letter-scale:${l.scale}}`; root.dataset.letters = l.id; }
         else delete root.dataset.letters;
+        const h = r.highlight && owns(r.highlight) ? ITEMS[r.highlight] : null;
+        if (h) { css += `html[data-highlight] #board{--sel:${h.sel};--word:${h.word}}`; root.dataset.highlight = h.id; }
+        else delete root.dataset.highlight;
         if (styleEl.textContent !== css) styleEl.textContent = css;
     }
     function equip(kind, id) {
         const r = store();
         if (id && !owns(id)) return;
-        if (kind === "colour") r.finish = id || ""; else r.letters = id || "";
+        if (!KIND[kind]) return;
+        r[KIND[kind].field] = id || "";
         save(r);
         apply();
     }
-    const equipped = kind => { const r = store(); const id = kind === "colour" ? r.finish : r.letters; return id && owns(id) ? id : ""; };
+    const equipped = kind => { const id = KIND[kind] ? store()[KIND[kind].field] : ""; return id && owns(id) ? id : ""; };
+    // the win effect and the typing trail, played (game.js's "win" and "type")
+    function playEffect(item, x, y) {
+        if (!item || typeof FX === "undefined") return;
+        for (const b of item.bursts) FX.burst({ ...b, x: x + (b.at ? b.at[0] * 420 : 0), y: y + (b.at ? b.at[1] * 420 : 0), delay: b.delay || 0 });
+    }
+    function center(el) { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }
+    Bus.on("win", () => {
+        const e = ITEMS[equipped("effect")], board = document.getElementById("board");
+        if (e && board) setTimeout(() => { if (board.isConnected) playEffect(e, ...center(board)); }, 350);
+    });
+    Bus.on("type", ({ row, col }) => {
+        const t = ITEMS[equipped("trail")];
+        if (!t || typeof Game === "undefined") return;
+        const cell = Game.cellEl(row, col);
+        if (cell) { const [x, y] = center(cell); FX.burst({ ...t.burst, x, y }); }
+    });
     function buy(id) {
         const x = ITEMS[id], price = x && PRICE[x.rarity];
         if (!x || !price || owns(id) || typeof Campaign === "undefined" || !Campaign.spendCoins(price)) return false;
@@ -161,6 +243,53 @@ const Collection = (() => {
         if (l) Object.assign(box.style, { fontFamily: l.font, fontWeight: l.weight, fontSize: `calc(2.2rem * ${l.scale})` });
         return box;
     }
+    // a win effect or a typing trail: a little burst of its particles, drawn still (press it to see it move)
+    const SHAPE = {
+        rect: c => `<rect x="-5" y="-2.5" width="10" height="5" rx="1" fill="${c}"/>`,
+        pixel: c => `<rect x="-3.5" y="-3.5" width="7" height="7" fill="${c}"/>`,
+        star: c => `<path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="${c}"/>`,
+        spark: c => `<path d="M-6 0 L6 0" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><circle cx="6" r="1.6" fill="#fff"/>`,
+        bubble: c => `<circle r="4.5" fill="none" stroke="${c}" stroke-width="1.6"/><circle cx="-1.6" cy="-1.6" r="1" fill="#fff"/>`,
+        petal: c => `<ellipse rx="3" ry="5.5" fill="${c}"/>`,
+        leaf: c => `<path d="M0 -6 Q5 0 0 6 Q-5 0 0 -6Z" fill="${c}"/><path d="M0 -5 V5" stroke="rgba(0,0,0,.3)" stroke-width="1"/>`,
+        flake: c => `<path d="M0 -6 V6 M-5.2 -3 L5.2 3 M-5.2 3 L5.2 -3" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/>`,
+        circle: c => `<circle r="3.4" fill="${c}"/>`,
+        heart: c => `<path d="M0 5 C-7 0 -5 -6 0 -2.5 C5 -6 7 0 0 5Z" fill="${c}"/>`,
+        note: c => `<path d="M1 -6 V3" stroke="${c}" stroke-width="1.8"/><ellipse cx="-1.2" cy="3.6" rx="2.6" ry="2" fill="${c}"/><path d="M1 -6 Q5 -5 4 -2" fill="none" stroke="${c}" stroke-width="1.6"/>`
+    };
+    const shapeOf = b => (b.shape === "text" ? (String(b.text).includes("♥") || b.text === "♥" ? "heart" : "note") : SHAPE[b.shape] ? b.shape : "circle");
+    function burstPreview(x) {
+        const b = x.bursts ? x.bursts[0] : x.burst, colors = x.bursts ? x.bursts.flatMap(q => q.colors) : b.colors, shape = SHAPE[shapeOf(b)];
+        const n = x.kind === "trail" ? 7 : 11;
+        const bits = Array.from({ length: n }, (_, i) => {
+            const a = i / n * Math.PI * 2 + (i % 2) * 0.3, r = (i % 3 === 0 ? 22 : i % 3 === 1 ? 15 : 9) * (x.kind === "trail" ? 0.8 : 1), k = 0.8 + (i % 3) * 0.25;
+            return `<g transform="translate(${(31 + Math.cos(a) * r).toFixed(1)} ${(31 + Math.sin(a) * r).toFixed(1)}) rotate(${(i * 47) % 360}) scale(${k.toFixed(2)})">${shape(colors[i % colors.length])}</g>`;
+        }).join("");
+        const middle = x.kind === "trail" ? `<rect x="22" y="22" width="18" height="18" rx="3" fill="#fffdf6"/><text x="31" y="35.5" text-anchor="middle" font-size="11" font-weight="800" fill="#2b2233">A</text>` : "";
+        return U.el("span", { class: "cl-burst", "aria-hidden": "true", html: `<svg viewBox="0 0 62 62"><defs><radialGradient id="clb"><stop offset="0" stop-color="#3a3058"/><stop offset="1" stop-color="#1c1628"/></radialGradient></defs><rect width="62" height="62" rx="6" fill="url(#clb)"/>${middle}${bits}</svg>` });
+    }
+    // a highlight: a little board with the word and the square you're on lit
+    function highlightPreview(h) {
+        const cells = [0, 1, 2, 3, 4, 5, 6, 7, 8].map(i => {
+            const fill = i === 4 ? h.sel : i === 3 || i === 5 ? h.word : "#ffffff";
+            return `<rect x="${3 + (i % 3) * 19}" y="${3 + Math.floor(i / 3) * 19}" width="17" height="17" rx="2.5" fill="${fill}"/>`;
+        });
+        return `<svg viewBox="0 0 62 62" aria-hidden="true"><rect width="62" height="62" rx="6" fill="#3a3448"/>${cells.join("")}<text x="31" y="36" text-anchor="middle" font-size="11" font-weight="800" fill="#2b2233">A</text></svg>`;
+    }
+    function preview(x) {
+        if (x.kind === "colour") return U.el("span", { class: "cl-board", html: colourPreview(x) });
+        if (x.kind === "letters") return lettersPreview(x);
+        if (x.kind === "effect" || x.kind === "trail") return burstPreview(x);
+        if (x.kind === "highlight") return U.el("span", { class: "cl-board", html: highlightPreview(x) });
+        return null;
+    }
+    const DEFAULT_PICTURE = {
+        colour: () => U.el("span", { class: "cl-world", "aria-hidden": "true", html: colourPreview({ cell: "#ffffff", grid: "#c8ccd4", ink: "#2b2233" }) }),
+        letters: () => lettersPreview(null),
+        effect: () => U.el("span", { class: "cl-burst none", "aria-hidden": "true" }, U.el("b", { text: "None" })),
+        trail: () => U.el("span", { class: "cl-burst none trail", "aria-hidden": "true" }, U.el("b", { text: "None" })),
+        highlight: () => U.el("span", { class: "cl-world", "aria-hidden": "true", html: highlightPreview({ sel: "#ffd54a", word: "#fff2a8" }) })
+    };
 
     // ---- the menu ----
     let tab = "colour", show = "All", rarity = "All", layer = null;
@@ -177,35 +306,24 @@ const Collection = (() => {
         document.getElementById("overlay").appendChild(layer);
         const draw = () => {
             const coins = typeof Campaign !== "undefined" ? Campaign.coins : 0;
-            const nColour = COLOURS.filter(c => owns(c.id)).length, nLetters = LETTERS.filter(l => owns(l.id)).length;
             const head = U.el("header", { class: "coll-head" },
                 U.el("h2", { text: "Collection" }),
                 U.el("span", { class: "coll-coins", title: "Coins: earned in the campaign and the quests" }, U.icon("coin"), U.el("b", { text: String(coins) })),
                 U.el("button", { type: "button", class: "coll-close", "aria-label": "Close", onclick: close }, U.icon("close")));
             const tabs = U.el("div", { class: "coll-tabs", role: "tablist" },
-                ...[["colour", `Board Colours`, `${nColour} of ${COLOURS.length}`], ["letters", "Letter Styles", `${nLetters} of ${LETTERS.length}`]].map(([k, label, n]) =>
-                    U.el("button", { type: "button", role: "tab", "aria-selected": String(tab === k), class: tab === k ? "on" : "", onclick: () => { Sound.play("select"); tab = k; draw(); } },
-                        U.el("b", { text: label }), U.el("small", { text: n }))));
-            // the list (common first, legendary last), and down the right side a button for each rarity
-            const all = tab === "colour" ? COLOURS : LETTERS;
+                ...Object.entries(KIND).map(([k, info]) => U.el("button", { type: "button", role: "tab", "aria-selected": String(tab === k), class: tab === k ? "on" : "", onclick: () => { Sound.play("select"); tab = k; draw(); } },
+                    U.el("b", { text: info.tab }), U.el("small", { text: `${info.list.filter(x => owns(x.id)).length} of ${info.list.length}` }))));
+            // the list (common first, legendary last), All / Owned on top, and down the right side a button for each rarity
+            const all = KIND[tab].list;
             const byRarity = list => (show === "Owned" ? list.filter(x => owns(x.id)) : list).filter(x => rarity === "All" || x.rarity === rarity);
             const main = U.el("div", { class: "coll-main" });
             main.appendChild(U.el("div", { class: "coll-filters" }, ...["All", "Owned"].map(f =>
                 U.el("button", { type: "button", class: "coll-chip" + (show === f ? " on" : ""), "aria-pressed": String(show === f), text: f, onclick: () => { Sound.play("select"); show = f; draw(); } }))));
-            if (tab === "colour") {
-                const list = byRarity(COLOURS);
-                const on = equipped("colour");
-                main.appendChild(U.el("div", { class: "coll-grid" },
-                    rarity === "All" && show === "All" ? tile({ id: "", name: "World's Own", rarity: "" }, U.el("span", { class: "cl-world", "aria-hidden": "true", html: colourPreview({ cell: "#ffffff", grid: "#c8ccd4", ink: "#2b2233" }) }), on === "", true, "colour") : null,
-                    ...list.map(c => tile(c, U.el("span", { class: "cl-board", html: colourPreview(c) }), on === c.id, owns(c.id), "colour"))));
-                if (!list.length) main.appendChild(U.el("p", { class: "coll-empty", text: "Nothing here yet." }));
-            } else {
-                const on = equipped("letters"), list = byRarity(LETTERS);
-                main.appendChild(U.el("div", { class: "coll-grid letters" },
-                    rarity === "All" && show === "All" ? tile({ id: "", name: "World's Own", rarity: "" }, lettersPreview(null), on === "", true, "letters") : null,
-                    ...list.map(l => tile(l, lettersPreview(l), on === l.id, owns(l.id), "letters"))));
-                if (!list.length) main.appendChild(U.el("p", { class: "coll-empty", text: "Nothing here yet." }));
-            }
+            const list = byRarity(all), on = equipped(tab);
+            main.appendChild(U.el("div", { class: "coll-grid" + (tab === "letters" ? " letters" : "") },
+                rarity === "All" && show === "All" ? tile({ id: "", name: tab === "effect" || tab === "trail" ? "None" : "World's Own", rarity: "" }, DEFAULT_PICTURE[tab](), on === "", true, tab) : null,
+                ...list.map(x => tile(x, preview(x), on === x.id, owns(x.id), tab))));
+            if (!list.length) main.appendChild(U.el("p", { class: "coll-empty", text: "Nothing here yet." }));
             const rail = U.el("nav", { class: "coll-rail", "aria-label": "Rarity" }, ...["All", ...RARITIES].map(r => {
                 const of = r === "All" ? all : all.filter(x => x.rarity === r), n = of.length, have = of.filter(x => owns(x.id)).length;
                 return U.el("button", { type: "button", class: "coll-rarity" + (rarity === r ? " on" : ""), "aria-pressed": String(rarity === r), style: RARITY_COLOR[r] ? { "--rc": RARITY_COLOR[r] } : {},
@@ -222,6 +340,11 @@ const Collection = (() => {
                     if (buy(x.id)) { Sound.play("coin"); equip(kind, x.id); draw(); } else { Sound.play("wrong"); FX.toast({ icon: "🪙", kicker: "COLLECTION", title: "Not Enough Coins", text: `${x.name} costs ${price}. Earn coins in the campaign and the quests.`, ms: 2600 }); }
                 } }, U.icon("coin"), " " + price)
                 : U.el("span", { class: "cl-state", text: "From Weekly Boxes" });
+            // a win effect or a trail plays when its picture is pressed
+            if (x.id && (kind === "effect" || kind === "trail")) {
+                picture = U.el("button", { type: "button", class: "cl-play", title: "See it", "aria-label": `See ${x.name}` }, picture);
+                picture.addEventListener("click", () => { const [cx, cy] = center(picture); if (kind === "effect") playEffect(x, cx, cy); else for (let i = 0; i < 3; i++) setTimeout(() => FX.burst({ ...x.burst, x: cx, y: cy }), i * 120); });
+            }
             return U.el("div", { class: "cl-tile" + (on ? " on" : "") + (have ? "" : " locked") + (x.rarity ? " r-" + x.rarity : ""), style: x.rarity ? { "--rc": RARITY_COLOR[x.rarity] } : {} },
                 picture,
                 U.el("span", { class: "cl-name" }, U.el("b", { text: x.name }), x.rarity ? U.el("small", { text: RARITY_NAME[x.rarity] }) : U.el("small", { text: "Default" })),
@@ -233,5 +356,6 @@ const Collection = (() => {
     }
 
     apply();
-    return { COLOURS, LETTERS, HERO, ITEMS, FAMILIES, RARITIES, RARITY_NAME, RARITY_COLOR, owns, give, equip, equipped, apply, open, store, save, unowned, colourPreview, lettersPreview, PRICE };
+    return { COLOURS, LETTERS, EFFECTS, TRAILS, HIGHLIGHTS, HERO, ITEMS, KIND, FAMILIES, RARITIES, RARITY_NAME, RARITY_COLOR, owns, give, equip, equipped, apply, open, store, save, unowned,
+        colourPreview, lettersPreview, preview, nameOf, playEffect, PRICE, everything: EVERYTHING };
 })();

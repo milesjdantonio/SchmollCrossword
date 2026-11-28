@@ -149,7 +149,9 @@ const Quests = (() => {
         const ms = until - new Date(), h = Math.floor(ms / 36e5), dd = Math.floor(h / 24);
         return dd ? `${dd}d ${h % 24}h` : `${h}h ${Math.floor(ms / 6e4) % 60}m`;
     }
-    const boxChip = (kind, done) => U.el("span", { class: "qx-box" + (done ? " got" : ""), title: done ? `${Boxes.KINDS[kind].name}: yours` : `Reward: a ${Boxes.KINDS[kind].name}`, html: Boxes.boxSvg(kind, 26) });
+    // the reward, named: its box and "Daily Box" or "Weekly Box"
+    const boxChip = (kind, done) => U.el("span", { class: "qx-box " + kind + (done ? " got" : ""), title: done ? `${Boxes.KINDS[kind].name}: yours` : `Reward: a ${Boxes.KINDS[kind].name}` },
+        U.el("span", { html: Boxes.boxSvg(kind, 22) }), U.el("b", { text: Boxes.KINDS[kind].name }));
     function draw(el) {
         if (!el) return;
         const s = state(), r = Collection.store(), waiting = Boxes.count();

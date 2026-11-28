@@ -59,15 +59,16 @@ const Boxes = (() => {
             ${kind === "weekly" ? `<path d="M96 22 l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z" fill="#fff6c0" stroke="#2b2233" stroke-width="2"/>` : ""}</g></svg>`;
     }
     function picture(item) {
-        if (item.kind === "colour") return U.el("span", { class: "bx-pic", html: Collection.colourPreview(item) });
-        if (item.kind === "letters") return Collection.lettersPreview(item);
+        if (Collection.KIND[item.kind]) { const p = Collection.preview(item); p.classList.add("bx-pic"); return p; }
         if (item.kind === "hero") {                                           // the part itself, on a hero
             const look = Hero.fix({ name: "Hero", top: 0, outfit: 0, item: 0, [item.key]: item.index });
             return U.el("span", { class: "bx-pic bx-hero", html: Hero.svg(look, "", { still: true }) });
         }
         return U.el("span", { class: "bx-pic bx-coins" }, U.icon("coin"), U.el("b", { text: String(item.amount) }));
     }
-    const label = item => (item.kind === "colour" ? `${item.name} Board` : item.kind === "letters" ? `${item.name} Letters` : item.kind === "hero" ? `${item.name} (for your hero)` : item.name);
+    const label = item => (item.kind === "hero" ? `${item.name} (for your hero)` : Collection.nameOf(item));
+    const ABOUT = { colour: "Put it on any world's board.", letters: "The letters on any world's board.", effect: "It bursts over the board when you solve.",
+        trail: "A puff from every letter you type.", highlight: "The square and the word you're on.", hero: "Find it in the hero maker.", coins: "Spend them in the Collection or the campaign's shop." };
 
     // ---- the show ----
     let layer = null;
@@ -120,7 +121,7 @@ const Boxes = (() => {
         await spin(stage, item, box.kind);
         // 4. the reveal
         const color = Collection.RARITY_COLOR[item.rarity];
-        const canUse = item.kind === "colour" || item.kind === "letters";
+        const canUse = !!Collection.KIND[item.kind];
         const left = list().length;
         const actions = U.el("div", { class: "res-actions" },
             canUse ? U.el("button", { type: "button", class: "btn primary", text: "Use It", onclick: () => { Collection.equip(item.kind, item.id); Sound.play("select"); useBtnDone(); } }) : null,
@@ -130,7 +131,7 @@ const Boxes = (() => {
             U.el("small", { class: "bx-rarity", text: Collection.RARITY_NAME[item.rarity] || "" }),
             U.el("div", { class: "bx-prize" }, picture(item)),
             U.el("h2", { text: label(item) }),
-            U.el("p", { text: item.kind === "coins" ? "Spend them in the Collection or the campaign's shop." : item.kind === "hero" ? "Find it in the hero maker." : "It's yours. Put it on any world's board." }),
+            U.el("p", { text: ABOUT[item.kind] || "" }),
             actions);
         function useBtnDone() { const u = actions.querySelector(".btn.primary"); if (u) { u.textContent = "In Use"; u.disabled = true; } }
         stage.appendChild(reveal);
@@ -146,7 +147,7 @@ const Boxes = (() => {
     // plays as each card passes the marker (it can't be skipped mid-spin, but with reduced motion it's instant).
     async function spin(stage, prize, kind) {
         const CARD = 132, N = 52, AT = 46;
-        const everything = [...Collection.COLOURS, ...Collection.LETTERS, ...Collection.HERO];
+        const everything = Collection.everything();
         const k = KINDS[kind] || KINDS.daily;
         const weighted = () => {                                                // fillers look like what the box can give
             const r = Math.random() * 100;
@@ -156,7 +157,9 @@ const Boxes = (() => {
             return same.length ? same[Math.floor(Math.random() * same.length)] : everything[Math.floor(Math.random() * everything.length)];
         };
         const items = Array.from({ length: N }, (_, i) => (i === AT ? prize : weighted()));
-        const strip = U.el("div", { class: "bx-strip" }, ...items.map(it => U.el("div", { class: "bx-card r-" + it.rarity, style: { "--rc": Collection.RARITY_COLOR[it.rarity] } }, picture(it), U.el("b", { text: it.kind === "coins" ? it.name : it.name }))));
+        const kindName = { colour: "Board", letters: "Letters", effect: "Win Effect", trail: "Trail", highlight: "Highlight", hero: "Hero", coins: "Coins" };
+        const strip = U.el("div", { class: "bx-strip" }, ...items.map(it => U.el("div", { class: "bx-card r-" + it.rarity, style: { "--rc": Collection.RARITY_COLOR[it.rarity] } },
+            picture(it), U.el("b", { text: it.name }), U.el("small", { text: kindName[it.kind] || "" }))));
         const reel = U.el("div", { class: "bx-reel" }, strip, U.el("i", { class: "bx-marker", "aria-hidden": "true" }));
         stage.replaceChildren(reel);
         const width = reel.clientWidth || 800;

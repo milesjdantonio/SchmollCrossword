@@ -605,6 +605,11 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Weekly Boxes and the badge; all six daily: one more Daily Box. Boxes are saved unopened (`boxes` in
       schmoll.rewards). A fifth rarity, Uncommon (130 coins). The Collection is sorted common to legendary, with
       All / Owned on top and a rarity rail on the right.
+      Then (the user: "make 3 new rewards"; "make the boxes, from the challenge, actually show what type of box it
+      is"): three new kinds in the Collection and the boxes: Win Effects (13: a burst over the board on a solve),
+      Typing Trails (10: a puff from each letter typed) and Highlights (15: the square and word you're on), each with
+      rarities, a picture (drawn particles; press a win effect or trail to see it play) and its own tab. The quest
+      tiles name their reward: a blue "Daily Box" or a purple "Weekly Box" chip. 167 things to collect in all.
 - [x] Standard sounds (2026-11-27, the user: "make a lot of the clicks just standard click sounds, not the realistic thing ... consider that for all sounds"): every everyday sound is now from Kenney's Interface Sounds (CC0, audio/sfx/ui/, 61 files: clicks, selects, switches, confirmations, errors, glass dings), the same in every world (no per-world materials; the Neon Arcade keeps its chiptune). The foley set (audio/sfx/rec/) is gone; the demo sound board and CREDITS.txt follow.
 - [x] Offline (2026-11-27): static/sw.js. Installing it keeps the page and everything it links to; the page and
       the puzzle APIs (daily, archive, campaign, boss) are network-first and kept, so any puzzle you've opened works
