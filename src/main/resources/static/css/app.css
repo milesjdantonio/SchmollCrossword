@@ -606,7 +606,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
     justify-content: center;
     background: var(--cell);
     color: var(--cell-ink);
-    font: var(--cell-weight) clamp(1.6rem, 8.6vw, 2.75rem)/1 var(--font-cell);
+    font: var(--cell-weight) calc(clamp(1.6rem, 8.6vw, 2.75rem) * var(--letter-scale, 1))/1 var(--font-cell);
     text-transform: uppercase;
     border-radius: var(--cell-radius);
     cursor: pointer;
@@ -615,7 +615,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 6px 16px 90px; }
 }
 .cell.block { background: var(--block); cursor: default; }
 /* Challenge mode's 7x7 board: smaller letters and numbers (beats each world's own letter size) */
-.board.big .cell { font-size: calc(clamp(1.6rem, 8.6vw, 2.75rem) * 5.4 / var(--size)); }   /* 6x6 to 9x9 */
+.board.big .cell { font-size: calc(clamp(1.6rem, 8.6vw, 2.75rem) * 5.4 / var(--size) * var(--letter-scale, 1)); }   /* 6x6 to 9x9 */
 .board.big .cell .num { top: 2px; left: 3px; font-size: calc(.72rem * 6 / var(--size)); }
 .report-btn { justify-self: center; padding: 4px 10px; border: 0; background: none; color: var(--muted); font: 700 .8rem var(--font-body); cursor: pointer; text-decoration: underline dotted; }
 .report-btn:hover { color: var(--accent); }

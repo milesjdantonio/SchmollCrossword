@@ -8,6 +8,7 @@
 const App = (() => {
     const $ = U.$;
     const root = document.documentElement;
+    $("#open-collection").addEventListener("click", () => { Sound.play("select"); Collection.open("colour"); });
     const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view"), archive: $("#archive-view") };
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 

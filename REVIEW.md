@@ -107,6 +107,11 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Daily Quests and the Collection.** Home's Quests card now has today's three small quests too (20 coins
+      each; all three give a board colour). Open the Collection from that card or Settings > World: 100 board
+      colours and 23 letter styles, each with a preview, to win in the quests or buy with campaign coins (the
+      legendary ones only from Weekly Quests). The Beta strip's Unlock All opens all of them.
+
 - [ ] **Weekly Quests.** On Home, under the Daily card: three quests for the week (the same for everyone, new each
       Sunday), each with a reward: a board colour (Gold, Midnight, Rose or Mint, for any world's board; pick it on
       the same card) or a new part for your hero (in the hero maker once won). Finish all three for the week's

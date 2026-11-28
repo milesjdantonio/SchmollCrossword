@@ -588,6 +588,14 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Satchel, Golden Pencil, Compass; locked in the hero maker until won), then 50 coins once everything's won.
       Home has a Weekly Quests card (the quests, progress, rewards, the badge, board colours, your badges); the
       results card lists the quests a solve moved. Privacy Notice updated.
+      Then (the user: "make daily quests too", "add more board colors like 100 total and add another type of reward
+      ... make a new selection menu for board color", "make the unlock all button unlock the board colors"):
+      Daily Quests (three a day, the same for everyone, 20 coins each and a board colour for all three) on the same
+      card; js/collection.js, the Collection: 100 board colours in 7 families (common / rare / epic / legendary),
+      23 letter styles (the board's lettering, in the game's own fonts; `--letter-scale`), the quest hero parts;
+      bought with coins (80 / 200 / 450; legendary only from Weekly Quests) or won; a menu with tabs, family
+      filters and a preview of each (from Home's card and Settings > World); the one in use is written as one small
+      style rule. The beta's Unlock All owns everything.
 - [ ] Offline: a service worker; the site, the campaign and opened puzzles work offline; online-only features say so
 
 ### Phase 8: Social

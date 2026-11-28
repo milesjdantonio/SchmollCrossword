@@ -39,6 +39,22 @@
 @media (max-width: 1100px) { .qx-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .qx-list { grid-template-columns: 1fr; } }
 
+/* ---- today's quests: one line each, above the week's tiles ---- */
+.qx-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.qx-sub h3 { margin: 0; font: 700 1rem var(--font-body); }
+.qx-sub span { color: var(--muted); font-size: .84rem; font-weight: 600; }
+.qx-day { margin-bottom: 16px; }
+.qx-day-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.qd { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 12px; border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--raised); }
+.qd.done { border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 9%, var(--raised)); }
+.qd-check { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--rule-strong); }
+.qd.done .qd-check { border-color: var(--good); background: var(--good); color: #fff; }
+.qd-check svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 3; }
+.qd-text { flex: 1; min-width: 0; font-size: .9rem; font-weight: 700; line-height: 1.25; }
+.qd.done .qd-text { color: var(--muted); }
+.qd .qx-reward { flex: none; padding: 3px 9px 3px 4px; }
+@media (max-width: 900px) { .qx-day-list { grid-template-columns: 1fr; } }
+
 /* ---- the results card: the quests this solve moved along ---- */
 .res-quests { display: grid; gap: 6px; max-width: 360px; margin: 14px auto 0; text-align: left; }
 .res-quests > small { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-align: center; }
@@ -51,6 +67,7 @@
 .rq:not(:has(.rq-medal)) .rq-text { grid-column: 1 / 3; }
 .rq-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .rq-text b { font-size: .86rem; font-weight: 800; line-height: 1.25; }
+.rq-text small { color: var(--muted); font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .rq-bar { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; }
 .rq-bar i { display: block; height: 100%; background: var(--accent); }
 .rq.done .rq-bar i { background: var(--good); }
@@ -59,10 +76,64 @@
 @keyframes rq-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
 @media (prefers-reduced-motion: reduce) { .rq { animation: none; } }
 
-/* ---- the board colours (any world's board; the squares and the lines between them) ---- */
-html[data-finish="gold"] #board { --cell: #fff4cf; --cell-ink: #3a2a00; --grid: #b8860b; --block: repeating-linear-gradient(45deg, #8a6408 0 2.2px, #c9971a 2.2px 6px); --solved: #ffe9a0; }
-html[data-finish="midnight"] #board { --cell: #1e2546; --cell-ink: #eef1ff; --grid: #0a0d1c; --block: #05060e; --solved: #2c3a70; }
-html[data-finish="rose"] #board { --cell: #fff0f4; --cell-ink: #4a1020; --grid: #c2456b; --block: repeating-linear-gradient(45deg, #9a2d50 0 2.2px, #d9708f 2.2px 6px); --solved: #ffd3df; }
-html[data-finish="mint"] #board { --cell: #eefbf3; --cell-ink: #10301f; --grid: #2f8f63; --block: repeating-linear-gradient(45deg, #1f6a48 0 2.2px, #5fb88a 2.2px 6px); --solved: #c8f2d8; }
-html[data-finish="gold"] #board .cell { box-shadow: inset 0 -3px 0 rgba(184, 134, 11, .25); }
-html[data-finish="midnight"] #board .cell .num { color: #9aa6d8; }
+/* (the board colours and letter styles themselves are written by collection.js, for the one in use) */
+
+/* ---- Home's quest card: the Collection's button ---- */
+.qx-look { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-width: min(100%, 360px); padding: 8px 12px 8px 8px;
+    border: 1px solid var(--rule-strong); border-radius: var(--radius-sm); background: var(--panel); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.qx-look:hover { border-color: var(--ink); }
+.qx-look:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.qx-look-pic svg { display: block; width: 48px; height: 48px; }
+.qx-look-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.qx-look-text b { font-size: 1rem; }
+.qx-look-text small { color: var(--muted); font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qx-look .chip-state { padding: 5px 12px; border: 1px solid var(--rule-strong); border-radius: 999px; font-size: .84rem; font-weight: 700; }
+.qx-ab { flex: none; width: 18px; text-align: center; font-style: normal; font-size: .82rem; line-height: 1; }
+.qd-bonus { justify-content: space-between; }
+.qd-bonus .qd-text { flex: none; color: var(--muted); }
+.qx-day-list { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+@media (max-width: 900px) { .qx-day-list { grid-template-columns: 1fr; } }
+.qx-reward.r-legendary:not(.got) { border-color: #d89a1a; box-shadow: 0 0 0 1px rgba(216, 154, 26, .35), 0 0 10px rgba(255, 200, 60, .35); }
+.qx-reward.r-epic:not(.got) { border-color: #8a5ad8; }
+
+/* ---- the Collection (collection.js): a wide sheet with tabs, filters and a grid of tiles ---- */
+.coll-layer { align-items: center; }
+.coll-card { position: relative; display: flex; flex-direction: column; width: min(1000px, 100%); max-height: calc(100vh - 32px); overflow: hidden;
+    background: var(--surface-solid); color: var(--ink); border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
+.coll-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 10px; }
+.coll-head h2 { margin: 0; flex: 1; font: 700 calc(1.7rem * var(--head-scale)) var(--font-head); }
+.coll-coins { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px 5px 6px; border-radius: 999px; background: var(--surface-2); font-weight: 800; font-variant-numeric: tabular-nums; }
+.coll-coins svg { width: 20px; height: 20px; }
+.coll-close { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-solid); color: var(--ink); cursor: pointer; }
+.coll-close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+.coll-tabs { display: flex; gap: 8px; padding: 0 20px 12px; border-bottom: 1px solid var(--line); }
+.coll-tabs button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-solid); color: var(--ink); font: inherit; cursor: pointer; }
+.coll-tabs button b { font-size: .98rem; }
+.coll-tabs button small { color: var(--muted); font-size: .78rem; font-weight: 700; }
+.coll-tabs button.on { border-color: var(--ink); background: var(--ink); color: var(--surface-solid); }
+.coll-tabs button.on small { color: inherit; opacity: .75; }
+.coll-body { overflow-y: auto; padding: 14px 20px 22px; }
+.coll-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.coll-chip { padding: 5px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-solid); color: var(--ink); font: 700 .84rem var(--font-body); cursor: pointer; }
+.coll-chip.on { border-color: var(--ink); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--ink); }
+.coll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.cl-tile { position: relative; display: grid; grid-template-rows: auto auto auto; justify-items: center; gap: 8px; padding: 12px 10px 10px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-solid); text-align: center; }
+.cl-tile.on { border-color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.cl-tile.locked .cl-board, .cl-tile.locked .cl-letters { filter: saturate(.75); opacity: .72; }
+.cl-board svg, .cl-world svg { display: block; width: 84px; height: 84px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, .15); }
+.cl-world svg { opacity: .6; }
+.cl-letters { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 10px; background: var(--surface-2); color: var(--ink); line-height: 1; font-size: 2.2rem; font-weight: 700; }
+.cl-name { display: flex; flex-direction: column; gap: 1px; }
+.cl-name b { font-size: .92rem; }
+.cl-name small { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .04em; }
+.cl-tile.r-rare .cl-name small { color: #2f7ad8; }
+.cl-tile.r-epic .cl-name small { color: #8a4fd0; }
+.cl-tile.r-legendary .cl-name small { color: #c8861a; }
+.cl-tile.r-legendary { background: linear-gradient(180deg, color-mix(in srgb, #ffcf3a 12%, var(--surface-solid)), var(--surface-solid)); }
+.cl-tile .btn.small { padding: 5px 14px; font-size: .84rem; }
+.cl-tile .btn.buy { display: inline-flex; align-items: center; gap: 4px; }
+.cl-tile .btn.buy svg { width: 16px; height: 16px; }
+.cl-state { padding: 5px 0; color: var(--muted); font-size: .8rem; font-weight: 800; }
+.cl-state.on { color: var(--good); }
+.coll-open { width: 100%; margin-top: 14px; font: inherit; text-align: left; cursor: pointer; background: var(--panel); }
+@media (max-width: 560px) { .coll-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .cl-board svg, .cl-world svg, .cl-letters { width: 70px; height: 70px; } }

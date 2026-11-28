@@ -1049,11 +1049,11 @@ const Game = (() => {
     }
     // the Weekly Quests this solve moved along (quests.js): each with its progress, and the reward when it's done
     function questResults(list) {
-        const box = U.el("div", { class: "res-quests" }, U.el("small", { text: "WEEKLY QUESTS" }));
+        const box = U.el("div", { class: "res-quests" }, U.el("small", { text: "QUESTS" }));
         list.forEach((q, i) => {
             const row = U.el("div", { class: "rq" + (q.done ? " done" : ""), style: { "--i": i } },
                 q.badge ? U.el("span", { class: "rq-medal", html: Quests.badgeSvg(q.badge) }) : null,
-                U.el("span", { class: "rq-text" }, U.el("b", { text: q.text }), U.el("span", { class: "rq-bar", "aria-hidden": "true" }, U.el("i", { style: { width: (q.n / q.target * 100) + "%" } }))),
+                U.el("span", { class: "rq-text" }, U.el("small", { text: q.scope || "" }), U.el("b", { text: q.text }), U.el("span", { class: "rq-bar", "aria-hidden": "true" }, U.el("i", { style: { width: (q.n / q.target * 100) + "%" } }))),
                 U.el("span", { class: "rq-n", text: q.done ? (q.reward ? "Won: " + q.reward : "Done") : `${q.n} of ${q.target}` }));
             box.appendChild(row);
             if (q.done) setTimeout(() => { if (row.isConnected) Sound.play("achievement"); }, 1200 + i * 350);

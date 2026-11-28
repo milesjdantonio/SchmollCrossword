@@ -5163,6 +5163,7 @@ const Campaign = (() => {
             // every ability opens too (unlockedAbility), each with its free uses if it has none yet
             if (data.betaUnlock) for (const a of ABILITIES) if (!(data.owned[a.id] > 0)) data.owned[a.id] = FREE_USES;
             save(); label();
+            if (typeof Collection !== "undefined") Collection.apply();      // (the Collection opens too, or closes again)
             if (full) { map = visibleMap(); data.section = U.clamp(data.section || 0, 0, map.length - 1); const f = frontier(); data.shown = f.si + "-" + f.level; save(); }
             redraw(); Sound.play(data.betaUnlock ? "sparkle" : "select");
             FX.toast({ icon: data.betaUnlock ? "🔓" : "🔒", kicker: "Beta", title: data.betaUnlock ? "Everything Unlocked" : "Locked Again", text: data.betaUnlock ? "Every level and ability is open." : "Levels and abilities open as you clear them again.", ms: 2400 });
@@ -5235,7 +5236,7 @@ const Campaign = (() => {
 
     return {
         onView, showMap, warmStage, play, playSpecial, heroLook, hero: () => (data.hero ? heroLook() : null), biome, prop: (world, r) => PROPS[biome(world).prop](r), editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
-        isBossLevel, syncSlots, addCoins: n => { data.coins = (data.coins || 0) + n; save(); }, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
+        isBossLevel, syncSlots, addCoins: n => { data.coins = (data.coins || 0) + n; save(); }, spendCoins: n => { if ((data.coins || 0) < n) return false; data.coins -= n; save(); return true; }, get coins() { return data.coins || 0; }, get betaUnlocked() { return !!data.betaUnlock; }, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();
