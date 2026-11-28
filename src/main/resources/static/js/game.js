@@ -68,7 +68,7 @@ const Game = (() => {
         if (all[key] && !(keepBest && points > (all[key].points || 0))) return false;   // already completed (and not beaten)
         // (Checks, Reveals and stars too: the leaderboard's server works the points out from them)
         all[key] = { date: new Date().toISOString().slice(0, 10), difficulty, seconds: game.seconds, points, surrendered,
-            checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}),
+            checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, mistakes: game.typos || 0, ...(stars ? { stars } : {}), ...(attempts ? { attempts } : {}),
             ...(game.ticket && difficulty !== "boss" ? { ticket: game.ticket } : {}) };
         U.saveRaw(SCORES_KEY, JSON.stringify(all));      // (says so if it couldn't)
         return true;
@@ -83,7 +83,7 @@ const Game = (() => {
     function saveArchiveRecord(puzzle, surrendered) {
         const all = archiveRecords(), key = puzzle.date.replace(/-/g, "") + "-" + puzzle.difficulty;
         if (all[key] && !all[key].surrendered) return false;
-        all[key] = { seconds: game.seconds, surrendered, checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, at: Date.now() };
+        all[key] = { seconds: game.seconds, surrendered, checked: game.squaresChecked || 0, revealed: game.squaresRevealed || 0, mistakes: game.typos || 0, at: Date.now() };
         U.saveRaw(ARCHIVE_KEY, JSON.stringify(all));
         return true;
     }
@@ -821,7 +821,7 @@ const Game = (() => {
         game.solved = true;
         drawTimer();
         const p = game.puzzle;
-        const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks };
+        const info = { mode: p.mode, difficulty: p.difficulty, seconds: game.seconds, checked: game.squaresChecked, revealed: game.squaresRevealed, checks: game.checks, mistakes: game.typos || 0 };
         if (p.mode === "archive") {
             // the Daily Archive: practice. The first solve is remembered for the calendar
             saveArchiveRecord(p, false);
@@ -935,6 +935,7 @@ const Game = (() => {
             card.appendChild(U.el("div", { class: "res-pb" }, U.el("b", { text: "New Personal Best" }), U.el("span", { text: `${cap(p.difficulty)} · ${U.fmtTime(info.best - info.seconds)} faster` })));
             setTimeout(() => { if (card.isConnected) Sound.play("achievement"); }, 700);
         }
+        if (!info.campaign && (p.mode === "daily" || p.mode === "archive")) card.appendChild(howItWent(info, p));
         const tally = U.el("div", { class: "res-tally" });
         card.appendChild(tally);
         if (info.breakdown && (info.counted || info.daily)) {           // (a Daily Boss rematch shows what it scored even when it isn't a new best)
@@ -1007,6 +1008,43 @@ const Game = (() => {
         const first = actions.querySelector("button");
         if (first) setTimeout(() => first.focus({ preventScroll: true }), 300);
         Bus.emit("results", info);
+    }
+    // How it went, next to your own history: hints and mistakes, then your recent times at this difficulty as bars
+    // (this solve lit up; shorter is faster), where it ranks and how it compares with your average
+    function solvesAt(difficulty, skipKey) {
+        const out = [];
+        for (const [k, r] of Object.entries(scores())) {
+            if (r.difficulty !== difficulty || r.surrendered || typeof r.seconds !== "number" || k === skipKey) continue;
+            out.push({ seconds: r.seconds, when: Date.parse(r.date) || 0, day: k.slice(0, 8) });
+        }
+        for (const [k, r] of Object.entries(archiveRecords())) {
+            if (!k.endsWith("-" + difficulty) || r.surrendered || typeof r.seconds !== "number" || k === skipKey) continue;
+            out.push({ seconds: r.seconds, when: r.at || 0, day: k.slice(0, 8) });
+        }
+        return out;
+    }
+    const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
+    function howItWent(info, p) {
+        const key = (p.mode === "archive" ? p.date.replace(/-/g, "") : seedDay(p.seed)) + "-" + p.difficulty;
+        const others = solvesAt(p.difficulty, key), cur = info.seconds, name = cap(p.difficulty);
+        const avg = others.length ? Math.round(others.reduce((a, r) => a + r.seconds, 0) / others.length) : null;
+        const hints = (info.checked || 0) + (info.revealed || 0);
+        const fact = (label, value, good) => U.el("div", { class: "rf-fact" + (good ? " good" : "") }, U.el("b", { text: value }), U.el("span", { text: label }));
+        const box = U.el("div", { class: "res-facts" },
+            U.el("div", { class: "rf-row" },
+                fact("Hints", hints ? [info.checked ? `${info.checked} Checked` : "", info.revealed ? `${info.revealed} Revealed` : ""].filter(Boolean).join(" · ") : "None", !hints),
+                fact("Mistakes", String(info.mistakes || 0), !info.mistakes),
+                fact(`Your ${name} Average`, avg == null ? "First Solve" : U.fmtTime(avg), avg != null && cur <= avg)));
+        if (!others.length) return box;
+        // the bars: up to 11 recent solves, oldest first, then this one
+        const recent = others.sort((a, b) => a.when - b.when).slice(-11), all = [...recent.map(r => r.seconds), cur], max = Math.max(...all);
+        const rank = 1 + others.filter(r => r.seconds < cur).length, total = others.length + 1;
+        const vs = avg == null ? "" : cur === avg ? "Right on Your Average" : `${U.fmtTime(Math.abs(avg - cur))} ${cur < avg ? "Faster" : "Slower"} Than Your Average`;
+        const line = rank === 1 ? `Your Fastest ${name} Yet` : `${ordinal(rank)} Fastest of ${total} ${name} Solves`;
+        box.appendChild(U.el("div", { class: "rf-bars", role: "img", "aria-label": `${line}. ${vs}` },
+            ...all.map((s, i) => U.el("i", { class: i === all.length - 1 ? "now" : "", style: { "--h": Math.max(8, Math.round(s / max * 100)) + "%", "--i": i }, title: U.fmtTime(s) }))));
+        box.appendChild(U.el("p", { class: "rf-line" }, U.el("b", { text: line }), vs ? " · " + vs : ""));
+        return box;
     }
     // the campaign part of the results card: stars that pop in one by one, what earned them, coins
     function campaignResults(card, c) {

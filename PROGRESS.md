@@ -572,7 +572,10 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       Daily card links to it. Tests: `ArchiveControllerTest`; 170 JUnit pass. Offline: with the service worker (later).
 - [ ] Detailed Stats page (completion, average times by difficulty, streaks, records, hardest puzzles, hints,
       mistakes); says these are this browser's stats
-- [ ] Better results screen (time, hints, mistakes, personal bests, compared with your own history)
+- [x] Better results screen (2026-11-27): dailies and Archive puzzles show Hints (checked / revealed), Mistakes (wrong
+      letters typed) and your average at that difficulty, then your recent times as bars (this one lit up) with its
+      rank and how it compares with your average (`howItWent` in game.js; the New Personal Best badge stays). Scores
+      and practice solves now save `mistakes` too (for the Stats page).
 - [ ] Weekly quests (reset Sunday, no double rewards on reload; rewards: hero parts, badges, world colour variants)
 - [ ] Offline: a service worker; the site, the campaign and opened puzzles work offline; online-only features say so
 

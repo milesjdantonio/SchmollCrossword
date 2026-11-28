@@ -1455,3 +1455,19 @@ svg.glyph.inline { display: inline-block; vertical-align: -0.2em; }
 /* a drawn icon written into the page's own markup (index.html): the same pictures as glyphs.js, as CSS images */
 .gi { display: inline-block; width: 1.1em; height: 1.1em; vertical-align: -0.2em; background: center / contain no-repeat; font-style: normal; }
 .gi-sun { background-image: var(--g-sun); } .gi-moon { background-image: var(--g-moon); } .gi-star { background-image: var(--g-star); } .gi-globe { background-image: var(--g-globe); }
+
+/* the results card: how it went (hints, mistakes, your average) and your recent times at this difficulty */
+.res-facts { margin: 14px auto 0; max-width: 360px; }
+.rf-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.rf-fact { display: flex; flex-direction: column; gap: 2px; padding: 8px 6px; border-radius: 12px; background: var(--surface-2); }
+.rf-fact b { font-size: .98rem; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.rf-fact span { color: var(--muted); font-size: .7rem; font-weight: 800; letter-spacing: .02em; }
+.rf-fact.good b { color: var(--good); }
+.rf-bars { display: flex; align-items: flex-end; justify-content: center; gap: 4px; height: 68px; margin: 8px 0 4px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.rf-bars i { width: 14px; height: var(--h); border-radius: 4px 4px 2px 2px; background: color-mix(in srgb, var(--ink) 22%, transparent);
+    transform-origin: bottom; animation: rf-grow .5s cubic-bezier(.3, 1.4, .5, 1) backwards; animation-delay: calc(.35s + var(--i) * 40ms); }
+.rf-bars i.now { background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+@keyframes rf-grow { from { transform: scaleY(0); } }
+.rf-line { margin: 2px 0 0; color: var(--muted); font-size: .82rem; font-weight: 700; }
+.rf-line b { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .rf-bars i { animation: none; } }
