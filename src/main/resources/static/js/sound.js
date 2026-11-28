@@ -195,11 +195,10 @@ const Sound = (() => {
     // every world: clean clicks, selects, confirmations and errors. Each has a few takes, played in turn with a touch
     // of pitch drift so a run of them never sounds machine-made. [group, takes, volume, pitch, pitch drift]
     const REC = {
-        type: ["click", 5, 0.22, 1, 0.05], erase: ["back", 4, 0.18, 1, 0.04], select: ["select", 5, 0.26, 1, 0.03],
-        nav: ["switch", 4, 0.26, 1, 0.03], toggle: ["toggle", 4, 0.32, 1, 0.03], blip: ["tick", 3, 0.22, 1, 0.04],
+        type: ["click", 5, 0.22, 1, 0.05], erase: ["back", 4, 0.18, 1, 0.04],
         flip: ["pluck", 2, 0.28, 1, 0.04], word: ["confirm", 4, 0.4, 1, 0.02], right: ["maximize", 4, 0.36, 1, 0.02],
         wrong: ["error", 4, 0.3, 1, 0.02], reveal: ["open", 4, 0.34, 1, 0.02], coin: ["glass", 5, 0.32, 1.1, 0.04],
-        pop: ["drop", 4, 0.3, 1, 0.04], thud: ["minimize", 4, 0.4, 0.85, 0.02], worldSwap: ["scroll", 4, 0.3, 1, 0.02],
+        pop: ["drop", 4, 0.3, 1, 0.04], thud: ["minimize", 4, 0.4, 0.85, 0.02],
         title: ["open", 4, 0.34, 0.9, 0.02]
     };
     const TAKES = { click: 5, select: 5, switch: 4, toggle: 4, tick: 3, back: 4, pluck: 2, confirm: 4, maximize: 4, minimize: 4, error: 4, open: 4, drop: 4, glass: 5, scroll: 4, bong: 1 };
@@ -216,6 +215,33 @@ const Sound = (() => {
         win: () => { rec("confirm", { v: 0.46, drift: 0.01 }); rec("glass", { v: 0.26, rate: 1.2, t: 0.12, drift: 0.01 }); rec("glass", { v: 0.22, rate: 1.5, t: 0.24, drift: 0.01 }); },
         tile: i => rec("tick", { v: 0.16, rate: 1 + ((i || 0) % 8) * 0.04, drift: 0.02 })
     };
+    // The click (menus, changing screens, toggles): one bright two-note click, the same everywhere
+    const CLICK_SOUNDS = { select: 1, nav: 1, toggle: 1, blip: 1 };
+    function click(t = 0) {
+        tone({ f: 1318, type: "square", d: 0.05, v: 0.05, t });
+        tone({ t: t + 0.045, f: 1976, type: "square", d: 0.09, v: 0.05 });
+    }
+    // Changing worlds: the click, then a short sound of the world you're going to
+    const WORLD_SOUND = {
+        classic: () => { tone({ t: 0.1, f: 1318, d: 0.45, v: 0.09 }); tone({ t: 0.1, f: 1976, d: 0.3, v: 0.04 }); },
+        paper: () => { for (let i = 0; i < 6; i++) noise({ t: 0.1 + i * 0.07 + Math.random() * 0.03, f: 3600, q: 1.4, d: 0.06, v: 0.08 }); },
+        garden: () => { for (let i = 0; i < 2; i++) { tone({ t: 0.1 + i * 0.26, f: 3300, f2: 2400, d: 0.11, v: 0.05 }); tone({ t: 0.22 + i * 0.26, f: 2600, f2: 3700, d: 0.1, v: 0.05 }); } },
+        squirrel: () => { [0.1, 0.22].forEach(t => { tone({ t, f: 520, f2: 300, type: "triangle", d: 0.08, v: 0.16 }); noise({ t, type: "lowpass", f: 1400, d: 0.06, v: 0.1 }); }); noise({ t: 0.32, f: 2400, f2: 1200, q: 0.7, d: 0.35, v: 0.06 }); },
+        candy: () => [0, 1, 2].forEach(i => tone({ t: 0.1 + i * 0.08, f: 600 * (1 + i * 0.33), f2: 900 * (1 + i * 0.33), d: 0.07, v: 0.12 })),
+        ocean: () => { noise({ t: 0.1, f: 400, f2: 1400, q: 0.6, d: 0.5, v: 0.12, a: 0.15 }); for (let i = 0; i < 4; i++) tone({ t: 0.2 + i * 0.08 + Math.random() * 0.03, f: 500 + i * 140, f2: 1100 + i * 200, d: 0.05, v: 0.08 }); },
+        snow: () => { for (let i = 0; i < 5; i++) tone({ t: 0.1 + i * 0.05, f: 2600 + (i % 2) * 400, type: "triangle", d: 0.18, v: 0.05 }); noise({ t: 0.1, type: "highpass", f: 6000, d: 0.3, v: 0.04 }); },
+        rain: () => { for (let i = 0; i < 10; i++) noise({ t: 0.1 + Math.random() * 0.45, f: 3000 + Math.random() * 3000, q: 4, d: 0.03, v: 0.06 }); tone({ t: 0.15, f: 70, f2: 45, d: 0.7, v: 0.2 }); },
+        sky: () => { noise({ t: 0.1, f: 300, f2: 2200, q: 0.8, d: 0.55, v: 0.12, a: 0.12 }); tone({ t: 0.3, f: 1568, d: 0.4, v: 0.05 }); tone({ t: 0.38, f: 2093, d: 0.35, v: 0.035 }); },
+        desert: () => [[587, 0.1], [622, 0.24], [587, 0.38]].forEach(([f, t]) => tone({ t, f, type: "sawtooth", d: 0.16, v: 0.05, vib: 1, filt: { f: 1800 } })),
+        carnival: () => [523, 659, 784, 1047].forEach((f, i) => tone({ t: 0.1 + i * 0.06, f, type: "triangle", d: 0.12, v: 0.08 })),
+        arcade: () => { tone({ t: 0.1, f: 988, type: "square", d: 0.07, v: 0.06 }); tone({ t: 0.16, f: 1319, type: "square", d: 0.16, v: 0.06 }); },
+        library: () => { noise({ t: 0.1, f: 2600, f2: 5200, d: 0.12, v: 0.1, q: 2 }); tone({ t: 0.18, f: 196, d: 0.6, v: 0.12, type: "triangle" }); tone({ t: 0.18, f: 294, d: 0.5, v: 0.06, type: "triangle" }); },
+        robot: () => { tone({ t: 0.1, f: 300, f2: 900, type: "sawtooth", d: 0.18, v: 0.05, filt: { f: 1500 } }); tone({ t: 0.32, f: 1760, type: "square", d: 0.06, v: 0.04 }); tone({ t: 0.4, f: 1760, type: "square", d: 0.06, v: 0.04 }); },
+        volcano: () => { tone({ t: 0.1, f: 60, f2: 38, d: 0.8, v: 0.3 }); noise({ t: 0.1, type: "lowpass", f: 500, f2: 150, d: 0.7, v: 0.2 }); },
+        space: () => { tone({ t: 0.1, f: 220, f2: 1320, d: 0.5, v: 0.08 }); tone({ t: 0.2, f: 1760, f2: 2640, d: 0.4, v: 0.03 }); },
+        rift: () => { [523, 659, 784].forEach(f => tone({ t: 0.1, f, d: 0.9, v: 0.05, a: 0.08 })); tone({ t: 0.12, f: 2093, d: 0.6, v: 0.03 }); }
+    };
+    Object.assign(WORLD_SOUND, { hollow: WORLD_SOUND.squirrel, atlantis: WORLD_SOUND.ocean, dunes: WORLD_SOUND.desert, cave: WORLD_SOUND.volcano });
     let recWarm = false;
     function warmRec() {                                           // fetched once, the first time a sound plays
         if (recWarm || !init()) return;
@@ -232,6 +258,13 @@ const Sound = (() => {
         gates[name] = now;
         const world = typeof Worlds !== "undefined" && Worlds.current;
         warmRec();
+        if (CLICK_SOUNDS[name]) { click(); return; }
+        if (name === "worldSwap") {
+            click();
+            const to = WORLD_SOUND[args[0]];
+            if (to) { quiet = 1; try { to(); } catch (err) { console.error("Sound", name, err); } }
+            return;
+        }
         // the standard set, unless the world keeps its own on purpose (the Neon Arcade's chiptune)
         if (!(world && world.keepSynth)) {
             const r = REC[name];

@@ -647,7 +647,7 @@ const Campaign = (() => {
         isle.classList.remove("sail-in");
         isle.classList.add("sail-out");
         $("#cm-sky").classList.add("out");
-        Sound.play("worldSwap");
+        Sound.play("worldSwap", map[si].world);
         setTimeout(() => { land(); isle.classList.remove("sail-out"); isle.classList.add("sail-in"); $("#cm-sky").classList.remove("out"); U.restart(pageEl, "turn"); switching = false; }, 300);
     }
 

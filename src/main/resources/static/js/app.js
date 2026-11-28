@@ -62,7 +62,7 @@ const App = (() => {
         if (switching || id === Settings.get("design")) return;
         switching = true;
         const w = Worlds.byId[id];
-        Sound.play("worldSwap");
+        Sound.play("worldSwap", id);
         await FX.transition(w.transition, () => {
             Settings.set("design", id);
             refreshWorldUI();

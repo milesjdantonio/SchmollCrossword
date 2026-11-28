@@ -2,10 +2,7 @@
 const ROWS = [
     ["Typing", "click", 5, "Every world (the Neon Arcade keeps its chiptune)"],
     ["Erasing", "back", 4, ""],
-    ["Menu click", "select", 5, "Buttons"],
-    ["Changing screens", "switch", 4, ""],
-    ["Toggle", "toggle", 4, "Switches and Pencil"],
-    ["Tick", "tick", 3, "Hover, dealing the squares"],
+    ["Tick", "tick", 3, "Dealing the squares"],
     ["Flip", "pluck", 2, ""],
     ["Word finished", "confirm", 4, "Also achievements and the win"],
     ["Right", "maximize", 4, "A right check, a streak"],
@@ -14,8 +11,8 @@ const ROWS = [
     ["Coins and sparkle", "glass", 5, "Sparkles play three at once, higher"],
     ["Pop", "drop", 4, ""],
     ["Thud", "minimize", 4, ""],
-    ["Changing worlds", "scroll", 4, ""]
-];
+    ["Pop", "drop", 4, ""]
+].filter((r, i, a) => a.findIndex(x => x[1] === r[1]) === i);   // (menu clicks and each world's sound are played by the game itself: try them there)
 const board = document.getElementById("board");
 for (const [title, group, n, note] of ROWS) {
     const row = document.createElement("p");
