@@ -115,6 +115,12 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       (the same in every world) instead of wood taps, casino chips and glass clinks. Hear them all at
       http://localhost:8090/demo/sounds.html. Tell me which still feel wrong.
 
+- [ ] **Reward boxes.** Every quest now gives a box: open it from Home's Quests card (or the results card). It drops
+      in, shakes and bursts open, then a reel of rewards spins and lands on yours, in its rarity's colour. It never
+      gives something you already have. Six quests a day and six a week; all six weekly give three more boxes. In the
+      Collection, things go from Common to Legendary, with the rarity buttons on the right. Tell me how the spin feels
+      (speed, length, sounds) and whether the odds seem right.
+
 - [ ] **Daily Quests and the Collection.** Home's Quests card now has today's three small quests too (20 coins
       each; all three give a board colour). Open the Collection from that card or Settings > World: 100 board
       colours and 23 letter styles, each with a preview, to win in the quests or buy with campaign coins (the

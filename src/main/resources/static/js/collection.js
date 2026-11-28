@@ -1,15 +1,21 @@
-// The Collection: looks for your board that you win in the quests (quests.js) or buy with coins.
+// The Collection: looks for your board that you win from the quests' boxes (quests.js, boxes.js) or buy with coins.
 //   Board colours: 100 of them, for any world's board (its squares, the lines between them, the black squares and
-//   the letters), in families, each common, rare, epic or legendary. Legendary ones only come from Weekly Quests.
+//   the letters), in families, each common, uncommon, rare, epic or legendary. Legendary ones only come from boxes.
 //   Letter styles: the lettering on the board, in the game's own fonts.
 //   The hero parts the Weekly Quests give (hero.js QUEST_PARTS) are owned here too.
 // Collection.open() is the menu (from Home's Quests card and Settings): every colour and style, a preview of each,
 // Use / Buy / where to win it. The beta's Unlock All (campaign.js) opens everything.
-//   Saved in this browser: schmoll.rewards { owned: [ids], badges: [weeks], finish: id, letters: id }
+//   Saved in this browser: schmoll.rewards { owned: [ids], badges: [weeks], finish: id, letters: id, boxes: [unopened] }
 const Collection = (() => {
-    const RARITY = { c: "common", r: "rare", e: "epic", l: "legendary" };
-    const PRICE = { common: 80, rare: 200, epic: 450, legendary: null };
-    const RARITY_NAME = { common: "Common", rare: "Rare", epic: "Epic", legendary: "Legendary" };
+    const RARITY = { c: "common", u: "uncommon", r: "rare", e: "epic", l: "legendary" };
+    const RARITIES = ["common", "uncommon", "rare", "epic", "legendary"];
+    const PRICE = { common: 80, uncommon: 130, rare: 200, epic: 450, legendary: null };
+    const RARITY_NAME = { common: "Common", uncommon: "Uncommon", rare: "Rare", epic: "Epic", legendary: "Legendary" };
+    const RARITY_COLOR = { common: "#8a8f98", uncommon: "#3aa860", rare: "#2f7ad8", epic: "#8a4fd0", legendary: "#e0a020" };
+    // (the plainer half of the commons are uncommon)
+    const UNCOMMON = new Set(["Lagoon", "Brick", "Olive", "Denim", "Clay", "Stone", "Teal", "Plum", "Mustard", "Navy", "Iron", "Moss", "Bamboo", "Wheat",
+        "Pine", "Blueberry", "Caramel", "Vanilla", "Raspberry", "Honey", "Newsprint", "Poster", "Slab", "Geometric", "Chunky"]);
+    const rank = x => RARITIES.indexOf(x.rarity);
 
     // name, family, rarity, square, lines, letters
     const COLOUR_ROWS = [
@@ -67,7 +73,8 @@ const Collection = (() => {
         ["Eclipse", "Legends", "l", "#08080c", "#ffb020", "#ffe8b0"]
     ];
     const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const COLOURS = COLOUR_ROWS.map(([name, family, r, cell, grid, ink]) => ({ id: "board-" + slug(name), kind: "colour", name, family, rarity: RARITY[r], cell, grid, ink }));
+    const COLOURS = COLOUR_ROWS.map(([name, family, r, cell, grid, ink]) => ({ id: "board-" + slug(name), kind: "colour", name, family, rarity: UNCOMMON.has(name) ? "uncommon" : RARITY[r], cell, grid, ink }))
+        .map((x, i) => ({ ...x, i })).sort((a, b) => rank(a) - rank(b) || a.i - b.i);            // common first, legendary last
     const FAMILIES = [...new Set(COLOURS.map(c => c.family))];
 
     // name, font, weight, size (1 = the board's usual), rarity
@@ -81,15 +88,16 @@ const Collection = (() => {
         ["Western", "'Rye', serif", 400, .9, "e"], ["Royal", "'Cinzel', serif", 700, .95, "e"], ["Storybook", "'IM Fell English SC', serif", 400, 1.05, "e"],
         ["Script", "'Pacifico', cursive", 400, .85, "l"], ["Retro Script", "'Shrikhand', cursive", 400, .85, "l"]
     ];
-    const LETTERS = LETTER_ROWS.map(([name, font, weight, scale, r]) => ({ id: "letters-" + slug(name), kind: "letters", name, font, weight, scale, rarity: RARITY[r] }));
+    const LETTERS = LETTER_ROWS.map(([name, font, weight, scale, r]) => ({ id: "letters-" + slug(name), kind: "letters", name, font, weight, scale, rarity: UNCOMMON.has(name) ? "uncommon" : RARITY[r] }))
+        .map((x, i) => ({ ...x, i })).sort((a, b) => rank(a) - rank(b) || a.i - b.i);
 
-    const HERO = (typeof Hero !== "undefined" ? Hero.QUEST_PARTS : []).map(p => ({ id: p.id, kind: "hero", name: p.name, rarity: "epic" }));
+    const HERO = (typeof Hero !== "undefined" ? Hero.QUEST_PARTS : []).map(p => ({ id: p.id, kind: "hero", name: p.name, key: p.key, index: p.index, rarity: "epic" }));
     const ITEMS = Object.fromEntries([...COLOURS, ...LETTERS, ...HERO].map(x => [x.id, x]));
 
     // ---- what you own ----
     function store() {
         const r = U.store.get("rewards", null) || {};
-        return { owned: Array.isArray(r.owned) ? r.owned : [], badges: Array.isArray(r.badges) ? r.badges : [],
+        return { owned: Array.isArray(r.owned) ? r.owned : [], badges: Array.isArray(r.badges) ? r.badges : [], boxes: Array.isArray(r.boxes) ? r.boxes : [],
             finish: typeof r.finish === "string" ? r.finish : "", letters: typeof r.letters === "string" ? r.letters : "" };
     }
     const save = r => U.store.set("rewards", r);
@@ -99,10 +107,8 @@ const Collection = (() => {
         const r = store();
         if (!r.owned.includes(id)) { r.owned.push(id); save(r); }
     }
-    // the rewards still to win, for the quests: a day's bonus is a common or rare board colour; a week's quests give the rest
-    const unowned = list => list.filter(x => !store().owned.includes(x.id));
-    const dailyPool = () => unowned(COLOURS.filter(c => c.rarity === "common" || c.rarity === "rare")).map(c => c.id);
-    const weeklyPool = () => unowned([...COLOURS.filter(c => c.rarity !== "common"), ...LETTERS.filter(l => l.rarity !== "common"), ...HERO]).map(x => x.id);
+    // what a box can still give: everything you don't own yet (a box never gives a repeat)
+    const unowned = () => { const have = store().owned; return [...COLOURS, ...LETTERS, ...HERO].filter(x => !have.includes(x.id)); };
 
     // ---- putting them on ----
     let styleEl = null;
@@ -157,7 +163,7 @@ const Collection = (() => {
     }
 
     // ---- the menu ----
-    let tab = "colour", family = "All", layer = null;
+    let tab = "colour", show = "All", rarity = "All", layer = null;
     function open(which = "colour") {
         tab = which;
         if (layer) layer.remove();
@@ -180,22 +186,33 @@ const Collection = (() => {
                 ...[["colour", `Board Colours`, `${nColour} of ${COLOURS.length}`], ["letters", "Letter Styles", `${nLetters} of ${LETTERS.length}`]].map(([k, label, n]) =>
                     U.el("button", { type: "button", role: "tab", "aria-selected": String(tab === k), class: tab === k ? "on" : "", onclick: () => { Sound.play("select"); tab = k; draw(); } },
                         U.el("b", { text: label }), U.el("small", { text: n }))));
-            const body = U.el("div", { class: "coll-body" });
+            // the list (common first, legendary last), and down the right side a button for each rarity
+            const all = tab === "colour" ? COLOURS : LETTERS;
+            const byRarity = list => (show === "Owned" ? list.filter(x => owns(x.id)) : list).filter(x => rarity === "All" || x.rarity === rarity);
+            const main = U.el("div", { class: "coll-main" });
+            main.appendChild(U.el("div", { class: "coll-filters" }, ...["All", "Owned"].map(f =>
+                U.el("button", { type: "button", class: "coll-chip" + (show === f ? " on" : ""), "aria-pressed": String(show === f), text: f, onclick: () => { Sound.play("select"); show = f; draw(); } }))));
             if (tab === "colour") {
-                body.appendChild(U.el("div", { class: "coll-filters" }, ...["All", "Owned", ...FAMILIES].map(f =>
-                    U.el("button", { type: "button", class: "coll-chip" + (family === f ? " on" : ""), "aria-pressed": String(family === f), text: f, onclick: () => { Sound.play("select"); family = f; draw(); } }))));
-                const list = family === "All" ? COLOURS : family === "Owned" ? COLOURS.filter(c => owns(c.id)) : COLOURS.filter(c => c.family === family);
+                const list = byRarity(COLOURS);
                 const on = equipped("colour");
-                body.appendChild(U.el("div", { class: "coll-grid" },
-                    tile({ id: "", name: "World's Own", rarity: "" }, U.el("span", { class: "cl-world", "aria-hidden": "true", html: colourPreview({ cell: "#ffffff", grid: "#c8ccd4", ink: "#2b2233" }) }), on === "", true, "colour"),
+                main.appendChild(U.el("div", { class: "coll-grid" },
+                    rarity === "All" && show === "All" ? tile({ id: "", name: "World's Own", rarity: "" }, U.el("span", { class: "cl-world", "aria-hidden": "true", html: colourPreview({ cell: "#ffffff", grid: "#c8ccd4", ink: "#2b2233" }) }), on === "", true, "colour") : null,
                     ...list.map(c => tile(c, U.el("span", { class: "cl-board", html: colourPreview(c) }), on === c.id, owns(c.id), "colour"))));
+                if (!list.length) main.appendChild(U.el("p", { class: "coll-empty", text: "Nothing here yet." }));
             } else {
-                const on = equipped("letters");
-                body.appendChild(U.el("div", { class: "coll-grid letters" },
-                    tile({ id: "", name: "World's Own", rarity: "" }, lettersPreview(null), on === "", true, "letters"),
-                    ...LETTERS.map(l => tile(l, lettersPreview(l), on === l.id, owns(l.id), "letters"))));
+                const on = equipped("letters"), list = byRarity(LETTERS);
+                main.appendChild(U.el("div", { class: "coll-grid letters" },
+                    rarity === "All" && show === "All" ? tile({ id: "", name: "World's Own", rarity: "" }, lettersPreview(null), on === "", true, "letters") : null,
+                    ...list.map(l => tile(l, lettersPreview(l), on === l.id, owns(l.id), "letters"))));
+                if (!list.length) main.appendChild(U.el("p", { class: "coll-empty", text: "Nothing here yet." }));
             }
-            card.replaceChildren(head, tabs, body);
+            const rail = U.el("nav", { class: "coll-rail", "aria-label": "Rarity" }, ...["All", ...RARITIES].map(r => {
+                const of = r === "All" ? all : all.filter(x => x.rarity === r), n = of.length, have = of.filter(x => owns(x.id)).length;
+                return U.el("button", { type: "button", class: "coll-rarity" + (rarity === r ? " on" : ""), "aria-pressed": String(rarity === r), style: RARITY_COLOR[r] ? { "--rc": RARITY_COLOR[r] } : {},
+                    onclick: () => { Sound.play("select"); rarity = r; draw(); } },
+                    U.el("b", { text: RARITY_NAME[r] || r }), U.el("small", { text: `${have} of ${n}` }));
+            }));
+            card.replaceChildren(head, tabs, U.el("div", { class: "coll-body" }, main, rail));
         };
         function tile(x, picture, on, have, kind) {
             const price = PRICE[x.rarity];
@@ -204,8 +221,8 @@ const Collection = (() => {
                 : price ? U.el("button", { type: "button", class: "btn small buy", onclick: () => {
                     if (buy(x.id)) { Sound.play("coin"); equip(kind, x.id); draw(); } else { Sound.play("wrong"); FX.toast({ icon: "🪙", kicker: "COLLECTION", title: "Not Enough Coins", text: `${x.name} costs ${price}. Earn coins in the campaign and the quests.`, ms: 2600 }); }
                 } }, U.icon("coin"), " " + price)
-                : U.el("span", { class: "cl-state", text: "Weekly Quests" });
-            return U.el("div", { class: "cl-tile" + (on ? " on" : "") + (have ? "" : " locked") + (x.rarity ? " r-" + x.rarity : "") },
+                : U.el("span", { class: "cl-state", text: "From Weekly Boxes" });
+            return U.el("div", { class: "cl-tile" + (on ? " on" : "") + (have ? "" : " locked") + (x.rarity ? " r-" + x.rarity : ""), style: x.rarity ? { "--rc": RARITY_COLOR[x.rarity] } : {} },
                 picture,
                 U.el("span", { class: "cl-name" }, U.el("b", { text: x.name }), x.rarity ? U.el("small", { text: RARITY_NAME[x.rarity] }) : U.el("small", { text: "Default" })),
                 action);
@@ -216,5 +233,5 @@ const Collection = (() => {
     }
 
     apply();
-    return { COLOURS, LETTERS, ITEMS, FAMILIES, owns, give, equip, equipped, apply, open, store, save, dailyPool, weeklyPool, colourPreview, PRICE };
+    return { COLOURS, LETTERS, HERO, ITEMS, FAMILIES, RARITIES, RARITY_NAME, RARITY_COLOR, owns, give, equip, equipped, apply, open, store, save, unowned, colourPreview, lettersPreview, PRICE };
 })();

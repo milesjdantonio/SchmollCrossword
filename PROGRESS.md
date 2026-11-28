@@ -596,6 +596,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       bought with coins (80 / 200 / 450; legendary only from Weekly Quests) or won; a menu with tabs, family
       filters and a preview of each (from Home's card and Settings > World); the one in use is written as one small
       style rule. The beta's Unlock All owns everything.
+      Then (the user: rewards as boxes with "a cool spin experience ... spin after an unboxing", "make 3 more",
+      "ordered from common to legendary ... a button for commons, rares, uncommons", "the top selection ... only All
+      and Owned"): six Daily and six Weekly Quests; every quest gives a box (js/boxes.js): it drops in, shakes and
+      bursts, then a reel of ~50 rewards spins past a marker (ticks, eases to a stop) and lands on the prize, chosen
+      first by the box's odds (Daily: common 52 / uncommon 30 / rare 14 / epic 4; Weekly: uncommon 18 / rare 44 /
+      epic 30 / legendary 8; some coin prizes) from what you don't own: never a repeat. All six weekly: 3 more
+      Weekly Boxes and the badge; all six daily: one more Daily Box. Boxes are saved unopened (`boxes` in
+      schmoll.rewards). A fifth rarity, Uncommon (130 coins). The Collection is sorted common to legendary, with
+      All / Owned on top and a rarity rail on the right.
 - [x] Standard sounds (2026-11-27, the user: "make a lot of the clicks just standard click sounds, not the realistic thing ... consider that for all sounds"): every everyday sound is now from Kenney's Interface Sounds (CC0, audio/sfx/ui/, 61 files: clicks, selects, switches, confirmations, errors, glass dings), the same in every world (no per-world materials; the Neon Arcade keeps its chiptune). The foley set (audio/sfx/rec/) is gone; the demo sound board and CREDITS.txt follow.
 - [x] Offline (2026-11-27): static/sw.js. Installing it keeps the page and everything it links to; the page and
       the puzzle APIs (daily, archive, campaign, boss) are network-first and kept, so any puzzle you've opened works

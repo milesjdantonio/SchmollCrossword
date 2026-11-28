@@ -2,7 +2,7 @@
 
 /* ---- Home's card: the three quests and the week's badge as four tiles, then what you've won ---- */
 .home-grid > .quests-card { grid-column: 1 / -1; }
-.qx-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.qx-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .qx { display: grid; grid-template-rows: 1fr auto; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--raised); }
 .qx.done { border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 9%, var(--raised)); }
 .qx-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -91,7 +91,7 @@
 .qx-ab { flex: none; width: 18px; text-align: center; font-style: normal; font-size: .82rem; line-height: 1; }
 .qd-bonus { justify-content: space-between; }
 .qd-bonus .qd-text { flex: none; color: var(--muted); }
-.qx-day-list { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+.qx-day-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 900px) { .qx-day-list { grid-template-columns: 1fr; } }
 .qx-reward.r-legendary:not(.got) { border-color: #d89a1a; box-shadow: 0 0 0 1px rgba(216, 154, 26, .35), 0 0 10px rgba(255, 200, 60, .35); }
 .qx-reward.r-epic:not(.got) { border-color: #8a5ad8; }
@@ -137,3 +137,97 @@
 .cl-state.on { color: var(--good); }
 .coll-open { width: 100%; margin-top: 14px; font: inherit; text-align: left; cursor: pointer; background: var(--panel); }
 @media (max-width: 560px) { .coll-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); } .cl-board svg, .cl-world svg, .cl-letters { width: 70px; height: 70px; } }
+
+/* ---- the boxes on the quest card ---- */
+.qx-box { display: inline-grid; place-items: center; flex: none; width: 34px; height: 30px; filter: saturate(.55) opacity(.7); }
+.qx-box.got { filter: none; }
+.qx-box svg { display: block; }
+.qx > .qx-box { grid-row: 2; justify-self: end; }
+.card-head .qx-open { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; padding: 4px 14px 4px 6px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink, #fff);
+    font: 800 .9rem var(--font-body); cursor: pointer; box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 45%, transparent); animation: qx-open-pulse 1.6s ease-in-out infinite; }
+.qx-open-box svg { display: block; }
+.card-head .qx-open:hover { filter: brightness(1.06); }
+@keyframes qx-open-pulse { 50% { transform: scale(1.05); box-shadow: 0 6px 22px color-mix(in srgb, var(--accent) 65%, transparent); } }
+.rq-open { display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin: 8px auto 0; }
+.rq-open svg { display: block; }
+
+/* ---- the Collection's rarity rail (on the right) ---- */
+.coll-body { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 18px; align-items: start; }
+.coll-main { min-width: 0; }
+.coll-rail { position: sticky; top: 0; display: flex; flex-direction: column; gap: 6px; }
+.coll-rarity { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 8px 12px; border: 1px solid var(--line); border-left: 5px solid var(--rc, var(--ink)); border-radius: 10px;
+    background: var(--surface-solid); color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.coll-rarity b { font-size: .9rem; }
+.coll-rarity small { color: var(--muted); font-size: .74rem; font-weight: 700; }
+.coll-rarity.on { background: color-mix(in srgb, var(--rc, var(--ink)) 14%, var(--surface-solid)); box-shadow: inset 0 0 0 1.5px var(--rc, var(--ink)); }
+.coll-empty { color: var(--muted); font-weight: 700; }
+.cl-tile { border-bottom: 4px solid var(--rc, var(--line)); }
+.cl-name small { color: var(--rc, var(--muted)) !important; }
+.cl-tile.r-uncommon .cl-name small { color: #3aa860; }
+@media (max-width: 720px) {
+    .coll-body { grid-template-columns: 1fr; }
+    .coll-rail { position: static; flex-direction: row; flex-wrap: wrap; order: -1; }
+    .coll-rarity { padding: 6px 10px; }
+}
+
+/* ---- opening a box (boxes.js): the box, the reel, the reveal ---- */
+.results.bx-layer { background: radial-gradient(circle at 50% 45%, rgba(40, 20, 70, .82), rgba(8, 4, 18, .96)); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.bx-stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; width: min(960px, 100%); min-height: min(640px, 92vh); color: #fff; text-align: center; }
+.bx-glow { position: absolute; left: 50%; top: 42%; width: 520px; height: 520px; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, color-mix(in srgb, var(--c) 55%, transparent), transparent 65%); animation: bx-glow 2.4s ease-in-out infinite; }
+@keyframes bx-glow { 50% { transform: translate(-50%, -50%) scale(1.12); opacity: .8; } }
+.bx-box { position: relative; padding: 0; border: 0; background: none; cursor: pointer; filter: drop-shadow(0 18px 30px rgba(0, 0, 0, .45)); }
+.bx-box:focus-visible { outline: 3px solid #fff; outline-offset: 8px; border-radius: 20px; }
+.bx-box.drop { animation: bx-drop .7s cubic-bezier(.3, 1.5, .5, 1) both, bx-idle 2s ease-in-out .8s infinite; }
+@keyframes bx-drop { from { transform: translateY(-70vh) rotate(-14deg); } }
+@keyframes bx-idle { 50% { transform: translateY(-8px) rotate(2deg); } }
+.bx-box.shake { animation: bx-shake .32s ease-in-out; }
+@keyframes bx-shake { 20% { transform: rotate(calc(-7deg * var(--k))) scale(1.04); } 40% { transform: rotate(calc(7deg * var(--k))) scale(1.06); } 60% { transform: rotate(calc(-5deg * var(--k))); } 80% { transform: rotate(calc(4deg * var(--k))); } }
+.bx-box.burst .bx-lid { animation: bx-lid .6s cubic-bezier(.2, .7, .3, 1) forwards; transform-origin: 60px 46px; transform-box: view-box; }
+.bx-box.burst .bx-body { animation: bx-body .55s ease-in forwards; transform-box: view-box; transform-origin: 60px 100px; }
+@keyframes bx-lid { to { transform: translate(40px, -120px) rotate(40deg); opacity: 0; } }
+@keyframes bx-body { 30% { transform: scale(1.12, .9); } to { transform: scale(.6); opacity: 0; } }
+.bx-caption { display: flex; flex-direction: column; gap: 2px; margin: 0; }
+.bx-caption b { font: 700 calc(1.8rem * var(--head-scale)) var(--font-head); }
+.bx-caption span { opacity: .75; font-weight: 700; }
+.bx-hint { margin: 0; font-weight: 800; letter-spacing: .08em; opacity: .85; animation: bx-blink 1.2s ease-in-out infinite; }
+@keyframes bx-blink { 50% { opacity: .35; } }
+/* the reel */
+.bx-reel { position: relative; width: 100%; height: 190px; overflow: hidden; border-radius: 18px; background: rgba(255, 255, 255, .06); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .12);
+    -webkit-mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); animation: bx-reel-in .45s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes bx-reel-in { from { transform: scaleY(0); } }
+.bx-strip { position: absolute; left: 0; top: 14px; display: flex; will-change: transform; }
+.bx-card { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 120px; height: 160px; margin: 0 6px; border-radius: 14px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--rc) 30%, #1c1630), #15111f); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--rc) 70%, transparent), inset 0 -6px 0 var(--rc); color: #fff; }
+.bx-card b { max-width: 100px; font-size: .8rem; line-height: 1.15; }
+.bx-card .bx-pic svg, .bx-card .cl-letters { width: 70px; height: 70px; }
+.bx-card .cl-letters { background: rgba(255, 255, 255, .9); color: #2b2233; font-size: 1.8rem !important; }
+.bx-card.won { animation: bx-won .7s ease-in-out infinite alternate; }
+@keyframes bx-won { to { box-shadow: inset 0 0 0 3px #fff, 0 0 30px var(--rc), inset 0 -6px 0 var(--rc); transform: scale(1.06); } }
+.bx-marker { position: absolute; left: 50%; top: 0; bottom: 0; width: 4px; transform: translateX(-50%); background: #ffe27a; box-shadow: 0 0 14px #ffcf3a; }
+.bx-marker::before, .bx-marker::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 10px solid transparent; }
+.bx-marker::before { top: 0; border-top-color: #ffe27a; }
+.bx-marker::after { bottom: 0; border-bottom-color: #ffe27a; }
+.bx-reel.done { height: 110px; transition: height .3s; }
+.bx-reel.done .bx-strip { top: -20px; transition: top .3s; }
+.bx-pic { display: grid; place-items: center; }
+.bx-pic svg { display: block; width: 100%; height: 100%; }
+.bx-card .bx-hero svg { width: 80px; height: 80px; }
+.bx-prize .bx-hero svg { width: 140px; height: 140px; }
+.bx-coins { gap: 2px; }
+.bx-coins svg { width: 46px; height: 46px; }
+.bx-coins b { font-size: 1.1rem; }
+/* the reveal */
+.bx-reveal { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; animation: bx-reveal .6s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes bx-reveal { from { opacity: 0; transform: scale(.6) translateY(30px); } }
+.bx-rarity { padding: 4px 14px; border-radius: 999px; background: var(--rc); color: #fff; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 0 24px var(--rc); }
+.bx-prize { display: grid; place-items: center; width: 150px; height: 150px; border-radius: 24px; background: rgba(255, 255, 255, .95); box-shadow: 0 0 0 4px var(--rc), 0 0 60px var(--rc); color: #2b2233; }
+.bx-prize .bx-pic svg, .bx-prize .cl-letters { width: 120px; height: 120px; }
+.bx-prize .cl-letters { background: none; font-size: 3.4rem !important; }
+.bx-reveal.r-legendary .bx-prize { animation: bx-legend 1.6s ease-in-out infinite; }
+@keyframes bx-legend { 50% { box-shadow: 0 0 0 4px var(--rc), 0 0 110px var(--rc), 0 0 40px #fff; } }
+.bx-reveal h2 { margin: 6px 0 0; font: 700 calc(2rem * var(--head-scale)) var(--font-head); }
+.bx-reveal p { margin: 0; opacity: .8; font-weight: 600; }
+.bx-reveal .res-actions { margin-top: 10px; }
+.bx-reveal .btn.ghost { background: rgba(255, 255, 255, .08); color: #fff; border: 1px solid rgba(255, 255, 255, .45); }
+@media (prefers-reduced-motion: reduce) { .bx-box, .bx-glow, .bx-card.won, .bx-reveal, .bx-reveal.r-legendary .bx-prize, .qx-open { animation: none !important; } }

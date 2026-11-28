@@ -1,12 +1,14 @@
-// Daily Quests: three small goals a day (the same for everyone, new at the player's midnight), 20 coins each, and a
-// board colour for all three.
-// Weekly Quests: three goals a week (one for the dailies, one for the campaign, one for how you solve), the same for
-// everyone that week, new every Sunday at midnight. Each one gives a reward from the Collection (collection.js) the
-// moment it's done: a rarer board colour, a letter style or a part for your hero; all three give the week's badge.
-// A reward is marked given (and saved) before it's applied, so a reload never gives it twice.
-//   Saved in this browser: schmoll.quests (this week's progress), schmoll.dayquests (today's); what you've won is
-//   the Collection's (schmoll.rewards)
+// Quests: goals that give reward boxes (boxes.js: an unboxing, then a spin for something from the Collection).
+//   Daily Quests: six small goals a day, the same for everyone, new at the player's midnight. Each gives a Daily Box;
+//   all six give one more.
+//   Weekly Quests: six bigger goals a week (two for the dailies, two for the campaign, two for how you solve), the same
+//   for everyone that week, new every Sunday at midnight. Each gives a Weekly Box; all six give three more and the
+//   week's badge.
+// A box is marked given (and saved) the moment its quest is done, so a reload never gives it twice.
+//   Saved in this browser: schmoll.quests (this week's progress), schmoll.dayquests (today's); the boxes and what
+//   they gave are the Collection's (schmoll.rewards)
 const Quests = (() => {
+    const VERSION = 2;                       // (an older save with three quests is started over)
 
     // ---- the quests ----
     const isDaily = i => (i.mode === "daily" && i.counted !== false && !i.practice) || (i.daily && i.counted !== false);
@@ -36,7 +38,6 @@ const Quests = (() => {
         ]
     };
     const QUEST = Object.fromEntries(Object.values(POOL).flat().map(q => [q.id, q]));
-    // today's: small, one solve or two each
     const DAY_POOL = [
         { id: "d-easy", text: "Solve Today's Easy", target: 1, add: i => (isDaily(i) && i.difficulty === "easy" ? 1 : 0) },
         { id: "d-medium", text: "Solve Today's Medium", target: 1, add: i => (isDaily(i) && i.difficulty === "medium" ? 1 : 0) },
@@ -51,48 +52,34 @@ const Quests = (() => {
         { id: "d-fast", text: "Solve a Puzzle in Under 2:00", target: 1, add: i => (i.seconds < 120 ? 1 : 0) }
     ];
     const DAY_QUEST = Object.fromEntries(DAY_POOL.map(q => [q.id, q]));
-    const DAY_COINS = 20, FALLBACK_COINS = 50;
+    const WEEK_BONUS_BOXES = 3;
 
-    // ---- the rewards: the Collection's, or coins once you have everything ----
-    const COINS = { id: "coins", name: `${FALLBACK_COINS} Coins`, kind: "coins" };
-    const rewardOf = id => Collection.ITEMS[id] || COINS;
-    const rewards = () => Collection.store(), saveRewards = r => Collection.save(r);
-    const owns = id => Collection.owns(id);
-    const nameOf = r => (r.kind === "colour" ? `${r.name} Board` : r.kind === "letters" ? `${r.name} Letters` : r.name);
-    const shuffled = (ids, R) => ids.map(id => [R(), id]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-
-    // ---- the week ----
+    // ---- the week and the day ----
     function weekOf(d = new Date()) { return dayKey(new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay())); }   // its Sunday
     function nextReset() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay() + 7); }
-    function newWeek(week) {
-        const R = U.rng(Number(week));
-        const pick = list => list[Math.floor(R() * list.length)].id;
-        const picks = [pick(POOL.daily), pick(POOL.campaign), pick(POOL.skill)];
-        // each quest's reward: one you don't have yet (shuffled the same way all week), else coins
-        const left = shuffled(Collection.weeklyPool(), R);
-        const rewardFor = Object.fromEntries(picks.map((id, i) => [id, left[i] || COINS.id]));
-        return { week, picks, rewardFor, progress: {}, sets: {}, done: {}, granted: {}, badge: false };
-    }
+    function nextDay() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); }
+    const shuffled = (ids, R) => ids.map(id => [R(), id]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
     function state() {
         const week = weekOf();
         let s = U.store.get("quests", null);
-        if (!s || s.week !== week || !Array.isArray(s.picks)) { s = newWeek(week); U.store.set("quests", s); }
+        if (!s || s.week !== week || s.v !== VERSION || !Array.isArray(s.picks)) {
+            const R = U.rng(Number(week));
+            const picks = [...shuffled(POOL.daily.map(q => q.id), R).slice(0, 2), ...shuffled(POOL.campaign.map(q => q.id), R).slice(0, 2), ...shuffled(POOL.skill.map(q => q.id), R).slice(0, 2)];
+            s = { v: VERSION, week, picks, progress: {}, sets: {}, done: {}, granted: {}, badge: false };
+            U.store.set("quests", s);
+        }
         return s;
     }
-    // ---- today ----
     function dayState() {
-        const day = dayKey(new Date());
+        const day = today();
         let s = U.store.get("dayquests", null);
-        if (!s || s.day !== day || !Array.isArray(s.picks)) {
-            const R = U.rng(Number(day) * 7 + 3), pool = DAY_POOL.map(q => [R(), q.id]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-            const colours = shuffled(Collection.dailyPool(), R);
-            s = { day, picks: pool.slice(0, 3), bonusReward: colours[0] || COINS.id, progress: {}, sets: {}, done: {}, granted: {}, bonus: false };
+        if (!s || s.day !== day || s.v !== VERSION || !Array.isArray(s.picks)) {
+            const R = U.rng(Number(day) * 7 + 3);
+            s = { v: VERSION, day, picks: shuffled(DAY_POOL.map(q => q.id), R).slice(0, 6), progress: {}, sets: {}, done: {}, granted: {}, bonus: false };
             U.store.set("dayquests", s);
         }
         return s;
     }
-    function nextDay() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1); }
-    const coins = n => { if (typeof Campaign !== "undefined" && Campaign.addCoins) Campaign.addCoins(n); };
 
     // one quest's progress from one solve: true if it moved
     function advance(s, q, info) {
@@ -108,52 +95,39 @@ const Quests = (() => {
 
     // ---- progress: every solved puzzle (game.js's "win") ----
     function onWin(info) {
-        const moved = [];
-        // today's (coins, marked given and saved before they're added)
+        const moved = [], boxes = [];
         const d = dayState();
         for (const id of d.picks) {
             const q = DAY_QUEST[id];
             if (!q || d.done[id] || !advance(d, q, info)) continue;
-            moved.push({ id, scope: "Today", text: q.text, n: Math.min(q.target, d.progress[id]), target: q.target, done: !!d.done[id], reward: d.done[id] ? `${DAY_COINS} Coins` : null });
+            moved.push({ id, scope: "Today", text: q.text, n: Math.min(q.target, d.progress[id]), target: q.target, done: !!d.done[id], reward: d.done[id] ? "Daily Box" : null });
+            if (d.done[id] && !d.granted[id]) { d.granted[id] = true; boxes.push(["daily", q.text]); }
         }
-        const newly = d.picks.filter(id => d.done[id] && !d.granted[id]);
-        newly.forEach(id => { d.granted[id] = true; });
-        const bonus = d.picks.every(id => d.done[id]) && !d.bonus;
-        if (bonus) d.bonus = true;
-        U.store.set("dayquests", d);
-        if (newly.length) coins(newly.length * DAY_COINS);
-        if (bonus) {
-            const reward = rewardOf(d.bonusReward);
-            if (reward.kind === "coins") coins(FALLBACK_COINS); else Collection.give(reward.id);
-            moved.push({ id: "day-bonus", scope: "Today", text: "All Three Today", n: 3, target: 3, done: true, reward: nameOf(reward) });
+        if (d.picks.every(id => d.done[id]) && !d.bonus) {
+            d.bonus = true;
+            boxes.push(["daily", "All six today"]);
+            moved.push({ id: "day-bonus", scope: "Today", text: "All Six Today", n: 6, target: 6, done: true, reward: "Another Daily Box" });
         }
-        // this week's
         const s = state();
         for (const id of s.picks) {
             const q = QUEST[id];
             if (!q || s.done[id] || !advance(s, q, info)) continue;
-            moved.push({ id, scope: "This Week", text: q.text, n: Math.min(q.target, s.progress[id]), target: q.target, done: !!s.done[id], reward: s.done[id] ? nameOf(rewardOf(s.rewardFor[id])) : null });
+            moved.push({ id, scope: "This Week", text: q.text, n: Math.min(q.target, s.progress[id]), target: q.target, done: !!s.done[id], reward: s.done[id] ? "Weekly Box" : null });
+            if (s.done[id] && !s.granted[id]) { s.granted[id] = true; boxes.push(["weekly", q.text]); }
         }
-        U.store.set("quests", s);
-        // the rewards: marked given and saved first, then applied (a reload in between can't give one twice)
-        for (const m of moved) if (m.done && m.scope === "This Week" && m.id !== "badge") grant(s, m.id);
         if (s.picks.every(id => s.done[id]) && !s.badge) {
             s.badge = true;
-            U.store.set("quests", s);
-            const r = rewards();
-            if (!r.badges.includes(s.week)) { r.badges.push(s.week); saveRewards(r); }
-            moved.push({ id: "badge", scope: "This Week", text: "All Three This Week", n: 3, target: 3, done: true, reward: "This Week's Badge", badge: s.week });
+            for (let i = 0; i < WEEK_BONUS_BOXES; i++) boxes.push(["weekly", "All six this week"]);
+            const r = Collection.store();
+            if (!r.badges.includes(s.week)) { r.badges.push(s.week); Collection.save(r); }
+            moved.push({ id: "badge", scope: "This Week", text: "All Six This Week", n: 6, target: 6, done: true, reward: `${WEEK_BONUS_BOXES} Weekly Boxes and the Badge`, badge: s.week });
         }
-        if (moved.length) info.quests = moved;            // the results card shows them (game.js showResults)
-        return moved;
-    }
-    function grant(s, id) {
-        if (s.granted[id]) return;
-        s.granted[id] = true;
+        // the quests' state (with "given") is saved before the boxes are added
+        U.store.set("dayquests", d);
         U.store.set("quests", s);
-        const reward = rewardOf(s.rewardFor[id]);
-        if (reward.kind === "coins") coins(FALLBACK_COINS);
-        else Collection.give(reward.id);
+        for (const [kind, from] of boxes) Boxes.add(kind, from);
+        if (moved.length) { info.quests = moved; info.boxes = Boxes.count(); }       // the results card shows them (game.js)
+        return moved;
     }
     Bus.on("win", info => { try { onWin(info); } catch (err) { console.error("quests", err); } });
 
@@ -175,35 +149,36 @@ const Quests = (() => {
         const ms = until - new Date(), h = Math.floor(ms / 36e5), dd = Math.floor(h / 24);
         return dd ? `${dd}d ${h % 24}h` : `${h}h ${Math.floor(ms / 6e4) % 60}m`;
     }
+    const boxChip = (kind, done) => U.el("span", { class: "qx-box" + (done ? " got" : ""), title: done ? `${Boxes.KINDS[kind].name}: yours` : `Reward: a ${Boxes.KINDS[kind].name}`, html: Boxes.boxSvg(kind, 26) });
     function draw(el) {
         if (!el) return;
-        const s = state(), r = rewards();
-        const head = U.el("header", { class: "card-head" }, U.el("h2", { text: "Quests" }));
-        // today's: one line each, coins on the right
+        const s = state(), r = Collection.store(), waiting = Boxes.count();
+        const head = U.el("header", { class: "card-head" }, U.el("h2", { text: "Quests" }),
+            waiting ? U.el("button", { type: "button", class: "qx-open", onclick: () => { Sound.play("select"); Boxes.openAll(); } },
+                U.el("span", { class: "qx-open-box", html: Boxes.boxSvg(r.boxes[0] ? r.boxes[0].kind : "daily", 30) }), U.el("b", { text: waiting === 1 ? "Open Your Box" : `Open ${waiting} Boxes` })) : null);
+        // today's: six small tiles, each with its box
         const d = dayState(), dayAll = d.picks.every(id => d.done[id]);
-        const today = U.el("section", { class: "qx-day" },
-            U.el("header", { class: "qx-sub" }, U.el("h3", { text: "Today" }), U.el("span", { text: dayAll ? "All Done · Back Tomorrow" : `New in ${timeLeft(nextDay())}` })),
+        const todayEl = U.el("section", { class: "qx-day" },
+            U.el("header", { class: "qx-sub" }, U.el("h3", { text: "Today" }), U.el("span", { text: dayAll ? "All Done · Back Tomorrow" : `New in ${timeLeft(nextDay())} · All Six: One More Box` })),
             U.el("ol", { class: "qx-day-list" }, ...d.picks.map(id => {
                 const q = DAY_QUEST[id], n = Math.min(q.target, d.progress[id] || 0), done = !!d.done[id];
                 return U.el("li", { class: "qd" + (done ? " done" : "") },
                     U.el("span", { class: "qd-check", "aria-hidden": "true" }, done ? U.icon("check") : null),
                     U.el("span", { class: "qd-text", text: q.text + (q.target > 1 && !done ? ` (${n} of ${q.target})` : "") }),
-                    U.el("span", { class: "qx-reward" + (done ? " got" : "") }, U.icon("coin"), U.el("span", { text: `${DAY_COINS}` })));
-            }), U.el("li", { class: "qd qd-bonus" + (d.bonus ? " done" : "") },
-                U.el("span", { class: "qd-text", text: "All Three" }), rewardChip(rewardOf(d.bonusReward), d.bonus))));
+                    boxChip("daily", done));
+            })));
         const weekHead = U.el("header", { class: "qx-sub" }, U.el("h3", { text: "This Week" }), U.el("span", { text: `New Quests in ${timeLeft(nextReset())}` }));
         const rows = s.picks.map(id => {
-            const q = QUEST[id], n = Math.min(q.target, s.progress[id] || 0), done = !!s.done[id], reward = rewardOf(s.rewardFor[id]);
+            const q = QUEST[id], n = Math.min(q.target, s.progress[id] || 0), done = !!s.done[id];
             return U.el("li", { class: "qx" + (done ? " done" : "") },
                 U.el("span", { class: "qx-text" }, U.el("b", { text: q.text }), U.el("span", { class: "qx-bar", "aria-hidden": "true" }, U.el("i", { style: { width: (n / q.target * 100) + "%" } }))),
                 U.el("span", { class: "qx-n", text: done ? "Done" : `${n} of ${q.target}` }),
-                rewardChip(reward, done));
+                boxChip("weekly", done));
         });
         const all = s.picks.every(id => s.done[id]);
         rows.push(U.el("li", { class: "qx qx-badge" + (all ? " done" : "") },
-            U.el("span", { class: "qx-text" }, U.el("b", { text: "Finish All Three" }), U.el("small", { text: all ? "This week's badge is yours." : "This week's badge" })),
+            U.el("span", { class: "qx-text" }, U.el("b", { text: "Finish All Six" }), U.el("small", { text: all ? "Three boxes and this week's badge: yours." : `${WEEK_BONUS_BOXES} Weekly Boxes and this week's badge` })),
             U.el("span", { class: "qx-medal", html: badgeSvg(s.week) })));
-        // what you've won: what's on your board now (and the Collection to change it), and your badges
         const colour = Collection.ITEMS[Collection.equipped("colour")], letters = Collection.ITEMS[Collection.equipped("letters")];
         const looks = U.el("button", { type: "button", class: "qx-look", onclick: () => { Sound.play("select"); Collection.open("colour"); } },
             U.el("span", { class: "qx-look-pic", html: Collection.colourPreview(colour || { cell: "#ffffff", grid: "#c8ccd4", ink: "#2b2233" }) }),
@@ -212,17 +187,9 @@ const Quests = (() => {
             U.el("span", { class: "chip-state", text: "Open" }));
         const badges = r.badges.length ? U.el("div", { class: "qx-badges" }, U.el("small", { text: `${r.badges.length} ${r.badges.length === 1 ? "Badge" : "Badges"}` }),
             ...r.badges.slice(-8).map(w => U.el("span", { class: "qx-medal small", title: "Week of " + w, html: badgeSvg(w) }))) : null;
-        el.replaceChildren(head, today, weekHead, U.el("ol", { class: "qx-list" }, ...rows), U.el("div", { class: "qx-won" }, looks, badges));
-    }
-    function rewardChip(reward, done) {
-        const picture = reward.kind === "colour" ? U.el("i", { class: "qx-sw", style: { "--a": reward.cell, "--b": reward.grid } })
-            : reward.kind === "letters" ? U.el("i", { class: "qx-ab", text: "Ab", style: { fontFamily: reward.font, fontWeight: reward.weight } })
-            : reward.kind === "hero" ? U.icon("hero") : U.icon("coin");
-        const label = reward.kind === "colour" ? `${reward.name} Board` : reward.kind === "letters" ? `${reward.name} Letters` : reward.name;
-        return U.el("span", { class: "qx-reward" + (done ? " got" : "") + (reward.rarity ? " r-" + reward.rarity : ""), title: (done ? `${label}: yours` : `Reward: ${label}`) + (reward.rarity ? ` (${reward.rarity})` : "") },
-            picture, U.el("span", { text: label }));
+        el.replaceChildren(head, todayEl, weekHead, U.el("ol", { class: "qx-list" }, ...rows), U.el("div", { class: "qx-won" }, looks, badges));
     }
     Bus.on("collection", () => { const el = document.getElementById("home-quests"); if (el && !el.closest("[hidden]")) draw(el); });
 
-    return { owns, onWin, draw, badgeSvg, state, dayState };
+    return { owns: id => Collection.owns(id), onWin, draw, badgeSvg, state, dayState };
 })();

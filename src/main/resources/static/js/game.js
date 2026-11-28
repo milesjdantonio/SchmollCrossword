@@ -1058,6 +1058,12 @@ const Game = (() => {
             box.appendChild(row);
             if (q.done) setTimeout(() => { if (row.isConnected) Sound.play("achievement"); }, 1200 + i * 350);
         });
+        // boxes to open: straight from here (the box opens over the results)
+        if (typeof Boxes !== "undefined" && Boxes.count()) {
+            const n = Boxes.count();
+            box.appendChild(U.el("button", { type: "button", class: "btn primary rq-open", onclick: () => { Sound.play("select"); Boxes.openAll(); } },
+                U.el("span", { html: Boxes.boxSvg(Collection.store().boxes[0].kind, 26) }), n === 1 ? " Open Your Box" : ` Open ${n} Boxes`));
+        }
         return box;
     }
     // the campaign part of the results card: stars that pop in one by one, what earned them, coins
