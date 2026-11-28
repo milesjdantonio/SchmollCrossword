@@ -301,3 +301,23 @@ html[data-world] .modes a.active { background: color-mix(in srgb, var(--ink) 10%
     .arc-cal { gap: 2px; padding: 2px; }
     .arc-pips { gap: 2px; }
 }
+
+/* ---- Stats: How You Solve, Records, Hardest for You ---- */
+.stats-grid.stats-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stat-list { display: grid; grid-template-columns: minmax(0, 1fr) auto; margin: 0; }
+.stat-list dt, .stat-list dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+.stat-list dt { color: var(--muted); font-size: .92rem; font-weight: 700; }
+.stat-list dd { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
+.stat-list dd b { font-size: 1.02rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat-list dd small { color: var(--muted); font-size: .76rem; font-weight: 600; }
+.stat-list dt:nth-last-child(2), .stat-list dd:last-child { border-bottom: 0; }
+.stat-hardest { margin: 0; padding: 0; list-style: none; counter-reset: hard; }
+.stat-hardest li { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule); counter-increment: hard; }
+.stat-hardest li:last-child { border-bottom: 0; }
+.stat-hardest li:not(.empty-note)::before { content: counter(hard); flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: var(--raised); font-weight: 800; font-size: .86rem; }
+.sh-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.sh-what b { font-size: .95rem; }
+.sh-what small { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.stat-hardest .btn.small { flex: none; padding: 5px 12px; font-size: .82rem; }
+@media (max-width: 1100px) { .stats-grid.stats-grid-3 { grid-template-columns: 1fr 1fr; } .stats-grid.stats-grid-3 > :last-child { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .stats-grid.stats-grid-3 { grid-template-columns: 1fr; } }

@@ -301,6 +301,7 @@ const App = (() => {
             : `${solved.length} ${solved.length === 1 ? "daily" : "dailies"} solved in all.`;
         drawHeatmap(all);
         drawTimes(all, solved);
+        drawDeep(all, keys, solved, streaks);
         $("#ach-count").textContent = (() => { const r = Achievements.render($("#ach-grid")); return `${r.got} of ${r.total} unlocked`; })();
         // history
         const rowsEl = $("#history-rows");
@@ -316,6 +317,67 @@ const App = (() => {
         $("#history").hidden = keys.length === 0;
         $("#no-history").hidden = keys.length > 0;
     }
+    // How You Solve, Records and Hardest for You: the detail behind the tiles (this browser's saved dailies, and its
+    // Daily Archive practice)
+    const KIND_NAME = { easy: "Easy", medium: "Medium", hard: "Hard", challenge: "Challenge", boss: "Boss" };
+    const shortDate = key => keyDate(key).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    function statRows(el, rows) {
+        el.replaceChildren(...rows.flatMap(([label, value, sub]) => [U.el("dt", { text: label }), U.el("dd", {}, U.el("b", { text: value }), sub ? U.el("small", { text: sub }) : null)]));
+    }
+    function drawDeep(all, keys, solved, streaks) {
+        const pct = (a, b) => (b ? Math.round(a / b * 100) + "%" : "–");
+        const days = [...new Set(keys.map(dayOf))].sort();
+        const first = days[0], today = dayKey(new Date());
+        const sinceFirst = first ? Math.round((keyDate(today) - keyDate(first)) / 864e5) + 1 : 0;
+        const fullDays = days.filter(d => ["easy", "medium", "hard", "challenge", "boss"].every(k => all[d + "-" + k] && !all[d + "-" + k].surrendered)).length;
+        const puzzles = solved.filter(k => all[k].difficulty !== "boss");
+        const noHint = puzzles.filter(k => !all[k].checked && !all[k].revealed).length;
+        const sum = f => keys.reduce((a, k) => a + (all[k][f] || 0), 0);
+        const counted = keys.filter(k => typeof all[k].mistakes === "number");
+        const practice = Object.values(Game.archiveRecords()).filter(r => !r.surrendered).length;
+        statRows($("#stat-habits"), [
+            ["Days Played", first ? `${days.length} of ${sinceFirst}` : "–", first ? `${pct(days.length, sinceFirst)} since ${shortDate(first)}` : ""],
+            ["All Five in a Day", String(fullDays), fullDays ? "Easy, Medium, Hard, Challenge and Boss" : ""],
+            ["No-Hint Solves", puzzles.length ? `${noHint} of ${puzzles.length}` : "–", puzzles.length ? pct(noHint, puzzles.length) : ""],
+            ["Squares Checked", String(sum("checked"))],
+            ["Squares Revealed", String(sum("revealed"))],
+            ["Mistakes per Puzzle", counted.length ? (counted.reduce((a, k) => a + all[k].mistakes, 0) / counted.length).toFixed(1) : "–", counted.length ? `Wrong letters typed, over ${counted.length} ${counted.length === 1 ? "puzzle" : "puzzles"}` : "Counted from your next solve"],
+            ["Given Up", String(keys.filter(k => all[k].surrendered).length)],
+            ["Archive Practice", String(practice), practice ? "Earlier days solved for practice" : ""]
+        ]);
+        // records: the fastest at each difficulty, the best boss score, the best day
+        const rec = [];
+        for (const d of ["easy", "medium", "hard", "challenge"]) {
+            const best = puzzles.filter(k => all[k].difficulty === d && typeof all[k].seconds === "number").sort((a, b) => all[a].seconds - all[b].seconds)[0];
+            rec.push([`Fastest ${KIND_NAME[d]}`, best ? U.fmtTime(all[best].seconds) : "–", best ? shortDate(best) : "Not solved yet"]);
+        }
+        const boss = solved.filter(k => all[k].difficulty === "boss").sort((a, b) => (all[b].points || 0) - (all[a].points || 0))[0];
+        rec.push(["Best Boss", boss ? `${all[boss].points} pts` : "–", boss ? shortDate(boss) : "Not beaten yet"]);
+        const perDay = {};
+        for (const k of solved) perDay[dayOf(k)] = (perDay[dayOf(k)] || 0) + (all[k].points || 0);
+        const bestDay = Object.entries(perDay).sort((a, b) => b[1] - a[1])[0];
+        rec.push(["Best Day", bestDay ? `${bestDay[1]} pts` : "–", bestDay ? shortDate(bestDay[0]) : ""]);
+        rec.push(["Best Streak", `${streaks.best} ${streaks.best === 1 ? "Day" : "Days"}`]);
+        statRows($("#stat-records"), rec);
+        // hardest: the solves furthest over your own average at their difficulty (each can be replayed from the Archive)
+        const avg = {};
+        for (const d of ["easy", "medium", "hard", "challenge"]) {
+            const t = puzzles.filter(k => all[k].difficulty === d && typeof all[k].seconds === "number").map(k => all[k].seconds);
+            if (t.length > 1) avg[d] = t.reduce((a, b) => a + b, 0) / t.length;
+        }
+        const hard = puzzles.filter(k => avg[all[k].difficulty] && all[k].seconds - avg[all[k].difficulty] >= 5)
+            .sort((a, b) => all[b].seconds / avg[all[b].difficulty] - all[a].seconds / avg[all[a].difficulty]).slice(0, 5);
+        const list = $("#stat-hardest");
+        if (!hard.length) { list.replaceChildren(U.el("li", { class: "empty-note", text: "Solve a few at the same difficulty to see which ones gave you the most trouble." })); return; }
+        list.replaceChildren(...hard.map(k => {
+            const r = all[k], d = keyDate(k), date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            const li = U.el("li", {},
+                U.el("span", { class: "sh-what" }, U.el("b", { text: `${KIND_NAME[r.difficulty]} · ${shortDate(k)}` }), U.el("small", { text: `${U.fmtTime(r.seconds)} · ${U.fmtTime(Math.round(r.seconds - avg[r.difficulty]))} over your average` })));
+            if (dayOf(k) < today) li.appendChild(U.el("button", { type: "button", class: "btn small", text: "Replay", onclick: () => Game.playPast(date, r.difficulty) }));
+            return li;
+        }));
+    }
+
     // a calendar heatmap of the last few months (as many weeks as fit the card): darker = more dailies solved that day
     function drawHeatmap(all) {
         const per = {};
