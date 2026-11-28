@@ -107,6 +107,11 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Weekly Quests.** On Home, under the Daily card: three quests for the week (the same for everyone, new each
+      Sunday), each with a reward: a board colour (Gold, Midnight, Rose or Mint, for any world's board; pick it on
+      the same card) or a new part for your hero (in the hero maker once won). Finish all three for the week's
+      badge. Tell me if the quests are the right size for a week, and what else you'd like as rewards.
+
 - [ ] **The Daily Archive.** On Home, under the Daily card, open the Daily Archive: a calendar of every earlier
       day, drawn like a crossword grid. The coloured marks on each day are its Easy, Medium, Hard and Challenge, filled
       in once you've solved them. Pick a day, play one: it's practice, so no points or streak. Surprise Me picks one

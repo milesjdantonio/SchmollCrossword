@@ -211,6 +211,7 @@ const App = (() => {
         $("#hello-fact").textContent = left <= 0 ? ". All Done for Today" : !solved ? `. ${WORDS[total] || total} Puzzles Today` : `. ${WORDS[left] || left} Left Today`;
         drawCountdown();
         Archive.homeLine($("#home-archive-sub"));
+        Quests.draw($("#home-quests"));
         const streaks = calculateStreaks(all);
         $("#home-streak").replaceChildren(
             U.el("b", { class: "sf-num", text: String(streaks.current) }),

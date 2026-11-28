@@ -579,7 +579,15 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       letters typed) and your average at that difficulty, then your recent times as bars (this one lit up) with its
       rank and how it compares with your average (`howItWent` in game.js; the New Personal Best badge stays). Scores
       and practice solves now save `mistakes` too (for the Stats page).
-- [ ] Weekly quests (reset Sunday, no double rewards on reload; rewards: hero parts, badges, world colour variants)
+- [x] Weekly quests (2026-11-27): js/quests.js, css/quests.css. Three a week (one each from the daily, campaign
+      and skill pools), picked by the week's Sunday so everyone has the same, new at Sunday midnight; counted from
+      game.js's "win" (sets for "different days/worlds"); each gives its reward the moment it's done, marked given
+      and saved before it's applied (no double rewards on reload), and finishing all three gives the week's badge
+      (a medal drawn from the week's date). Rewards: four board colours (Gold, Midnight, Rose, Mint: any world's
+      board, chosen on Home's card), six hero parts drawn for it (Laurel Wreath, Explorer Hat, Star Sash, Quest
+      Satchel, Golden Pencil, Compass; locked in the hero maker until won), then 50 coins once everything's won.
+      Home has a Weekly Quests card (the quests, progress, rewards, the badge, board colours, your badges); the
+      results card lists the quests a solve moved. Privacy Notice updated.
 - [ ] Offline: a service worker; the site, the campaign and opened puzzles work offline; online-only features say so
 
 ### Phase 8: Social

@@ -29,13 +29,17 @@ const Hero = (() => {
     const TOPS = ["Nothing", "Tuft", "Beanie", "Cap", "Crown", "Bow", "Wizard Hat", "Headphones", "Sprout", "Spiky", "Top Hat", "Pirate Hat", "Flower", "Horns", "Halo", "Bandana", "Cowboy Hat", "Chef Hat", "Viking Helmet",
         // the bosses' gifts (GIFT below)
         "Pencil Crown", "Thistle Crown", "Acorn Cap", "Gumdrop Crown", "Octopus Hat", "Fur Hat", "Storm Cloud", "Aviator Cap", "Pharaoh Headdress", "Jester Hat", "Pixel Crown", "Candle Crown", "Antenna", "Flame Crown", "Space Helmet", "Cursed Halo",
-        "Squirrel Ears", "Coral Crown", "Sand Goggles", "Miner's Helmet"];
+        "Squirrel Ears", "Coral Crown", "Sand Goggles", "Miner's Helmet",
+        // won in the Weekly Quests (QUEST_PARTS below)
+        "Laurel Wreath", "Explorer Hat"];
     const OUTFITS = ["Nothing", "Scarf", "Cape", "Bow Tie", "Backpack", "Medal", "Belt", "Wings", "Overalls", "Necklace", "Tie", "Apron", "Sash",
         "Paper Ruff", "Vine Sash", "Leaf Scarf", "Candy Sash", "Life Ring", "Fur Collar", "Raincoat", "Jetpack", "Broad Collar", "Striped Vest", "Pixel Armor", "Ghost Shroud", "Robo Armor", "Scale Armor", "Planet Ring", "Fallen Wings",
-        "Fluffy Tail", "Pearl Necklace", "Desert Wrap", "Ember Cloak"];
+        "Fluffy Tail", "Pearl Necklace", "Desert Wrap", "Ember Cloak",
+        "Star Sash", "Quest Satchel"];
     const ITEMS = ["Nothing", "Pencil", "Book", "Star Wand", "Lantern", "Magnifier", "Sword", "Shield", "Balloon", "Umbrella", "Key", "Flag", "Ice Cream", "Fishing Rod", "Trophy",
         "Giant Eraser", "Watering Can", "Owl Plush", "Lollipop", "Trident", "Ice Axe", "Lightning Bolt", "Kite", "Ankh Staff", "Popcorn", "Game Controller", "Ghost Friend", "Wrench", "Torch", "Telescope", "Feather Quill",
-        "Giant Acorn", "Conch Shell", "Hourglass", "Pickaxe"];
+        "Giant Acorn", "Conch Shell", "Hourglass", "Pickaxe",
+        "Golden Pencil", "Compass"];
     const PARTS = { body: BODIES, eyes: EYES, mouth: MOUTHS, face: FACES, top: TOPS, outfit: OUTFITS, item: ITEMS };
 
 
@@ -113,6 +117,23 @@ const Hero = (() => {
             `<g class="bz-glow"><circle cx="120" cy="${t}" r="10" fill="#ffd03e" ${st(3)}/><circle cx="120" cy="${t}" r="18" fill="#ffb02e" opacity=".25"/></g><path d="M${120 - w + 10} ${t + 6} Q${120 - w + 18} ${t - 6} ${120 - w + 30} ${t - 10}" stroke="#ff6a1f" stroke-width="3" fill="none" opacity=".8"/>`; }
     ];
     // outfits: { back, front } (either may be missing)
+    // the Weekly Quests' hats: a laurel wreath and an explorer's hat
+    const QUEST_TOPS = [
+        (t, c, S) => {
+            const w = Math.min(S.hw + 6, 60);
+            return [-1, 1].map(k => {
+                const P = [[120 + k * 6, t - 6], [120 + k * w * 0.7, t - 12], [120 + k * w, t + 16]];
+                const at = u => [0, 1].map(j => (1 - u) * (1 - u) * P[0][j] + 2 * u * (1 - u) * P[1][j] + u * u * P[2][j]);
+                const path = `M${P[0][0]} ${P[0][1]} Q${f1(P[1][0])} ${P[1][1]} ${f1(P[2][0])} ${P[2][1]}`;
+                return `<path d="${path}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/><path d="${path}" fill="none" stroke="#6b8f2a" stroke-width="3" stroke-linecap="round"/>` +
+                    [0.12, 0.3, 0.48, 0.66, 0.84].map((u, i) => { const [x, y] = at(u), side = i % 2 ? -1 : 1;
+                        return `<ellipse cx="${f1(x)}" cy="${f1(y + side * 5)}" rx="8" ry="4" transform="rotate(${f1(k * (20 + u * 50) + side * 18)} ${f1(x)} ${f1(y + side * 5)})" fill="#8cc63f" ${st(2.5)}/>`; }).join("");
+            }).join("") + `<circle cx="120" cy="${t - 8}" r="4" fill="#ffd23f" ${st(2.5)}/>`;
+        },
+        (t, c) => `<path d="M58 ${t + 14} Q120 ${t + 2} 182 ${t + 14} Q120 ${t + 28} 58 ${t + 14}Z" fill="#c8a46a" ${st(4)}/>` +
+            `<path d="M86 ${t + 12} C86 ${t - 32} 154 ${t - 32} 154 ${t + 12}Z" fill="#dcbb80" ${st(4)}/><path d="M87 ${t + 3} Q120 ${t + 11} 153 ${t + 3} L154 ${t + 12} Q120 ${t + 20} 86 ${t + 12}Z" fill="${c}"/>` +
+            `<path d="M100 ${t - 16} Q120 ${t - 24} 140 ${t - 16}" fill="none" stroke="#fff" stroke-width="3" opacity=".5"/>`
+    ];
     const GIFT_OUTFITS = [
         // a crumpled paper ruff
         { front: (c, S) => { const y = S.mouthY + 22, w = S.w - 4; return `<path d="${Array.from({ length: 13 }, (_, i) => { const x = 120 - w + i * w / 6; return `${i ? "L" : "M"}${f1(x)} ${f1(y + (i % 2 ? 14 : 0) + Math.sin(i / 12 * Math.PI) * 10)}`; }).join("")} L${120 + w} ${y + 22} Q120 ${y + 40} ${120 - w} ${y + 22}Z" fill="#ffffff" ${st(3.5)}/>` +
@@ -173,6 +194,17 @@ const Hero = (() => {
         // The Lava Beast: a cloak with a glowing ember hem
         { back: (c, S) => { const y = S.eyeY + 20, w = S.w + 10; return `<path d="M${120 - w + 14} ${y} Q${120 - w - 14} ${y + 70} ${120 - w - 4} ${Math.min(214, y + 110)} H${120 + w + 4} Q${120 + w + 14} ${y + 70} ${120 + w - 14} ${y}Z" fill="#2a1c20" ${st(3.5)}/><path d="M${120 - w - 4} ${Math.min(214, y + 110)} H${120 + w + 4}" stroke="#ff6a1f" stroke-width="5" class="bz-glow"/>`; } }
     ];
+    // the Weekly Quests' outfits: a sash of stars and an explorer's satchel
+    const QUEST_OUTFITS = [
+        { front: (c, S) => { const x1 = 120 - S.w * 0.72, y1 = S.eyeY + 24, x2 = 120 + S.w * 0.62, y2 = Math.min(200, S.mouthY + 44), mx = (x1 + x2) / 2 + 10, my = (y1 + y2) / 2 - 14;
+            const path = `M${f1(x1)} ${f1(y1)} Q${f1(mx)} ${f1(my)} ${f1(x2)} ${f1(y2)}`;
+            return `<path d="${path}" fill="none" stroke="${INK}" stroke-width="15" stroke-linecap="round"/><path d="${path}" fill="none" stroke="#2f5fd0" stroke-width="10" stroke-linecap="round"/>` +
+                [0.2, 0.45, 0.7, 0.92].map(u => { const x = (1 - u) * (1 - u) * x1 + 2 * u * (1 - u) * mx + u * u * x2, y = (1 - u) * (1 - u) * y1 + 2 * u * (1 - u) * my + u * u * y2;
+                    return `<path d="${star(x, y, 6.5, 2.8)}" fill="#ffd23f" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/>`; }).join(""); } },
+        { front: (c, S) => { const x1 = 120 - S.w * 0.62, y1 = S.eyeY + 20, x2 = 120 + S.w * 0.52, y2 = Math.min(194, S.mouthY + 38);
+            return `<path d="M${f1(x1)} ${f1(y1)} L${f1(x2)} ${f1(y2)}" stroke="${INK}" stroke-width="10" stroke-linecap="round"/><path d="M${f1(x1)} ${f1(y1)} L${f1(x2)} ${f1(y2)}" stroke="#8a5a3c" stroke-width="6" stroke-linecap="round"/>` +
+                `<g transform="translate(${f1(x2)} ${f1(y2)})"><rect x="-17" y="-4" width="34" height="27" rx="6" fill="#b07a3e" ${st(3.5)}/><path d="M-17 3 Q0 14 17 3 V-4 H-17Z" fill="#8a5a3c" ${st(3)}/><circle cx="0" cy="9" r="3.2" fill="#ffd23f" ${st(2)}/></g>`; } }
+    ];
     const GIFT_ITEMS = [
         // a giant eraser
         () => `<g transform="translate(206 112) rotate(-14)"><rect x="-22" y="-26" width="28" height="30" rx="5" fill="#ff9fb4" ${st(3.5)}/><rect x="4" y="-26" width="18" height="30" rx="3" fill="#4f86d9" ${st(3.5)}/><path d="M-18 -18 h18" stroke="#fff" stroke-width="3" opacity=".6"/></g>`,
@@ -218,6 +250,26 @@ const Hero = (() => {
         // The Lava Beast: a pickaxe with a glowing head
         () => `<g transform="translate(204 128) rotate(-18)"><rect x="-4" y="-80" width="8" height="80" rx="3" fill="#8a5a3c" ${st(3)}/><path d="M-30 -74 Q0 -96 30 -74 L26 -68 Q0 -84 -26 -68Z" fill="#5a4448" ${st(3)}/><path d="M-30 -74 l-4 6 M30 -74 l4 6" stroke="#ff8a2a" stroke-width="3" stroke-linecap="round" class="bz-glow"/></g>`
     ];
+    // the Weekly Quests' things to hold: a golden pencil and a compass
+    const QUEST_ITEMS = [
+        () => `<g transform="translate(206 128) rotate(-18)"><rect x="-6" y="-66" width="12" height="64" fill="#ffcf3a" ${st(3)}/><path d="M-6 -66 L0 -84 L6 -66Z" fill="#f2d2a2" ${st(3)}/><path d="M-2 -78 L0 -84 L2 -78Z" fill="${INK}"/>` +
+            `<rect x="-6" y="-8" width="12" height="8" fill="#c8ccd8" ${st(3)}/><path d="M-1.5 -60 V-12" stroke="#fff6c0" stroke-width="2.5"/><path d="${star(16, -70, 7, 3)}" fill="#fff6c0" class="bz-glow"/></g>`,
+        () => `<g transform="translate(206 114)"><rect x="-3.5" y="-27" width="7" height="7" rx="2" fill="#e0b020" ${st(2.5)}/><circle r="20" fill="#e0b020" ${st(3.5)}/><circle r="14" fill="#fffaf0" ${st(2)}/>` +
+            `<path d="M0 -12 L4 0 L-4 0Z" fill="#e5484d"/><path d="M0 12 L4 0 L-4 0Z" fill="#5a6474"/><circle r="2.2" fill="${INK}"/><path d="M0 -14 V-11 M14 0 H11 M0 14 V11 M-14 0 H-11" stroke="${INK}" stroke-width="1.5"/></g>`
+    ];
+    GIFT_TOPS.push(...QUEST_TOPS);
+    GIFT_OUTFITS.push(...QUEST_OUTFITS);
+    GIFT_ITEMS.push(...QUEST_ITEMS);
+    // which list index each quest part has (after the 20 bosses' gifts), for Quests (quests.js)
+    const QUEST_PARTS = [
+        { id: "hero-laurel", key: "top", index: 19 + GIFT_WORLDS.length },
+        { id: "hero-explorer", key: "top", index: 20 + GIFT_WORLDS.length },
+        { id: "hero-starsash", key: "outfit", index: 13 + GIFT_WORLDS.length },
+        { id: "hero-satchel", key: "outfit", index: 14 + GIFT_WORLDS.length },
+        { id: "hero-goldpencil", key: "item", index: 15 + GIFT_WORLDS.length },
+        { id: "hero-compass", key: "item", index: 16 + GIFT_WORLDS.length }
+    ];
+    QUEST_PARTS.forEach(q => { q.name = PARTS[q.key][q.index]; });
     const GIFT = {};
     GIFT_WORLDS.forEach((w, i) => { GIFT[w] = { top: 19 + i, outfit: 13 + i, item: 15 + i }; });
     // which parts are still locked: { top: Set, outfit: Set, item: Set } for the bosses you haven't beaten
@@ -225,6 +277,8 @@ const Hero = (() => {
         const out = { top: new Set(), outfit: new Set(), item: new Set() };
         if (!beaten) return out;
         for (const w of GIFT_WORLDS) if (!beaten.includes(w)) for (const k of ["top", "outfit", "item"]) out[k].add(GIFT[w][k]);
+        // the Weekly Quests' parts stay locked until a quest gives them
+        for (const q of QUEST_PARTS) if (!(typeof Quests !== "undefined" && Quests.owns(q.id))) out[q.key].add(q.index);
         return out;
     }
     const giftNames = world => (GIFT[world] ? [TOPS[GIFT[world].top], OUTFITS[GIFT[world].outfit], ITEMS[GIFT[world].item]] : null);
@@ -534,7 +588,7 @@ const Hero = (() => {
                         stepper("Holding", "item", ITEMS)),
                     cur.top ? swatches("Hat Colour", "topColor", ACCENTS) : "",
                     cur.outfit ? swatches("Outfit Colour", "outfitColor", ACCENTS) : "",
-                    beaten && left ? U.el("p", { class: "hm-locked", text: `🎁 ${left} more parts to win: every boss you beat gives your hero a hat, an outfit and something to hold.` }) : "");
+                    beaten && left ? U.el("p", { class: "hm-locked", text: `🎁 ${left} more parts to win: every boss you beat gives your hero a hat, an outfit and something to hold, and the Weekly Quests give more.` }) : "");
             }
             const close = value => { removeEventListener("keydown", onKey, true); U.dialog.close(modal); modal.classList.remove("in"); setTimeout(() => modal.remove(), 250); done(value); };
             const onKey = e => { if (e.key === "Escape" && !first && U.dialog.top(modal)) { e.preventDefault(); close(null); } };
@@ -554,5 +608,5 @@ const Hero = (() => {
         });
     }
 
-    return { svg, inner, maker, random, fix, cleanName, giftNames, GIFT_WORLDS, COLORS, ACCENTS };
+    return { svg, inner, maker, random, fix, cleanName, giftNames, GIFT_WORLDS, COLORS, ACCENTS, QUEST_PARTS };
 })();

@@ -5235,7 +5235,7 @@ const Campaign = (() => {
 
     return {
         onView, showMap, warmStage, play, playSpecial, heroLook, hero: () => (data.hero ? heroLook() : null), biome, prop: (world, r) => PROPS[biome(world).prop](r), editHero, secretOpen, secretEarned, beatenBosses, backToMode, ready: fetchMap, storyPages, storyAfterBoss, playIntro: () => FX.cinematic(c => Story.intro(c, storyPages())), nextPhase, next, slotName, apiUrl, titles, cardInfo, onWin, bestLine, bossFinale, drawHomeCard, bossSvg, openShop,
-        isBossLevel, syncSlots, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
+        isBossLevel, syncSlots, addCoins: n => { data.coins = (data.coins || 0) + n; save(); }, mascotLine, dailyTries, pageWon: w => !!(data.levels && data.levels[keyOf(w, 5)]), abilities: ABILITIES, items: ITEMS, unlockedAbilities, useItem, useAbility,
         get playing() { return data.playing; }, get fight() { return fight; }
     };
 })();

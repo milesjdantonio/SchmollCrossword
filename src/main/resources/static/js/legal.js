@@ -3,7 +3,7 @@
 // Written to match what the code really does (LeaderboardController, ReportController, RateLimiter, game storage).
 // If that changes, change these too, and the "Last updated" date.
 const Legal = (() => {
-    const UPDATED = "November 7, 2026";
+    const UPDATED = "November 27, 2026";
     const REPO = "https://github.com/milesjdantonio/SchmollCrossword";
     const p = (...parts) => U.el("p", {}, ...parts);
     const a = (text, href) => U.el("a", { href, text, target: "_blank", rel: "noopener" });
@@ -49,7 +49,7 @@ const Legal = (() => {
         privacy: { title: "Privacy Notice", body: () => [
             p("Schmoll Crossword is a free game with no accounts, no ads and no tracking. This notice explains the little it does keep."),
             h("On Your Device"),
-            p("Your progress, scores, streaks, stats, coins, achievements, settings and your campaign hero (its look and the name you give it) are saved in your browser's storage on this device. They aren't sent to us, except for what you choose to post to the leaderboard (below). Erase them any time with Settings > Reset (Erase Campaign Data, Erase Leaderboard Data or Erase All Data), or by clearing this site's data in your browser."),
+            p("Your progress, scores, streaks, stats, Daily Archive practice, Weekly Quests and their rewards, coins, achievements, settings and your campaign hero (its look and the name you give it) are saved in your browser's storage on this device. They aren't sent to us, except for what you choose to post to the leaderboard (below). Erase them any time with Settings > Reset (Erase Campaign Data, Erase Leaderboard Data or Erase All Data), or by clearing this site's data in your browser."),
             p("If you join the leaderboard, your browser makes a random ID once, so the leaderboard can tell your scores apart from other players'. It isn't linked to who you are, and it's never shown to anyone. When you start a daily, the server also gives your browser a signed note of the start time, so solve times can be checked; it holds nothing about you."),
             h("The World Leaderboard (Optional)"),
             p("If you choose to join, we store the first name you pick (and a last initial, if you add one), that random ID, and each daily's score and solve time, by day. Your name and points are shown publicly on that day's leaderboard, and each day's board is deleted after 30 days. Don't use a name you'd rather keep private."),

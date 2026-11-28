@@ -956,6 +956,7 @@ const Game = (() => {
             setTimeout(() => { if (!card.isConnected) return; FX.countUp(total, b.total, { dur: 900 }); Sound.play("sparkle"); }, 350 + rows.length * 260);
         }
         if (info.campaign) campaignResults(card, info.campaign);
+        if (info.quests && info.quests.length) card.appendChild(questResults(info.quests));
         if (info.note) card.appendChild(U.el("p", { class: "res-note", text: info.note }));
         if ((p.mode === "daily" || info.daily) && info.counted && typeof Leaderboard !== "undefined") {
             const box = U.el("div", { class: "res-leader" });               // the World Leaderboard: post this daily
@@ -1044,6 +1045,19 @@ const Game = (() => {
         box.appendChild(U.el("div", { class: "rf-bars", role: "img", "aria-label": `${line}. ${vs}` },
             ...all.map((s, i) => U.el("i", { class: i === all.length - 1 ? "now" : "", style: { "--h": Math.max(8, Math.round(s / max * 100)) + "%", "--i": i }, title: U.fmtTime(s) }))));
         box.appendChild(U.el("p", { class: "rf-line" }, U.el("b", { text: line }), vs ? " · " + vs : ""));
+        return box;
+    }
+    // the Weekly Quests this solve moved along (quests.js): each with its progress, and the reward when it's done
+    function questResults(list) {
+        const box = U.el("div", { class: "res-quests" }, U.el("small", { text: "WEEKLY QUESTS" }));
+        list.forEach((q, i) => {
+            const row = U.el("div", { class: "rq" + (q.done ? " done" : ""), style: { "--i": i } },
+                q.badge ? U.el("span", { class: "rq-medal", html: Quests.badgeSvg(q.badge) }) : null,
+                U.el("span", { class: "rq-text" }, U.el("b", { text: q.text }), U.el("span", { class: "rq-bar", "aria-hidden": "true" }, U.el("i", { style: { width: (q.n / q.target * 100) + "%" } }))),
+                U.el("span", { class: "rq-n", text: q.done ? (q.reward ? "Won: " + q.reward : "Done") : `${q.n} of ${q.target}` }));
+            box.appendChild(row);
+            if (q.done) setTimeout(() => { if (row.isConnected) Sound.play("achievement"); }, 1200 + i * 350);
+        });
         return box;
     }
     // the campaign part of the results card: stars that pop in one by one, what earned them, coins

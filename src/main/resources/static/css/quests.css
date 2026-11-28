@@ -1,0 +1,68 @@
+/* Weekly Quests (js/quests.js): Home's card, the results card's lines, and the board colours they give. */
+
+/* ---- Home's card: the three quests and the week's badge as four tiles, then what you've won ---- */
+.home-grid > .quests-card { grid-column: 1 / -1; }
+.qx-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.qx { display: grid; grid-template-rows: 1fr auto; gap: 8px; min-width: 0; padding: 12px 14px; border: 1px solid var(--rule); border-radius: var(--radius-sm); background: var(--raised); }
+.qx.done { border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 9%, var(--raised)); }
+.qx-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.qx-text b { font: 700 .98rem/1.3 var(--font-body); }
+.qx-text small { color: var(--muted); font-size: .82rem; font-weight: 600; }
+.qx-bar { height: 7px; border-radius: 4px; background: color-mix(in srgb, var(--ink) 10%, transparent); overflow: hidden; }
+.qx-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width .5s cubic-bezier(.3, 1.2, .5, 1); }
+.qx.done .qx-bar i { background: var(--good); }
+.qx-n { color: var(--muted); font-size: .84rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.qx.done .qx-n { color: var(--good); }
+.qx > .qx-n, .qx > .qx-reward { grid-row: 2; }
+.qx { grid-template-columns: auto minmax(0, 1fr); }
+.qx > .qx-text { grid-column: 1 / -1; }
+.qx-reward { justify-self: end; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 10px 3px 4px; border: 1px solid var(--rule-strong); border-radius: 999px; background: var(--panel); font-size: .78rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qx-reward svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; }
+.qx-reward.got { border-color: color-mix(in srgb, var(--good) 50%, transparent); color: var(--good); }
+.qx-sw { width: 16px; height: 16px; flex: none; border-radius: 4px; background: linear-gradient(135deg, var(--a) 50%, var(--b) 50%); box-shadow: inset 0 0 0 1.5px var(--b); }
+.qx-badge { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto; align-items: center; }
+.qx-badge > .qx-text { grid-column: 1; }
+.qx-medal { display: block; width: 46px; color: var(--ink); }
+.qx-medal svg { display: block; width: 100%; height: auto; }
+.qx-badge:not(.done) .qx-medal { filter: grayscale(1); opacity: .45; }
+.qx-won { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 14px; }
+.qx-finishes, .qx-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.qx-won small { margin-right: 4px; color: var(--muted); font-size: .84rem; font-weight: 700; }
+.qx-swatch { position: relative; width: 32px; height: 32px; padding: 0; border: 1px solid var(--rule-strong); border-radius: 8px; cursor: pointer;
+    background: linear-gradient(135deg, var(--a, var(--cell)) 50%, var(--b, var(--grid)) 50%); transition: transform .12s; }
+.qx-swatch:hover:not(:disabled) { transform: translateY(-2px); }
+.qx-swatch.on { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--ink); }
+.qx-swatch.locked { cursor: default; opacity: .35; filter: grayscale(.6); }
+.qx-swatch:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+.qx-badges .qx-medal.small { width: 30px; }
+.qx-badges .qx-medal.small text { display: none; }
+@media (max-width: 1100px) { .qx-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .qx-list { grid-template-columns: 1fr; } }
+
+/* ---- the results card: the quests this solve moved along ---- */
+.res-quests { display: grid; gap: 6px; max-width: 360px; margin: 14px auto 0; text-align: left; }
+.res-quests > small { color: var(--accent); font-weight: 900; letter-spacing: .14em; text-align: center; }
+.rq { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--surface-2);
+    animation: rq-in .45s cubic-bezier(.3, 1.4, .5, 1) backwards; animation-delay: calc(.9s + var(--i) * .25s); }
+.rq.done { background: color-mix(in srgb, var(--good) 16%, var(--surface-2)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--good) 45%, transparent); }
+.rq-medal { width: 30px; color: var(--ink); }
+.rq-medal svg { display: block; width: 100%; height: auto; }
+.rq-medal text { display: none; }
+.rq:not(:has(.rq-medal)) .rq-text { grid-column: 1 / 3; }
+.rq-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rq-text b { font-size: .86rem; font-weight: 800; line-height: 1.25; }
+.rq-bar { height: 5px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 12%, transparent); overflow: hidden; }
+.rq-bar i { display: block; height: 100%; background: var(--accent); }
+.rq.done .rq-bar i { background: var(--good); }
+.rq-n { font-size: .78rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.rq.done .rq-n { color: var(--good); }
+@keyframes rq-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .rq { animation: none; } }
+
+/* ---- the board colours (any world's board; the squares and the lines between them) ---- */
+html[data-finish="gold"] #board { --cell: #fff4cf; --cell-ink: #3a2a00; --grid: #b8860b; --block: repeating-linear-gradient(45deg, #8a6408 0 2.2px, #c9971a 2.2px 6px); --solved: #ffe9a0; }
+html[data-finish="midnight"] #board { --cell: #1e2546; --cell-ink: #eef1ff; --grid: #0a0d1c; --block: #05060e; --solved: #2c3a70; }
+html[data-finish="rose"] #board { --cell: #fff0f4; --cell-ink: #4a1020; --grid: #c2456b; --block: repeating-linear-gradient(45deg, #9a2d50 0 2.2px, #d9708f 2.2px 6px); --solved: #ffd3df; }
+html[data-finish="mint"] #board { --cell: #eefbf3; --cell-ink: #10301f; --grid: #2f8f63; --block: repeating-linear-gradient(45deg, #1f6a48 0 2.2px, #5fb88a 2.2px 6px); --solved: #c8f2d8; }
+html[data-finish="gold"] #board .cell { box-shadow: inset 0 -3px 0 rgba(184, 134, 11, .25); }
+html[data-finish="midnight"] #board .cell .num { color: #9aa6d8; }
