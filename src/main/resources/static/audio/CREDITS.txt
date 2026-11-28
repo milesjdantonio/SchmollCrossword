@@ -21,7 +21,7 @@ Sound effects (audio/sfx) - Kenney (www.kenney.nl), CC0
   RPG Audio          https://kenney.nl/assets/rpg-audio
   UI Audio           https://kenney.nl/assets/ui-audio
   Casino Audio       https://kenney.nl/assets/casino-audio
-  (sfx/rec/: the everyday sounds, typing, clicks, words, coins, from these packs, trimmed and level-matched)
+  (sfx/ui/: the everyday sounds, typing, clicks, words, coins, from Interface Sounds, trimmed and level-matched)
   Music Jingles      https://kenney.nl/assets/music-jingles   (jingle-*.mp3)
 
 Boss music (audio/music). Each boss has a song per phase: <world>.mp3 is phase 1, <world>-p2.mp3 phase 2 and so on

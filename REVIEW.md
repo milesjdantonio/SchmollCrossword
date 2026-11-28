@@ -107,6 +107,10 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Standard sounds.** Typing, clicks, finished words, mistakes, coins and the win now use plain interface sounds
+      (the same in every world) instead of wood taps, casino chips and glass clinks. Hear them all at
+      http://localhost:8090/demo/sounds.html. Tell me which still feel wrong.
+
 - [ ] **Daily Quests and the Collection.** Home's Quests card now has today's three small quests too (20 coins
       each; all three give a board colour). Open the Collection from that card or Settings > World: 100 board
       colours and 23 letter styles, each with a preview, to win in the quests or buy with campaign coins (the

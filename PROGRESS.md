@@ -596,6 +596,7 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       bought with coins (80 / 200 / 450; legendary only from Weekly Quests) or won; a menu with tabs, family
       filters and a preview of each (from Home's card and Settings > World); the one in use is written as one small
       style rule. The beta's Unlock All owns everything.
+- [x] Standard sounds (2026-11-27, the user: "make a lot of the clicks just standard click sounds, not the realistic thing ... consider that for all sounds"): every everyday sound is now from Kenney's Interface Sounds (CC0, audio/sfx/ui/, 61 files: clicks, selects, switches, confirmations, errors, glass dings), the same in every world (no per-world materials; the Neon Arcade keeps its chiptune). The foley set (audio/sfx/rec/) is gone; the demo sound board and CREDITS.txt follow.
 - [ ] Offline: a service worker; the site, the campaign and opened puzzles work offline; online-only features say so
 
 ### Phase 8: Social
