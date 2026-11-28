@@ -597,7 +597,13 @@ strip stays); "playable version of all" (the four secret worlds first as playabl
       filters and a preview of each (from Home's card and Settings > World); the one in use is written as one small
       style rule. The beta's Unlock All owns everything.
 - [x] Standard sounds (2026-11-27, the user: "make a lot of the clicks just standard click sounds, not the realistic thing ... consider that for all sounds"): every everyday sound is now from Kenney's Interface Sounds (CC0, audio/sfx/ui/, 61 files: clicks, selects, switches, confirmations, errors, glass dings), the same in every world (no per-world materials; the Neon Arcade keeps its chiptune). The foley set (audio/sfx/rec/) is gone; the demo sound board and CREDITS.txt follow.
-- [ ] Offline: a service worker; the site, the campaign and opened puzzles work offline; online-only features say so
+- [x] Offline (2026-11-27): static/sw.js. Installing it keeps the page and everything it links to; the page and
+      the puzzle APIs (daily, archive, campaign, boss) are network-first and kept, so any puzzle you've opened works
+      offline; files named by content are used at once (old versions let go when a new page arrives), music, sounds
+      and pictures are kept when first used; the leaderboard, reports and posting stay network-only. app.js
+      registers it, keeps today's four dailies once a day in the background, and shows an "Offline" note (tap to
+      hide). Tested by stopping the server: Home, the quests, today's dailies and the Archive all opened. Privacy
+      Notice says what's kept.
 
 ### Phase 8: Social
 - [ ] Share result cards (answer-free; copy fallback)

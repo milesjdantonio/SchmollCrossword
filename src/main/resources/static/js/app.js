@@ -8,6 +8,33 @@
 const App = (() => {
     const $ = U.$;
     const root = document.documentElement;
+    // ---------------------------------------------------------------------------------------------
+    // Offline: the service worker (sw.js) keeps the site and every puzzle you've opened. A notice says when you're
+    // offline (new puzzles and the leaderboard wait for a connection), and today's dailies are kept in the background
+    // once a day, so they can be played offline later
+    // ---------------------------------------------------------------------------------------------
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(err => console.warn("offline support", err)));
+    }
+    const offlineEl = U.el("p", { class: "offline-note", role: "status", hidden: true },
+        U.el("b", { text: "Offline" }), U.el("span", { text: "Puzzles you've opened still work. New ones and the leaderboard wait for a connection." }));
+    offlineEl.addEventListener("click", () => { offlineEl.hidden = true; });       // (tap it away; it comes back the next time you go offline)
+    document.body.appendChild(offlineEl);
+    let wasOff = null;
+    const syncOnline = () => { const off = navigator.onLine === false; if (off !== wasOff) offlineEl.hidden = !off; wasOff = off; root.classList.toggle("offline", off); if (!off) keepToday(); };
+    addEventListener("online", syncOnline);
+    addEventListener("offline", syncOnline);
+    function keepToday() {
+        if (navigator.onLine === false || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+        const d = dayKey(new Date()), date = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6)}`;
+        if (U.store.get("keptDay", "") === d) return;
+        (window.requestIdleCallback || (f => setTimeout(f, 3000)))(() => {
+            Promise.all(["easy", "medium", "hard", "challenge"].map(k => fetch(`/api/daily?difficulty=${k}&date=${date}`).then(r => r.ok)))
+                .then(oks => { if (oks.every(Boolean)) U.store.set("keptDay", d); }).catch(() => {});
+        }, { timeout: 10000 });
+    }
+    setTimeout(syncOnline, 4000);
+
     $("#open-collection").addEventListener("click", () => { Sound.play("select"); Collection.open("colour"); });
     const screens = { home: $("#home-view"), game: $("#game-view"), campaign: $("#campaign-view"), stats: $("#stats-view"), settings: $("#settings-view"), archive: $("#archive-view") };
     const cap = s => s.charAt(0).toUpperCase() + s.slice(1);

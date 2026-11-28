@@ -107,6 +107,10 @@ Everything in the major update that needs your eyes, ears or a decision. When so
       It may be an arrangement of John Coltrane's "Giant Steps", which is still under copyright. Only listening can
       tell; if it is, it gets replaced.
 
+- [ ] **Offline.** Open the game once, then turn off your Wi-Fi and reload: it still opens, today's dailies and any
+      puzzle or level you've opened still play, and a note in the corner says the leaderboard and new puzzles need
+      a connection.
+
 - [ ] **Standard sounds.** Typing, clicks, finished words, mistakes, coins and the win now use plain interface sounds
       (the same in every world) instead of wood taps, casino chips and glass clinks. Hear them all at
       http://localhost:8090/demo/sounds.html. Tell me which still feel wrong.

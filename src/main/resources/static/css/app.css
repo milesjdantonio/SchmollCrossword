@@ -1471,3 +1471,9 @@ svg.glyph.inline { display: inline-block; vertical-align: -0.2em; }
 .rf-line { margin: 2px 0 0; color: var(--muted); font-size: .82rem; font-weight: 700; }
 .rf-line b { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .rf-bars i { animation: none; } }
+
+/* offline: a small note in the corner (app.js) */
+.offline-note { position: fixed; left: 14px; bottom: 14px; z-index: 650; display: flex; align-items: baseline; gap: 8px; max-width: min(460px, calc(100vw - 28px)); margin: 0;
+    padding: 9px 14px; border-radius: 14px; background: var(--ink); color: var(--surface-solid); font-size: .86rem; font-weight: 600; line-height: 1.35; box-shadow: 0 8px 24px rgba(0, 0, 0, .25); }
+.offline-note[hidden] { display: none; }
+.offline-note b { flex: none; font-weight: 900; }
